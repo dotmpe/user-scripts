@@ -7,12 +7,13 @@ python:
 #services: []
 env:
   matrix: []
-  global:
+  global: []
 
 #before_install: []
-@  - test -n scriptpath=$(pwd) . build/init.sh
+#  - test -n scriptpath=$(pwd) . build/init.sh
 #install: []
-#before_script:
+before_script:
+  - . .build/init.sh
 script:
   - lib_load build
   - test/lint.sh all

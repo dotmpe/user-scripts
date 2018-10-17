@@ -1,2 +1,7 @@
-2018-10-17 Intial project setup, checks, testing, SCM tools, CI.
-2018-10-17 Keep (most) project docs apart in GH wiki repo </doc>
+2018-10-17 WIP: Initial project setup, checks, testing, SCM tools, CI.
+  - Makefile to wrap tooling, prefer something agnostic but make almost always goes </Makefile>
+  - May include u-s distributable later, include build tooling there.
+  - Alt. compile scripts into composer, package, component JSON.
+2018-10-17 TODO: get in version control [VC] lib and setup <.build/pre-commit.sh> and <.build/init.sh> properly. 
+  - Will want to include checks from any library requested, whitespace, other string checking, static analysis.
+x 2018-10-17 2018-10-17 Keep (most) project docs apart in GH wiki repo </doc> @docs
