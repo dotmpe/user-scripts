@@ -1,0 +1,2 @@
+2018-10-17 Intial project setup, checks, testing, SCM tools, CI.
+2018-10-17 Keep (most) project docs apart in GH wiki repo </doc>

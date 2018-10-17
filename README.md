@@ -1,3 +1,22 @@
+# User Scripts
+
+Bourne shell compatible scripts to deal with:
+
+- Provisioning
+- Versioning
+- Packaging
+- Testing
+- Analysis
+- Distribution
+
+- [Docs](doc) ([Wiki](https://github.com/bvberkum/user-scripts/wiki))
+- [DevLog](doc/dev)
+- [ChangeLog](CHANGELOG.md)
+
+* [AGPL-3.0](COPYING)
+
+---
+
 [2018-08-24] Goal: shell history but better
 
 # Req'ments
@@ -30,4 +49,3 @@ None. [Initial orientation](doc/dev/main.md).
 [3]: http://web.archive.org/web/*/alias.sh
 [4]: https://explainshell.com
 [5]: https://github.com/idank/explainshell/issues/4
-

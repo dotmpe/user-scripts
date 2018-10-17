@@ -5,6 +5,23 @@ immediate objectives:
 - record script body under ID (using some key/value store CLi client)
 - record script executions (idem ditto)
 
+* Bourne shell compatible dist.
+  But building all dev/build components out of Bash, Dash compat.
+
+## Status
+
+- Initial project setup, slightly unorganized docs
+- Code still in other repos, looking at dev and [ci] setup.
+
+[ci]: /doc/dev/ci.md
+
+## Overview
+
+- [tasks](todo.txt), .done.txt
+- ``test/*.sh`` to maintain project for now
+- ``build/*.sh`` later for env init, profile
+- ``src/sh`` for source probably
+- ``dist/sh`` etc. perhaps
 
 ## Static analysis
 
