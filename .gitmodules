@@ -1,3 +1,4 @@
 [submodule "doc"]
 	path = doc
 	url = http://github.com/bvberkum/user-scripts.wiki.git
+	# XXX: url = git@github.com:bvberkum/user-scripts.wiki.git

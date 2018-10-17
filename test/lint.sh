@@ -21,12 +21,17 @@ lint-bats()
 
 # Groups
 
-all()
+check()
 {
   # TODO: lint markdown
   # TODO: lint sh-scripts
   # TODO: lint bash-scripts
-  lint-bats
+  lint-bats "$@"
+}
+
+all()
+{
+  check
 }
 
 "$@"
