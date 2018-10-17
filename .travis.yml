@@ -15,7 +15,7 @@ env:
 before_script:
   - . .build/init.sh
 script:
-  - lib_load build
+  #- lib_load build
   - test/lint.sh all
   - test/unit.sh all
   - test/spec.sh all
