@@ -3,4 +3,4 @@ all: init check build test
 init:: ; . .build/init.sh
 check:: ; . .build/check.sh
 build::
-test:: ; . .build/ci.sh
+test:: ; . .build/test.sh

@@ -44,7 +44,7 @@ EOM
 - [Dev-Docs](wiki/dev/main)
 - [ChangeLog](CHANGELOG.md)
 
-Version: 0.1-doc
+Version: 0.0
 
 * [AGPL-3.0](COPYING)
 

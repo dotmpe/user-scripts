@@ -26,7 +26,8 @@ check()
   # TODO: lint markdown
   # TODO: lint sh-scripts
   # TODO: lint bash-scripts
-  lint-bats "$@"
+  lint-bats "$@" &&
+  git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
 }
 
 all()

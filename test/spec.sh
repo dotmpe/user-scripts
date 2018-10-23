@@ -15,7 +15,7 @@ test-bats-specs()
   test -n "$*" || set -- test/*-spec.bats
   test "$1" != "test/*-spec.bats" || return 0
   # Run all tests as one suite/report run
-  bats -c "$@"
+  bats "$@"
 }
 
 
