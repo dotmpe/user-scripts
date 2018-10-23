@@ -1,0 +1,29 @@
+digraph unix_shell_lineages {
+
+  sh [label="Bourne Shell (1977, Bell)"];
+
+  heirloom_sh[label="OpenSolaris sh"];
+
+  csh [label="C-shell (1978)"];
+  tcsh [label="tsch (1981/1983, Carnegie)"]
+  csh -> tcsh
+
+  ksh88 [label="Korn Shell (1988, Bell)"];
+  ksh93 [label="ksh93"];
+
+  bash [label="Born Again Shell (1989, GNU)"];
+
+  zsh [label="zsh (1990, Princeton)"];
+  bb [label="Busy Box"];
+
+  ash [label="Almquist shell [ash,sh] (1989, BSD)"];
+  ash_97 [label="Almquist shell [dash,sh] (1997, Linux)"];
+  dash [label="Debian Almquist shell [dash,sh] (2002)"];
+
+  ash -> ash_97
+  ash_97 -> dash
+
+  fish [label="friendly interactive shell [fish] (2005)"];
+  yash [label="yash"];
+  oil [label="Oil"];
+}
