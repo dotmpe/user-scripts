@@ -1,0 +1,3 @@
+[submodule "doc"]
+	path = doc
+	url = http://github.com/bvberkum/user-scripts.wiki.git
