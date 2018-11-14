@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
-# Run all or specific unit-tests </doc/dev/ci>
+# Component unit-tests </doc/dev/ci>
 #
 # Usage:
 #   ./unit.sh <function name>
 
-set -o nounset
 set -o pipefail
 set -o errexit
 
@@ -18,11 +17,33 @@ test-bats-units()
   bats "$@"
 }
 
+default_test_run()
+{
+  local test_fmt=$1 report_fmt=$2; shift 2
+
+  for x in "$@"
+    do
+      test="test/$(basename $x .$test_fmt).$report_fmt"
+    done
+}
+
 # Groups
+
+check()
+{
+  true
+}
 
 all()
 {
   test-bats-units
 }
+
+default()
+{
+  all
+}
+
+test -n "$1" || set -- default
 
 "$@"

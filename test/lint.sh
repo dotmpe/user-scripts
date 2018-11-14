@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
-# Run tools to maintain the coding style </doc/dev/ci>
+# Tools to maintain coding style standards </doc/dev/ci>
 #
 # Usage:
 #   ./lint.sh <function name>
 
-set -o nounset
 set -o pipefail
 set -o errexit
 
@@ -34,5 +33,12 @@ all()
 {
   check
 }
+
+default()
+{
+  all
+}
+
+test -n "$1" || set -- default
 
 "$@"

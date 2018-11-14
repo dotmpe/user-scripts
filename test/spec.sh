@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
-# Run all or specific system, integration and acceptance tests </doc/dev/ci>
+# System, integration and acceptance tests </doc/dev/ci>
 #
 # Usage:
 #   ./lint.sh <function name>
 
-set -o nounset
 set -o pipefail
 set -o errexit
 
@@ -21,9 +20,21 @@ test-bats-specs()
 
 # Groups
 
+check()
+{
+  true
+}
+
 all()
 {
   test-bats-specs
 }
+
+default()
+{
+  all
+}
+
+test -n "$1" || set -- default
 
 "$@"
