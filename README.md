@@ -38,6 +38,11 @@ EOM
 )"
 ```
 
+### Status
+
+- Experimental project setup, but Sh library should work as advertized.
+- Secondary objectives being setup, 
+
 ### Sections
 
 - [Docs](doc) ([Wiki](https://github.com/bvberkum/user-scripts/wiki))

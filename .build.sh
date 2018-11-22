@@ -28,12 +28,12 @@ init-checks()
 
 check()
 {
-  run-test check
+  run-test check >&2
 }
 
 build()
 {
-  false
+  true
 }
 
 run-test()
@@ -45,6 +45,16 @@ run-test()
   test/unit.sh "$@" &&
   test/bm.sh "$@" &&
   test/spec.sh "$@"
+}
+
+clean()
+{
+  find ./ -iname '*.tap' -exec rm -v "{}" + # FIXME &&
+  #{
+  #  not_trueish "$clean_force" || {
+  #    git clean -df && git clean -dfx */
+  #  }
+  #}
 }
 
 

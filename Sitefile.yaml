@@ -7,16 +7,10 @@ routes: # Simple router instances
 
   '': redir:README
   index: redir:README
-  
   LICENSE: redir:COPYING
 
-  README-it: markdown-it:README.md
-
   # Serve documentation
-  README: markdown:README.md
-  COPYING: markdown:COPYING.md
-  CHANGELOG: markdown:CHANGELOG.md
-
+  _md: markdown-it:*.md
   _doc: markdown:doc/*.md
   _doc_dev: markdown:doc/dev/*.md
 
@@ -29,23 +23,15 @@ routes: # Simple router instances
 options: # Router instance shared settings
   local: {} # Custom settings per URL route
   global: # Custom settings per router name
-    docutils:
-      $ref: '#/options/global/rst2html'
-    rst2html:
-      link_stylesheets: true
-      flags:
-      - "--no-toc-backlinks"
-      - '--field-name-limit=0'
-      scripts:
-        $ref: '#/defs/scripts/default'
-      stylesheets:
-        $ref: '#/defs/stylesheets/default'
     pug:
       merge:
         scripts:
           $ref: '#/defs/scripts/default'
         stylesheets:
           $ref: '#/defs/stylesheets/default'
+    sitefile:
+      pug:
+        $ref: '#/options/global/pug'
     markdown:
       pug:
         $ref: '#/options/global/pug'
@@ -76,4 +62,3 @@ defs: # Storage for custom structures here
      # - url: /vendor/highlight-js-style-sunburst.css
      # - url: /vendor/highlight-js-style-a11y-dark.css
       - url: /vendor/highlight-js-style-xcode.css
-

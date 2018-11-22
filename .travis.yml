@@ -1,9 +1,12 @@
 # Travis CI - test workflow </doc/dev/ci.md>
 language: python
-cache: pip
 python:
   - 2.7
-#addons:
+addons:
+  apt:
+    packages:
+      - realpath
+
 #services: []
 env:
   matrix: []
@@ -12,17 +15,43 @@ env:
 #before_install: []
 #  - test -n scriptpath=$(pwd) . build/init.sh
 #install: []
+
 before_script:
-  - . .build/init.sh
+  - export scriptname='before-script' before_script_ts="$(date +%s)"
+  - echo "Starting '$scriptname'..."
+  - make init
+  - bats --version
+
 script:
+  - export scriptname='script' script_ts="$(date +%s)"
+  - echo "Starting '$scriptname'..."
   #- lib_load build
-  - test/lint.sh all
-  - test/unit.sh all
-  - test/spec.sh all
+  - make test/baseline/realpath.tap
+  #- make base
+  - make lint
+  #- make units
+  #- make specs
+
 #after_script: []
 #after_success: []
 #after_failure: []
-#before_cache:
+
+before_cache:
+  - export scriptname='before-cache' before_cache_ts="$(date +%s)"
+  - echo "Starting '$scriptname'..."
+  - rm -f $HOME/.cache/pip/log/debug.log
+
+cache:
+  directories:
+     - ./node_modules
+     - ./vendor
+     - $HOME/.local
+     - $HOME/.basher
+     - $HOME/.cache/pip
+     - $HOME/virtualenv
+     - $HOME/.npm
+     - $HOME/.composer
+     - $HOME/.rvm/
 
 #matrix:
 #  include: []

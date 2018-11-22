@@ -10,6 +10,10 @@ set -o pipefail
 set -o errexit
 
 
+test -n "$scriptpath" || exit 5
+. $scriptpath/tools/sh/init.sh
+
+
 # Groups
 
 check()

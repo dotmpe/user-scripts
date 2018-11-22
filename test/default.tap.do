@@ -1,10 +1,13 @@
 #!/bin/sh
 
-set -- "$@" "$REDO_PWD/$3" "$(basename "$3" .tap)"
+set -- "$@" "$(dirname "$1")/$(basename "$1" .tap)"
+test -e "$4.bats" || exit 20
 
-# TODO: build tap report for other tests.
-test -e "$5.bats" || exit 1
+# move to project dir before testing for ease of managing paths
+set -- "$REDO_PWD/$1" "$REDO_PWD/$2" "$REDO_PWD/$3" "$REDO_PWD/$4"
+cd "$REDO_BASE"
+test -e "$4.bats" || exit 30
 
-bats "$5.bats" | tee "$3"
+bats "$4.bats" | tee "$3" | $HOME/bin/bats-colorize.sh >&2
 redo-stamp <"$3"
-grep -q '^not ok ' "$3" && false || true
+grep -q '^not\ ok\ ' "$3" && false || true

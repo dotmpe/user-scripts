@@ -1,0 +1,15 @@
+
+# Fetch remote refs every hour
+AGE git 3600
+
+# Make main source reference copy and two working checkouts refencing first repo
+
+# XXX: u-c does not do GIT-ref checkouts, also add depth param ie. for non-dev checkouts
+
+SH mkdiv -vp /src/{,local/{docs,dev}/}github.com/bvberkum
+
+GIT git@github.com:bvberkum/user-scripts.git /src/github.com/bvberkum/
+
+GIT git@github.com:bvberkum/user-scripts.git /src/local/dev/github.com/bvberkum/ origin r0.0
+GIT git@github.com:bvberkum/user-scripts.git /src/local/dev-docs/github.com/bvberkum/ origin doc-0.1
+

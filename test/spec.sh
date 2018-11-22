@@ -9,32 +9,22 @@ set -o pipefail
 set -o errexit
 
 
-test-bats-specs()
-{
-  test -n "$*" || set -- test/*-spec.bats
-  test "$1" != "test/*-spec.bats" || return 0
-  # Run all tests as one suite/report run
-  bats "$@"
-}
+test -n "$scriptpath" || exit 5
+. $scriptpath/tools/sh/init.sh
 
 
 # Groups
 
 check()
 {
-  true
+  bats -c test/spec/*.bats >/dev/null
 }
 
 all()
 {
-  test-bats-specs
+  bats test/spec/*.bats
 }
 
-default()
-{
-  all
-}
-
-test -n "$1" || set -- default
+test -n "$1" || set -- all
 
 "$@"

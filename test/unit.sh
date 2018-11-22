@@ -9,41 +9,27 @@ set -o pipefail
 set -o errexit
 
 
-test-bats-units()
-{
-  test -n "$*" || set -- test/unit/*.bats
-  test "$1" != "test/unit/*.bats" || return 0
-  # Run all tests as one suite/report run
-  bats "$@"
-}
+test -n "$scriptpath" || exit 5
+. $scriptpath/tools/sh/init.sh
 
-default_test_run()
-{
-  local test_fmt=$1 report_fmt=$2; shift 2
+lib_load build
 
-  for x in "$@"
-    do
-      test="test/$(basename $x .$test_fmt).$report_fmt"
-    done
-}
 
 # Groups
 
 check()
 {
-  true
+  bats -c test/unit/*.bats >/dev/null
 }
 
 all()
 {
-  test-bats-units
+  build_tests bats tap test/unit/*.bats | while read -r tap
+  do
+    build $tap
+  done
 }
 
-default()
-{
-  all
-}
-
-test -n "$1" || set -- default
+test -n "$1" || set -- all
 
 "$@"

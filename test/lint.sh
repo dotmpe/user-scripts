@@ -9,14 +9,19 @@ set -o pipefail
 set -o errexit
 
 
+test -n "$scriptpath" || exit 5
+. $scriptpath/tools/sh/init.sh
+
+
+
 lint-bats()
 {
   test -n "$*" || set -- test/*.bats
   test "$1" != "test/*.bats" || return 0
-  # Count flag to dry-run (load, parse) tests.
-  # Does not setup/step/teardown in anyway.
-  bats -c "$@"
+  # Count flag to load, parse but dont step tests.
+  bats -c "$@" >/dev/null
 }
+
 
 # Groups
 
@@ -25,8 +30,9 @@ check()
   # TODO: lint markdown
   # TODO: lint sh-scripts
   # TODO: lint bash-scripts
-  lint-bats "$@" &&
-  git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
+  lint-bats "$@" && {
+    git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
+  } >&2
 }
 
 all()
@@ -34,11 +40,6 @@ all()
   check
 }
 
-default()
-{
-  all
-}
-
-test -n "$1" || set -- default
+test -n "$1" || set -- all
 
 "$@"

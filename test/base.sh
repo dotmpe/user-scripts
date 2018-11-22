@@ -10,23 +10,27 @@ set -o pipefail
 set -o errexit
 
 
+test -n "$scriptpath" || exit 5
+. $scriptpath/tools/sh/init.sh
+
+lib_load build
+
+
 # Groups
 
 check()
 {
-  true
+  bats -c test/baseline/*.bats >/dev/null
 }
 
 all()
 {
-  default_test_run bats tap test/*-baseline.bats
+  build_tests bats tap test/baseline/*.bats | while read -r tap
+  do
+    build $tap
+  done
 }
 
-default()
-{
-  all
-}
-
-test -n "$1" || set -- default
+test -n "$1" || set -- all
 
 "$@"

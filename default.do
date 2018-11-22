@@ -6,8 +6,10 @@ redo-always
 
 default_main()
 {
-  local script_util=$HOME/bin/tools/sh
-  
+  export package_build_tool=redo
+  export scriptpath=$PWD
+  export script_util=$scriptpath/tools/sh
+
   case "$1" in
   
     # Default redo target
@@ -26,31 +28,42 @@ default_main()
       ;;
 
 
-    init ) redo build-init build-init-checks
+    init )    
+              redo build-init build-init-checks
       ;;
   
-    check ) redo build-check
+    check )
+              redo build-check
       ;;
   
-    build ) redo build-build
+    build ) 
+              redo-ifchange build-check &&
+              redo build-build
       ;;
   
-    baselines )   .build.sh run_test baselines ;;
-    lint )        test/lint.sh default ;;
-    units )       .build.sh run_test units ;;
-    specs )       .build.sh run_test specs ;;
+    baselines )   ./.build.sh run-test baselines ;;
+    lint )        test/lint.sh all ;;
+    units )       test/unit.sh all ;;
+    specs )       test/spec.sh all ;;
   
-    test ) .build.sh run_test ;;
-    #test ) redo baselines units specs ;;
-  
-    pack ) redo build-pack
+    test )        
+              redo-ifchange init &&
+              redo-ifchange build &&
+              ./.build.sh run-test
+      ;;
+
+    pack )
+              redo-ifchange build-test &&
+              redo build-pack
       ;;
   
-    dist ) redo build-dist
+    dist )
+              redo-ifchange build-pack &&
+              redo build-dist
       ;;
  
 
-    build-* ) ./.build.sh "$(echo "$1" | cut -c7- )" ;;
+    build-* )     ./.build.sh "$(echo "$1" | cut -c7- )" ;;
 
 
     x-* ) exec $script_util/init-here.sh /src "$(cat <<EOM
@@ -69,5 +82,4 @@ EOM
   esac
 }
 
-
-default_main "$@"
+SCRIPTPATH= default_main "$@"
