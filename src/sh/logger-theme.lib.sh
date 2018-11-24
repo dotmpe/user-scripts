@@ -67,7 +67,6 @@ logger_theme_lib_load()
 
     else
 
-      grey="${default}"
 
       black="$(tput setaf 0)"
       red="$(tput setaf 1)"
@@ -77,6 +76,7 @@ logger_theme_lib_load()
       purple="$(tput setaf 5)" # magenta
       cyan="$(tput setaf 6)"
       default="$(tput setaf 7)"
+      grey="${default}"
       bdefault="${bold}${default}"
     fi
   fi

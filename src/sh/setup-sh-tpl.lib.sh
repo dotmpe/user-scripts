@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# File archives in plain shell vars
+
 
 # Base-Var-Id should include trailing _ btw, see basevar
 

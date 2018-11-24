@@ -14,7 +14,7 @@ lib_load <my_lib>
 
 If function ``<my_lib>_load`` exists it is executed after source.
 
- These and following ``tools/sh/*.sh`` scripts provide entry-points for basic
+These and following ``tools/sh/*.sh`` scripts provide entry-points for basic
 setups, see XXX: tooling ref
 and  [libv0:lib_load](/doc/src/lib#v0:lib_load) docs.
 
@@ -40,8 +40,9 @@ EOM
 
 ### Status
 
-- Experimental project setup, but Sh library should work as advertized.
-- Secondary objectives being setup, 
+- Experimental project setup, moving over libs and porting tests.
+  ``lib_load`` works and some libs may.
+- Secondary objectives regard shell/project tooling. See dev docs.
 
 ### Sections
 

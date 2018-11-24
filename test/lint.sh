@@ -27,6 +27,7 @@ lint-bats()
 
 check()
 {
+  echo "lint: check scripts..." >&2
   # TODO: lint markdown
   # TODO: lint sh-scripts
   # TODO: lint bash-scripts

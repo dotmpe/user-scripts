@@ -15,12 +15,20 @@ all: init check build test clean
 %.tap: %.bats Makefile
 	@bats "$<" | tee "$@" | ./tools/sh/bats-colorize.sh >&2
 
-init:: ; @./.build.sh "$@"
-check:: ; @./.build.sh "$@"
-build:: ; @./.build.sh "$@"
-baseline:: ; @./test/base.sh all
+build-%::
+	@print_yellow "$*" "Starting.."
+	@./.build.sh "$*"
+	@print_green "$*" "OK"
+
+init:: build-init check base
+check:: build-check
+base:: build-baselines
 lint:: ; @./test/lint.sh all
 units:: ; @./test/unit.sh all
 specs:: ; @./test/spec.sh all
-test:: ; @./.build.sh "$@"
-clean:: ; @./.build.sh "$@"
+build:: build-check
+test:: build-test
+clean:: build-clean
+
+# Test errors work with make build-* recipe
+fail: build-bats-negative

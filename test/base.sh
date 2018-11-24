@@ -20,13 +20,21 @@ lib_load build
 
 check()
 {
+  echo "baseline: check scripts..." >&2
   bats -c test/baseline/*.bats >/dev/null
 }
 
 all()
 {
+  echo "baseline: all scripts..." >&2
   build_tests bats tap test/baseline/*.bats | while read -r tap
   do
+    echo "Building '$tap'..." >&2
+    case "$tap" in
+      # Test negatives separately (apply to test harnass themselves more than host env)
+      *-negative.tap ) continue ;;
+      redo* ) continue ;;
+    esac
     build $tap
   done
 }

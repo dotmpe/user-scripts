@@ -9,8 +9,11 @@ test_env_init()
   test -n "$base" || return 12
   test -n "$uname" || uname=$(uname)
   test -n "$scriptpath" || scriptpath=$(pwd -P)
-  SHT_PWD="$(grealpath --relative-to=$BATS_CWD $BATS_TEST_DIRNAME )"
-  test -n "$VND_GH_SRC" || VND_GH_SRC=/srv/src-local/github.com
+
+  # XXX: relative path to templates/fixtures?
+  SHT_PWD="$( cd $BATS_CWD && realpath $BATS_TEST_DIRNAME )"
+  test -n "$VND_SRC_PREFIX" || VND_SRC_PREFIX=/srv/src-local
+  test -n "$VND_GH_SRC" || VND_GH_SRC=$VND_SRC_PREFIX/github.com
   hostname_init
 }
 

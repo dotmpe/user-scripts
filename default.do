@@ -33,7 +33,7 @@ default_main()
       ;;
   
     check )
-              redo build-check
+              redo build-init-checks build-check
       ;;
   
     build ) 
@@ -41,7 +41,11 @@ default_main()
               redo build-build
       ;;
   
-    baselines )   ./.build.sh run-test baselines ;;
+    baselines )   
+              ./.build.sh negative &&
+              ./test/base.sh all
+      ;;
+
     lint )        test/lint.sh all ;;
     units )       test/unit.sh all ;;
     specs )       test/spec.sh all ;;
@@ -49,7 +53,7 @@ default_main()
     test )        
               redo-ifchange init &&
               redo-ifchange build &&
-              ./.build.sh run-test
+              ./.build.sh run-test >&2
       ;;
 
     pack )

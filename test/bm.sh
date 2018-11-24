@@ -18,11 +18,13 @@ test -n "$scriptpath" || exit 5
 
 check()
 {
+  echo "benchmarks: check scripts..." >&2
   true
 }
 
 all()
 {
+  echo "benchmarks: all scripts..." >&2
   true
 }
 

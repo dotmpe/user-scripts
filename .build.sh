@@ -16,24 +16,21 @@ init()
   ./.init.sh "$@"
 }
 
-init-checks()
-{
-  bash --version &&
-  git --version &&
-  # FIXME: redo --version &&
-  make --version &&
-
-  ./.init.sh check-git
-}
-
+# Re-run init-checks (TODO or run if not yet run) and run over check part of
+# every test-suite.
 check()
 {
-  run-test check >&2
+  ./.init.sh check && run-test check && echo "build: check OK" >&2
+}
+
+baselines()
+{
+  negatives-precheck && test/base.sh all
 }
 
 build()
 {
-  true
+  false
 }
 
 run-test()
@@ -44,7 +41,7 @@ run-test()
   test/lint.sh "$@" &&
   test/unit.sh "$@" &&
   test/bm.sh "$@" &&
-  test/spec.sh "$@"
+  test/spec.sh "$@" && echo "build: run-test '$*' OK" >&2
 }
 
 clean()
@@ -55,6 +52,26 @@ clean()
   #    git clean -df && git clean -dfx */
   #  }
   #}
+}
+
+bats-negative()
+{
+	bats test/baseline/bats-negative.bats
+}
+
+negatives-precheck()
+{
+	bats-negative && false || true
+}
+
+pack()
+{
+  false
+}
+
+dist()
+{
+  false
 }
 
 

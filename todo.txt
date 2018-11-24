@@ -1,3 +1,10 @@
+2018-11-24
+  - TODO: install newer bats on travis, or use something in docker (bats has no diag)
+  - TODO: realpath is too old on travis?
+  - TODO: decide on deps setup; redo, basher et al. or docker
+  - Not sure travis cache is working ok
+  - Add assert and other helpers to Bats setup
+
 2018-10-17 WIP: Initial project setup, checks, testing, SCM tools, CI.
   - Makefile to wrap tooling, prefer something agnostic but make almost always goes </Makefile>
   - May include u-s distributable later, include build tooling there.

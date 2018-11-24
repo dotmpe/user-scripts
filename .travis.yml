@@ -10,17 +10,22 @@ addons:
 #services: []
 env:
   matrix: []
-  global: []
+  global:
+  - SRC_PREFIX=$HOME/build
+  - VND_SRC_PREFIX=$HOME/build
+  - VND_GH_SRC=$HOME/build
 
 #before_install: []
 #  - test -n scriptpath=$(pwd) . build/init.sh
-#install: []
+install:
+  - export scriptname='install' before_script_ts="$(date +%s)"
+  - echo "Starting '$scriptname'..."
 
 before_script:
   - export scriptname='before-script' before_script_ts="$(date +%s)"
   - echo "Starting '$scriptname'..."
+  - realpath --help || realpath -h || realpath --version || realpath -V
   - make init
-  - bats --version
 
 script:
   - export scriptname='script' script_ts="$(date +%s)"
