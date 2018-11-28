@@ -22,13 +22,13 @@ and  [libv0:lib_load](/doc/src/lib#v0:lib_load) docs.
 U_S=/src/github.com/bvberkum/user-script
 
 # Load into current shell
-scriptpath=$U_S/src/sh . $U_S/tools/init.sh
+scriptpath=$U_S/src/sh/lib . $U_S/tools/init.sh
 
 # Or with init-here helper command (ie. local script file)
-$scriptpath/tools/sh/init-here.sh /src "lib_load <my_lib> && ..."
+$scriptpath/tools/sh/init-here.sh $PWD/lib:$U_s/src/sh/lib "lib_load <my_lib> && ..."
 
 # Or with here-doc
-$scriptpath/tools/sh/init-here.sh /src "$(cat <<EOM
+$scriptpath/tools/sh/init-here.sh $ "$(cat <<EOM
 
   lib_load <my_lib>
 

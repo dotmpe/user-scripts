@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init #&& load ../assert
+  init #&& load assert
 }
 
 

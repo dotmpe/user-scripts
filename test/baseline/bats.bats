@@ -5,7 +5,7 @@ base=bats-negative-baseline
 
 setup()
 {
-   init && . $BATS_CWD/tools/sh/init.sh && load ../assert
+   init
 }
 
 
@@ -21,6 +21,8 @@ setup()
 }
 
 @test "$base: assert lib" {
+
+  load assert
 
   run true
   assert_success

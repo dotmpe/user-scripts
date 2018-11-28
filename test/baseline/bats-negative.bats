@@ -5,39 +5,53 @@ base=bats-negative-baseline
 
 setup()
 {
-   init && . $BATS_CWD/tools/sh/init.sh && load ../assert
+  init 0 0
 }
 
 
 @test "$base: vanilla shell" {
 
   run true
-  test ${status} -eq 1
-  test -n "${lines}"
+  test ${status} -eq 0
+  test -z "${lines}"
 
   run false
   test ${status} -ne 0
-  test -n "${lines}"
+  test -z "${lines}"
 }
 
 @test "$base: assert lib" {
 
+  load assert
+
   run true
-  assert_failure
+  assert_success
 
   run false
-  assert_success
+  assert_failure
+
+  run echo 123
   assert_output "123"
 }
 
 @test "$base: helper lib (I)" {
 
-  run false
+  load extra
+  load stdtest
+
+  run true
   test_ok_empty
 }
 
 @test "$base: helper lib (II)" {
 
+  load extra
+  load stdtest
+
   run false
-  test_nok_nonempty || stdfail
+  test_nok_empty || stdfail
+
+  run echo 123
+  { test_ok_nonempty 1 && test_lines "123"
+  } || stdfail
 }

@@ -13,7 +13,7 @@ load ../init
   } || stdfail 1.
 
   run lib_load
-  { test_ok_empty
+  { test_nok_empty
   } || stdfail 2.
 }
 

@@ -7,8 +7,8 @@ redo-always
 default_main()
 {
   export package_build_tool=redo
-  export scriptpath=$PWD
-  export script_util=$scriptpath/tools/sh
+  scriptpath=$PWD
+  script_util=$scriptpath/tools/sh
 
   case "$1" in
   

@@ -4,11 +4,12 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
+  test -n "$LOG" || return 102
   test -n "$uname" || uname="$(uname -s)"
   case "$uname" in
       Darwin ) expr=bash-substr ;;
       Linux ) expr=sh-substr ;;
-      * ) error "Unable to init expr for '$uname'" 1;;
+      * ) $LOG error "str" "Unable to init expr for '$uname'" "" 1;;
   esac
 
   test -n "$ext_groupglob" || {

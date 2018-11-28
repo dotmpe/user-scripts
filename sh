@@ -2,21 +2,27 @@
 
 set -e
 
-exec ./tools/sh/init-here.sh /src/sh "$(cat <<EOM
+#scriptpath= SCRIPTPATH= bats test/baseline/mainlibs.bats
+#scriptpath= SCRIPTPATH= bats test/baseline/{bash,realpath,git,bats,redo}*.bats
+#scriptpath= SCRIPTPATH= bats test/unit/{os,lib,logger}*bats
+#scriptpath= SCRIPTPATH= bats test/unit/{sys,shell,str,date}*bats
+#scriptpath= SCRIPTPATH= bats test/unit/*bats
+#scriptpath= SCRIPTPATH= bats test/spec/*bats
 
-  lib_load sys build logger
+exec ./tools/sh/init-here.sh $HOME/bin "" "" "$(cat <<EOM
 
-  cmd_exists foobar
+  lib_load script logger str logger-std
 
+  lib_load env-d build user-env make mkvar
 
-  #lib_load logger package build-test
-  
-  #spwd=. ppwd=$PWD vc_tracked
-  #exit \$?
-
+  lib_load build package build-test
   #package_init
   #build_test_init
-  
-  #package_components
+
+  #env_d_boot
+  #env_d_complete
+
+  #echo "PWD" | make_op
+
 EOM
 )"

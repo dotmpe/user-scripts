@@ -2,6 +2,8 @@
 
 shell_lib_load()
 {
+  test -n "$LOG" || return 102
+
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "$SD_SHELL_DIR" || SD_SHELL_DIR="$HOME/.statusdir/shell"
 
@@ -12,10 +14,9 @@ shell_lib_load()
   test -n "$CS" || CS=dark
 
   { test 1 -eq $os_lib_loaded -a \
-    1 -eq $sys_lib_loaded -a \
-    1 -eq $str_lib_loaded -a \
-    1 -eq $std_lib_loaded
-  } || error "Missing dependencies" 1
+        1 -eq $sys_lib_loaded -a \
+        1 -eq $str_lib_loaded
+  } || $LOG error shell "Missing dependencies" "" 1
 
   test -n "$base" || base=$(test -e "$0" && basename "$0" .sh || printf -- "$0")
 
@@ -232,8 +233,8 @@ record_env_diff_keys()
 
   # FIXME:
   #test -e "$1" -a -e "$2" || stderr "record-env-keys-diff" '' 1
-  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || error "record-env-keys-diff" 1
+  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $LOG error env "record-env-keys-diff" "" 1
 
-  #note "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
+  $LOG info "shell" "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }

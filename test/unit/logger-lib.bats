@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init
+  init && lib_load logger-std
 }
 
 
@@ -36,6 +36,12 @@ setup()
   { test_ok_nonempty 1 && test_lines "debug" ;} || stdfail 2.2.
 }
 
+@test "$base: stderr-demo" {
+
+  run stderr_demo
+  test_ok_nonempty || stfail
+}
+
 @test "$base: logger-demo" {
 
   logger_exit_threshold=0
@@ -43,8 +49,8 @@ setup()
 
   run logger_demo
   { test_ok_nonempty 7 && test_lines \
-      "* Emergency*:*" \
-      "* Critical*:*"
+      "*Emergency*:*" \
+      "*Critical*:*"
   } || stdfail 1.
 
   logger_log_threshold=0
@@ -54,21 +60,21 @@ setup()
 
   logger_exit_threshold=1
   run logger_demo
-  { test_nok_empty && test "$status" = "1"
+  { test_nok_empty && test "$status" = "255"
   } || stdfail 2.1.
 
   logger_exit_threshold=2
   run logger_demo
-  { test_nok_empty && test "$status" = "2"
+  { test_nok_empty && test "$status" = "254"
   } || stdfail 2.2.
 
   logger_log_threshold=7
   run logger_demo
-  { test_nok_nonempty 6 && test "$status" = "2"
+  { test_nok_nonempty 6 && test "$status" = "254"
   } || stdfail 3.1.
 
   logger_exit_threshold=3
   run logger_demo
-  { test_nok_nonempty 5 && test "$status" = "3"
+  { test_nok_nonempty 5 && test "$status" = "253"
   } || stdfail 3.2.
 }

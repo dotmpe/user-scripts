@@ -6,7 +6,7 @@ load ../init
 setup()
 {
   init &&
-  load ../assert &&
+  load assert &&
   lib_load setup-sh-tpl
 }
 

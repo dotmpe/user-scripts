@@ -5,12 +5,11 @@ load ../init
 
 setup()
 {
-  init &&
-  main_inc=$SHT_PWD/../var/sh-src-main-mytest-funcs.sh
+  init 0 && lib_load sys && main_inc=$SHT_PWD/../var/sh-src-main-mytest-funcs.sh
 }
 
 
-@test "$base: incr VAR [AMOUNT]]" {
+@test "$base: incr VAR [AMOUNT]" {
 
   COUNT=2
   run incr COUNT 5
@@ -18,6 +17,7 @@ setup()
 
   incr COUNT 5
   test $COUNT -eq 7 || stdfail "2. ($COUNT)"
+
 }
 
 
@@ -37,6 +37,7 @@ setup()
 
   run trueish - ; test_nok_empty || stdfail 5.A.
   run trueish "" ; test_nok_empty || stdfail 5.B.
+
 }
 
 @test "$base: not-trueish VALUE" {
@@ -55,6 +56,7 @@ setup()
 
   run not_trueish - ; test_ok_empty || stdfail 5.A.
   run not_trueish "" ; test_ok_empty || stdfail 5.B.
+
 }
 
 @test "$base: falseish VALUE" {
@@ -102,6 +104,8 @@ setup()
   run cmd_exists ""
   test_nok_empty || stdfail "B.1."
   
+  lib_load os
+
   run which "$(get_uuid)"
   test_nok_empty || stdfail "B.2."
 
@@ -117,6 +121,8 @@ setup()
   run func_exists myfunc
   test_ok_empty || stdfail A.
 
+  lib_load os
+
   run func_exists $(get_uuid)
   test_nok_empty || stdfail B.
 }
@@ -126,15 +132,21 @@ setup()
 
 @test "$base: try-exec-func on existing function" {
 
+  #lib_load os str logger-std
+
   . $main_inc
+
+  export verbosity=4
+
   run try_exec_func mytest_function
-  { test $status -eq 0 &&
-    fnmatch "mytest" "${lines[*]}"
+  { test $status -eq 0 && fnmatch "mytest" "${lines[*]}"
   } || stdfail
+
 }
 
 @test "$base: try-exec-func on non-existing function" {
 
   run try_exec_func no_such_function
   test $status -eq 1
+
 }

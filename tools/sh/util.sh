@@ -3,7 +3,7 @@
 # Must be started from u-s project root or set before
 test -n "$scriptpath" || scriptpath="$(pwd -P)"
 
-test -n "$script_util" || export script_util=$scriptpath/tools/sh
+test -n "$script_util" || script_util=$scriptpath/tools/sh
 
 . $script_util/init.sh
 

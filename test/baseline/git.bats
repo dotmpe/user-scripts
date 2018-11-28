@@ -5,7 +5,7 @@ base=git-baseline
 
 setup()
 {
-   init && . $BATS_CWD/tools/sh/init.sh && load ../assert
+   init && . $BATS_CWD/tools/sh/init.sh && load assert
 }
 
 

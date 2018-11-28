@@ -6,7 +6,7 @@ load ../init
 setup()
 {
   init &&
-  load ../assert &&
+  load assert &&
   tmpd &&
   diag "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)" &&
   lib_load setup-sh-tpl

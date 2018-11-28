@@ -14,6 +14,7 @@ env:
   - SRC_PREFIX=$HOME/build
   - VND_SRC_PREFIX=$HOME/build
   - VND_GH_SRC=$HOME/build
+  - LOG=tools/sh/log.sh
 
 #before_install: []
 #  - test -n scriptpath=$(pwd) . build/init.sh
