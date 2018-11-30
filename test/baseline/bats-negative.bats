@@ -9,49 +9,53 @@ setup()
 }
 
 
-@test "$base: vanilla shell" {
+@test "$base: vanilla shell I" {
 
   run true
-  test ${status} -eq 0
-  test -z "${lines}"
-
-  run false
   test ${status} -ne 0
-  test -z "${lines}"
 }
 
-@test "$base: assert lib" {
+@test "$base: vanilla shell II" {
+
+  run false
+  test ${status} -eq 0
+}
+
+@test "$base: vanilla shell III" {
+
+  run false
+  test -n "${lines}"
+}
+
+
+@test "$base: assert lib I" {
 
   load assert
 
   run true
-  assert_success
+  assert_failure
+}
+
+@test "$base: assert lib II" {
+
+  load assert
 
   run false
-  assert_failure
+  assert_success
+}
 
-  run echo 123
+@test "$base: assert lib III" {
+
+  load assert
+
+  run true
   assert_output "123"
 }
 
-@test "$base: helper lib (I)" {
+@test "$base: assert lib IV" {
 
-  load extra
-  load stdtest
-
-  run true
-  test_ok_empty
-}
-
-@test "$base: helper lib (II)" {
-
-  load extra
-  load stdtest
-
-  run false
-  test_nok_empty || stdfail
+  load assert
 
   run echo 123
-  { test_ok_nonempty 1 && test_lines "123"
-  } || stdfail
+  assert_output ""
 }

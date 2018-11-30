@@ -10,8 +10,7 @@ set -o pipefail
 set -o errexit
 
 
-test -n "$scriptpath" || exit 5
-. $scriptpath/tools/sh/init.sh
+. ./tools/sh/init.sh
 
 lib_load build
 
@@ -20,13 +19,13 @@ lib_load build
 
 check()
 {
-  echo "baseline: check scripts..." >&2
+  print_yellow "" "baseline: check scripts..." >&2
   bats -c test/baseline/*.bats >/dev/null
 }
 
 all()
 {
-  echo "baseline: all scripts..." >&2
+  print_yellow "" "baseline: all scripts..." >&2
   build_tests bats tap test/baseline/*.bats | while read -r tap
   do
     echo "Building '$tap'..." >&2
@@ -35,8 +34,10 @@ all()
       *-negative.tap ) continue ;;
       redo* ) continue ;;
     esac
-    build $tap
+    build $tap || true
   done
+
+  grep -q '^NOT OK\ ' test/baseline/*.tap && false || true
 }
 
 test -n "$1" || set -- all

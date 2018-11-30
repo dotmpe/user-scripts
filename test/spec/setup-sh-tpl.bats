@@ -22,7 +22,7 @@ teardown()
 
 @test "$base: setup-sh-tpl: simple files: 1. parts" {
 
-  verbosity=3
+  export verbosity=4 logger_log_threshold=4
   . ./test/var/build-lib/setup-sh-tpl-1.sh
 
   # Setup one file and sub-dir file

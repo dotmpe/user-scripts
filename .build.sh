@@ -5,13 +5,14 @@
 # Usage:
 #   ./.build.sh <function name>
 
+set -o nounset
 set -o pipefail
 set -o errexit
 
 
 init()
 {
-  test -n "$1" || set -- all
+  test $# -gt 0 || set -- all
 
   ./.init.sh "$@"
 }
@@ -20,7 +21,8 @@ init()
 # every test-suite.
 check()
 {
-  ./.init.sh check && run-test check && echo "build: check OK" >&2
+  ./.init.sh check && run-test check &&
+    print_green "" "build: check OK" >&2
 }
 
 baselines()
@@ -35,13 +37,14 @@ build()
 
 run-test()
 {
-  test -n "$1" || set -- all
+  test $# -gt 1 || set -- all
 
   test/base.sh "$@" &&
   test/lint.sh "$@" &&
   test/unit.sh "$@" &&
   test/bm.sh "$@" &&
-  test/spec.sh "$@" && echo "build: run-test '$*' OK" >&2
+  test/spec.sh "$@" &&
+    print_green "" "build: run-test '$*' OK" >&2
 }
 
 clean()
@@ -56,12 +59,20 @@ clean()
 
 bats-negative()
 {
-	bats test/baseline/bats-negative.bats
+	set -- test/baseline/bats-negative.tap
+	# Build test report and discard return-status since we invert check
+	$package_build_tool "$1" || true
+	# Match on any success; not any failure; return un-inverted status
+	grep '^OK\ ' "$1"
 }
 
+# Run 'negatives' from baseline suite. Expect only error states or abort
 negatives-precheck()
 {
-	bats-negative && false || true
+  $LOG info build "Starting negatives precheck"
+	bats-negative &&
+    $LOG error build "Negative test(s) check unexpectedly succeeded" 1 ||
+    $LOG ok build "Negative checks passed: all failed as expected."
 }
 
 pack()
@@ -85,15 +96,17 @@ default()
 
 all()
 {
-  init && check && build && test && pack
+  init && check && build && run-test && pack
 }
 
+
+test $# -gt 0 || set -- default
 
 # XXX: Map to namespace to avoid overlap with builtin names
 act="$1" ;
 case "$1" in test ) shift 1 ; set -- run-$act "$@" ;; esac
 unset act
 
-test -n "$1" || set -- default
+type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-.htd/env.sh}"
 
 "$@"

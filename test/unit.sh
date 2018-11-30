@@ -9,8 +9,7 @@ set -o pipefail
 set -o errexit
 
 
-test -n "$scriptpath" || exit 5
-. $scriptpath/tools/sh/init.sh
+. ./tools/sh/init.sh
 
 lib_load build
 
@@ -19,15 +18,19 @@ lib_load build
 
 check()
 {
+  print_yellow "" "unit: check scripts..." >&2
   bats -c test/unit/*.bats >/dev/null
 }
 
 all()
 {
+  print_yellow "" "unit: all scripts..." >&2
   build_tests bats tap test/unit/*.bats | while read -r tap
   do
-    build $tap
+    build $tap || true
   done
+
+  grep -q '^NOT OK\ ' test/unit/*.tap && false || true
 }
 
 test -n "$1" || set -- all

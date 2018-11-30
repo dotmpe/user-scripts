@@ -14,6 +14,12 @@ os_lib_load()
   test -n "$ggrep" || case "$uname" in
       Linux ) ggrep=grep ;; * ) ggrep=ggrep ;;
   esac
+  test -n "$gdate" || case "$uname" in
+      Linux ) gdate=date ;; * ) gdate=gdate ;;
+  esac
+  test -n "$gstat" || case "$uname" in
+      Linux ) gstat=stat ;; * ) gstat=gstat ;;
+  esac
 }
 
 
@@ -194,6 +200,23 @@ filesize() # File
           stat -L -c '%s' "$1" || return 1
         ;;
       * ) $LOG error "os" "filesize: $1?" "" 1 ;;
+    esac; shift
+  done
+}
+
+# Use `stat` to get inode change time (in epoch seconds)
+filectime() # File
+{
+  while test $# -gt 0
+  do
+    case "$uname" in
+      Darwin )
+          stat -L -f '%c' "$1" || return 1
+        ;;
+      Linux | CYGWIN_NT-6.1 )
+          stat -L -c '%Z' "$1" || return 1
+        ;;
+      * ) $LOG error "os" "filectime: $1?" "" 1 ;;
     esac; shift
   done
 }
@@ -510,4 +533,3 @@ zipfiles()
     done
   } | ziplists $rows
 }
-

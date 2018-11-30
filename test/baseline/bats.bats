@@ -1,11 +1,11 @@
 #!/usr/bin/env bats
 
 load ../init
-base=bats-negative-baseline
+base=bats-baseline
 
 setup()
 {
-   init
+  init 0 0
 }
 
 
@@ -31,4 +31,26 @@ setup()
   run false
   assert_failure
   assert_output ""
+}
+
+@test "$base: helper lib (I)" {
+
+  load extra
+  load stdtest
+
+  run true
+  test_ok_empty
+}
+
+@test "$base: helper lib (II)" {
+
+  load extra
+  load stdtest
+
+  run false
+  test_nok_empty || stdfail
+
+  run echo 123
+  { test_ok_nonempty 1 && test_lines "123"
+  } || stdfail
 }

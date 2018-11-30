@@ -9,9 +9,7 @@ set -o pipefail
 set -o errexit
 
 
-test -n "$scriptpath" || exit 5
-. $scriptpath/tools/sh/init.sh
-
+. ./tools/sh/init.sh
 
 
 lint-bats()
@@ -22,18 +20,24 @@ lint-bats()
   bats -c "$@" >/dev/null
 }
 
+lint-tags()
+{
+  # TODO: forbid only one tag... Should setup degrees of tags allowed per branch-line
+  { git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
+  } >&2
+}
 
 # Groups
 
 check()
 {
-  echo "lint: check scripts..." >&2
+  print_yellow "" "lint: check scripts..." >&2
   # TODO: lint markdown
   # TODO: lint sh-scripts
   # TODO: lint bash-scripts
-  lint-bats "$@" && {
-    git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
-  } >&2
+  lint-bats &&
+  lint-tags &&
+  print_green "" "no lint identified!" >&2
 }
 
 all()

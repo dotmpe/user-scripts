@@ -24,8 +24,6 @@ teardown()
 
 @test "$base: 1. redo{,-ifchange} builds, rebuilds; redo-{targets,sources,ood} lists; sqlite3 tracks deps" {
 
-  skip "Fix at Travis"
-
   test_tpl="test/var/redo/redo-baseline-tpl1.sh"
   setup_sh_tpl "$test_tpl" "" "$tmpd"
 
@@ -117,7 +115,6 @@ Test3 done'
 
 @test "$base: 2. redo-stamp to avoid rebuilding all targets unnecessarily" {
 
-  skip "Fix at Travis"
 #  skip 'TODO: if do-script runs and output is no different to lasttime; redo-stamp <$3...'
 
   test_tpl="test/var/redo/redo-baseline-tpl2.sh"
@@ -126,19 +123,22 @@ Test3 done'
   cd "$tmpd"
 
   redo test.c
-  exp_a="$(stat -f '%c' test.a)" ;
-  exp_b="$(stat -f '%c' test.b)"
-  exp_c="$(stat -f '%c' test.c)"
-  stat -f '%N c:%c m:%m' test.* a.src
+  exp_a="$(filectime test.a)" ;
+  exp_b="$(filectime test.b)"
+  exp_c="$(filectime test.c)"
+  case "$uname" in
+    Darwin ) stat -f '%N c:%c m:%m' test.* a.src ;;
+    * ) stat -c '%n c:%Z m:%Y' test.* a.src ;;
+  esac
 
   sleep 1.5
 
   touch a.src
   redo-ifchange test.c
-  test_a="$(stat -f '%c' test.a)" ;
-  test_b="$(stat -f '%c' test.b)"
-  test_c="$(stat -f '%c' test.c)"
-  stat -f '%N c:%c m:%m' test.* a.src
+  test_a="$(filectime test.a)" ;
+  test_b="$(filectime test.b)"
+  test_c="$(filectime test.c)"
+  $gstat -c '%n c:%Z m:%Y' test.* a.src
 
   test "$test_a" != "$exp_a"
   assert_equal "$test_b" "$exp_b"
@@ -148,7 +148,7 @@ Test3 done'
 
 @test "$base: 3. Redo isolates env, and has no-reuse or export between .do files" {
 
-  TODO FIXME
+  TODO
 
   cd "$tmpd"
   SCRIPTPATH= scriptpath=

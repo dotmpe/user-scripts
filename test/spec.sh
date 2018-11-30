@@ -9,20 +9,22 @@ set -o pipefail
 set -o errexit
 
 
-test -n "$scriptpath" || exit 5
-. $scriptpath/tools/sh/init.sh
+. ./tools/sh/init.sh
 
 
 # Groups
 
 check()
 {
+  print_yellow "" "spec: check scripts..." >&2
   bats -c test/spec/*.bats >/dev/null
 }
 
 all()
 {
-  bats test/spec/*.bats
+  print_yellow "" "spec: all scripts..." >&2
+  bats test/spec/*.bats &&
+  print_green "" "specs OK" >&2
 }
 
 test -n "$1" || set -- all

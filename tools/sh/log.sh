@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Logger: arg-to-colored ansi
+# Logger: arg-to-colored ansi line output
 # Usage:
 #   log.sh [Line-Type] [Header] [Msg] [Ctx] [Exit]
 
@@ -16,8 +16,8 @@ logger_stderr_num() # Level-Name
       emerg ) echo 1 ;;
       crit  ) echo 2 ;;
       error ) echo 3 ;;
-      warn  ) echo 4 ;;
-      note  ) echo 5 ;;
+      warn|warning  ) echo 4 ;;
+      note|notice  ) echo 5 ;;
       info  ) echo 6 ;;
       debug ) echo 7 ;;
       * ) return 1 ;;
@@ -26,16 +26,17 @@ logger_stderr_num() # Level-Name
 
 lvl=$(logger_stderr_num "$1")
 
-test $verbosity -ge $lvl || {
-  test -n "$5" && exit $5 || {
-    exit 0
+test -z "$lvl" || {
+  test $verbosity -ge $lvl || {
+    test -n "$5" && exit $5 || {
+      exit 0
+    }
   }
 }
 
 
-
 # left align first columnt at:
-test -n "$FIRSTTAB" || FIRSTTAB=32
+test -n "$FIRSTTAB" || FIRSTTAB=24
 
 if [ -z "$CS" ]
 then
@@ -45,35 +46,42 @@ fi
 COLOURIZE=yes
 
 # Shell colors
-if [ "$COLOURIZE" == "yes" ]
+if [ "$COLOURIZE" = "yes" ]
 then
-	if [ "$CS" == "light" ]
+
+  bold="$(tput bold)"
+  underline="$(tput smul)"
+  standout="$(tput smso)"
+
+  normal="$(tput sgr0)"
+
+	if [ "$CS" = "light" ]
 	then
 		# primary, black
-		c0="\x1b[0;0;30m"
+    c0="$(tput setaf 0)"
 		# pale (inverted white)
-		c7="\x1b[0;7;37m"
+    c7="$standout$(tput setaf 7)"
 		# hard (bright black, ie. dark gray)
-		c9="\x1b[0;1;30m"
+    c9="$bold$0"
 	else
 		# primary, pale white
-		c0="\x1b[0;0;0m"
+    c0="$(tput setaf 0)"
 		# pale (normal white, ie. light gray)
-		c7="\x1b[0;0;37m"
+    c7="$(tput setaf 7)"
 		# hard (bold white)
-		c9="\x1b[1;1;37m"
+    c9="$bold$7"
 	fi
 	# warning color, red
-	c1="\x1b[0;1;31m"
+  c1="$bold$(tput setaf 1)"
 	# ok color, green
-	c2="\x1b[0;0;32m"
-	c21="\x1b[0;1;32m"
+  c2="$(tput setaf 2)"
+  c21="$bold$c2"
 	# running, orange
-	c3="\x1b[0;0;33m"
-	c31="\x1b[0;1;33m"
+  c3="$(tput setaf 3)"
+  c31="$bold$c3"
 	# updated, blue
-	c41="\x1b[0;1;34m"
-	c4="\x1b[0;0;34m"
+  c4="$(tput setaf 4)"
+  c41="$bold$c4"
 fi
 ## Make output strings
 mk_title_blue="$c7$c41%s$c7:$c0"
@@ -177,7 +185,7 @@ __log()
 	while [ ${#padding} -lt $len ]; do
 		padding="$padd$padding"
 	done;
-	printf " $padding$targets $msg$c0\n"
+	printf " %s%s %s%s\n" "$padding" "$targets" "$msg" "$c0$normal"
 }
 
 
@@ -190,6 +198,19 @@ then
 		__log "$lt" "$t" "$m" "$s";
 	done
 else
-	# quoted arguments:
-	__log "$1" "$2" "$3" "$4";
+  case "$1" in
+    demo )
+        set -- demo "Test message line" "123"
+      	__log "error" "$@"
+      	__log "warn" "$@"
+      	__log "note" "$@"
+      	__log "info" "$@"
+      	__log "debug" "$@"
+      	__log "ok" "$@"
+      	__log "fail" "$@"
+      ;;
+    * )
+      	__log "$1" "$2" "$3" "$4"
+      ;;
+  esac
 fi

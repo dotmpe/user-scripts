@@ -16,7 +16,7 @@ shell_lib_load()
   { test 1 -eq $os_lib_loaded -a \
         1 -eq $sys_lib_loaded -a \
         1 -eq $str_lib_loaded
-  } || $LOG error shell "Missing dependencies" "" 1
+  } || $LOG error shell.lib "Missing dependencies" "" 1
 
   test -n "$base" || base=$(test -e "$0" && basename "$0" .sh || printf -- "$0")
 
@@ -111,11 +111,13 @@ sh_env_init()
 {
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
+    $LOG info shell.lib "Choosing bash sh-env-init"
     sh_env()
     {
       set | grep '^[a-zA-Z_][0-9a-zA-Z_]*=.*$'
     }
   } || {
+    $LOG info shell.lib "Choosing non-bash sh-env-init"
     sh_env()
     {
       set
@@ -235,6 +237,6 @@ record_env_diff_keys()
   #test -e "$1" -a -e "$2" || stderr "record-env-keys-diff" '' 1
   #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $LOG error env "record-env-keys-diff" "" 1
 
-  $LOG info "shell" "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
+  $LOG info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }

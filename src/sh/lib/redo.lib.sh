@@ -17,12 +17,12 @@ redo_lib_load()
 redo_deps() # Target-Path
 {
   test -n "$1" && {
-    local id=$(echo 'SELECT rowid FROM Files WHERE name='\'"$1"\' | sqlite3 "$redo_db")
+    local id=$(echo "SELECT rowid FROM Files WHERE name='$1';" | sqlite3 "$redo_db")
     test -n "$id" || error "No such target '$1'" 1
     echo '
 SELECT
   Files.name, Files.is_generated
-FROM Files JOIN Deps on Files.rowid = Deps.source WHERE target='"$id"'
+FROM Files JOIN Deps on Files.rowid = Deps.source WHERE target='"$id"';
 ' | sqlite3 "$redo_db" | tr '|' ' '
     return $?
 
@@ -31,7 +31,7 @@ FROM Files JOIN Deps on Files.rowid = Deps.source WHERE target='"$id"'
     echo '
 SELECT
   Files.name
-FROM Files JOIN Deps on Files.rowid = Deps.source WHERE Files.is_generated=1
+FROM Files JOIN Deps on Files.rowid = Deps.source WHERE Files.is_generated=1;
 ' | sqlite3 "$redo_db" | tr '|' ' '
     return $?
   }

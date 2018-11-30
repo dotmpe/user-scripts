@@ -30,6 +30,14 @@ date_lib_init_bin()
     Darwin ) gdate="gdate" ;;
     Linux ) gdate="date" ;;
   esac
+
+  OFF_1=$($gdate -d '1 Jan' +%z)
+  OFF_7=$($gdate -d '1 Jul' +%z)
+  OFF_NOW=$($gdate +%z)
+
+  test \( $OFF_NOW -gt $OFF_1 -a $OFF_NOW -gt $OFF_7 \) &&
+    IS_DST=1 || IS_DST=0
+
   export gdate
 }
 

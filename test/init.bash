@@ -1,20 +1,22 @@
 #!/bin/bash
 
-
 # Helpers for BATS project test env.
+
 
 # Set env and other per-specfile init
 test_env_init()
 {
   test -n "$base" || return 12
+  test -n "$scriptname" &&
+    scriptname=$scriptname:test:$base ||
+    scriptname=test:$base
   test -n "$uname" || uname=$(uname)
 
   test -n "$scriptpath" || scriptpath=$(pwd -P)/src/sh/lib
   test -n "$script_util" || script_util=$(pwd -P)/tools/sh
 
   test -n "$testpath" || testpath=$(pwd -P)/test
-  #test -n "$default_lib" ||
-  default_lib="os sys str std main"
+  test -n "$default_lib" || default_lib="os sys str logger-std"
 
 
   test -n "$BATS_LIB_PATH" || {

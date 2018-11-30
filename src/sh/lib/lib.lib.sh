@@ -2,18 +2,12 @@
 
 # Module for lib_load
 
-# FIXME: comment format:
-# [return codes] [exit codes] func-id [flags] pos-arg-id.. $name-arg-id..
-# Env: $name-env-id
-# Description.
-
 
 lib_lib_load()
 {
   test -n "$LOG" || return 102
-  test -n "$default_lib" ||
-      export default_lib="os sys str src shell"
-      # XXX export default_lib="os sys str src argv match vc shell"
+  test -n "$default_lib" || default_lib="os sys str src shell"
+  # XXX testing default_lib="argv match vc"
 
   test -n "$lib_loaded" || lib_loaded=
 }
@@ -27,7 +21,6 @@ lib_load()
   # __load_lib: true if inside util.sh:lib-load
   test -n "$__load_lib" || local __load_lib=1
 
-  #test -n "$1" || set -- $default_lib
   test -n "$1" || return 1
 
   while test -n "$1"

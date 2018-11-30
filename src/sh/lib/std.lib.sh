@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# TODO: regroup into logger
 
 # std: logging and dealing with the shell's stdio decriptors
 

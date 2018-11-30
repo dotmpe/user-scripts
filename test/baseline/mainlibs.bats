@@ -5,7 +5,11 @@ load ../init
 
 setup()
 {
-  init 0 0
+  case "$BATS_TEST_DESCRIPTION" in
+    *"init.bash 0"* ) init 0;;
+    *"init.bash"* ) init ;;
+    * ) init 0 0 ;;
+  esac
 }
 
 
@@ -92,10 +96,32 @@ setup()
   done
 }
 
+@test "$base: test init.bash 0" {
+  type trueish >/dev/null
+  type fnmatch >/dev/null
+  type tmpd >/dev/null
+  type tmpf >/dev/null
+  type get_uuid >/dev/null
+}
+
+@test "$base: test init.bash" {
+
+  fnmatch "* logger-std *" " $default_lib " || stdfail "$default_lib"
+
+  test $os_lib_loaded -eq 1
+  test $str_lib_loaded -eq 1
+  test $sys_lib_loaded -eq 1
+  test $logger_lib_loaded -eq 1
+
+  func_exists fnmatch
+  func_exists error
+  func_exists debug
+}
+
 
 @test "$base: try-exec-func (bash) on existing function" {
 
-  skip
+  skip FIXME cleanup
 
   run bash -c "$(cat <<EOM
 

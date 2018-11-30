@@ -108,11 +108,22 @@ logger_strfmt() # line-type target-ids description source-ids
 # is too low; exit with given status.
 logger_stderr() # syslog-level target-ids description source-ids status-code
 {
+  test -n "$stderr_log_channel" || stderr_log_channel=$scriptname
   test -n "$1" || set -- "$stderr_log_level" "$2" "$3" "$4" "$5"
-  test -n "$stderr_log_channel" || stderr_log_channel="$1"
   test -n "$2" || set -- "$1" "$stderr_log_channel" "$3" "$4" "$5"
 
-  logger_hook=stderr logger_strfmt "$@" >&2
+  { test -z "$1" || {
+      test $1 -le $logger_log_threshold
+    }
+  } && {
+
+    logger_hook=stderr logger_strfmt "$@" >&2
+  }
+
+  test -n "$5" && exit $5
+  test -z "$1" || {
+    test $1 -gt $logger_exit_threshold || exit -$1
+  }
 }
 
 

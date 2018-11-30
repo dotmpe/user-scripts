@@ -5,12 +5,13 @@ load ../init
 
 setup()
 {
-  init #&& load assert
+  init
 }
 
 
 @test "realpath baseline --help" {
 
+  # realpath --help || realpath -h || realpath --version || realpath -V
   run realpath --help
 # XXX: simple older vs grealpath; { test_ok_nonempty && test_lines "Usage: realpath \[OPTION\]... FILE..."
   { test_ok_nonempty && test_lines "*Usage:*"
@@ -21,7 +22,7 @@ setup()
 }
 
 
-@test "realpath baseline --relative-base are present" {
+@test "realpath baseline --relative-base is present" {
 
   skip "Using simple realpath on Travis CI now"
   run realpath --help

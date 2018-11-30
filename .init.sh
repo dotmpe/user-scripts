@@ -9,6 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+
 init-git()
 {
   which git || return
@@ -44,7 +45,7 @@ init-redo()
 check-redo()
 {
   local r=''
-  redo -h || r=$?
+  redo -h 2>/dev/null || r=$?
   test "$r" = "97" || init-err "redo:-h:err:$r"
   # Must not be in parent dir, or targets become mixed with other projects, and harder to track
   # FIXME: only available after run; chicken-and-the-egg problem
@@ -56,6 +57,7 @@ init-bats()
   test -n "$SRC_PREFIX" -a -n "$BATS_REPO" -a -n "$BATS_VERSION" || return
   echo "Installing bats" >&2
   test -d $SRC_PREFIX/local/ || mkdir $SRC_PREFIX/local/
+  : "${PREFIX:=/usr/local}"
   test -d $SRC_PREFIX/local/bats || {
     git clone $BATS_REPO $SRC_PREFIX/local/bats || return $?
   }
@@ -91,7 +93,9 @@ init-err()
 check()
 {
   default >/dev/null || init-err default
-  git describe >/dev/null || init-err "git describe: CWD should be GIT checkout and have tags in repo"
+
+  git describe >/dev/null ||
+    init-err "git describe: CWD should be GIT checkout and have tags in repo"
 }
 
 
@@ -113,9 +117,14 @@ default()
 all()
 {
   init-git || return
+
   which basher || { init-basher || return; }
   which redo || { init-redo || return; }
-  which bats || { init-bats || return; }
+
+  { which bats && fnmatch "Bats 1.1.*" "$(bats --version)"
+  } || {
+    PREFIX=$HOME/.local init-bats || return
+  }
 
   test -n "$VND_GH_SRC" || return
   for helper in bats-assert bats-file bats-support
@@ -131,10 +140,12 @@ all()
 
 
 # XXX: Map to namespace to avoid overlap with builtin names
-act="$1" ;
-case "$1" in git ) shift 1 ; set -- init-$act "$@" ;; esac
+
+test $# -gt 0 || set -- default
+
+act="$1" ; case "$1" in git ) shift 1 ; set -- init-$act "$@" ;; esac
 unset act
 
-test -n "$1" || set -- default
+type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-.htd/env.sh}"
 
 "$@"

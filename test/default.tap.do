@@ -8,6 +8,6 @@ set -- "$REDO_PWD/$1" "$REDO_PWD/$2" "$REDO_PWD/$3" "$REDO_PWD/$4"
 cd "$REDO_BASE"
 test -e "$4.bats" || exit 30
 
-bats "$4.bats" | tee "$3" | $HOME/bin/bats-colorize.sh >&2
+bats "$4.bats" | tee "$3" | ./tools/sh/bats-colorize.sh >&2
 redo-stamp <"$3"
 grep -q '^not\ ok\ ' "$3" && false || true

@@ -1,5 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 redo-always
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
 
 # The main project redo script controls project lifecycle and workflows
 
@@ -7,8 +12,15 @@ redo-always
 default_main()
 {
   export package_build_tool=redo
-  scriptpath=$PWD
-  script_util=$scriptpath/tools/sh
+  #scriptpath=$PWD
+  #script_util=$scriptpath/tools/sh
+
+  : "${BASH_ENV:=.htd/env.sh}"
+  . $BASH_ENV
+  export BASH_ENV
+
+  fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
+  export scriptname=$scriptname:$1
 
   case "$1" in
   
@@ -29,11 +41,11 @@ default_main()
 
 
     init )    
-              redo build-init build-init-checks
+              redo build-init build-check
       ;;
   
     check )
-              redo build-init-checks build-check
+              redo build-check build-check
       ;;
   
     build ) 
@@ -71,7 +83,6 @@ default_main()
 
 
     x-* ) exec $script_util/init-here.sh /src "$(cat <<EOM
-lib_load
 lib_load package build-test
 
 EOM

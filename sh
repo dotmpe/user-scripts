@@ -9,20 +9,30 @@ set -e
 #scriptpath= SCRIPTPATH= bats test/unit/*bats
 #scriptpath= SCRIPTPATH= bats test/spec/*bats
 
+
+
+
 exec ./tools/sh/init-here.sh $HOME/bin "" "" "$(cat <<EOM
 
   lib_load script logger str logger-std
 
   lib_load env-d build user-env make mkvar
+  
+  #. ./.htd/env.sh
 
-  lib_load build package build-test
-  #package_init
-  #build_test_init
+  env_d_boot
 
-  #env_d_boot
+
   #env_d_complete
 
-  #echo "PWD" | make_op
+
+  #export LOG=./tools/sh/log.sh ;
+
+  #echo '. ./.htd/env.sh ; export LOG; redo \$(patsubst %.bats, %.tap,\$(wildcard test/*/*.bats))' | make_op "" recipe
+
+  #lib_load build package build-test
+  #package_init
+  #build_test_init
 
 EOM
 )"

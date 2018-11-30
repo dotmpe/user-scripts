@@ -15,36 +15,44 @@ env:
   - VND_SRC_PREFIX=$HOME/build
   - VND_GH_SRC=$HOME/build
   - LOG=tools/sh/log.sh
+  - CS=dark
 
-#before_install: []
-#  - test -n scriptpath=$(pwd) . build/init.sh
+
+before_install:
+  - export scriptname='before-install' before_install_ts="$(date +%s)"
+  #- scriptpath=$(pwd) . build/init.sh
+  - . ./.htd/env.sh
 install:
-  - export scriptname='install' before_script_ts="$(date +%s)"
-  - echo "Starting '$scriptname'..."
+  - export scriptname='install' install_ts="$(date +%s)"
+  - print_yellow "" "Starting '$scriptname'..."
+
 
 before_script:
   - export scriptname='before-script' before_script_ts="$(date +%s)"
-  - echo "Starting '$scriptname'..."
-  - realpath --help || realpath -h || realpath --version || realpath -V
+  - print_yellow "" "Starting '$scriptname'..."
   - make init
-
 script:
   - export scriptname='script' script_ts="$(date +%s)"
-  - echo "Starting '$scriptname'..."
+  - print_yellow "" "Starting '$scriptname'..."
+# First smoke run everything with make
   #- lib_load build
-  - make test/baseline/realpath.tap
+  #- make test/baseline/realpath.tap
   #- make base
   - make lint
   #- make units
   #- make specs
+# Cleanup and redo all
+  - git clean -dfx test/
+  - redo
 
 #after_script: []
 #after_success: []
 #after_failure: []
 
+
 before_cache:
   - export scriptname='before-cache' before_cache_ts="$(date +%s)"
-  - echo "Starting '$scriptname'..."
+  - print_yellow "" "Starting '$scriptname'..."
   - rm -f $HOME/.cache/pip/log/debug.log
 
 cache:
