@@ -1,5 +1,3 @@
-2018-11-24 Testing. Bats on Travis is 0.4.0. Cache is complaning.
-  - Not sure travis cache is working ok
 x 2018-11-25 Add assert and other helpers to Bats setup
 2018-10-17 Initial setup ``.build/*.sh``, ``Makefile``. TODO: git hooks, checks
 x 2018-10-17 2018-10-17 Keep (most) project docs apart in GH wiki repo </doc> @docs

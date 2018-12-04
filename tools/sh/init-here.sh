@@ -24,7 +24,6 @@ test -n "$1" && {
 __load_mode=ext . $scriptpath/lib.lib.sh
 lib_lib_load && lib_lib_loaded=1 || exit $?
 
-
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
 test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script
@@ -32,7 +31,6 @@ lib_load $init_sh_libs
 
 test -n "$2" && init_sh_boot="$2" || init_sh_boot=stderr-console-logger
 script_init "$init_sh_boot"
-
 
 shift 3
 

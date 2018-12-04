@@ -85,7 +85,7 @@ setup()
 
 @test "$base: aliases are recognized (Bash)" {
   lib_load shell
-  shell_init
+  shell_lib_init
 
   _r() {
     shopt -s expand_aliases

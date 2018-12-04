@@ -40,7 +40,7 @@ shell_lib_load()
 #
 # See shell-check, shell-test-sh and sh-env-init,
 # and also <doc/shell-builtins.tab>
-shell_init()
+shell_lib_init()
 {
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
@@ -203,6 +203,10 @@ sh_execinfo_() # CMD
   true
 }
 
+sh_deps()
+{
+  oshc deps
+}
 
 # TODO: maybe use env with shell-test/detect etc. And/otherwise move this,
 # env.lib.sh? Consolidate user-conf first.

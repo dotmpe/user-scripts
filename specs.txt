@@ -1,0 +1,59 @@
+# vim:nowrap:ft=todo.txt:
+
+2018-12-03 Overloading functions should never be unintentional.
+  - Should write test-helper to check to check for this.
+
+2018-12-03 Logging is a pain, tempted to replace it all with sentinels,
+  but may want to review all profile and consolidate into env.d first.
+
+2018-12-03 @Composure shlib sync:
+
+
+2018-12-03 Keeping *merge history per function* maybe be useful @Backlog @Composure
+
+  - Assume for now every function copy is identical.
+
+    - We can identify them by a checksum of their copy
+    - Also given two copies, committed in different repositories then one or the
+      other can be updated automatically
+
+  - But keeping collections of 'frozen functions' may be disadvantageous, if we
+  kept each function in its own file then
+
+    - GIT can do its merge magic
+    - we can lookup the version, if any, for any given unknown copy
+    (I'm not sure how to do that on subfile line basis, but is it quite simple
+    for a file)
+    - This is still assuming that one or the other repository will carry both
+    versions; but that is the point: that merges including conflict resolutions
+    are committed for known versions of the copy, and that thus for any copy of
+    the version we have a 'upgrade path', a resolution to the latest edition.
+    While not a literal carbon copy, each repo can maintain its own change sets.
+
+
+
+2018-12-03 @Git baseline:
+  1. TODO: see merge-history-per-function. Show how a tracked file 
+    two branches same file 
+
+                              var=foo
+
+    test -n "$var" || var=foo           : "${var:=foo}"
+
+
+    
+2018-12-03 Script authors should be able to deal with a clean language.
+
+  - Avoid variables-as-commands.
+
+    If a command or function name in an invocation is replaced with a variable
+    reference because its value is dynamic it can be wrapped by a function. Which
+    is nicer to type and read.
+   
+    If there are namespace reasons (ie. collisions) either
+
+    - change the load scope, ie. isolate shells
+    - change the loaded scope, ie. use dynamic but predetermined namespace
+    - redesign func/exec names
+    - transpile
+

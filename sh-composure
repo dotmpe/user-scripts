@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+
+. ./tools/sh/init.sh
+
+lib_load composure std src function functions ck shell git volume oil docker-sh
+
+lib_init
+composure_check_name_scripts
+oil_docker_init
+
+copy_function  copy_function  src/sh/lib/function.lib.sh | oshc deps
+
+exit $?
+
+# XXX composure_lib_load
+#composure_lib_init
+#composure_check_name_scripts
+#composure_draft
+
+echo 'add_env_path_lookup   src/sh/lib/sys.lib.sh
+remove_env_path_lookup      src/sh/lib/sys.lib.sh
+copy_function               src/sh/lib/function.lib.sh
+' |  composure_shlib_sync_pairs
+

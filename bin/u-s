@@ -1,0 +1,168 @@
+#!/bin/sh
+set -e
+
+# u-s
+
+init()
+{
+  U_S_VERSION="$(cd "$U_S" && git_version)"
+}
+
+edit()
+{
+  test $# -gt 0 || set -- "$@"
+  $EDITOR "$@"
+}
+
+git_version()
+{
+  git describe --always
+}
+
+update()
+{
+  cd "$U_S"
+  git fetch && git reset --hard origin/r0.0
+}
+
+reinstall()
+{
+  cd
+  test -n "$1" || set -- bvberkum/user-scripts
+  basher uninstall "$1" &&
+  BASHER_FULL_CLONE=true basher install "$1"
+  u-s update
+}
+
+redo_reinit()
+{
+  cd /src/github.com/apenwarr/redo &&
+    sudo git clean -dfx &&
+    sudo ./redo install
+}
+
+dckr_load()
+{
+  lib_load docker-sh
+
+  docker_name=u-s-dckr
+  docker_image=bvberkum/treebox:dev
+  U_S_PATH=/home/treebox/.basher/cellar/packages/bvberkum/user-scripts
+  U_S_CONTAINER=$docker_name
+
+}
+dckr_init()
+{
+  docker_sh_c_init()
+  {
+    ${dckr_pref}docker exec -u root "$1" \
+      sh -c 'echo treebox:treebox | chpasswd'
+    ${dckr_pref}docker exec -w /src/github.com/bvberkum/oil "$1" \
+      sh -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal' &&
+    ${dckr_pref}docker exec -ti -u root -w /src/github.com/apenwarr/redo "$1" \
+      sh -c 'git clean -dfx && ./redo install'
+  }
+  dckr_load && docker_sh_c require
+}
+dckr_reset()
+{
+  dckr_load && docker_sh_c delete "$U_S_CONTAINER" &&
+    $LOG note u-s:dckr "Removed container"
+}
+dckr_req()
+{
+  dckr_load &&
+  docker inspect --format '{{ .Id }}' "$docker_name" >/dev/null || dckr_init
+}
+dckr_exec()
+{
+  dckr_load &&
+  ${dckr_pref}docker exec -ti -w "$U_S_PATH" "$U_S_CONTAINER" "$@"
+}
+dckr_shell()
+{
+  dckr_load && dckr_exec $docker_shell -li "$@"
+}
+dckr_cmd()
+{
+  dckr_shell -c "$*"
+}
+dckr_update()
+{
+  dckr update
+}
+dckr()
+{
+  test $# -gt 0 || set -- git-version
+  dckr_req && dckr_cmd ./bin/u-s "$@"
+}
+
+travis_status()
+{
+  test -n "$1" || set -- "bvberkum/user-scripts" "$2"
+  test -n "$2" || set -- "$1" "r0.0"
+
+  #lib_load statusdir
+
+  out=/tmp/u-s-travis-$2.svg
+  curl -s 'https://api.travis-ci.org/'"$1"'.svg?branch='$2 >"$out"
+
+  grep -q failing "$out" && r=1 || {
+    grep -q error "$out" && r=2 || {
+      r=0
+    }
+  }
+  return $r
+}
+
+commands()
+{
+  grep '^[a-z_]()' "$0" | cut -d'{' -f1
+}
+
+print_help()
+{
+  echo "Main commands: "
+  echo "  update [version] - fetch and hard-reset to latest version"
+  echo "  reinstall"
+  echo
+  echo "  dckr [CMD ARG...] - Execue U-S sub-command in container"
+  echo "  dckr-init - Create docker container"
+  echo "  dckr-reset - Delete docker container"
+  echo "  dckr-shell CMD - Execute login shell at U-S dir"
+  echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
+  echo
+  echo "  dckr-cmd make [init|check|base|lint|units|specs|build|test|clean]"
+  echo
+  echo "use 'commands' for full list."
+}
+print_usage()
+{
+  echo "Usage: u-s [CMD [ARG...]]"
+}
+usage()
+{
+  print_usage
+  print_help
+  exit 1
+}
+
+main()
+{
+  init
+  test $# -gt 0 || set -- usage
+  mkvid "$1" 
+  local subcmd="$1" cmdid=$vid
+  shift
+  $vid "$@"
+}
+
+# TODO: make u-s proper install by expanding source lines below
+
+. "$(dirname "$(realpath "$0")")/../tools/sh/u-s-env.sh"
+
+. $U_S/tools/sh/init.sh
+
+lib_init
+
+main "$@"

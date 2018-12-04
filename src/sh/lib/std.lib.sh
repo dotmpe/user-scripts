@@ -1,8 +1,7 @@
 #!/bin/sh
 
-# TODO: regroup into logger
-
 # std: logging and dealing with the shell's stdio decriptors
+
 
 stdio_type()
 {
@@ -92,76 +91,38 @@ std_exit()
   test "$1" != "0" -a -z "$1" && return 1 || exit $1
 }
 
-emerg()
+std_emerg()
 {
   std_v 1 || std_exit $2 || return 0
   stderr "Emerg" "$1" $2
 }
-crit()
+std_crit()
 {
   std_v 2 || std_exit $2 || return 0
   stderr "Crit" "$1" $2
 }
-error()
+std_error()
 {
   std_v 3 || std_exit $2 || return 0
   stderr "Error" "$1" $2
 }
-warn()
+std_warn()
 {
   std_v 4 || std_exit $2 || return 0
   stderr "Warning" "$1" $2
 }
-note()
+std_note()
 {
   std_v 5 || std_exit $2 || return 0
   stderr "Notice" "$1" $2
 }
-# FIXME: core tool name
-info()
+std_info()
 {
   std_v 6 || std_exit $2 || return 0
   stderr "Info" "$1" $2
 }
-debug()
+std_debug()
 {
   std_v 7 || std_exit $2 || return 0
   stderr "Debug" "$1" $2
 }
-
-
-
-# Main
-
-case "$0" in "" ) ;; "-"* ) ;; * )
-  test -n "$scriptname" || scriptname="$(basename "$0" .sh)"
-  test -n "$verbosity" || verbosity=5
-  test -z "$__load_lib" && lib_std_act="$1" || lib_std_act="load-ext"
-  case "$lib_std_act" in
-
-    load-ext ) ;; # External include, do nothing
-
-    error )
-        test -n "$3" &&
-          error "$2" $3 ||
-          error "$2"
-      ;;
-
-    load )
-        test -n "$scriptpath" || scriptpath="$(dirname "$0")/script"
-        std_load || {
-          echo "Error loading $scriptname" 1>&2
-          exit 1
-        }
-      ;;
-
-    '' ) ;;
-
-    * ) # Setup SCRIPTPATH and include other scripts
-        echo "Ignored $scriptname argument(s) $0: $*" 1>&2
-      ;;
-
-  esac
-
-;; esac
-

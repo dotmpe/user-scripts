@@ -19,7 +19,8 @@ default_main()
   . $BASH_ENV
   export BASH_ENV
 
-  fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
+  : "${scriptname:=redo}"
+  #fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
   export scriptname=$scriptname:$1
 
   case "$1" in

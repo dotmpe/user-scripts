@@ -23,7 +23,7 @@ lib_load()
 
   test -n "$1" || return 1
 
-  while test -n "$1"
+  while test $# -gt 0
   do
     lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')
     test -n "$lib_id" || {
@@ -56,8 +56,24 @@ lib_load()
 
         eval "ENV_SRC=\"$ENV_SRC $f_lib_path\""
         eval ${lib_id}_lib_loaded=1
+        lib_loaded="$lib_loaded $lib_id"
         # FIXME $LOG info "lib" "Finished loading ${lib_id}: OK"
         unset lib_id
+    }
+    shift
+  done
+}
+
+lib_init()
+{
+  test -n "$1" || set -- $lib_loaded
+
+  while test $# -gt 0
+  do
+    type ${1}_lib_init 2> /dev/null 1> /dev/null && {
+      ${1}_lib_init || {
+        $LOG error "lib" "in lib-init $1 ($?)" 1 || return
+      }
     }
     shift
   done

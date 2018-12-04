@@ -30,20 +30,21 @@ install:
 before_script:
   - export scriptname='before-script' before_script_ts="$(date +%s)"
   - print_yellow "" "Starting '$scriptname'..."
-  - make init
+  #- make init
 script:
   - export scriptname='script' script_ts="$(date +%s)"
   - print_yellow "" "Starting '$scriptname'..."
 # First smoke run everything with make
   #- lib_load build
   #- make test/baseline/realpath.tap
+  - ./sh-test
   #- make base
-  - make lint
+  #- make lint
   #- make units
   #- make specs
 # Cleanup and redo all
-  - git clean -dfx test/
-  - redo
+  #- git clean -dfx test/
+  #- redo
 
 #after_script: []
 #after_success: []

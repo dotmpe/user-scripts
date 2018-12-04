@@ -15,7 +15,7 @@ logger_std_init()
   stderr_log_channel="$1"
   stderr_log_level=$verbosity
   logger_log_threshold=$verbosity
-  logger_fd=2 logger_check stderr_demo "Init" 2
+  # XXX exit logger_fd=2 logger_check stderr_demo "Init" 2
 }
 
 # ~ MSG [EXIT] [CHANNEL]

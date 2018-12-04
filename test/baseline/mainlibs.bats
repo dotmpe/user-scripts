@@ -5,10 +5,24 @@ load ../init
 
 setup()
 {
-  case "$BATS_TEST_DESCRIPTION" in
-    *"init.bash 0"* ) init 0;;
-    *"init.bash"* ) init ;;
-    * ) init 0 0 ;;
+  case "$BATS_TEST_NUMBER" in
+    
+    2|4 ) init 1 0 0 0 ;;
+    6 ) init ;;
+
+#    # Partial init
+#    *"init.bash 0"* ) init "" 0;;
+#
+#    # Defaults
+#    *"init.bash"* ) init ;;
+#
+#    # Init only, don't source any lib including lib.lib
+#    *"base shell"* ) init 0 ;;
+
+#    # Init only, and setup lib.lib
+#    * ) init "" 0 0 0 ;;
+
+    * ) init 0 ;;
   esac
 }
 
@@ -75,6 +89,26 @@ setup()
   assert test -e "$script_util/boot/null.sh"
 }
 
+@test "$base: init.sh / base shell" {
+
+  run $SHELL -c "$script_util/init.sh"
+
+  skip FIXME cleanup
+
+  run bash -c "$(cat <<EOM
+
+__load_mode=boot source $scriptpath/tools/sh/init.sh &&
+source '$main_inc' &&
+try_exec_func mytest_function
+EOM
+    )"
+  diag "Output: ${lines[0]}"
+  {
+    test $status -eq 0 &&
+    fnmatch "mytest" "${lines[*]}"
+  } || stdfail 3.
+}
+
 @test "$base: base libs" {
 
   test -z "$os_lib_loaded" -a \
@@ -97,42 +131,47 @@ setup()
 }
 
 @test "$base: test init.bash 0" {
-  type trueish >/dev/null
-  type fnmatch >/dev/null
-  type tmpd >/dev/null
-  type tmpf >/dev/null
-  type get_uuid >/dev/null
+
+  type test_env_init >/dev/null
+  type hostname_init >/dev/null
+  type init >/dev/null
+  env | grep -q '^base=' && false || true
+  env | grep -q '^hostnameid=' && false || true
+  env | grep -q '^ENV_NAME='
+
+  type trueish >/dev/null && false || true
+  type fnmatch >/dev/null && false || true
+  type tmpd >/dev/null && false || true
+  type tmpf >/dev/null && false || true
+  type get_uuid >/dev/null && false || true
 }
 
 @test "$base: test init.bash" {
 
-  fnmatch "* logger-std *" " $default_lib " || stdfail "$default_lib"
+  { func_exists basedir &&
+    test $os_lib_loaded -eq 1
+  } || false "Error with os.lib"
 
-  test $os_lib_loaded -eq 1
-  test $str_lib_loaded -eq 1
-  test $sys_lib_loaded -eq 1
-  test $logger_lib_loaded -eq 1
+  { func_exists mkid &&
+    test $str_lib_loaded -eq 1
+  } || false "Error with str.lib"
 
-  func_exists fnmatch
-  func_exists error
-  func_exists debug
-}
+  { func_exists fnmatch &&
+    test $sys_lib_loaded -eq 1
+  } || false "Error with sys.lib"
 
+  return
 
-@test "$base: try-exec-func (bash) on existing function" {
+# TODO: revise logger setup
+#  func_exists note
+#  func_exists warn
+#  func_exists error
 
-  skip FIXME cleanup
-
-  run bash -c "$(cat <<EOM
-
-__load_mode=boot source $scriptpath/tools/sh/init.sh &&
-source '$main_inc' &&
-try_exec_func mytest_function
-EOM
-    )"
-  diag "Output: ${lines[0]}"
   {
-    test $status -eq 0 &&
-    fnmatch "mytest" "${lines[*]}"
-  } || stdfail 3.
+    func_exists std_debug &&
+    func_exists std_info &&
+    func_exists std_note &&
+    func_exists std_warn &&
+    func_exists std_error
+  } || false "Error with std.lib"
 }

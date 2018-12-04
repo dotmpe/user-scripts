@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+exec ./tools/sh/init-here.sh $HOME/bin "" "" "$(cat <<EOM
+
+  lib_load composure
+
+  lib_init
+
+  ls -la \$COMPOSURE 
+
+
+  #lib_load script logger str logger-std
+
+  #lib_load env-d build user-env make mkvar
+  
+  #. ./.htd/env.sh
+
+  #env_d_boot
+
+
+  #env_d_complete
+
+
+  #export LOG=./tools/sh/log.sh ;
+
+  #echo '. ./.htd/env.sh ; export LOG; redo \$(patsubst %.bats, %.tap,\$(wildcard test/*/*.bats))' | make_op "" recipe
+
+  #lib_load build package build-test
+  #package_init
+  #build_test_init
+
+EOM
+)"
