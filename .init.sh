@@ -14,7 +14,7 @@ init-git()
 {
   which git || return
   test -e .git/hooks/pre-commit || {
-    ln -s ../../.build/pre-commit.sh .git/hooks/pre-commit || return
+    ln -s ../../tools/git/hooks/pre-commit.sh .git/hooks/pre-commit || return
   }
   test -e .git/modules || {
     git submodule update --init || return
