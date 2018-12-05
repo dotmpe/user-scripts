@@ -12,17 +12,35 @@ lib_lib_load()
   test -n "$lib_loaded" || lib_loaded=
 }
 
+lib_path_exists()
+{
+  test -e "$1/$2.lib.sh" || return 1
+  echo "$1/$2.lib.sh"
+}
+
+# Echo every occurence of *.lib.sh on SCRIPTPATH
+lib_path() # local-name path-var-name
+{
+  test -n "$2" || set -- "$1" SCRIPTPATH
+  lookup_test=lib_path_exists lookup_path $2 "$1"
+}
+
+lib_lookup()
+{
+  # FIXME: use quier algo
+  lib_path "$1" | head -n 1
+}
+
 # Lookup and load sh-lib on SCRIPTPATH
 lib_load()
 {
+  test -n "$1" || return 1
+
   test -n "$LOG" || exit 102
   local lib_id= f_lib_loaded= f_lib_path=
 
   # __load_lib: true if inside util.sh:lib-load
   test -n "$__load_lib" || local __load_lib=1
-
-  test -n "$1" || return 1
-
   while test $# -gt 0
   do
     lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')
@@ -52,7 +70,7 @@ lib_load()
           ${lib_id}_lib_load || {
             $LOG error "lib" "in lib-load $1 ($?)" 1 || return
           }
-        }
+        } || true
 
         eval "ENV_SRC=\"$ENV_SRC $f_lib_path\""
         eval ${lib_id}_lib_loaded=1
@@ -71,8 +89,10 @@ lib_assert()
   test $# -gt 0 || return
   while test $# -gt 0
   do
-    test "$(eval "echo \$${1}_lib_loaded")" = "1" ||
-        $LOG error lib "Assert loaded $1" "" 1
+    test "$(eval "echo \$${1}_lib_loaded")" = "1" || {
+      $LOG error lib "Assert loaded $1" "" 1
+      return 1
+    }
     shift
   done
 }

@@ -4,6 +4,8 @@ shell_lib_load()
 {
   test -n "$LOG" || return 102
 
+  lib_assert os sys str || return
+
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "$SD_SHELL_DIR" || SD_SHELL_DIR="$HOME/.statusdir/shell"
 
@@ -12,11 +14,6 @@ shell_lib_load()
 
   test -n "$MPE_ENV_NAME" || MPE_ENV_NAME=dev
   test -n "$CS" || CS=dark
-
-  { test 1 -eq $os_lib_loaded -a \
-        1 -eq $sys_lib_loaded -a \
-        1 -eq $str_lib_loaded
-  } || $LOG error shell.lib "Missing dependencies" "" 1
 
   test -n "$base" || base=$(test -e "$0" && basename "$0" .sh || printf -- "$0")
 
