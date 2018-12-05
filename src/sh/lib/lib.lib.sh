@@ -57,16 +57,30 @@ lib_load()
         eval "ENV_SRC=\"$ENV_SRC $f_lib_path\""
         eval ${lib_id}_lib_loaded=1
         lib_loaded="$lib_loaded $lib_id"
-        # FIXME $LOG info "lib" "Finished loading ${lib_id}: OK"
+        # FIXME sep. profile/front-end for shell vs user-scripts
+        # $LOG info "lib" "Finished loading ${lib_id}: OK"
         unset lib_id
     }
     shift
   done
 }
 
+# Verify lib was loaded or bail out
+lib_assert()
+{
+  test $# -gt 0 || return
+  while test $# -gt 0
+  do
+    test "$(eval "echo \$${1}_lib_loaded")" = "1" ||
+        $LOG error lib "Assert loaded $1" "" 1
+    shift
+  done
+}
+
+# After loaded, execute <lib-id>_lib_init() if defined for each lib in load seq.
 lib_init()
 {
-  test -n "$1" || set -- $lib_loaded
+  test $# -gt 0 || set -- $lib_loaded
 
   while test $# -gt 0
   do
