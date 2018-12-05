@@ -11,6 +11,7 @@ function_linenumber() # Func-Name File-Path
     return 1
   }
 }
+# empty
 
 
 # Set start-line, end-line and span-lines for Sh function ( end = start + span )
@@ -95,13 +96,13 @@ EOF
   }
 }
 
-function_start_line()
+function_start_line() # Func-Name Script-File
 {
   function_linenumber "$@" || return $?
   echo $line_number
 }
 
-function_range()
+function_range() # Func-Name Script-File
 {
   function_linerange "$@" || return $?
   echo $start_line $span_lines $end_line

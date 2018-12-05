@@ -44,7 +44,6 @@ $1
 w" | ed -s $file_name
 }
 
-
 # Replace one entire line using Sed.
 file_replace_at() # ( FILE:LINE | ( FILE LINE ) ) INSERT
 {
@@ -62,16 +61,12 @@ file_replace_at() # ( FILE:LINE | ( FILE LINE ) ) INSERT
     line_number=$1; shift 1
   }
 
-  test -e "$file_name" || error "no file $file_name" 1
-  test -n "$line_number" || error "no line_number" 1
+  test -e "$file_name" || error "no file: $file_name" 1
+  test -n "$line_number" || error "no line_number: $file_name: '$1'" 1
   test -n "$1" || error "nothing to insert" 1
 
-  note "Removing line $file_name:$line_number"
-  echo "${line_number}d
-.
-w" | ed $file_name >/dev/null
-
-  file_insert_at $file_name:$(( $line_number - 1 )) "$1"
+  set -- "$( echo "$1" | sed 's/[\#&\$]/\\&/g' )"
+  $gsed -i $line_number's#.*#'"$1"'#' "$file_name"
 }
 
 
@@ -114,6 +109,35 @@ file_replace_at_sed()
   sed $line_number's/.*/'$1'/' $file_name
 }
 
+
+# Start at Line, verbosely output that line and all before matching Grep.
+# Stops at non-matching line, returns 0. first-line == 3:Line for not match
+grep_to_first() # 1:Grep 2:File-Path 3:Line
+{
+  from_line=$3
+  while true
+  do
+    tail -n +$3 "$2" | head -n 1 | grep -q "$1" || break
+    set -- "$1" "$2" "$(( $3 - 1 ))"
+  done
+  test $from_line -gt $3 || return
+  first_line=$3
+}
+
+
+# Like grep-to-first but go forward matching for Grep.
+grep_to_last() # 1:Grep 2:File-Path 3:Line
+{
+  from_line=$3
+  while true
+  do
+    tail -n +$3 "$2" | head -n 1 | grep -q "$1" || break
+    set -- "$1" "$2" "$(( $3 + 1 ))"
+  done
+  test $from_line -lt $3 || return
+  last_line=$3
+}
+
 get_lines()
 {
   test -n "$*" || error "arguments required" 1
@@ -133,6 +157,70 @@ get_lines()
 
   tail -n +$line_number $file_name | head -n $1
 }
+
+# find '<func>()' line and see if its preceeded by a comment. Return comment text.
+func_comment()
+{
+  test -n "$1" || error "function name expected" 1
+  test -n "$2" -a -e "$2" || error "file expected: '$2'" 1
+  test -z "$3" || error "surplus arguments: '$3'" 1
+
+  # find function line number, or return 1 ending function for no comment
+  grep_line="$(grep -n "^\s*$1()" "$2" | cut -d ':' -f 1)"
+  case "$grep_line" in [0-9]* ) ;; * ) return 1 ;; esac
+
+  lines=$(echo "$grep_line" | count_words)
+  test $lines -gt 1 && {
+    error "Multiple lines for function '$1'"
+    return 1
+  }
+
+  # find first comment line
+  grep_to_first '^\s*#' "$2" "$(( $grep_line - 1 ))"
+
+  # return and reformat comment lines
+  source_lines "$2" $first_line $grep_line | sed -E 's/^\s*#\ ?//'
+}
+
+grep_head_comment_line()
+{
+  head_comment_line="$($ggrep -m 1 '^[[:space:]]*# .*\..*$' "$1")" || return
+  echo "$head_comment_line" | sed 's/^[[:space:]]*# //g'
+}
+
+# Get first proper comment with period character, ie. retrieve single line
+# non-directive, non-header with eg. description line. See alt. grep-list-head.
+read_head_comment()
+{
+  local r=''
+
+  # Scan #-diretives to first proper comment line
+  read_lines_while "$1" 'echo "$line" | grep -qE "^\s*#[^ ]"' || r=$?
+  test -n "$line_number" || return
+
+  # If no line matched start at firstline
+  test -n "$r" && first_line=1 || first_line=$(( $line_number + 1 ))
+
+  # Read rest, if still commented.
+  read_lines_while "$1" 'echo "$line" | grep -qE "^\s*#(\ .*)?$"' $first_line || return
+
+  width_lines=$line_number
+  last_line=$(( $first_line + $width_lines - 1 ))
+  lines_slice $first_line $last_line "$1" | $gsed 's/^\s*#\ \?//'
+}
+
+# Echo exact contents of the #-commented file header, or return 1
+# backup-header-comment file [suffix-or-abs-path]
+backup_header_comment() # Src-File [.header]
+{
+  test -n "$2" || set -- "$1" ".header"
+  fnmatch "/*" "$2" \
+    && backup_file="$2" \
+    || backup_file="$1$2"
+  # find last line of header, add output to backup
+  read_head_comment "$1" >"$backup_file" || return $?
+}
+
 
 # Return span of lines from Src, starting output at Start-Line and ending
 # Span-Lines later, or at before End-Line.
@@ -187,3 +275,10 @@ expand_srcline()
   info "Replaced line with resolved src of '$srcfile'"
 }
 
+
+# Strip sentinel line and insert external file
+expand_line() # Src-File Line Include-File
+{
+  file_truncate_lines "$1" "$(( $2 - 1 ))" "$2" &&
+  file_insert_at $1:$(( $2 - 1 )) "$(cat "$3")"
+}

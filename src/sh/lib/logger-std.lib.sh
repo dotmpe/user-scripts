@@ -13,8 +13,13 @@ logger_std_init()
   test -n "$1" || set -- "$scriptname"
 
   stderr_log_channel="$1"
-  stderr_log_level=$verbosity
-  logger_log_threshold=$verbosity
+  test -z "$verbosity" && {
+    stderr_log_level=4
+    logger_log_threshold=4
+  } || {
+    stderr_log_level=$verbosity
+    logger_log_threshold=$verbosity
+  }
   # XXX exit logger_fd=2 logger_check stderr_demo "Init" 2
 }
 

@@ -66,6 +66,20 @@ ck_sha1()
 ck_sha2()
 {
   test -n "$abbrev" || abbrev=7
+  cksum="$(sha256sum "$1" | cut -f1 -d' ')" || return
+  test -n "$2" && {
+    test ${#2} -eq ${#cksum} || {
+      test $abbrev -gt 0 || return
+      # Partial match but at least N chars
+      test ${#2} -ge $abbrev && fnmatch "$2*" "$cksum"
+      return $?
+    }
+    test "$2" = "$cksum" || return
+  } || echo "$cksum"
+}
+ck_sha2_a()
+{
+  test -n "$abbrev" || abbrev=7
   cksum="$(shasum -a 256 "$1" | cut -f1 -d' ')" || return
   test -n "$2" && {
     test ${#2} -eq ${#cksum} || {
