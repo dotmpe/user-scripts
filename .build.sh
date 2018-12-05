@@ -21,13 +21,15 @@ init()
 # every test-suite.
 check()
 {
-  ./.init.sh check && run-test check &&
-    print_green "" "build: check OK" >&2
+  ./.init.sh check || return
+  run-test check || return
+  print_green "" "build: check OK" >&2
 }
 
 baselines()
 {
-  negatives-precheck && test/base.sh all
+  negatives-precheck ||
+  test/base.sh all
 }
 
 build()
@@ -37,14 +39,14 @@ build()
 
 run-test()
 {
-  test $# -gt 1 || set -- all
+  test $# -gt 0 || set -- all
 
-  test/base.sh "$@" &&
-  test/lint.sh "$@" &&
-  test/unit.sh "$@" &&
-  test/bm.sh "$@" &&
-  test/spec.sh "$@" &&
-    print_green "" "build: run-test '$*' OK" >&2
+  test/base.sh "$@" || return
+  test/lint.sh "$@" || return
+  test/unit.sh "$@" || return
+  test/bm.sh "$@" || return
+  test/spec.sh "$@" || return
+  print_green "" "build: run-test '$*' OK" >&2
 }
 
 clean()
@@ -70,9 +72,11 @@ bats-negative()
 negatives-precheck()
 {
   $LOG info build "Starting negatives precheck"
-	bats-negative &&
-    $LOG error build "Negative test(s) check unexpectedly succeeded" 1 ||
-    $LOG ok build "Negative checks passed: all failed as expected."
+	bats-negative && {
+    $LOG error build "Negative test(s) check unexpectedly succeeded" 1
+    return 1
+  }
+  $LOG ok build "Negative checks passed: all failed as expected."
 }
 
 pack()

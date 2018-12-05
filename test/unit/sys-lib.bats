@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init 0 && lib_load sys && main_inc=$SHT_PWD/../var/sh-src-main-mytest-funcs.sh
+  init "" 0 && lib_load sys && main_inc=$SHT_PWD/../var/sh-src-main-mytest-funcs.sh
 }
 
 

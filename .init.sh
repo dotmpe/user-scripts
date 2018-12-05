@@ -73,6 +73,16 @@ check-bats()
   bats --version >/dev/null
 }
 
+check-github-release()
+{
+  github-release -V >/dev/null
+}
+
+init-github-release()
+{
+  npm install -g github-release-cli
+}
+
 init-src()
 {
   test -n "$1" -a -n "$2" -a -d "$2"  -a -w "$2" || return
@@ -107,6 +117,7 @@ default()
   check-basher || init-err basher
   check-bats || init-err bats
   check-redo || init-err redo
+  check-github-release || init-err github-release
   test -n "$VND_GH_SRC" || init-err VND-GH-SRC
   for helper in bats-assert bats-file bats-support
   do
@@ -118,6 +129,7 @@ all()
 {
   init-git || return
 
+  which github-release || { init-github-release || return; }
   which basher || { init-basher || return; }
   which redo || { init-redo || return; }
 

@@ -1,31 +1,27 @@
 #!/bin/sh
 
-set -e
-
-
-# Load sh-lib on scriptpath
-lib_load()
+util_lib_load()
 {
-  local f_lib_load=
-  test -n "$__load_lib" || local __load_lib=1
-  test -n "$1" || set -- str sys os std src match
-  while test -n "$1"
-  do
-    . $scriptpath/$1.lib.sh load-ext
-    f_lib_load=$(printf "${1}" | tr -Cs 'A-Za-z0-9_' '_')_load
-    # again, func_exists is in sys.lib.sh. But inline here:
-    type ${f_lib_load} 2> /dev/null 1> /dev/null && {
-      ${f_lib_load}
-    }
-    shift
-  done
+  true
+}
+
+util_lib_init()
+{
+  test -n "$LOG" || return 102
 }
 
 
 
 # Main
 
-case "$0" in "" ) ;; "-"* ) ;; * )
+case "$0" in
+
+  "-"*|"" ) ;;
+  "" ) ;; "-"* ) ;;
+  * )
+
+set -e
+
   test -n "$scriptname" || scriptname="$(basename "$0" .sh)"
   test -n "$verbosity" || verbosity=5
   test -z "$__load_lib" && lib_util_act="$1" || lib_util_act="load-ext"

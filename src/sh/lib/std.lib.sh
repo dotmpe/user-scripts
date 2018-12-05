@@ -3,12 +3,38 @@
 # std: logging and dealing with the shell's stdio decriptors
 
 
-stdio_type()
+std_lib_load()
+{
+  test -n "$uname" || uname="$(uname -s)"
+}
+
+std_lib_init()
+{
+  test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
+  test -x "$(which file)" || error "file util required for stdio-type" 1
+}
+
+std_lib_check()
+{
+  std_iotype_check
+}
+
+std_iotype_check()
+{
+  case "$uname" in
+
+    Linux | CYGWIN_NT-* ) ;;
+    Darwin ) ;;
+
+    * ) error "No stdio-type for $uname" ;;
+  esac
+  return 1
+}
+
+get_stdio_type()
 {
   local io= pid=
   test -n "$1" && io=$1 || io=1
-  test -n "$uname" || uname=$(uname)
-  test -x "$(which file)" || error "file util required for stdio-type" 1
   case "$uname" in
 
     Linux | CYGWIN_NT-* )
@@ -35,7 +61,7 @@ stdio_type()
         fi
       ;;
 
-    * ) error "No stdio-type for $uname" 1 ;;
+    * ) error "No stdio-type for $uname" ;;
   esac
 }
 
@@ -91,27 +117,27 @@ std_exit()
   test "$1" != "0" -a -z "$1" && return 1 || exit $1
 }
 
-std_emerg()
+emerg()
 {
   std_v 1 || std_exit $2 || return 0
   stderr "Emerg" "$1" $2
 }
-std_crit()
+crit()
 {
   std_v 2 || std_exit $2 || return 0
   stderr "Crit" "$1" $2
 }
-std_error()
+error()
 {
   std_v 3 || std_exit $2 || return 0
   stderr "Error" "$1" $2
 }
-std_warn()
+warn()
 {
   std_v 4 || std_exit $2 || return 0
   stderr "Warning" "$1" $2
 }
-std_note()
+note()
 {
   std_v 5 || std_exit $2 || return 0
   stderr "Notice" "$1" $2
@@ -121,7 +147,7 @@ std_info()
   std_v 6 || std_exit $2 || return 0
   stderr "Info" "$1" $2
 }
-std_debug()
+debug()
 {
   std_v 7 || std_exit $2 || return 0
   stderr "Debug" "$1" $2

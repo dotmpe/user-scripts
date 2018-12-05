@@ -49,8 +49,8 @@ setup_sh_tpl_item() # Index-Nr Base-Var-Id
 
   mtime="$(eval echo \"\$${2}_${1}__mtime\")"
   test -z "$mtime" || {
-      note "Modified '$mtime' '$name'"
-      touch_ts "@$mtime" "$name"
+    note "Modified '$mtime' '$name'"
+    touch_ts "@$mtime" "$name"
   }
 }
 

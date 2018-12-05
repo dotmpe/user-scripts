@@ -14,9 +14,9 @@ test_env_init()
 
   test -n "$scriptpath" || scriptpath=$(pwd -P)/src/sh/lib
   test -n "$script_util" || script_util=$(pwd -P)/tools/sh
-
   test -n "$testpath" || testpath=$(pwd -P)/test
 
+  export LOG=$script_util/log.sh
 
   # XXX: relative path to templates/fixtures?
   SHT_PWD="$( cd $BATS_CWD && realpath $BATS_TEST_DIRNAME )"
@@ -48,7 +48,10 @@ init() # ( 0 | 1 1 1 1 )
 
   export ENV_NAME=testing
 
-  test -n "$*" || set -- 1 1 1 1
+  test -n "$1" || set -- 1 "$1" "$3" "$4"
+  test -n "$2" || set -- "$1" 1 "$3" "$4"
+  test -n "$3" || set -- "$1" "$2" 1 "$4"
+  test -n "$4" || set -- "$1" "$2" "$3" 1
 
   test "$1" != "0" || return 0
 
@@ -56,21 +59,17 @@ init() # ( 0 | 1 1 1 1 )
   init_sh_boot="$3"
 
   test "$2" != "1" -o \( -n "$3" -a "$3" != "0" \) || init_sh_boot="null"
-  test "$3" != "1" -a -z "$init_sh_boot" && {
+  test "$init_sh_boot" = "1" && {
     test "$3" = "0" || init_sh_boot='std test'
     test "$4" = "0" || init_sh_boot=$init_sh_boot' script'
   }
 
-  ENV_SRC=
+# FIXME: deal with sub-envs wanting to know about lib-envs exported by parent
+# ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
+# and dealing only with current env, testing lib-load and tools, user-scripts.
+  LIB_SRC=
   . $script_util/init.sh || return
 
-#  echo init_sh_boot="$init_sh_boot 1=$1"
-#  echo lib_lib_loaded=$lib_lib_loaded
-#  echo sys_lib_loaded=$sys_lib_loaded
-#  echo os_lib_loaded=$os_lib_loaded
-#  echo logger_lib_loaded=$logger_lib_loaded
-#
-#  echo ENV_SRC=$ENV_SRC
 }
 
 

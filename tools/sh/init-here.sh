@@ -19,6 +19,10 @@ test -n "$1" && {
   SCRIPTPATH=$(pwd -P):$scriptpath
 }
 
+# Cannot load/init without some provisionary logger setup
+test -n "$LOG" || export LOG=$script_util/log.sh
+test -s "$LOG" -a -x "$LOG" || { echo LOG=$LOG >&2 ; exit 102; }
+
 
 # Now include module loader with `lib_load` by hand
 __load_mode=ext . $scriptpath/lib.lib.sh

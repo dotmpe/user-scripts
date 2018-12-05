@@ -168,10 +168,10 @@ EOM
 #  func_exists error
 
   {
-    func_exists std_debug &&
+    func_exists debug &&
     func_exists std_info &&
-    func_exists std_note &&
-    func_exists std_warn &&
-    func_exists std_error
+    func_exists note &&
+    func_exists warn &&
+    func_exists error
   } || false "Error with std.lib"
 }

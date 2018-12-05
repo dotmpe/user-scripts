@@ -24,11 +24,13 @@ do
 
       echo found func annotation trailer until $last_line
 
+      tail -n +$start_line $lib | head -n $span_lines | ck_sha1 -
+
       span_lines=$(( $last_line - $start_line ))
       tail -n +$start_line $lib | head -n $span_lines
+
     }
 
-    #echo "$fn: $( copy_function  $fn  $lib | ck_sha1 - )  $( copy_function  $fn  $lib | ck_sha2 - )"
   done
 done
 exit $?

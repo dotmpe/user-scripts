@@ -17,7 +17,7 @@ composure_check_name_scripts()
   for inc in $COMPOSURE/*.inc
   do
     fnmatch "$(basename "$inc" .inc)[ (]*" "$(head -1 $inc)" ||
-      std_error "Name mismatch on $inc: $(head -n 1 $inc)" 1
+      error "Name mismatch on $inc: $(head -n 1 $inc)" 1
   done
 }
 
@@ -55,8 +55,8 @@ composure_shlib_sync_pairs() # [create] [force] ~
   grep_nix_lines | while read fname libfile ; do
     is_composer_inc "$fname" || {
       trueish "$create" || {
-        trueish "$force" || std_error "No such composer inc '$fname'" 1
-        std_warn "No such composer inc '$fname', ignored (--force)"
+        trueish "$force" || error "No such composer inc '$fname'" 1
+        warn "No such composer inc '$fname', ignored (--force)"
         continue
       }
       composure_draft "$fname" || return

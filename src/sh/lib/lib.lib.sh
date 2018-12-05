@@ -5,11 +5,13 @@
 
 lib_lib_load()
 {
-  test -n "$LOG" || return 102
   test -n "$default_lib" || default_lib="os sys str src shell"
   # XXX testing default_lib="argv match vc"
+}
 
-  test -n "$lib_loaded" || lib_loaded=
+lib_lib_init()
+{
+  test -n "$LOG" || return 102
 }
 
 lib_path_exists()
@@ -27,7 +29,6 @@ lib_path() # local-name path-var-name
 
 lib_lookup()
 {
-  # FIXME: use quier algo
   lib_path "$1" | head -n 1
 }
 
@@ -72,7 +73,7 @@ lib_load()
           }
         } || true
 
-        eval "ENV_SRC=\"$ENV_SRC $f_lib_path\""
+        eval "LIB_SRC=\"$LIB_SRC $f_lib_path\""
         eval ${lib_id}_lib_loaded=1
         lib_loaded="$lib_loaded $lib_id"
         # FIXME sep. profile/front-end for shell vs user-scripts

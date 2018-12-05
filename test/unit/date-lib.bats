@@ -101,7 +101,7 @@ teardown()
 
 @test "${base}: newer-than FILE SECONDS " {
 
-  verbosity=4
+  export verbosity=4
 
   touch_ts @1 foo
   run newer_than foo $_1MIN

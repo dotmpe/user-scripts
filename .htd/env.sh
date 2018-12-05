@@ -10,6 +10,11 @@ export uname=${uname:-$(uname -s)}
 export LOG=${LOG:-./tools/sh/log.sh}
 
 
+test -n "$GITHUB_TOKEN" || {
+  . ~/.local/etc/profile.d/github-user-scripts.sh || exit $?
+}
+
+
 : "${SRC_PREFIX:=/src}"
 : "${VND_SRC_PREFIX:=$SRC_PREFIX}"
 : "${VND_GH_SRC:=$VND_SRC_PREFIX/github.com}"
