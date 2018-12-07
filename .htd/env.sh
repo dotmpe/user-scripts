@@ -9,9 +9,19 @@ export uname=${uname:-$(uname -s)}
 #export LOG=${LOG:-logger_log}
 export LOG=${LOG:-./tools/sh/log.sh}
 
+case "$uname" in
+  MSYS_NT-* ) toolname=sh-win ;;
+  Linux ) toolname=sh ;;
+  * ) $LOG error .htd/env "No tooling for '$uname'" "" 1
+esac
 
 test -n "$GITHUB_TOKEN" || {
   . ~/.local/etc/profile.d/github-user-scripts.sh || exit $?
+}
+
+test "$toolname" = "sh-win" && {
+
+  choco install make
 }
 
 

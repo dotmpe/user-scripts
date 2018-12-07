@@ -1,8 +1,11 @@
 # Travis CI - test workflow </doc/dev/ci.md>
 language: python
+os:
+  - Linux
+  - Windows
 #language: shell
-dist:
-  - xenial
+#dist:
+#  - xenial
 python:
   - 2.7
 addons:
