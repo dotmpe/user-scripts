@@ -10,7 +10,7 @@ export uname=${uname:-$(uname -s)}
 export LOG=${LOG:-./tools/sh/log.sh}
 
 
-test -n "$GITHUB_TOKEN" || {
+test -n "${GITHUB_TOKEN:-}" || {
   . ~/.local/etc/profile.d/github-user-scripts.sh || exit $?
 }
 
