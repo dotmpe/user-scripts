@@ -1,33 +1,37 @@
-[2018-08-24] Goal: shell history but better
+# User Scripts [![](http://img.shields.io/travis/bvberkum/user-scripts.svg)](https://travis-ci.org/bvberkum/user-scripts) ![repo license](https://img.shields.io/github/license/bvberkum/user-scripts.svg) ![commits per year](https://img.shields.io/github/commit-activity/y/bvberkum/user-scripts.svg) ![code size](https://img.shields.io/github/languages/code-size/bvberkum/user-scripts.svg) ![repo size](https://img.shields.io/github/repo-size/bvberkum/user-scripts.svg)
 
-# Req'ments
-1. record shell scripts like a bookmark collection
-2. auto-determine dependencies and prerequisite settings (static analysis)
-3. record execution and context, track when/where/what has run per user (for
-   some selected subset of scripts)
-4. assemble CLI tools from collection subsets (ie. by prefix, metadata, host, etc.)
-5. distribute collection using existing code VCS
-6. code client in shell or compiled distributable, provide server with REST.
-   Wrap it up by providing containerized dist.
-
-# Progress
-None. [Initial orientation](doc/dev/main.md).
-
-# See also
-- [Composure][1], 7 basic shell functions to rule them all: draft, revise and
-  others to create new functions from the last shell history and use the Bash
-  AST to store metadata. Distribution using vanilla GIT.
-
-- [commandlinefu.com][2], like the now-defunct [alias.sh][3], share snippets
-  (public only) with an online community.
-
-- [Explainshell][4], an online and now/almost [CLI][5] tool too for getting all
-  the manpage bits for a given shell invocation or pipeline.
+Bourne shell compatible scripts in various modules, and a method for loading
+modules.
 
 
-[1]: https://github.com/erichs/composure
-[2]: https://www.commandlinefu.com/commands/browse
-[3]: http://web.archive.org/web/*/alias.sh
-[4]: https://explainshell.com
-[5]: https://github.com/idank/explainshell/issues/4
+### Usage
+
+Use the ``lib_load`` function to source ``<my_lib>.lib.sh`` found anywhere on ``SCRIPTPATH``:
+```sh
+lib_load <my_lib>
+```
+
+If function ``<my_lib>_load`` exists it is executed directly after sourcing.
+
+Set and export SCRIPTPATH for a script environment with ``init.sh``:
+```
+scriptpath=$PWD . ./tools/sh/init.sh
+lib_load <my_lib>
+```
+or set from master/for dev:
+```
+test -e ./tools/sh/init.sh ||
+  curl -sSO https://github.com/user-tools/user-scripts/blob/master/tools/sh/init-gh.sh | sh -
+scriptpath=$PWD . ./tools/sh/init.sh
+```
+A predefined set of modules is loaded.
+
+
+### Status
+Released `lib_load` and some other routines for testing in the field. All other commits on 0.0 dev line (branch ``r0.0``).
+
+
+Version: 0.0.1
+
+* [AGPL-3.0](COPYING)
 

@@ -1,0 +1,57 @@
+os: Linux
+dist:
+  - xenial
+
+language: shell
+addons:
+  apt:
+    packages:
+      - realpath
+
+env:
+  matrix: []
+  global:
+  - SRC_PREFIX=$HOME/build
+  - VND_SRC_PREFIX=$HOME/build
+  - VND_GH_SRC=$HOME/build
+
+before_install:
+  - . ./tools/ci/util.sh
+  - export_stage before-install before_install && announce_stage
+  - . ./tools/ci/env.sh &&
+    . ./tools/ci/init.sh
+
+script:
+  - export_stage script && announce_stage
+  - . ./tools/ci/build.sh
+
+before_cache:
+  - export_stage before-cache before_cache && announce_stage
+  - rm -f $HOME/.cache/pip/log/debug.log
+
+cache:
+  directories:
+     - .htd
+     - .redo
+     - ./node_modules
+     - ./vendor
+     - $HOME/.local
+     - $HOME/.basher
+     - $HOME/.cache/pip
+     - $HOME/virtualenv
+     - $HOME/.npm
+     - $HOME/.composer
+     - $HOME/.rvm/
+     - $HOME/.statusdir/
+     - $HOME/lib
+     - $HOME/build/apenwarr
+     - $HOME/build/ztombol
+    # NOTE: careful not to include repo-under-test
+     - $HOME/build/user-tools/user-scripts
+     - $HOME/build/user-tools/user-conf
+     - $HOME/build/bvberkum/user-conf
+     - $HOME/build/bvberkum/docopt-mpe
+     - $HOME/build/bvberkum/git-versioning
+     - $HOME/build/bats-core/bats-core
+     - $HOME/build/bvberkum/bats-core
+     - $HOME/build/user-tools/bats-core

@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Initial CLi helper for any kind of U-S checkout or install
+
+
 init()
 {
   test -n "U_S" || U_S="$(dirname "$(dirname "$(realpath "$0")")")"
@@ -14,20 +17,33 @@ git_version()
 
 update()
 {
-  cd "$U_S"
+  test -n "$U_S" || return
+  cd "$U_S" &&
   git fetch && git reset --hard origin/r0.0
 }
 
-usage()
+help()
 {
-  echo "Usage: u-c [update]"
-  exit 1
+  echo "Usage: u-s [help|git_version|update]"
+  echo
+  print_help
+}
+usage_fail()
+{
+  help
+  return 1
+}
+print_help()
+{
+  echo "CLI helper for User-Scripts. Not suited for dev, see v0.0 docs."
 }
 
 main()
 {
-  init
-  test $# -gt 0 || set -- usage
+  . ./tools/sh/init.sh && init || return
+
+  test $# -gt 0 || set -- usage_fail
+
   "$@"
 }
 
