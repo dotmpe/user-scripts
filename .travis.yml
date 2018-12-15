@@ -33,8 +33,7 @@ before_install:
 
 install:
   - export_stage install && announce_stage
-  #- make init
-  - ./.build.sh init
+  - make init
 
 before_script:
   - export_stage before-script before_script && announce_stage
@@ -42,15 +41,13 @@ before_script:
 script:
   - export_stage script && announce_stage
   - sh ./tools/ci/build.sh
-# First smoke run everything with make
-  #- make test/baseline/realpath.tap
   - ./sh-test
+# First smoke run everything with make
+  - make test/baseline/realpath.tap
   #- make base
   #- make lint
   #- make units
   #- make specs
-  - . ./tools/sh/init.sh
-  - lib_load build
 # Cleanup and redo all
   #- git clean -dfx test/
   #- redo
