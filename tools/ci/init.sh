@@ -29,10 +29,16 @@ echo '---------- Finished CI setup'
 echo "Travis Branch: $TRAVIS_BRANCH"
 echo "Travis Commit: $TRAVIS_COMMIT"
 echo "Travis Commit Range: $TRAVIS_COMMIT_RANGE"
+# TODO: gitflow comparison/merge base
+#vcflow-upstreams $TRAVIS_BRANCH
+# set env and output warning if we're behind
+#vcflow-downstreams
+# similar.
 echo
 echo "User Conf: $(cd ~/.conf && git describe --always)" || true
 echo "User Composer: $(cd ~/.local/composer && git describe --always)" || true
 echo "User Bin: $(cd ~/bin && git describe --always)" || true
+echo "User static lib: $(find ~/lib )" || true
 echo
 echo '---------- Listing user checkouts'
 for x in $HOME/build/*/

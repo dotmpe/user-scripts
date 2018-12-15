@@ -35,6 +35,7 @@ before_install:
 install:
   - export_stage install && announce_stage
   - ./.build.sh init
+  - sh ./tools/ci/init.sh || echo err:$?
   #- make init
 
 before_script:
@@ -90,26 +91,31 @@ after_failure:
   - export_stage failure && announce_stage
 after_success:
   - export_stage success && announce_stage
-after_sscript:
+after_script:
   - export_stage after && announce_stage
   - . ./tools/ci/parts/after.sh
   - . ./tools/ci/parts/publish.sh
-  - std_note "End of $scriptname"
-  - echo done
+  - announce "End of $scriptname"
+  - echo Done
 
 
 matrix:
   include:
     - python: 2.7
 
-    - if: branch = "test"
-      python: 3.5
+    - env: TRAVIS_US_PUBLISH="pre"
+      if: branch = r0.0
+
+    - env: TRAVIS_US_PUBLISH="rc"
+      if: branch = test
+
+    - python: 3.5
+      if: branch = test
 
 #    - if: branch = test
-#      - ENV_NAME=testing
-
+#      env: ENV_NAME=testing
 #    branch = test
-#      - ENV_NAME=production
+#      env: ENV_NAME=production
 
 #  exclude: []
 #branches:

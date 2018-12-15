@@ -132,10 +132,10 @@ all()
   which basher || { init-basher || return; }
   which redo || { init-redo || return; }
 
-  BATS_VERSION="$(bats --version)"
-  { which bats && fnmatch "Bats 1.1.*" "$BATS_VERSION"
+  BATS_VERSION_="$(bats --version)"
+  { which bats && fnmatch "Bats 1.1.*" "$BATS_VERSION_"
   } || {
-    echo "Found $BATS_VERSION, getting 1.1"
+    echo "Found $BATS_VERSION_, getting 1.1"
     PREFIX=$HOME/.local init-bats || return
   }
 
