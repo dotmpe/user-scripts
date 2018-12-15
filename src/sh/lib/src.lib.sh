@@ -37,7 +37,7 @@ file_insert_at()
   # use ed-script to insert second file into first at line
   # Note: this loses trailing blank lines
   # XXX: should not have ed period command. Cannot sync this function, file-insert-at
-  stderr info "Inserting at $file_name:$line_number"
+  std_info "Inserting at $file_name:$line_number"
   echo "${line_number}a
 $1
 .
@@ -262,7 +262,7 @@ expand_source_line() # Src-File Line
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile" || return
   trueish "$keep_source" || rm $srcfile
-  info "Replaced line with resolved src of '$srcfile'"
+  std_info "Replaced line with resolved src of '$srcfile'"
 }
 
 
@@ -272,7 +272,7 @@ expand_srcline()
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile"
   trueish "$keep_source" || rm $srcfile
-  info "Replaced line with resolved src of '$srcfile'"
+  std_info "Replaced line with resolved src of '$srcfile'"
 }
 
 

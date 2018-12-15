@@ -100,7 +100,7 @@ EOF`
   case "$enabled" in *error:* )
       warn "Sshuttle: $enabled";;
     * )
-      info "Sshuttle: $enabled";;
+      std_info "Sshuttle: $enabled";;
   esac
 }
 

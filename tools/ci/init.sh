@@ -25,7 +25,30 @@ test "$GIT_COMMIT" = "$TRAVIS_COMMIT" || {
 
 
 
-echo '---------- Starting build'
+echo '---------- Finished CI setup'
 echo "Travis Branch: $TRAVIS_BRANCH"
 echo "Travis Commit: $TRAVIS_COMMIT"
 echo "Travis Commit Range: $TRAVIS_COMMIT_RANGE"
+echo
+echo "User Conf: $(cd ~/.conf && git describe --always)" || true
+echo "User Composer: $(cd ~/.local/composer && git describe --always)" || true
+echo "User Bin: $(cd ~/bin && git describe --always)" || true
+echo
+echo '---------- Listing user checkouts'
+for x in $HOME/build/*/
+do
+    test -e $x/.git && {
+        echo "$x at GIT $( cd $x && git describe --always )"
+        continue
+
+    } || {
+        for y in $x/*/
+        do
+            test -e $y/.git &&
+                echo "$y at GIT $( cd $y && git describe --always )" ||
+                echo "Unkown $y"
+        done
+    }
+done
+echo
+echo '---------- Starting build'

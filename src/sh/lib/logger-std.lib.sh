@@ -29,7 +29,7 @@ crit() {  logger_stderr "2" "$3" "$1" "" "$2"; }
 error() { logger_stderr "3" "$3" "$1" "" "$2"; }
 warn() {  logger_stderr "4" "$3" "$1" "" "$2"; }
 note() {  logger_stderr "5" "$3" "$1" "" "$2"; }
-info() {  logger_stderr "6" "$3" "$1" "" "$2"; }
+std_info() {  logger_stderr "6" "$3" "$1" "" "$2"; }
 debug() { logger_stderr "7" "$3" "$1" "" "$2"; }
 
 stderr_demo()
