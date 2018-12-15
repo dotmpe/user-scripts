@@ -1,6 +1,8 @@
 #!/bin/sh
 # See .travis.yml
 
+. ./tools/ci/util.sh
+
 # Initial tests, no tooling at all yet. Just smoketesting CI init.
 
 announce 'Check project baseline'

@@ -15,7 +15,7 @@ default_main()
   #scriptpath=$PWD
   #script_util=$scriptpath/tools/sh
 
-  : "${BASH_ENV:=.htd/env.sh}"
+  : "${BASH_ENV:=tools/ci/env.sh}"
   . $BASH_ENV
   export BASH_ENV
 

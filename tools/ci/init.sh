@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+set -o errexit
 #!/bin/sh
 # See .travis.yml
 
@@ -18,6 +22,8 @@ test "$GIT_COMMIT" = "$TRAVIS_COMMIT" || {
     return 1
   }
 }
+
+
 
 echo '---------- Starting build'
 echo "Travis Branch: $TRAVIS_BRANCH"

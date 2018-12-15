@@ -14,7 +14,10 @@ init()
 {
   test $# -gt 0 || set -- all
 
-  ./.init.sh "$@"
+  ./.init.sh "$@" || false
+
+  echo "Running final checks..." >&2
+  ./.init.sh "default" >/dev/null
 }
 
 # Re-run init-checks (TODO or run if not yet run) and run over check part of
@@ -111,6 +114,6 @@ act="$1" ;
 case "$1" in test ) shift 1 ; set -- run-$act "$@" ;; esac
 unset act
 
-type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-.htd/env.sh}"
+type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-tools/ci/env.sh}"
 
 "$@"

@@ -142,10 +142,14 @@ print_usage()
 {
   echo "Usage: u-s [CMD [ARG...]]"
 }
-usage()
+help()
 {
   print_usage
   print_help
+}
+usage()
+{
+  help
   exit 1
 }
 

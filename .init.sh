@@ -14,6 +14,7 @@ init-git()
 {
   which git || return
   test -e .git/hooks/pre-commit || {
+    rm .git/hooks/pre-commit || true
     ln -s ../../tools/git/hooks/pre-commit.sh .git/hooks/pre-commit || return
   }
   test -e .git/modules || {
@@ -45,6 +46,7 @@ init-redo()
 check-redo()
 {
   local r=''
+  which redo || return
   redo -h 2>/dev/null || r=$?
   test "$r" = "97" || init-err "redo:-h:err:$r"
   # Must not be in parent dir, or targets become mixed with other projects, and harder to track
@@ -54,17 +56,25 @@ check-redo()
 
 init-bats()
 {
-  test -n "$SRC_PREFIX" -a -n "$BATS_REPO" -a -n "$BATS_VERSION" || return
-  echo "Installing bats" >&2
-  test -d $SRC_PREFIX/local/ || mkdir $SRC_PREFIX/local/
-  : "${PREFIX:=/usr/local}"
-  test -d $SRC_PREFIX/local/bats || {
-    git clone $BATS_REPO $SRC_PREFIX/local/bats || return $?
+  echo "Installing bats"
+
+  : "${BATS_VERSION:=master}"
+  : "${BATS_REPO:="https://github.com/bats-core/bats-core.git"}"
+  : "${BATS_PREFIX:=$VND_GH_SRC/bats-core/bats-core}"
+
+  test -d $BATS_PREFIX/.git || {
+
+    mkdir -vp "$(dirname "$BATS_PREFIX")"
+    test ! -e $BATS_PREFIX || {
+      rm -rf $BATS_PREFIX || return
+    }
+
+    git clone "$BATS_REPO" $BATS_PREFIX || return $?
   }
+
   (
-    cd $SRC_PREFIX/local/bats &&
-    git checkout $BATS_VERSION &&
-    ./install.sh $PREFIX
+    cd $BATS_PREFIX &&
+    git checkout "$BATS_VERSION" -- && ./install.sh $PREFIX
   )
 }
 
@@ -81,17 +91,6 @@ check-github-release()
 init-github-release()
 {
   npm install -g github-release-cli
-}
-
-init-src()
-{
-  test -n "$1" -a -n "$2" -a -d "$2"  -a -w "$2" || return
-  local repo='' group=''
-  repo="$(basename "$1" .git)"
-  group="$(basename "$(dirname "$1")")"
-
-  test -d "$2/$group" || mkdir -vp "$2/$group"
-  git clone "$1" "$2/$group/$repo" && echo "Clone to $group/$repo OK" >&2
 }
 
 init-err()
@@ -116,7 +115,7 @@ default()
   check-git || init-err git
   check-basher || init-err basher
   check-bats || init-err bats
-  check-redo || init-err redo
+  # XXX: check-redo || init-err redo
   check-github-release || init-err github-release
   test -n "$VND_GH_SRC" || init-err VND-GH-SRC
   for helper in bats-assert bats-file bats-support
@@ -133,21 +132,26 @@ all()
   which basher || { init-basher || return; }
   which redo || { init-redo || return; }
 
-  { which bats && fnmatch "Bats 1.1.*" "$(bats --version)"
+  BATS_VERSION="$(bats --version)"
+  { which bats && fnmatch "Bats 1.1.*" "$BATS_VERSION"
   } || {
+    echo "Found $BATS_VERSION, getting 1.1"
     PREFIX=$HOME/.local init-bats || return
   }
 
-  test -n "$VND_GH_SRC" || return
+  #reset-cache
+  #rm -rf $VND_GH_SRC/ztombol || true
+
   for helper in bats-assert bats-file bats-support
   do
     test -d $VND_GH_SRC/ztombol/$helper || {
-      init-src https://github.com/ztombol/$helper.git $VND_GH_SRC/ || return
+      mkdir -vp "$VND_GH_SRC/ztombol"
+      echo "Adding test-helper $helper..."
+      git clone --depth 15 \
+        https://github.com/ztombol/$helper.git $VND_GH_SRC/ztombol/$helper ||
+        return
     }
   done
-
-  echo "Running final checks..." >&2
-  default >/dev/null
 }
 
 
@@ -158,6 +162,6 @@ test $# -gt 0 || set -- default
 act="$1" ; case "$1" in git ) shift 1 ; set -- init-$act "$@" ;; esac
 unset act
 
-type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-.htd/env.sh}"
+type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-tools/ci/env.sh}"
 
 "$@"

@@ -15,7 +15,7 @@ exec ./tools/sh/init-here.sh $HOME/bin "" "" "$(cat <<EOM
 
   #lib_load env-d build user-env make mkvar
   
-  #. ./.htd/env.sh
+  #. ./tools/ci/env.sh
 
   #env_d_boot
 
@@ -25,7 +25,7 @@ exec ./tools/sh/init-here.sh $HOME/bin "" "" "$(cat <<EOM
 
   #export LOG=./tools/sh/log.sh ;
 
-  #echo '. ./.htd/env.sh ; export LOG; redo \$(patsubst %.bats, %.tap,\$(wildcard test/*/*.bats))' | make_op "" recipe
+  #echo '. ./tools/ci/env.sh ; export LOG; redo \$(patsubst %.bats, %.tap,\$(wildcard test/*/*.bats))' | make_op "" recipe
 
   #lib_load build package build-test
   #package_init

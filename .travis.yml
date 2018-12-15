@@ -1,50 +1,56 @@
 # Travis CI - test workflow </doc/dev/ci.md>
+
 os: Linux
 dist:
   - xenial
 
-language: python
-#language: shell
-python:
-  - "2.7" # 2.7.14 [2018-12-07] 
 addons:
   apt:
     packages:
       - realpath
 
+sudo: false
+
 #services: []
+
+#language: shell
+language: python
+python:
+  - "2.7" # 2.7.14 [2018-12-07] 
+
 env:
   matrix: []
   global:
-  - SRC_PREFIX=$HOME/build
   - VND_SRC_PREFIX=$HOME/build
-  - VND_GH_SRC=$HOME/build
+  - VND_GH_SRC=$VND_SRC_PREFIX
+  - SRC_PREFIX=$VND_SRC_PREFIX
   - secure: enle3U9VEk9tkOgZLSzrOHRNQPAW/wHdC+0HfxjEAD70XUlpbrIJxRx9fX37E8+whj6KefNNw+B5L9dj8TTie+dah01uIw8Ypl6QbjgI8AtGbxlXzRf9q0brEc/03dYMd6zE3Jd5xN13dadB4D/0vtmrn06hBZqYcEze6RYauHvUq6NMPcvN5CnLXmyDcFWplDfoBk9RDMmt1+ccAC176+Z777+aX03IGQkgMOjxBhKMd4pT+A/8GLpIDjTsBRCAmIhfDqMkkAXYI0epEbORssQRAOHfDXlUP6EMZIbih2YLLbt6RzxMBauqxhcPRRKPKDvNfK42cf2RfVqNsRuuTZJrFMLNTuEBJcAhrcIa9dGb8ttMXxyom3VhDSb4natW8hPKDFSTfDlPXQZRBjcUC0I+NehIHLaX2umfKAWCopADYCmGbadMX2GBoDKUbTKFFuXpAJSel4umZZtR66Kyiq63w09gRVbRI86A4Wr2yBhZ7gs4Ey4LpCIql/v44tpbbt1FbHRyQ6+1ClVITucLG0aaCdDnPMhrHlkTZ7RnNd+wQZsE3cgUgkeGXlbahTrn2pmKetjzQnPwXF/KgcZlcyhkeJIaQZxLZ+rzlpaO6iILOmmYutAnzzLYUKponPjNUm45wIet1Hjgw771AOeGRMm/unQoQB2bIYhcbsLMxsM=
 
 before_install:
   - . ./tools/ci/util.sh
   - export_stage before-install before_install && announce_stage
-  #- scriptpath=$(pwd) . build/init.sh
-  - . ./.htd/env.sh
+  - . ./tools/ci/env.sh
 
-#install:
-#  - export_stage install && announce_stage
+install:
+  - export_stage install && announce_stage
+  #- make init
+  - ./.build.sh init
 
 before_script:
   - export_stage before-script before_script && announce_stage
-  #- make init
 
 script:
   - export_stage script && announce_stage
   - sh ./tools/ci/build.sh
 # First smoke run everything with make
-  #- lib_load build
   #- make test/baseline/realpath.tap
   - ./sh-test
   #- make base
   #- make lint
   #- make units
   #- make specs
+  - . ./tools/sh/init.sh
+  - lib_load build
 # Cleanup and redo all
   #- git clean -dfx test/
   #- redo
