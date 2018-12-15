@@ -6,5 +6,5 @@
   wiki has precedence. Maybe something to solve later, doc->wiki.
   But using file paths based on root-project in other source, outside docs/wiki repo.
 
-## (0.0.1) [2018-12-14] 'lib-load'
+## 0.0.1 [2018-12-15] 'lib-load'
 - Initial release 'lib-load' so other repos can get testing.
