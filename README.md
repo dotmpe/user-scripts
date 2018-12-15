@@ -1,4 +1,4 @@
-# User Scripts [![](http://img.shields.io/travis/bvberkum/user-scripts.svg)](https://travis-ci.org/bvberkum/user-scripts) ![repo license](https://img.shields.io/github/license/bvberkum/user-scripts.svg) ![commits per year](https://img.shields.io/github/commit-activity/y/bvberkum/user-scripts.svg) ![code size](https://img.shields.io/github/languages/code-size/bvberkum/user-scripts.svg) ![repo size](https://img.shields.io/github/repo-size/bvberkum/user-scripts.svg)
+# User Scripts [![](http://img.shields.io/travis/bvberkum/user-scripts/master.svg)](https://travis-ci.org/bvberkum/user-scripts) ![repo license](https://img.shields.io/github/license/bvberkum/user-scripts.svg) ![commits per year](https://img.shields.io/github/commit-activity/y/bvberkum/user-scripts.svg) ![code size](https://img.shields.io/github/languages/code-size/bvberkum/user-scripts.svg) ![repo size](https://img.shields.io/github/repo-size/bvberkum/user-scripts.svg)
 
 Bourne shell compatible scripts in various modules, and a method for loading
 modules.

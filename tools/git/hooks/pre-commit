@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
+
+
+# Always from the right dir.. realpath would help, but not depending on that.
+test -n "$U_S" || {
+  U_S_="$(dirname "$(dirname "$0")")"
+  test "$(basename "$U_S_")" = ".git" && {
+
+    U_S="$(dirname "$U_S_")"
+
+  } || {
+    test "$(basename "$U_S_")" = "git" && {
+      U_S="$(dirname "$(dirname "$U_S_")")"
+    } || {
+
+      exit 1
+    }
+  }
+  unset U_S_
+}
+
+# Load lib-env
+. $U_S/tools/sh/init.sh
+lib_init
+
+# TODO: some source-code checks
+
+# 

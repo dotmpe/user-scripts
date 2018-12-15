@@ -19,6 +19,8 @@ test "$GIT_COMMIT" = "$TRAVIS_COMMIT" || {
   }
 }
 
+
+
 echo '---------- Starting build'
 echo "Travis Branch: $TRAVIS_BRANCH"
 echo "Travis Commit: $TRAVIS_COMMIT"
