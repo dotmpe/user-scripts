@@ -22,22 +22,21 @@ env:
   - secure: enle3U9VEk9tkOgZLSzrOHRNQPAW/wHdC+0HfxjEAD70XUlpbrIJxRx9fX37E8+whj6KefNNw+B5L9dj8TTie+dah01uIw8Ypl6QbjgI8AtGbxlXzRf9q0brEc/03dYMd6zE3Jd5xN13dadB4D/0vtmrn06hBZqYcEze6RYauHvUq6NMPcvN5CnLXmyDcFWplDfoBk9RDMmt1+ccAC176+Z777+aX03IGQkgMOjxBhKMd4pT+A/8GLpIDjTsBRCAmIhfDqMkkAXYI0epEbORssQRAOHfDXlUP6EMZIbih2YLLbt6RzxMBauqxhcPRRKPKDvNfK42cf2RfVqNsRuuTZJrFMLNTuEBJcAhrcIa9dGb8ttMXxyom3VhDSb4natW8hPKDFSTfDlPXQZRBjcUC0I+NehIHLaX2umfKAWCopADYCmGbadMX2GBoDKUbTKFFuXpAJSel4umZZtR66Kyiq63w09gRVbRI86A4Wr2yBhZ7gs4Ey4LpCIql/v44tpbbt1FbHRyQ6+1ClVITucLG0aaCdDnPMhrHlkTZ7RnNd+wQZsE3cgUgkeGXlbahTrn2pmKetjzQnPwXF/KgcZlcyhkeJIaQZxLZ+rzlpaO6iILOmmYutAnzzLYUKponPjNUm45wIet1Hjgw771AOeGRMm/unQoQB2bIYhcbsLMxsM=
 
 before_install:
-  - export scriptname='before-install' before_install_ts="$(date +%s)"
+  - . ./tools/ci/util.sh
+  - export_stage before-install before_install && announce_stage
   #- scriptpath=$(pwd) . build/init.sh
   - . ./.htd/env.sh
-install:
-  - export scriptname='install' install_ts="$(date +%s)"
-  - print_yellow "" "Starting '$scriptname'..."
 
+#install:
+#  - export_stage install && announce_stage
 
 before_script:
-  - export scriptname='before-script' before_script_ts="$(date +%s)"
-  - print_yellow "" "Starting '$scriptname'..."
+  - export_stage before-script before_script && announce_stage
   #- make init
 
 script:
-  - export scriptname='script' script_ts="$(date +%s)"
-  - print_yellow "" "Starting '$scriptname'..."
+  - export_stage script && announce_stage
+  - sh ./tools/ci/build.sh
 # First smoke run everything with make
   #- lib_load build
   #- make test/baseline/realpath.tap
@@ -56,8 +55,7 @@ script:
 
 
 before_cache:
-  - export scriptname='before-cache' before_cache_ts="$(date +%s)"
-  - print_yellow "" "Starting '$scriptname'..."
+  - export_stage before-cache before_cache && announce_stage
   - rm -f $HOME/.cache/pip/log/debug.log
 
 cache:
@@ -77,11 +75,15 @@ cache:
      - $HOME/lib
      - $HOME/build/apenwarr
      - $HOME/build/ztombol
-     - $HOME/build/bvberkum/user-scripts
+    # NOTE: careful not to include repo-under-test
+    # - $HOME/build/bvberkum/user-scripts
+     - $HOME/build/user-tools/user-scripts
+     - $HOME/build/user-tools/user-conf
      - $HOME/build/bvberkum/user-conf
      - $HOME/build/bvberkum/docopt-mpe
      - $HOME/build/bvberkum/git-versioning
-     - $HOME/build/bvberkum/bats-core
+     - $HOME/build/bats-core/bats-core
+     #- $HOME/build/bvberkum/bats-...
 
 #matrix:
 #  include: []
@@ -90,3 +92,4 @@ cache:
 #  only: []
 #  except: []
 #deploy:
+

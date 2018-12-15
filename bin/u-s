@@ -1,10 +1,12 @@
 #!/bin/sh
 set -e
 
-# u-s
+# Initial CLi helper for any kind of U-S checkout or install
+
 
 init()
 {
+  test -n "U_S" || U_S="$(dirname "$(dirname "$(realpath "$0")")")"
   U_S_VERSION="$(cd "$U_S" && git_version)"
 }
 
@@ -149,7 +151,8 @@ usage()
 
 main()
 {
-  init
+  init || return
+  #. ./tools/sh/init.sh && init || return
   test $# -gt 0 || set -- usage
   mkvid "$1" 
   local subcmd="$1" cmdid=$vid

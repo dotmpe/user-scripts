@@ -18,6 +18,19 @@ These and following ``tools/sh/*.sh`` scripts provide entry-points for basic
 setups, see XXX: tooling ref
 and  [libv0:lib_load](/doc/src/lib#v0:lib_load) docs.
 
+Set and export SCRIPTPATH for a script environment with ``init.sh``:
+```
+scriptpath=$PWD . ./tools/sh/init.sh
+lib_load <my_lib>
+```
+or set from master/for dev:
+```
+test -e ./tools/sh/init.sh ||
+  curl -sSO https://github.com/user-tools/user-scripts/blob/master/tools/sh/init-gh.sh | sh -
+scriptpath=$PWD . ./tools/sh/init.sh
+```
+A predefined set of modules is loaded.
+
 ```sh
 U_S=/src/github.com/bvberkum/user-script
 
@@ -40,19 +53,21 @@ EOM
 
 ### Status
 
+Released `lib_load` and some other routines for testing in the field. 
+
 - Experimental project setup, moving over libs and porting tests.
   ``lib_load`` works and some libs may.
 - Secondary objectives regard shell/project tooling. See dev docs.
+
+Version: 0.0
+
+* [AGPL-3.0](COPYING)
 
 ### Sections
 
 - [Docs](doc) ([Wiki](https://github.com/bvberkum/user-scripts/wiki))
 - [Dev-Docs](wiki/dev/main)
 - [ChangeLog](CHANGELOG.md)
-
-Version: 0.0
-
-* [AGPL-3.0](COPYING)
 
 ### Hacking
 
@@ -75,4 +90,3 @@ make test
 # or
 ./.build.sh test
 ```
-

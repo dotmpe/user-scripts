@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Initial tools to help boot env for project/script
+
 script_lib_load()
 {
   test -n "$LOG" || return 102

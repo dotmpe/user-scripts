@@ -6,6 +6,7 @@
 # Dev workflow
 master release
 release r0.0
+master test
 
 # Doc workflow; fork r0.1 sub-release version later
 master doc-1.0

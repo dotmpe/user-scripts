@@ -48,7 +48,6 @@ mkcid()
   cid=$(echo "$1" | sed 's/\([^a-z0-9-]\|\-\)/-/g')
 }
 
-
 # x-platform regex match since Bash/BSD test wont chooche on older osx
 x_re()
 {
