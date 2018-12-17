@@ -79,7 +79,6 @@ default_main()
               redo build-dist
       ;;
  
-
     build-* )     ./.build.sh "$(echo "$1" | cut -c7- )" ;;
 
 
@@ -88,6 +87,20 @@ lib_load package build-test
 
 EOM
 )" ;;
+
+    
+    src-sh ) # Static analysis for Sh libs
+
+        redo-ifchange .cllct/src/sh-libs.list
+        cut -d"	" -f1 .cllct/src/sh-libs.list | while read libid
+        do
+            redo-ifchange .cllct/src/functions/$libid-lib.func-list
+            while read func
+            do
+              redo-ifchange .cllct/src/functions/$libid-lib/$func.func-deps
+            done <.cllct/src/functions/$libid-lib.func-list
+        done
+      ;;
 
 
     # TODO: build components by name, maybe specific module specs
@@ -98,4 +111,5 @@ EOM
   esac
 }
 
-SCRIPTPATH= default_main "$@"
+#SCRIPTPATH= 
+default_main "$@"

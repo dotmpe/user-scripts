@@ -13,23 +13,25 @@ paths="$(ggrep '^'"$docid"'\>	' "sh-libs.list" | gsed 's/^[^\t]*\t//g')" &&
 mkdir -p "$(dirname "$1")"
 
 test -n "$paths" || {
-    exit 0
+  $LOG warn "$1" "No paths for '$docid'"
+  exit 0
 }
 
-redo-ifchange $( echo "$paths" | gsed 's#^\(\.\/\)\?#'"$REDO_BASE/"'#g' )
+# Redo 
+#redo-ifchange $( echo "$paths" | gsed 's#^\(\.\/\)\?#'"$REDO_BASE/"'#g' )
 
 test ! -e "$1" -o -s "$1" || rm "$1"
 
 # Pass filename to build routine
 (
-  util_mode=boot scriptpath=$REDO_BASE . $REDO_BASE/util.sh
+  U_S=$REDO_BASE . $REDO_BASE/tools/sh/init.sh
 
   scriptname="do:$REDO_PWD:$1" && {
     test -n "$docid" -a -n "$paths" || {
       error "'$docid' <$paths>" 1 ;
     } ; } &&
   cd "$REDO_BASE" &&
-  lib_load build &&
+  lib_load build-htd && lib_init && build_init &&
   build_lib_func_list $paths >"$REDO_BASE/$REDO_PWD/$3"
 )
 

@@ -29,6 +29,7 @@ test -n "$scriptname" || scriptname="$(basename "$0")"
 SCRIPTPATH_=$scriptpath
 SCRIPTPATH_=$SCRIPTPATH_:$U_S$sh_src_base
 # FIXME: remove CI env
+#SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/user-scripts/src/sh/lib
 SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe/commands
 SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe/contexts
 SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe

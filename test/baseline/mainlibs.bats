@@ -97,7 +97,7 @@ setup()
 
   run bash -c "$(cat <<EOM
 
-__load_mode=boot source $scriptpath/tools/sh/init.sh &&
+U_S=$BATS_PWD . $BATS_PWD/tools/sh/init.sh &&
 source '$main_inc' &&
 try_exec_func mytest_function
 EOM

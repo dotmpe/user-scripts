@@ -39,7 +39,7 @@ script_init()
 
       } || {
 
-        $LOG error "script" "Cannnot find script-init '$1'" "" 103 || return
+        $LOG error "script" "Cannnot find script-init to boot '$1' at <$script_util>" "" 103 || return
       }
     }
   }

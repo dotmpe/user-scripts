@@ -56,6 +56,7 @@ pathname() # PATH EXT...
     printf -- "$name\\n"
   }
 }
+
 # basepath: see pathname as alt. to basename for ext stripping
 
 # Simple iterator over pathname

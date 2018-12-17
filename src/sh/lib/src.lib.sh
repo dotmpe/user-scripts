@@ -138,6 +138,27 @@ grep_to_last() # 1:Grep 2:File-Path 3:Line
   last_line=$3
 }
 
+
+# Truncate whole, trailing or middle lines of file.
+file_truncate_lines() # 1:file [2:start_line=0 [3:end_line=]]
+{
+  test -f "$1" || error "file-truncate-lines FILE '$1'" 1
+  test -n "$2" && {
+    cp $1 $1.tmp
+    test -n "$3" && {
+      {
+        head -n $2 $1.tmp
+        tail -n +$(( $3 + 1 )) $1.tmp
+      } > $1
+    } || {
+      head -n $2 $1.tmp > $1
+    }
+    rm $1.tmp
+  } || {
+    printf -- "" > $1
+  }
+}
+
 get_lines()
 {
   test -n "$*" || error "arguments required" 1

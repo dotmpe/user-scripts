@@ -5,13 +5,13 @@
 function_linenumber() # Func-Name File-Path
 {
   test -n "$1" -a -e "$2" || error "function-linenumber FUNC FILE" 1
-  file_where_grep "^$1()\(\ {\)\?\(\ \#.*\)\?$" "$2" || return
+  file_where_grep "^$1()\(\ {\)\?\(\ \#.*\)\?\(.* }\)\?$" "$2" || return
   test -n "$line_number" || {
     error "No line-nr for '$1' in '$2'"
     return 1
   }
 }
-# empty
+# function-linenumber <func-name> <file-path> #6706f73679dcb
 
 
 # Set start-line, end-line and span-lines for Sh function ( end = start + span )
@@ -68,7 +68,7 @@ copy_paste_function() # Func-Name Src-File
   test -n "$1" -a -f "$2" ||
       error "copy-paste-function: Func-Name File expected " $?
   debug "copy_paste_function '$1' '$2' "
-  var_isset copy_only || copy_only=1
+  sh_isset copy_only || copy_only=1
   test -n "$cp" || {
     test -n "$cp_board" || cp_board="$(get_uuid)"
     test -n "$ext" || ext="$(filenamext "$2")"
@@ -113,4 +113,9 @@ function_copy_pase()
   test -f "$2" -a -n "$1" -a -z "$3" || error "usage: FUNC FILE" 1
   copy_paste_function "$1" "$2"
   note "Moved function $1 to $cp"
+}
+
+parse_func_annotation()
+{
+  cat
 }

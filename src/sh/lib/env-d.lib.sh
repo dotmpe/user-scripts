@@ -37,8 +37,6 @@ make_lookup_path='$(wildcard
   test -e "$UCONF/etc/env.d"
 }
 
-fnmatch() { case "$2" in "$1" ) return;; * ) return 1;; esac; }
-
 env_d_append()
 {
   env_d_mk="$env_d_mk.$(cat)"

@@ -16,9 +16,9 @@ list_functions() # Sh-Files...
 {
   try_value list_functions_head || true
   trueish "$list_functions_scriptname" && {
-    grep '^\s*[A-Za-z0-9_\/-]*().*$' $1 | sed "s#^#$1 #"
+    grep '^[A-Za-z0-9_\/-]*().*$' $1 | sed "s#^#$1 #"
   } || {
-    grep '^\s*[A-Za-z0-9_\/-]*().*$' $1
+    grep '^[A-Za-z0-9_\/-]*().*$' $1
   }
   try_value list_functions_tail || true
   return 0
@@ -48,7 +48,7 @@ functions_list() # (ls-func|list-func(tions)) [ --(no-)list-functions-scriptname
 {
   test -z "$2" || {
     # Turn on scriptname output prefix if more than one file is given
-    var_isset list_functions_scriptname || list_functions_scriptname=1
+    sh_isset list_functions_scriptname || list_functions_scriptname=1
   }
   list_functions_foreach "$@"
 }
@@ -102,7 +102,7 @@ functions_cmdnames()
 
 functions_calls()
 {
-  lib_load build # XXX: for sh-calls, move to sep. lib later
+  lib_load build-htd # XXX: for sh-calls, move to sep. lib later
 
   functions_list "$@" | sed 's/().*$//g' | while read -r func
   do

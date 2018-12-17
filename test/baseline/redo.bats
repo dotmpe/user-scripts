@@ -159,7 +159,7 @@ type lib_load || echo no lib load
 echo scriptpath=$scriptpath SCRIPTPATH=$SCRIPTPATH
 echo sys_lib_loaded=$sys_lib_loaded
 echo package_lib_loaded=$package_lib_loaded
-scriptpath=$BATS_CWD . $BATS_CWD/util.sh
+scriptpath=$BATS_CWD . $BATS_CWD/tools/sh/init.sh
 export scriptpath
 ' ;
   } > foo.do
@@ -171,7 +171,7 @@ type lib_load || echo no lib load
 echo scriptpath=$scriptpath SCRIPTPATH=$SCRIPTPATH
 echo sys_lib_loaded=$sys_lib_loaded
 echo package_lib_loaded=$package_lib_loaded
-scriptpath=$BATS_CWD . $BATS_CWD/util.sh
+scriptpath=$BATS_CWD . $BATS_CWD/tools/sh/init.sh
 ' ;
   } > bar.do
 

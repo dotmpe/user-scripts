@@ -343,6 +343,25 @@ settitle()
 	fi
 }
 
+# Return 1 if env was provided, or 0 if default was set
+default_env() # VAR-NAME DEFAULT-VALUE
+{
+  test -n "$1" -a $# -eq 2 || error "default-env requires two args ($*)" 1
+  local vid= sid= id=
+  trueish "$title" && upper= || {
+    test -n "$upper" || upper=1
+  }
+  mkvid "$1"
+  mksid "$1"
+  unset upper
+  test -n "$(eval echo \$$vid)" || {
+    debug "No $sid env ($vid), using '$2'"
+    eval $vid="$2"
+    return 0
+  }
+  return 1
+}
+
 
 rnd_passwd()
 {

@@ -1,2 +1,8 @@
 test/*/*.tap
 build-check
+*.tmp
+.cllct/src/scm-status
+.cllct/src/*.list
+.cllct/src/*.func-list
+.cllct/src/functions/*/*.func-deps
+.cllct/src/*.lib-deps

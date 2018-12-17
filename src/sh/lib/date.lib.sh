@@ -219,6 +219,7 @@ touch_ts() # ( DATESTR | TIMESTAMP | FILE ) FILE
 {
   test -n "$2" || set -- "$1" "$1"
   touch -t "$(timestamp2touch "$1")" "$2"
+}
 
 # Print fractional seconds since Unix epoch
 epoch_microtime() { $gdate +"%s.%N"; }

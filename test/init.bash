@@ -14,6 +14,7 @@ test_env_init()
 
   test -n "$scriptpath" || scriptpath=$(pwd -P)/src/sh/lib
   test -n "$script_util" || script_util=$(pwd -P)/tools/sh
+
   test -n "$testpath" || testpath=$(pwd -P)/test
 
   export LOG=$script_util/log.sh
@@ -63,6 +64,8 @@ init() # ( 0 | 1 1 1 1 )
     test "$3" = "0" || init_sh_boot='std test'
     test "$4" = "0" || init_sh_boot=$init_sh_boot' script'
   }
+
+  load_init_bats
 
 # FIXME: deal with sub-envs wanting to know about lib-envs exported by parent
 # ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
@@ -135,22 +138,22 @@ bats_dynamic_include_path()
     } || {
 
       for bats_path in "$BATS_TEST_DIRNAME" "$BATS_CWD"
-
       do
         test -d "$bats_path/$path_default" || continue
         BATS_LIB_PATH="$BATS_LIB_PATH:$bats_path/$path_default"
       done
     }
   done
-
-  unset bats_basedirs
 }
 
-test -n "$BATS_LIB_PATH" || bats_dynamic_include_path
-
-test -n "$BATS_LIB_EXTS" || BATS_LIB_EXTS=.bash\ .sh
-test -n "$BATS_VAR_EXTS" || BATS_VAR_EXTS=.txt\ .tab
-test -n "$BATS_LIB_DEFAULT" || BATS_LIB_DEFAULT=load
+load_init_bats()
+{
+  test -n "$BATS_LIB_PATH" || bats_dynamic_include_path
+  
+  test -n "$BATS_LIB_EXTS" || BATS_LIB_EXTS=.bash\ .sh
+  test -n "$BATS_VAR_EXTS" || BATS_VAR_EXTS=.txt\ .tab
+  test -n "$BATS_LIB_DEFAULT" || BATS_LIB_DEFAULT=load
+}
 
 load() # ( PATH | NAME )
 {
