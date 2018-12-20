@@ -1,6 +1,7 @@
 #!/bin/sh
 
-. ./tools/ci/util.sh
+# XXX: . ./tools/ci/util.sh
+
 
 export_stage before-install before_install
 
@@ -45,7 +46,6 @@ echo "Shell: $SHELL"
 echo "Shell-Options: $-"
 echo "Shell-Level: $SHLVL"
 
-
 echo "Travis Branch: $TRAVIS_BRANCH"
 echo "Travis Commit: $TRAVIS_COMMIT"
 echo "Travis Commit Range: $TRAVIS_COMMIT_RANGE"
@@ -59,6 +59,13 @@ echo "User Conf: $(cd ~/.conf && git describe --always)" || true
 echo "User Composer: $(cd ~/.local/composer && git describe --always)" || true
 echo "User Bin: $(cd ~/bin && git describe --always)" || true
 echo "User static lib: $(find ~/lib )" || true
+echo
+echo "Script-Path:"
+echo "$SCRIPTPATH" | tr ' ' '\n'
+echo "Script-Name: $scriptname"
+echo "Verbosity: $verbosity"
+echo "Color-Scheme: $CS"
+echo "Debug: $DEBUG"
 echo
 echo '---------- Listing user checkouts'
 for x in $HOME/build/*/

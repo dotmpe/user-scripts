@@ -93,19 +93,18 @@ setup()
 
   run $SHELL -c "$script_util/init.sh"
 
-  #skip FIXME cleanup
+  load stdtest
 
   run bash -c "$(cat <<EOM
 
-U_S=$BATS_PWD . $BATS_PWD/tools/sh/init.sh &&
+U_S=$BATS_CWD . $BATS_CWD/tools/sh/init.sh &&
 source '$main_inc' &&
 try_exec_func mytest_function
 EOM
     )"
   diag "Output: ${lines[0]}"
   {
-    test $status -eq 0 &&
-    fnmatch "mytest" "${lines[*]}"
+    test $status -eq 0 && fnmatch "mytest" "${lines[*]}"
   } || stdfail 3.
 }
 

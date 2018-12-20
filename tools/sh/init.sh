@@ -38,8 +38,8 @@ test -n "$script_env" || {
     script_env=$U_S$sh_util_base/user-env.sh
 }
 
+$INIT_LOG "info" "" "Loading user-script env..." "$script_env"
 . "$script_env"
-
 
 # Now include module loader with `lib_load`, setup by hand
 . $scriptpath/lib.lib.sh

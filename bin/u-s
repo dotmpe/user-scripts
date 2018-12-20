@@ -169,7 +169,6 @@ main()
 . "$(dirname "$(realpath "$0")")/../tools/sh/u-s-env.sh"
 
 . $U_S/tools/sh/init.sh
-
 lib_init
 
 main "$@"

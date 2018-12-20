@@ -14,6 +14,12 @@ script_lib_init()
   test -n "$LOG" -a -x "$LOG" && script_log=$LOG || script_log=$PWD/tools/sh/log.sh
 }
 
+script_lib_init_()
+{
+  script_lib_init
+  $script_log warn "" "Delayed script-log init, check lib-init!"
+}
+
 scripts_init()
 {
   test $# -gt 0 || return
@@ -26,6 +32,7 @@ scripts_init()
 
 script_init()
 {
+  test -n "$script_log" || script_lib_init_
   test -f "$1" && {
 
     $script_log info "script" "Bootstrapping from '$1'"

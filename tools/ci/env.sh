@@ -105,5 +105,7 @@ esac
 
 . ./tools/sh/parts/print-color.sh
 
+. ./tools/ci/parts/util.sh
+
 
 print_yellow "ci:env" "Starting: $0 '$*'" >&2
