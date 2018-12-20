@@ -23,4 +23,11 @@ not_trueish()
   trueish "$1" && return 1 || return 0
 }
 
+. ./tools/sh/parts/print-color.sh
+
+# XXX: merge .init.sh vestiges, split up parts; . ./tools/ci/env.sh
+
+
+print_yellow "ci:util" "Loaded"
+
 #

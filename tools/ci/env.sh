@@ -1,14 +1,4 @@
 #!/bin/ash
-# XXX: usr/bin/env bash
-
-#set -o nounset Travis errrors?
-set -o pipefail
-set -o nounset
-set -o errexit
-
-# NOTE: set default bash-profile (affects other Shell scripts)
-#test -n "${BASH_ENV:-}" ||
-. "${BASH_ENV:=tools/sh/env.sh}"
 
 
 fnmatch() { case "$2" in $1 ) return;; * ) return 1;; esac; }
@@ -32,42 +22,14 @@ req_subcmd() # Alt-Prefix [Arg]
   }
   test -n "$altpref" || return
 
-  subcmd="$altpref$1"
+  subcmd="$altpref$subcmd"
   type "$subcmd" 2>/dev/null >&2 && {
     eval ${prefid}subcmd=$subcmd
     return
   }
+
+  $LOG error "ci:env" "No subcmd for '$2'"
   return 1
-}
-
-case "$uname" in
-  Darwin )  export gdate=gdate gsed=gsed ggrep=ggrep ;;
-  Linux )   export gdate=date gsed=sed ggrep=grep ;;
-esac
-
-c_normal="$(tput sgr0)"
-c_black="$(tput setaf 0)"
-c_red="$(tput setaf 1)"
-c_green="$(tput setaf 2)"
-c_yellow="$(tput setaf 3)"
-#c_blue="$(tput setaf 4)"
-#c_purple="$(tput setaf 5)" # magenta
-c_bold="$(tput bold)"
-c_default="$(tput setaf 7)"
-print_red()
-{
-  test -n "$1" || set -- "$scriptname" "$2"
-  printf "%s[%s%s%s] %s%s%s\n" "$c_red" "$c_default" "$1" "$c_red" "$c_default" "$2" "$c_normal"
-}
-print_yellow()
-{
-  test -n "$1" || set -- "$scriptname" "$2"
-  printf "%s[%s%s%s] %s%s%s\n" "$c_yellow" "$c_default" "$1" "$c_yellow" "$c_default" "$2" "$c_normal"
-}
-print_green()
-{
-  test -n "$1" || set -- "$scriptname" "$2"
-  printf "%s[%s%s%s] %s%s%s\n" "$c_green" "$c_default" "$1" "$c_green" "$c_default" "$2" "$c_normal"
 }
 
 req_usage_fail()
@@ -80,37 +42,68 @@ req_usage_fail()
 
 main_() # [Base] [Cmd-Args...]
 {
+  export TEST_ENV package_build_tool
+
   local main_ret= base="$1" ; shift 1
   test -n "$base" || base="$(basename "$0" .sh)"
 
   test $# -gt 0 || set -- default
   req_usage_fail || return
-  req_subcmd "$base-" "$1" || usage-fail "$@"
+  req_subcmd "$base-" "$1" || usage-fail "$base: $*"
 
   shift 1
   eval \$${prefid}subcmd "$@" || main_ret=$?
-  unset subcmd ${prefid}subcmd prefid
+  unset ${prefid}subcmd prefid
 
   return $main_ret
 }
 
 main_test_() # Test-Cat [Cmd-Args...]
 {
-  local ret= testcat="$1" ; shift 1
-  local main_test_ret=
+  export TEST_ENV package_build_tool
+
+  local main_test_ret= testcat="$1" ; shift 1
+  test -n "$testcat" || testcat=$(basename "$0" .sh)
 
   test $# -gt 0 || set -- all
   req_usage_fail || return
-  req_subcmd "test-$testcat-" "$1" || usage-fail "$@"
+  req_subcmd "$testcat-" "$1" || usage-fail "test: $testcat: $*"
 
   shift 1
-  eval \$${prefid}subcmd "$@" || main_test_ret=$?
-  unset subcmd ${prefid}subcmd prefid
+  eval \$${prefid}subcmd \"\$@\" || main_test_ret=$?
+  unset ${prefid}subcmd prefid
 
   test -z "$main_test_ret" && print_green "" "OK" || {
     print_red "" "Not OK"
     return $main_test_ret
   }
 }
+
+
+#XXX: Travis errors? tools/sh/parts/env.sh
+#set -o pipefail
+#set -o nounset
+#set -o errexit
+
+
+. "${USER_ENV:=tools/sh/env.sh}"
+
+# FIXME: make
+: "${package_build_tool:=redo}"
+: "${TEST_ENV:=$ci_util/env.sh}"
+
+# NOTE: set default bash-profile (affects other Shell scripts)
+#: "${BASH_ENV:=$USER_ENV}"
+export USER_ENV BASH_ENV
+
+
+case "$uname" in
+  Darwin )  export gdate=gdate gsed=gsed ggrep=ggrep ;;
+  Linux )   export gdate=date gsed=sed ggrep=grep ;;
+esac
+
+
+. ./tools/sh/parts/print-color.sh
+
 
 print_yellow "ci:env" "Starting: $0 '$*'" >&2

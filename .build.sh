@@ -34,7 +34,7 @@ check()
 
 baselines()
 {
-  negatives-precheck || test/base.sh all
+  negatives-precheck && test/base.sh all
 }
 
 build()
@@ -65,13 +65,13 @@ clean()
   #}
 }
 
-bats-negative()
+run-negative()
 {
 	set -- test/baseline/bats-negative.tap
 	# Build test report and discard return-status since we invert check
-	$package_build_tool "$1" || true
-	# Match on any success; not any failure; return un-inverted status
-	grep '^OK\ ' "$1"
+  $package_build_tool "$1" || true
+	# Match on any success; not any failure
+	grep '^OK\ ' "$1" && false || true
 }
 
 # Run 'negatives' from baseline suite. Expect only error states or abort
@@ -111,6 +111,6 @@ all()
 
 # Main
 
-type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+. "${TEST_ENV:=tools/ci/env.sh}"
 # Fallback func-name to init namespace to avoid overlap with builtin names
 main_ "run" "$@"

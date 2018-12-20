@@ -3,20 +3,21 @@
 base=project-baseline
 
 
-setup()
-{
-  export LOG=$PWD/tools/sh/log.sh
-  export CS=dark
-}
+@test "$base: init.sh setup" {
 
+  run . ./tools/sh/init.sh
+  test $status -eq 0 && test -z "${lines[*]}"
 
-@test "init.sh setup" {
-
+  # Again, no harnass.
   . ./tools/sh/init.sh
 }
 
-@test "u-s run" {
+@test "$base: u-s run" {
 
+  run ./bin/u-s help
+  test $status -eq 0 && test -n "${lines[*]}"
+
+  # Again, no harnass.
   ./bin/u-s help
 }
 

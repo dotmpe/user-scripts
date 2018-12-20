@@ -2,7 +2,7 @@
 # See .travis.yml
 
 # XXX: Travis CI: /home/travis/.travis/job_stages: line 1
-# Tetsing deinit.sh to allow better feedback for Shell tools/ and lib DUTs.
+# Testing deinit.sh to allow better feedback for Shell tools/ and lib DUTs.
 
 export uname=${uname:-$(uname -s)}
 
@@ -16,8 +16,8 @@ export guniq=${guniq:-uniq}
 
 . $PWD/tools/sh/parts/env.sh
 
-set -e
-
-set +o pipefail &&
-set +o errexit &&
-set +o nounset
+#set -e
+#
+#set +o pipefail &&
+#set +o errexit &&
+#set +o nounset

@@ -20,9 +20,16 @@ lint-bats()
 
 lint-tags()
 {
-  # TODO: forbid only one tag... Should setup degrees of tags allowed per branch-line
-  { git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' && return 1 || true
-  } >&2
+  test -z "$*" && {
+    # TODO: forbid only one tag... setup degrees of tags allowed per release
+
+    { git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' "$@" && return 1 || true
+    } >&2
+  } || {
+
+    { git grep '\(XXX\|FIXME\|TODO\):' "$@" && return 1 || true
+    } >&2
+  }
 }
 
 # Groups
@@ -46,6 +53,6 @@ all()
 
 # Main
 
-type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+. "${TEST_ENV:=tools/ci/env.sh}"
 
-main_test_ "$(basename "$0" .sh)" "$@"
+main_test_ "" "$@"

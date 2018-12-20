@@ -11,29 +11,18 @@ BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
 
 # Always from the right dir.. realpath would help, but not depending on that.
 test -n "$U_S" || {
-  U_S_="$(dirname "$(dirname "$0")")"
-  test "$(basename "$U_S_")" = ".git" && {
-
-    U_S="$(dirname "$U_S_")"
-
-  } || {
-    test "$(basename "$U_S_")" = "git" && {
-      U_S="$(dirname "$(dirname "$U_S_")")"
-    } || {
-
-      exit 1
-    }
-  }
-  unset U_S_
+  U_S="$(dirname "$(dirname "$(dirname "$0")")")"
 }
 
-# Load lib-env
-. $U_S/tools/sh/init.sh
-lib_init
+# XXX: Load lib-env for GIT hook
+#. "${TEST_ENV:=tools/sh/env.sh}"
+. "${TEST_ENV:=tools/ci/env.sh}"
+
+#. $U_S/tools/sh/init.sh
+#lib_init
 
 # TODO: some source-code checks
-
-# 
+#
 
 # Compare to-be committed against HEAD or emty for initial commit
 
@@ -46,7 +35,7 @@ else
 fi
 
 # Use config hooks.allownonascii to configure this check
-allownonascii=$(git config --bool hooks.allownonascii)
+allownonascii=$(git config --bool hooks.allownonascii) || true
 
 # Redirect output to stderr.
 exec 1>&2
@@ -76,7 +65,7 @@ EOF
 fi
 
 # If there are whitespace errors, print the offending file names and fail.
-exec git diff-index --check --cached $against --
+git diff-index --check --cached $against --
 
 
 # TODO: setup libs to pre-commit whitespace, lint, etc. checks. Then
@@ -86,3 +75,5 @@ exec git diff-index --check --cached $against --
 # scriptpath=$(git get repo basedir) . .build/init.sh
 # lib_load vc && .build/check.sh $(vc_staged)
 
+# XXX: @current warn on tag in tools, after cleanup track src too
+./test/lint.sh tags tools || true

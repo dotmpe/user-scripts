@@ -3,6 +3,8 @@
 test -n "$UCACHE" || UCACHE=$HOME/.cache/local
 test -d "$UCACHE/user-env" || mkdir -p "$UCACHE/user-env"
 
+test -n "$LOG" -a -x "$LOG" && INIT_LOG=$LOG || INIT_LOG=$PWD/tools/sh/log.sh
+
 test -n "$BASH" -a \( "$BASH" != "/bin/sh" \) && IS_BASH=1 || IS_BASH=0
 
 # To be sourced with "$@" pattern
@@ -89,6 +91,6 @@ __isenv()
 
 . "$script_util/parts/env-scriptpath.sh"
 
-$LOG debug user-env "Script-Path:" "$SCRIPTPATH"
+$INIT_LOG debug user-env "Script-Path:" "$SCRIPTPATH"
 
 # Id: user-scripts/0.0.2-dev tools/sh/user-env.sh

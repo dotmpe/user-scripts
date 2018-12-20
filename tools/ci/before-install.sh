@@ -4,14 +4,17 @@
 
 export_stage before-install before_install
 
-# XXX: cleanup
+# XXX: split-out sh & ci env, init and check stanza's to parts files
 
   # Leave loading env parts to sh/env, but sets may diverge..
   # $script_util/parts/env-*.sh
   # $ci_util/parts/env-*.sh
 script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
 
-. $ci_util/parts/init.sh
+# Get checkouts, tool installs and rebuild env (PATH etc.)
+. $ci_util/parts/install.sh &&
+script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
+
 
 echo '---------- Check for sane GIT state'
 

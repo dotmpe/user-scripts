@@ -21,6 +21,13 @@ check()
 all()
 {
   print_yellow "" "unit: all scripts..." >&2
+
+  # FIXME: rebuild TAP repors based on changed prereq. only
+
+  type lib_load >/dev/null 2>&1 || . "$script_util/init.sh"
+  lib_load build
+  lib_init
+
   build_tests bats tap test/unit/*.bats | while read -r tap
   do
     build $tap || true
@@ -32,6 +39,6 @@ all()
 
 # Main
 
-type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+. "${TEST_ENV:=tools/ci/env.sh}"
 
 main_test_ "$(basename "$0" .sh)" "$@"

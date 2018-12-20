@@ -28,6 +28,6 @@ all()
 
 # Main
 
-type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+. "${TEST_ENV:=tools/ci/env.sh}"
 
 main_test_ "$(basename "$0" .sh)" "$@"

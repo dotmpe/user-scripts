@@ -93,7 +93,7 @@ setup()
 
   run $SHELL -c "$script_util/init.sh"
 
-  skip FIXME cleanup
+  #skip FIXME cleanup
 
   run bash -c "$(cat <<EOM
 

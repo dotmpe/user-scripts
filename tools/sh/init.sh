@@ -2,6 +2,10 @@
 
 # This is for sourcing into a standalone or other env boot/init script (ie. CI)
 
+# NOTE: /bin/sh =/= Sh b/c BASH_ENV... sigh. Oh well, *that* works. Now this:
+test -z "$BASHOPTS" || set +o nounset # die-bash-die
+
+
 # U_S=<...> . <script_util>/init.sh
 
 # It requires a path to the basedir of the project to boot with. Containing:
@@ -15,6 +19,8 @@
 
 # init_sh_libs ?= sys os str
 # init_sh_boot ?= stderr-console-logger
+
+test -n "$LOG" -a -x "$LOG" && INIT_LOG=$LOG || INIT_LOG=$PWD/tools/sh/log.sh
 
 test -n "$U_S" || U_S=$(pwd -P)
 
@@ -38,17 +44,19 @@ test -n "$script_env" || {
 # Now include module loader with `lib_load`, setup by hand
 . $scriptpath/lib.lib.sh
 lib_lib_load && lib_lib_loaded=1 ||
-  $LOG "error" "init.sh" "Failed at lib.lib $?" "" 1
+  $INIT_LOG "error" "init.sh" "Failed at lib.lib $?" "" 1
 
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
 test "$init_sh_libs" = "0" || {
+  test -n "$LOG" || LOG=$INIT_LOG
+
   test -n "$init_sh_libs" -a "$init_sh_libs" != "1" ||
     init_sh_libs=sys\ os\ str\ script
 
   lib_load $init_sh_libs ||
-    $LOG "error" "init.sh" "Failed at loading libs '$init_sh_libs' $?" "" 1
+    $INIT_LOG "error" "init.sh" "Failed at loading libs '$init_sh_libs' $?" "" 1
 
 
   test -n "$init_sh_boot" || init_sh_boot=1
@@ -58,8 +66,10 @@ test "$init_sh_libs" = "0" || {
   }
 
   scripts_init $init_sh_boot ||
-    $LOG "error" "init.sh" "Failed at bootstrap '$init_sh_boot' $?" "" 1
+    $INIT_LOG "error" "init.sh" "Failed at bootstrap '$init_sh_boot' $?" "" 1
 
 }
+
+unset INIT_LOG
 
 # Id: user-scripts/0.0.0-dev tools/sh/init.sh

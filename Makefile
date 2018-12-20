@@ -1,6 +1,6 @@
 BASH := $(shell which bash)
 export SHELL=$(BASH)
-export TEST_ENV=tools/ci/env.sh
+export BASH_ENV=tools/ci/env.sh
 
 MAKEFLAGS += --no-builtin-rules
 #MAKEFLAGS += --no-builtin-variables

@@ -17,7 +17,7 @@ default_main()
   export TEST_ENV
 
   : "${scriptname:=redo}"
-  #fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
+  # XXXX: fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
   #export scriptname=$scriptname:$1
 
   case "$1" in
