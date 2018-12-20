@@ -1,22 +1,32 @@
 #!/usr/bin/env bash
 #
-# Provisining and project init helpers
-#
-# Usage:
-#   .init.sh <function name>
+# Provisioning and project init helpers
 
-set -o nounset
-set -o pipefail
-set -o errexit
+usage()
+{
+  echo 'Usage:'
+  echo '  ./tools/sh/parts/init.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 init-git()
 {
-  which git || return
+  test -x "$(which git)" || return
+  init-git-hooks || return
+  init-git-submodules || return
+}
+
+init-git-hooks()
+{
   test -e .git/hooks/pre-commit || {
     rm .git/hooks/pre-commit || true
     ln -s ../../tools/git/hooks/pre-commit.sh .git/hooks/pre-commit || return
   }
+}
+
+init-git-submodules()
+{
   test -e .git/modules || {
     git submodule update --init || return
   }
@@ -25,7 +35,8 @@ init-git()
 check-git()
 {
   test -x "$(which git)" || return
-  test -h .git/hooks/pre-commit && test -d .git/modules
+  test -h .git/hooks/pre-commit &&
+  test -d .git/modules
 }
 
 init-basher()
@@ -46,7 +57,7 @@ init-redo()
 check-redo()
 {
   local r=''
-  which redo || return
+  test -x "$(which redo)" || return
   redo -h 2>/dev/null || r=$?
   test "$r" = "97" || init-err "redo:-h:err:$r"
   # Must not be in parent dir, or targets become mixed with other projects, and harder to track
@@ -56,7 +67,7 @@ check-redo()
 
 init-bats()
 {
-  echo "Installing bats"
+  $LOG info "" "Installing bats..."
 
   : "${BATS_VERSION:=master}"
   : "${BATS_REPO:="https://github.com/bats-core/bats-core.git"}"
@@ -85,17 +96,18 @@ check-bats()
 
 check-github-release()
 {
-  github-release -V >/dev/null
+  github-release --version >/dev/null
 }
 
 init-github-release()
 {
-  npm install -g github-release-cli
+  go get github.com/aktau/github-release
 }
 
 init-err()
 {
-  echo "init: Error $*" >&2
+  $LOG error "" "failed during init" "$*"
+  print_red "sh:init" "failed at '$*'" >&2
   exit 1
 }
 
@@ -126,16 +138,23 @@ default()
 
 all()
 {
-  init-git || return
+  init-git || init-err git $?
 
-  which github-release || { init-github-release || return; }
-  which basher || { init-basher || return; }
-  which redo || { init-redo || return; }
+  # XXX which github-release >/dev/null || {
+  test -x "$(which github-release)" || {
+    init-github-release || init-err github-release $?
+  }
+  test -x "$(which basher)" || {
+    init-basher || init-err basher $?
+  }
+  test -x "$(which redo)" || {
+    init-redo || init-err redo $?
+  }
 
   BATS_VERSION_="$(bats --version)"
-  { which bats && fnmatch "Bats 1.1.*" "$BATS_VERSION_"
+  { test -x "$(which bats)" && fnmatch "Bats 1.1.*" "$BATS_VERSION_"
   } || {
-    echo "Found $BATS_VERSION_, getting 1.1"
+    $LOG warn "" "Found $BATS_VERSION_, getting 1.1..."
     PREFIX=$HOME/.local init-bats || return
   }
 
@@ -146,7 +165,7 @@ all()
   do
     test -d $VND_GH_SRC/ztombol/$helper || {
       mkdir -vp "$VND_GH_SRC/ztombol"
-      echo "Adding test-helper $helper..."
+      $LOG info "" "Adding test-helper $helper..."
       git clone --depth 15 \
         https://github.com/ztombol/$helper.git $VND_GH_SRC/ztombol/$helper ||
         return
@@ -155,13 +174,8 @@ all()
 }
 
 
-# XXX: Map to namespace to avoid overlap with builtin names
+# Main
 
-test $# -gt 0 || set -- default
-
-act="$1" ; case "$1" in git ) shift 1 ; set -- init-$act "$@" ;; esac
-unset act
-
-type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-tools/ci/env.sh}"
-
-"$@"
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+# Fallback func-name to init namespace to avoid overlap with builtin names
+main_ "init" "$@"

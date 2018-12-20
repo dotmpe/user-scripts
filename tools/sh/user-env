@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# To be sourced with "$@" pattern
-
-#tools/sh/user-env
-
-. $USD/tools/sh/user-env.sh

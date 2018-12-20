@@ -11,13 +11,10 @@ test_env_init()
     scriptname=$scriptname:test:$base ||
     scriptname=test:$base
   test -n "$uname" || uname=$(uname)
-
   test -n "$scriptpath" || scriptpath=$(pwd -P)/src/sh/lib
   test -n "$script_util" || script_util=$(pwd -P)/tools/sh
-
+  test -n "$LOG" || export LOG=$script_util/log.sh
   test -n "$testpath" || testpath=$(pwd -P)/test
-
-  export LOG=$script_util/log.sh
 
   # XXX: relative path to templates/fixtures?
   SHT_PWD="$( cd $BATS_CWD && realpath $BATS_TEST_DIRNAME )"
@@ -73,6 +70,17 @@ init() # ( 0 | 1 1 1 1 )
   LIB_SRC=
   . $script_util/init.sh || return
 
+}
+
+# Non-bats initialize to access helper libs 'load'
+load_init()
+{
+  test -n "$TMPDIR" || TMPDIR=/tmp
+  BATS_TMPDIR=$TMPDIR/bats-temp-$(get_uuid)
+  BATS_CWD=$PWD
+  BATS_TEST_DIRNAME=$PWD/test
+  load_init_bats
+#  test "$PWD" = "$scriptpath"
 }
 
 

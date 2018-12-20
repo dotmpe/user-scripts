@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 #
 # System, integration and acceptance tests </doc/dev/ci>
-#
-# Usage:
-#   ./lint.sh <function name>
 
-set -o pipefail
-set -o errexit
-
-
-. ./tools/sh/init.sh
+usage()
+{
+  echo 'Usage:'
+  echo '  test/spec.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 # Groups
@@ -27,6 +25,9 @@ all()
   print_green "" "specs OK" >&2
 }
 
-test -n "$1" || set -- all
 
-"$@"
+# Main
+
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+
+main_test_ "$(basename "$0" .sh)" "$@"

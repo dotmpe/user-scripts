@@ -24,40 +24,23 @@ env:
   - VND_SRC_PREFIX=$HOME/build
   - VND_GH_SRC=$VND_SRC_PREFIX
   - SRC_PREFIX=$VND_SRC_PREFIX
-  - secure: enle3U9VEk9tkOgZLSzrOHRNQPAW/wHdC+0HfxjEAD70XUlpbrIJxRx9fX37E8+whj6KefNNw+B5L9dj8TTie+dah01uIw8Ypl6QbjgI8AtGbxlXzRf9q0brEc/03dYMd6zE3Jd5xN13dadB4D/0vtmrn06hBZqYcEze6RYauHvUq6NMPcvN5CnLXmyDcFWplDfoBk9RDMmt1+ccAC176+Z777+aX03IGQkgMOjxBhKMd4pT+A/8GLpIDjTsBRCAmIhfDqMkkAXYI0epEbORssQRAOHfDXlUP6EMZIbih2YLLbt6RzxMBauqxhcPRRKPKDvNfK42cf2RfVqNsRuuTZJrFMLNTuEBJcAhrcIa9dGb8ttMXxyom3VhDSb4natW8hPKDFSTfDlPXQZRBjcUC0I+NehIHLaX2umfKAWCopADYCmGbadMX2GBoDKUbTKFFuXpAJSel4umZZtR66Kyiq63w09gRVbRI86A4Wr2yBhZ7gs4Ey4LpCIql/v44tpbbt1FbHRyQ6+1ClVITucLG0aaCdDnPMhrHlkTZ7RnNd+wQZsE3cgUgkeGXlbahTrn2pmKetjzQnPwXF/KgcZlcyhkeJIaQZxLZ+rzlpaO6iILOmmYutAnzzLYUKponPjNUm45wIet1Hjgw771AOeGRMm/unQoQB2bIYhcbsLMxsM=
+  - secure: "enle3U9VEk9tkOgZLSzrOHRNQPAW/wHdC+0HfxjEAD70XUlpbrIJxRx9fX37E8+whj6KefNNw+B5L9dj8TTie+dah01uIw8Ypl6QbjgI8AtGbxlXzRf9q0brEc/03dYMd6zE3Jd5xN13dadB4D/0vtmrn06hBZqYcEze6RYauHvUq6NMPcvN5CnLXmyDcFWplDfoBk9RDMmt1+ccAC176+Z777+aX03IGQkgMOjxBhKMd4pT+A/8GLpIDjTsBRCAmIhfDqMkkAXYI0epEbORssQRAOHfDXlUP6EMZIbih2YLLbt6RzxMBauqxhcPRRKPKDvNfK42cf2RfVqNsRuuTZJrFMLNTuEBJcAhrcIa9dGb8ttMXxyom3VhDSb4natW8hPKDFSTfDlPXQZRBjcUC0I+NehIHLaX2umfKAWCopADYCmGbadMX2GBoDKUbTKFFuXpAJSel4umZZtR66Kyiq63w09gRVbRI86A4Wr2yBhZ7gs4Ey4LpCIql/v44tpbbt1FbHRyQ6+1ClVITucLG0aaCdDnPMhrHlkTZ7RnNd+wQZsE3cgUgkeGXlbahTrn2pmKetjzQnPwXF/KgcZlcyhkeJIaQZxLZ+rzlpaO6iILOmmYutAnzzLYUKponPjNUm45wIet1Hjgw771AOeGRMm/unQoQB2bIYhcbsLMxsM="
 
 
 before_install:
-  - . ./tools/ci/util.sh
-  - export_stage before-install before_install && announce_stage
-  - . ./tools/ci/env.sh
+  - . ./tools/ci/before-install.sh
 
 install:
-  - export_stage install && announce_stage
-  - ./.build.sh init
-  - sh ./tools/ci/init.sh || echo err:$?
-  #- make init
+  - . ./tools/ci/install.sh
 
 before_script:
-  - export_stage before-script before_script && announce_stage
+  - . ./tools/ci/before.sh
 
 script:
-  - export_stage script && announce_stage
-  - . ./tools/ci/build.sh
-# Smoke run everything with make
-  #- make test/baseline/realpath.tap
-  #- make base
-  #- make lint
-  #- make units
-  #- make specs
-# Cleanup and run again wtih redo
-  #- git clean -dfx test/
-  #- redo
-
+  - . ./tools/ci/script.sh
 
 before_cache:
-  - export_stage before-cache before_cache && announce_stage
-  - rm -f $HOME/.cache/pip/log/debug.log
+  - . ./tools/ci/before-cache.sh
 
 cache:
   directories:
@@ -77,6 +60,7 @@ cache:
      - $HOME/build/apenwarr
      - $HOME/build/ztombol
     # NOTE: careful not to include repo-under-test
+     - $HOME/build/bvberkum/user-scripts-incubator
     # - $HOME/build/bvberkum/user-scripts
      - $HOME/build/user-tools/user-scripts
      - $HOME/build/user-tools/user-conf
@@ -88,15 +72,11 @@ cache:
 
 
 after_failure:
-  - export_stage failure && announce_stage
+  - . ./tools/ci/after-failure.sh
 after_success:
-  - export_stage success && announce_stage
+  - . ./tools/ci/after-success.sh
 after_script:
-  - export_stage after && announce_stage
-  - . ./tools/ci/parts/after.sh
-  - . ./tools/ci/parts/publish.sh
-  - announce "End of $scriptname"
-  - echo Done
+  - . ./tools/ci/after.sh
 
 
 matrix:

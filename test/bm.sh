@@ -2,15 +2,13 @@
 #
 # Additional test-runs with the intend to generate and collection further
 # profile information
-#
-# Usage:
-#   ./bm.sh <function name>
 
-set -o pipefail
-set -o errexit
-
-
-. ./tools/sh/init.sh
+usage()
+{
+  echo 'Usage:'
+  echo '  test/bm.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 # Groups
@@ -32,6 +30,9 @@ default()
   all
 }
 
-test -n "$1" || set -- default
 
-"$@"
+# Main
+
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+
+main_test_ "$(basename "$0" .sh)" "$@"

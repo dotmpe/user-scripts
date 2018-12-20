@@ -12,16 +12,13 @@ set -o errexit
 default_main()
 {
   export package_build_tool=redo
-  #scriptpath=$PWD
-  #script_util=$scriptpath/tools/sh
 
-  : "${BASH_ENV:=tools/ci/env.sh}"
-  . $BASH_ENV
-  export BASH_ENV
+  . "${TEST_ENV:=tools/ci/env.sh}"
+  export TEST_ENV
 
   : "${scriptname:=redo}"
   #fnmatch "*redo:*" "$scriptname" || scriptname=$scriptname:redo
-  export scriptname=$scriptname:$1
+  #export scriptname=$scriptname:$1
 
   case "$1" in
   
@@ -42,11 +39,11 @@ default_main()
 
 
     init )    
-              redo build-init build-check
+              redo build-init check
       ;;
   
     check )
-              redo build-check build-check
+              redo build-check
       ;;
   
     build ) 
@@ -111,5 +108,6 @@ EOM
   esac
 }
 
-#SCRIPTPATH= 
+# FIXME: user profile env
+unset SCRIPTPATH scriptpath script_util U_S LOG
 default_main "$@"

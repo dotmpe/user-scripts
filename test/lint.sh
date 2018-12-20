@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 #
 # Tools to maintain coding style standards </doc/dev/ci>
-#
-# Usage:
-#   ./lint.sh <function name>
 
-set -o pipefail
-set -o errexit
-
-
-. ./tools/sh/init.sh
+usage()
+{
+  echo 'Usage:'
+  echo '  test/lint.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 lint-bats()
@@ -45,6 +43,9 @@ all()
   check
 }
 
-test -n "$1" || set -- all
 
-"$@"
+# Main
+
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+
+main_test_ "$(basename "$0" .sh)" "$@"

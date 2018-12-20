@@ -1,49 +1,52 @@
 #!/usr/bin/env bash
 #
 # Run project tooling
-#
-# Usage:
-#   ./.build.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+usage()
+{
+  echo 'Usage:'
+  echo '  ./.build.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 init()
 {
-  test $# -gt 0 || set -- all
+  assert_nonzero "$@" || set -- all
+  ./tools/sh/parts/init.sh "$@" || return
 
-  ./.init.sh "$@" || false
-
-  echo "Running final checks..." >&2
-  ./.init.sh "default" >/dev/null
+  $LOG info "" "Running final checks..." >&2
+  ./tools/sh/parts/init.sh "default" >/dev/null
 }
 
 # Re-run init-checks (TODO or run if not yet run) and run over check part of
 # every test-suite.
 check()
 {
-  ./.init.sh check || return
-  run-test check || return
+  ./tools/sh/parts/init.sh check || {
+    $LOG error "" "sh:init check" "" 1 ; return 1; }
+
+  run-test check || {
+    $LOG error "" "test: check" "" 1; return 1; }
+
   print_green "" "build: check OK" >&2
 }
 
 baselines()
 {
-  negatives-precheck ||
-  test/base.sh all
+  negatives-precheck || test/base.sh all
 }
 
 build()
 {
-  false
+  true
 }
 
 run-test()
 {
-  test $# -gt 0 || set -- all
+  assert_nonzero "$@" || set -- all
 
+  print_yellow "" "build: run-test Starting '$*'... " >&2
   test/base.sh "$@" || return
   test/lint.sh "$@" || return
   test/unit.sh "$@" || return
@@ -84,7 +87,7 @@ negatives-precheck()
 
 pack()
 {
-  false
+  true
 }
 
 dist()
@@ -97,8 +100,7 @@ dist()
 
 default()
 {
-  init &&
-  check
+  init && check
 }
 
 all()
@@ -107,13 +109,8 @@ all()
 }
 
 
-test $# -gt 0 || set -- default
+# Main
 
-# XXX: Map to namespace to avoid overlap with builtin names
-act="$1" ;
-case "$1" in test ) shift 1 ; set -- run-$act "$@" ;; esac
-unset act
-
-type fnmatch >/dev/null 2>&1 || . "${BASH_ENV:-tools/ci/env.sh}"
-
-"$@"
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+# Fallback func-name to init namespace to avoid overlap with builtin names
+main_ "run" "$@"

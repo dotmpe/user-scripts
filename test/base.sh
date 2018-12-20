@@ -3,16 +3,12 @@
 # Baseline descriobes third-party components, dependencies, host.
 # For host/env prerequisites and checks see init and init-checks targets.
 
-# Usage:
-#   ./base.sh <function name>
-
-set -o pipefail
-set -o errexit
-
-
-. ./tools/sh/init.sh
-
-lib_load build
+usage()
+{
+  echo 'Usage:'
+  echo '  test/base.sh <function name>'
+}
+usage-fail() { usage && exit 2; }
 
 
 # Groups
@@ -40,6 +36,9 @@ all()
   grep -q '^NOT OK\ ' test/baseline/*.tap && false || true
 }
 
-test -n "$1" || set -- all
 
-"$@"
+# Main
+
+type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+
+main_test_ "$(basename "$0" .sh)" "$@"

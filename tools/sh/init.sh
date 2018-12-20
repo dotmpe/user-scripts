@@ -24,29 +24,15 @@ test -n "$sh_util_base" || sh_util_base=/tools/sh
 # Must be started from u-s project root or set before, or provide SCRIPTPATH
 test -n "$scriptpath" || scriptpath="$U_S$sh_src_base"
 test -n "$scriptname" || scriptname="$(basename "$0")"
-
-
-SCRIPTPATH_=$scriptpath
-SCRIPTPATH_=$SCRIPTPATH_:$U_S$sh_src_base
-# FIXME: remove CI env
-#SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/user-scripts/src/sh/lib
-SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe/commands
-SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe/contexts
-SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/script-mpe
-SCRIPTPATH_=$SCRIPTPATH_:$HOME/build/bvberkum/user-conf/script
-SCRIPTPATH_=$SCRIPTPATH_:$HOME/lib/sh
-
-test -n "$SCRIPTPATH" && {
-
-  SCRIPTPATH=$SCRIPTPATH_:$SCRIPTPATH
-} || {
-
-  SCRIPTPATH=$SCRIPTPATH_
-}
-unset SCRIPTPATH_
-export SCRIPTPATH
-
 test -n "$script_util" || script_util="$U_S$sh_util_base"
+
+test -n "$script_env" || {
+  test -e "$PWD$sh_util_base/user-env.sh" &&
+    script_env=$PWD$sh_util_base/user-env.sh ||
+    script_env=$U_S$sh_util_base/user-env.sh
+}
+
+. "$script_env"
 
 
 # Now include module loader with `lib_load`, setup by hand

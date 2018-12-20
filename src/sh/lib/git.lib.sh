@@ -84,4 +84,3 @@ git_src_get() # <user>/<repo>
     ln -vs "$VND_GH_SRC/$1" "$PROJECT_DIR/$name"
   }
 }
-

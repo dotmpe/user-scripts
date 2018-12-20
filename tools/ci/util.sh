@@ -15,3 +15,12 @@ announce()
 {
   echo "---------- $1 ($(date --iso=ns))"
 }
+
+# No error on empty, or not trueish match
+not_trueish()
+{
+  test -n "$1" || return 0
+  trueish "$1" && return 1 || return 0
+}
+
+#

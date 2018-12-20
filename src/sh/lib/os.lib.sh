@@ -459,6 +459,7 @@ go_to_dir_with()
 
 
 
+# Count lines with wc (no EOF termination correction)
 count_lines()
 {
   test -z "$1" -o "$1" = "-" && {
@@ -484,6 +485,57 @@ line_count()
   esac
   local lc=$(wc -l $1 | awk '{print $1}')
   echo $lc
+}
+
+# Count words
+count_words()
+{
+  test -z "$1" -o "$1" = "-" && {
+    wc -w | awk '{print $1}'
+  } || {
+    while test -n "$1"
+    do
+      wc -w $1 | awk '{print $1}'
+      shift
+    done
+  }
+}
+
+# Count every character
+count_chars()
+{
+  test -n "$1" && {
+    while test -n "$1"
+    do
+      wc -c $1 | awk '{print $1}'
+      shift
+    done
+  } || {
+    wc -w | awk '{print $1}'
+  }
+}
+
+# Count occurence of character each line
+count_char() # Char
+{
+  local ch="$1" ; shift
+  awk -F$ch '{print NF-1}' |
+      # strip -1 "error" for empty line
+      sed 's/^-1$//'
+}
+
+# Count tab-separated columns on first line. One line for each file.
+count_cols()
+{
+  test -n "$1" && {
+    while test -n "$1"
+    do
+      { printf '\t'; head -n 1 "$1"; } | count_char '\t'
+      shift
+    done
+  } || {
+    { printf '\t'; head -n 1; } | count_char '\t'
+  }
 }
 
 get_uuid()
