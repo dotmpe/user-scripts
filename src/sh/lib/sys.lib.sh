@@ -4,9 +4,14 @@
 
 sys_lib_load()
 {
-  test -n "$LOG" || return 102
   test -n "$uname" || uname="$(uname -s)"
   test -n "$hostname" || hostname="$(hostname -s | tr 'A-Z' 'a-z')"
+}
+
+sys_lib_init()
+{
+  test -n "$LOG" && sys_lib_log="$LOG" || sys_lib_log="$INIT_LOG"
+  test -n "$sys_lib_log" || return 102
 
 # XXX: cleanup
 if [ -z "$(which realpath)" ]
@@ -15,7 +20,9 @@ realpath() {
   [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#.}"
 }
 fi
+  $sys_lib_log info "" "Loaded sys.lib" "$0"
 }
+
 
 # Sh var-based increment
 incr() # VAR [AMOUNT=1]
@@ -90,7 +97,7 @@ func_exists()
 try_exec_func()
 {
   test -n "$1" || return 97
-  $LOG debug "sys" "try-exec-func '$1'"
+  $sys_lib_log debug "sys" "try-exec-func '$1'"
   func_exists $1 || return $?
   local func=$1
   shift 1
@@ -128,10 +135,10 @@ setup_tmpd()
   test -n "$2" -o -z "$RAM_TMPDIR" || set -- "$1" "$RAM_TMPDIR"
   test -n "$2" -o -z "$TMPDIR" || set -- "$1" "$TMPDIR"
   test -n "$2" ||
-        $LOG warn sys "No RAM tmpdir/No tmpdir settings found" 1
+        $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
 
   test -d $2/$1 || mkdir -p $2/$1
-  test -n "$2" -a -d "$2" || $LOG error sys "Not a dir: '$2'" 1
+  test -n "$2" -a -d "$2" || $sys_lib_log error sys "Not a dir: '$2'" "" 1
   echo "$2/$1"
 }
 
@@ -142,11 +149,11 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
 {
   test -n "$1" || set -- .out "$2" "$3"
   test -n "$2" || set -- $1 $(get_uuid) "$3"
-  test -n "$1" -a -n "$2" || $LOG error sys "empty arg(s)" 1
-  test -z "$4" || $LOG error sys "surplus arg(s) '$3'" 1
+  test -n "$1" -a -n "$2" || $sys_lib_log error sys "empty arg(s)" "" 1
+  test -z "$4" || $sys_lib_log error sys "surplus arg(s) '$3'" "" 1
 
   test -n "$3" || set -- "$1" "$2" "$(setup_tmpd)"
-  test -n "$3" -a -d "$3" || $LOG error sys "Not a dir: '$3'" 1
+  test -n "$3" -a -d "$3" || $sys_lib_log error sys "Not a dir: '$3'" "" 1
 
   test -n "$(dirname $3/$2$1)" -a "$(dirname $3/$2$1)" \
     || mkdir -p "$(dirname $3/$2$1)"
@@ -156,9 +163,9 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
 # sys-prompt PROMPT [VAR=choice_confirm]
 sys_prompt()
 {
-  test -n "$1" || $LOG error sys "sys-prompt: arg expected" 1
+  test -n "$1" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
   test -n "$2" || set -- "$1" choice_confirm
-  test -z "$3" || $LOG error sys "surplus-args '$3'" 1
+  test -z "$3" || $sys_lib_log error sys "surplus-args '$3'" "" 1
   echo $1
   read -n 1 $2
 }
@@ -244,7 +251,7 @@ init_user_env()
     test -n "$value" || continue
     export $key=$value
     test -e "$value" || {
-      $LOG warn sys "path for $key does not exist: $value"
+      $sys_lib_log warn sys "path for $key does not exist: $value"
     }
   done
 }
@@ -385,7 +392,8 @@ capture() # CMD [RET-VAR=ret_var] [OUT-FILE-VAR=out_file] [-|FILE]
   local return_status=
   test -n "$input" && {
     test "$input" != "-" && {
-      test -f "$input" || $LOG error sys "Input file '$input' expected" 1
+      test -f "$input" ||
+        $sys_lib_log error sys "Input file '$input' expected" "" 1
     } || {
       input=$(setup_tmpf .capture-input)
       cat >"$input"
@@ -409,7 +417,7 @@ capture_var() # CMD [RET-VAR=ret_var] [OUT-VAR=out_var] [ARGS...]
   test -n "$2" || set -- "$1" "ret_var" "$3"
   local cmd_name="$1" _ret_var_="$2" _out_var_="$3"
 
-  $LOG note sys "Capture: $1 $2 $3"
+  $sys_lib_log note sys "Capture: $1 $2 $3"
   shift 3
   test -n "$_out_var_" || {
     fnmatch "* *" "$cmd_name" && _out_var_=out_var || _out_var_=$cmd_name
@@ -424,7 +432,7 @@ capture_var() # CMD [RET-VAR=ret_var] [OUT-VAR=out_var] [ARGS...]
       local tmp="$($cmd_name "$@" || echo $?>$failed)"
     }
 
-  $LOG note sys "Captured: $_out_var_: $tmp"
+  $sys_lib_log note sys "Captured: $_out_var_: $tmp"
 
   # Set return var and cleanup
   test -e "$failed" && {
@@ -462,10 +470,10 @@ exec_arg() # CMDLINE [ -- CMDLINE ]...
       test -n "$execline" || continue
       echo "$execline">>"$execs"
       execnr=$(count_lines "$execs")
-      $LOG debug sys "Execline: $execnr. '$execline'"
+      $sys_lib_log debug sys "Execline: $execnr. '$execline'"
       $execline || return 3
     done
   test ! -e "$execs" || { execnr=$(count_lines "$execs"); rm "$execs"; }
-  $LOG info sys "Exec-arg: executed $execnr lines"
+  $sys_lib_log info sys "Exec-arg: executed $execnr lines"
   test $execnr -gt 0 || return 1
 }

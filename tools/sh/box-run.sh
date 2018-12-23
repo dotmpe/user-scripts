@@ -30,7 +30,7 @@ set --
 # Start entrypoint for user script, in user's shell
 shellname=$(basename "$SHELL")
 
-$HOME/bin/tools/$shellname/init-here.sh "$scriptbase:$rscriptbase" "$(cat <<EOM
+$scriptpath/tools/$shellname/init-here.sh "$scriptbase:$rscriptbase" "$(cat <<EOM
 
 set -e
 

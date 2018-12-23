@@ -1,0 +1,38 @@
+# varspec           cmdspec                                 #
+/LOG                true
+ /SCRIPTPATH        ./bin/u-s
+true                . ./tools/sh/init.sh
+true                ./tools/sh/init-here.sh
+
+true                sh ./sh-init-here
+true                sh ./sh-test
+true                sh ./sh-package
+true                sh ./sh-composure
+
+true                bats test/baseline/1-shell.bats
+true                bats test/baseline/2-bash.bats
+true                bats test/baseline/3-project.bats
+true                bats test/baseline/4-mainlibs.bats
+true                bats test/baseline/bats-negative.bats
+true                bats test/baseline/bats.bats
+true                bats test/baseline/git.bats
+true                bats test/baseline/realpath.bats
+true                bats test/baseline/redo.bats
+true                bats test/baseline/std-runner.bats
+
+true                bats test/unit/ck-lib.bats
+true                bats test/unit/date-lib.bats
+true                bats test/unit/functions-lib.bats
+true                bats test/unit/lib-lib.bats
+true                bats test/unit/logger-lib.bats
+true                bats test/unit/logger-std-lib.bats
+true                bats test/unit/make-lib.bats
+true                bats test/unit/os-lib.bats
+true                bats test/unit/setup-sh-tpl.bats
+true                bats test/unit/shell-lib.bats
+true                bats test/unit/src-lib.bats
+true                bats test/unit/std-stack.bats
+true                bats test/unit/str-lib.bats
+true                bats test/unit/sys-lib.bats
+
+# vim:ft=bash:

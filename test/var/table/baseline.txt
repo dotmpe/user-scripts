@@ -1,0 +1,32 @@
+# varspec                              cmdspec                                #
+/CWD                                   . ./tools/sh/env.sh
+ /LOG
+  /SCRIPTPATH
+  SCRIPTPATH=$PWD
+  SCRIPTPATH=
+ LOG=$PWD/tools/sh/log.sh
+  /SCRIPTPATH
+  SCRIPTPATH=$PWD
+ LOG=
+  /SCRIPTPATH
+CWD=$PWD/tools/sh/log.sh
+ /LOG
+  /SCRIPTPATH
+  SCRIPTPATH=$PWD
+CWD=
+ /LOG
+  /SCRIPTPATH
+
+#/LOG                                   . ./tools/sh/parts/env-0.sh
+#LOG=$PWD/tools/sh/log.sh
+#LOG=
+#
+#/LOG                                   bash ./tools/sh/env.sh
+#LOG=$PWD/tools/sh/log.sh
+#LOG=
+#
+#/LOG                                   bash ./tools/sh/parts/env-0.sh
+#LOG=$PWD/tools/sh/log.sh
+#LOG=
+
+# vim:ft=bash:

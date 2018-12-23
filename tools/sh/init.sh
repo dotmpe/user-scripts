@@ -2,8 +2,9 @@
 
 # This is for sourcing into a standalone or other env boot/init script (ie. CI)
 
+
 # NOTE: /bin/sh =/= Sh b/c BASH_ENV... sigh. Oh well, *that* works. Now this:
-test -z "$BASHOPTS" || set +o nounset # die-bash-die
+test -n "$BASHOPTS" || set +o nounset # die-bash-die
 
 
 # U_S=<...> . <script_util>/init.sh
@@ -20,6 +21,7 @@ test -z "$BASHOPTS" || set +o nounset # die-bash-die
 # init_sh_libs ?= sys os str
 # init_sh_boot ?= stderr-console-logger
 
+test -n "$LOG" && LOG_ENV=1 || LOG_ENV=
 test -n "$LOG" -a -x "$LOG" && INIT_LOG=$LOG || INIT_LOG=$PWD/tools/sh/log.sh
 
 test -n "$U_S" || U_S=$(pwd -P)
@@ -41,23 +43,29 @@ test -n "$script_env" || {
 $INIT_LOG "info" "" "Loading user-script env..." "$script_env"
 . "$script_env"
 
-# Now include module loader with `lib_load`, setup by hand
-. $scriptpath/lib.lib.sh
-lib_lib_load && lib_lib_loaded=1 ||
+# Now include module with `lib_load`
+{
+. $scriptpath/lib.lib.sh &&
+  lib_lib_load && lib_lib_loaded=1 &&
+  lib_lib_init
+} ||
   $INIT_LOG "error" "init.sh" "Failed at lib.lib $?" "" 1
 
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
 test "$init_sh_libs" = "0" || {
+  test -n "$init_sh_libs" -a "$init_sh_libs" != "1" ||
+    init_sh_libs=sys\ os\ str\ script\ log\ shell
+
+  $INIT_LOG "info" "sh:init" "Loading" "$init_sh_libs"
   test -n "$LOG" || LOG=$INIT_LOG
 
-  test -n "$init_sh_libs" -a "$init_sh_libs" != "1" ||
-    init_sh_libs=sys\ os\ str\ script
-
   lib_load $init_sh_libs ||
-    $INIT_LOG "error" "init.sh" "Failed at loading libs '$init_sh_libs' $?" "" 1
+    $INIT_LOG "error" "init.sh" "Failed loading libs: $?" "$init_sh_libs" 1
 
+  lib_init $init_sh_libs ||
+    $INIT_LOG "error" "init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
 
   test -n "$init_sh_boot" || init_sh_boot=1
   test -n "$init_sh_boot" && {
@@ -70,6 +78,6 @@ test "$init_sh_libs" = "0" || {
 
 }
 
-unset INIT_LOG
+test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
 
 # Id: user-scripts/0.0.0-dev tools/sh/init.sh

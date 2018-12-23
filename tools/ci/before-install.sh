@@ -1,91 +1,102 @@
-#!/bin/sh
+#!/bin/ash
 
-# XXX: . ./tools/ci/util.sh
+export VND_SRC_PREFIX=$HOME/build
+: "${CWD:="$PWD"}"
+
+echo "Sourcing env (I)..."
+. "${BASH_ENV:="$PWD/tools/ci/env.sh"}" || true
 
 
 export_stage before-install before_install
+
 
 # XXX: split-out sh & ci env, init and check stanza's to parts files
 
   # Leave loading env parts to sh/env, but sets may diverge..
   # $script_util/parts/env-*.sh
   # $ci_util/parts/env-*.sh
-script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
+#script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
+
+. "$ci_util/parts/announce.sh"
+
 
 # Get checkouts, tool installs and rebuild env (PATH etc.)
-. $ci_util/parts/install.sh &&
-script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
+. "$ci_util/parts/init-user-repo.sh"
 
 
-echo '---------- Check for sane GIT state'
+test "$(whoami)" = "travis" || {
+  export sudo=sudo
 
-GIT_COMMIT="$(git rev-parse HEAD)"
-test "$GIT_COMMIT" = "$TRAVIS_COMMIT" || {
+  test -x "$(which apt-get)" && {
+    test -z "$APT_PACKAGES" ||
+    {
+      echo sudo=$sudo APT_PACKAGES=$APT_PACKAGES
+      {
+        $sudo apt-get update &&
+        $sudo apt-get install $APT_PACKAGES
 
-  # For Sanity: Travis won't complain if you accidentally
-  # cache the checkout, but this should:
-  git reset --hard $TRAVIS_COMMIT || {
-    echo '---------- git reset:'
-    env | grep -i Travis
-    git status
-    $LOG error ci:build "Unexpected checkout $GIT_COMMIT" "" 1
-    return 1
+      } || error "Error installing APT packages" 1
+    }
   }
 }
 
+# FIXME: replace ./install-dependencies.sh basher
 
-
-echo '---------- Finished CI setup'
-echo '--------------------'
-git status && git describe --always
-echo '--------------------'
-find ~/.travis || true
-echo '--------------------'
-echo "Terminal: $TERM"
-echo "Shell: $SHELL"
-echo "Shell-Options: $-"
-echo "Shell-Level: $SHLVL"
-
-echo "Travis Branch: $TRAVIS_BRANCH"
-echo "Travis Commit: $TRAVIS_COMMIT"
-echo "Travis Commit Range: $TRAVIS_COMMIT_RANGE"
-# TODO: gitflow comparison/merge base
-#vcflow-upstreams $TRAVIS_BRANCH
-# set env and output warning if we're behind
-#vcflow-downstreams
-# similar.
-echo
-echo "User Conf: $(cd ~/.conf && git describe --always)" || true
-echo "User Composer: $(cd ~/.local/composer && git describe --always)" || true
-echo "User Bin: $(cd ~/bin && git describe --always)" || true
-echo "User static lib: $(find ~/lib )" || true
-echo
-echo "Script-Path:"
-echo "$SCRIPTPATH" | tr ' ' '\n'
-echo "Script-Name: $scriptname"
-echo "Verbosity: $verbosity"
-echo "Color-Scheme: $CS"
-echo "Debug: $DEBUG"
-echo
-echo '---------- Listing user checkouts'
-for x in $HOME/build/*/
+pip uninstall -qy docopt || true
+#./install-dependencies.sh test bats-force-local
+for x in composer.lock .Gemfile.lock
 do
-    test -e $x/.git && {
-        echo "$x at GIT $( cd $x && git describe --always )"
-        continue
-
-    } || {
-        for y in $x/*/
-        do
-            test -e $y/.git &&
-                echo "$y at GIT $( cd $y && git describe --always )" ||
-                echo "Unkown $y"
-        done
-    }
+  test -e $x || continue
+  rsync -avzui $x .htd/$x
 done
-echo
-$LOG note "" "ci/parts/init Done"
-echo '---------- Starting build'
 
 
-. $ci_util/deinit.sh
+test "$(whoami)" = "travis" || {
+  pip install -q --upgrade pip
+}
+
+pip install -q keyring requests_oauthlib
+pip install -q gtasks
+
+test -x "$(which tap-json)" || npm install -g tap-json
+test -x "$(which any-json)" || npm install -g any-json
+npm install nano
+
+which github-release || go get github.com/aktau/github-release
+
+test "$(whoami)" = "travis" || {
+  not_falseish "$SHIPPABLE" && {
+    cpan reload index
+    cpan install CAPN
+    cpan reload cpan
+    cpan install XML::Generator
+    test -x "$(which tap-to-junit-xml)" ||
+      basher install jmason/tap-to-junit-xml
+    tap-to-junit-xml --help || true
+  }
+}
+
+gem install travis
+
+# FIXME: merge gh-pages into master
+#bundle install
+
+# FIXME: npm install parse-torrent lodash
+
+# FIXME: htd install json-spec
+
+
+script_env_init=tools/ci/parts/env.sh . ./tools/sh/env.sh
+
+
+. "$ci_util/parts/check-git.sh"
+
+
+. "$ci_util/parts/init.sh"
+
+
+close_stage
+
+
+. "$ci_util/deinit.sh"
+# Id: /0.0 tools/ci/before-install.sh

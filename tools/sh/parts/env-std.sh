@@ -1,6 +1,6 @@
 #!/bin/ash
 
-: "${LOG:=$PWD/tools/sh/log.sh}"
-: "${CS:=dark}"
+: "${LOG:="$PWD/tools/sh/log.sh"}"
+: "${CS:="dark"}"
 export LOG CS
 #

@@ -1,0 +1,21 @@
+# varspec                              cmdspec                                #
+
+/CWD                                   1. ./tools/sh/env.sh
+ /LOG                                  2
+  /SCRIPTPATH                          3
+  SCRIPTPATH=$PWD                      4
+  SCRIPTPATH=                          5
+ LOG=$PWD/tools/sh/log.sh              6
+  /SCRIPTPATH                          7
+  SCRIPTPATH=$PWD                      8
+ LOG=                                  9
+  /SCRIPTPATH                          10
+CWD=$PWD/tools/sh/log.sh               11
+ /LOG                                  12
+  /SCRIPTPATH                          13
+  SCRIPTPATH=$PWD                      14
+CWD=                                   15
+ /LOG                                  16
+  /SCRIPTPATH                          17
+
+# vim:ft=bash:

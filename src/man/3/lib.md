@@ -5,6 +5,6 @@ that we have not loaded yet.
 
 
 is the first line of defense to deal
-with the chicken-and-the-egg problem 
+with the chicken-and-the-egg problem
 
 the second is tools/sh/init\*sh

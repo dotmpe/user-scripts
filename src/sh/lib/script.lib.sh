@@ -16,8 +16,8 @@ script_lib_init()
 
 script_lib_init_()
 {
-  script_lib_init
-  $script_log warn "" "Delayed script-log init, check lib-init!"
+  set -- "$scriptname" "Delayed script-log init, check lib-init!"
+  script_lib_init && $script_log warn "$@"
 }
 
 scripts_init()

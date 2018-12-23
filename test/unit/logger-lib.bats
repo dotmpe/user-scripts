@@ -25,14 +25,14 @@ setup()
 
 @test "$base: logger-stderr-level NUM" {
 
-  run logger_stderr_level
+  run log_level_name
   { test_nok_empty
   } || stdfail 1.1.
   
-  run logger_stderr_level 1
+  run log_level_name 1
   { test_ok_nonempty 1 && test_lines "emerg" ;} || stdfail 2.1.
 
-  run logger_stderr_level 7
+  run log_level_name 7
   { test_ok_nonempty 1 && test_lines "debug" ;} || stdfail 2.2.
 }
 

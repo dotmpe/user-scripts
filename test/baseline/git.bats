@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 load ../init
-base=git-baseline
+base='baseline:git'
 
 setup()
 {

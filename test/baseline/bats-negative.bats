@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 load ../init
-base=bats-negative-baseline
+base='baseline:bats-negative'
 
 setup()
 {

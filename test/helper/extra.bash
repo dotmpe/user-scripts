@@ -26,7 +26,7 @@ trueish()
 
 fnmatch()
 {
-  case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
+  case "$2" in $1 ) return 0 ;; * ) return 1 ;; esac
 }
 
 next_temp_file()
@@ -70,7 +70,7 @@ get_uuid()
     uuidgen
     return 0
   }
-  error "FIXME uuid required" 1
+  $LOG "error" "" "FIXME uuid required" "" 1
   return 1
 }
 

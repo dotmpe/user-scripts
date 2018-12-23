@@ -7,6 +7,7 @@ docker_sh_lib_load()
   test -n "$docker_sh_c_port" || docker_sh_c_port=22
   test -n "$docker_name" || docker_name=
   test -n "$docker_image" || docker_image=
+  test -n "$docker_shell" || docker_shell=bash
 }
 
 docker_sh_names()
@@ -43,7 +44,7 @@ docker_sh_c_ip() # [Container]
     error "docker IP inspect on $1 failed" 1
 }
 
-docker_sh_c_port() # [Container]
+docker_sh_c_port() # [Container] [Port=22]
 {
   test -n "$1" || set -- $docker_sh_c
   test -n "$1" || set -- $docker_name
@@ -63,4 +64,3 @@ docker_sh_c_image_name() # [Container]
 {
   docker_sh_c_inspect '{{.Config.Image}}' "$@"
 }
-

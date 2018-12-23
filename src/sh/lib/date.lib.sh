@@ -31,7 +31,8 @@ date_lib_load()
 
 date_lib_init()
 {
-  lib_assert sys os str || return
+  lib_assert sys os str std log || return
+
   case "$uname" in
     Darwin ) gdate="gdate" ;;
     Linux ) gdate="date" ;;
@@ -45,6 +46,9 @@ date_lib_init()
     IS_DST=1 || IS_DST=0
 
   export gdate
+
+  local log=; req_init_log
+  $log info "" "Loaded date.lib" "$0"
 }
 
 
@@ -99,6 +103,27 @@ date_epochsec()
       }
     }
   return 1
+}
+
+date_fmt() # Date-Ref Str-Time-Fmt
+{
+  test -z "$1" && {
+    tags="-d today"
+  } || {
+    # NOTE patching for GNU date
+    _inner_() { printf -- '-d ' ; echo "$1" | bsd_gsed_pre ;}
+    test -e "$1" && { tags="-d @$(filemtime "$1")"; } ||
+      tags=$( p= s= act=_inner_ foreach_do $1 )
+  }
+  $gdate $date_flags $tags +"$2"
+}
+
+date_()
+{
+  test -n "$1" && {
+    test -e "$1" && set -- -r "$1" "$2" || set -- -d "$1" "$2"
+  }
+  $gdate "$@"
 }
 
 # Compare date, timestamp or mtime and return oldest as epochsec (ie. lowest val)
@@ -221,10 +246,28 @@ touch_ts() # ( DATESTR | TIMESTAMP | FILE ) FILE
   touch -t "$(timestamp2touch "$1")" "$2"
 }
 
-# Print fractional seconds since Unix epoch
-epoch_microtime() { $gdate +"%s.%N"; }
+date_iso() # Ts [date|hours|minutes|seconds|ns]
+{
+  test -n "$2" || set -- "$1" date
+  test -n "$1" && {
+    $gdate -d @$1 --iso-8601=$2 || return $?
+  } || {
+    $gdate --iso-8601=$2 || return $?
+  }
+}
 
-date_microtime() { $gdate +"%Y-%m-%d %H:%M:%S.%N"; }
+# Print fractional seconds since Unix epoch
+epoch_microtime() # [Date-Ref=now]
+{
+  set -- "$1" "+%s.%N"
+  date_ "$@"
+}
+
+date_microtime()
+{
+  set -- "$1" +"%Y-%m-%d %H:%M:%S.%N"
+  date_ "$@"
+}
 
 sec_nomicro()
 {

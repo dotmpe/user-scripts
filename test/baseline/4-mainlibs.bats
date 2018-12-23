@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-base=mainlibs
 load ../init
+base="baseline-4:mainlibs"
 
 setup()
 {
@@ -97,9 +97,10 @@ setup()
 
   run bash -c "$(cat <<EOM
 
-U_S=$BATS_CWD . $BATS_CWD/tools/sh/init.sh &&
+. $BATS_CWD/tools/sh/init.sh &&
 source '$main_inc' &&
 try_exec_func mytest_function
+
 EOM
     )"
   diag "Output: ${lines[0]}"
@@ -132,7 +133,6 @@ EOM
 @test "$base: test init.bash 0" {
 
   type test_env_init >/dev/null
-  type hostname_init >/dev/null
   type init >/dev/null
   env | grep -q '^base=' && false || true
   env | grep -q '^hostnameid=' && false || true

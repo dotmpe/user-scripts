@@ -20,5 +20,3 @@ logger_log(line_type, target_ids, description, source_ids, status_code)
 
     unless status-code < verbosity
     do write pretty stderr line
-
-

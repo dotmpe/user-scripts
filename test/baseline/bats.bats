@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 load ../init
-base=bats-baseline
+base='baseline:bats'
 
 setup()
 {

@@ -7,19 +7,13 @@ os_lib_load()
 {
   test -n "$uname" || uname="$(uname -s)"
   test -n "$os" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+}
 
-  test -n "$gsed" || case "$uname" in
-      Linux ) gsed=sed ;; * ) gsed=gsed ;;
-  esac
-  test -n "$ggrep" || case "$uname" in
-      Linux ) ggrep=grep ;; * ) ggrep=ggrep ;;
-  esac
-  test -n "$gdate" || case "$uname" in
-      Linux ) gdate=date ;; * ) gdate=gdate ;;
-  esac
-  test -n "$gstat" || case "$uname" in
-      Linux ) gstat=stat ;; * ) gstat=gstat ;;
-  esac
+os_lib_init()
+{
+  test -n "$LOG" && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
+  test -n "$os_lib_log" || return 102
+  $os_lib_log info "" "Loaded os.lib" "$0"
 }
 
 
@@ -200,7 +194,7 @@ filesize() # File
       Linux | CYGWIN_NT-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
-      * ) $LOG error "os" "filesize: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filesize: $1?" "" 1 ;;
     esac; shift
   done
 }
@@ -217,7 +211,7 @@ filectime() # File
       Linux | CYGWIN_NT-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
-      * ) $LOG error "os" "filectime: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filectime: $1?" "" 1 ;;
     esac; shift
   done
 }
@@ -234,7 +228,7 @@ filemtime() # File
       Linux | CYGWIN_NT-6.1 )
           stat -L -c '%Y' "$1" || return 1
         ;;
-      * ) $LOG error "os" "filemtime: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filemtime: $1?" "" 1 ;;
     esac; shift
   done
 }
@@ -353,7 +347,7 @@ read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
   test -n "$1" || return 1
   test -n "$2" || set -- "$1" '^\s*(#.*|\s*)$'
-  test -z "$3" || $LOG error "os" "read-nix-style-file: surplus arguments '$2'" "" 1
+  test -z "$3" || $os_lib_log error "os" "read-nix-style-file: surplus arguments '$2'" "" 1
   cat $cat_f "$1" | grep -Ev "$2" || return 1
 }
 
@@ -548,7 +542,7 @@ get_uuid()
     uuidgen
     return 0
   }
-  $LOG error "os" "FIXME uuid required" "" 1
+  $os_lib_log error "os" "FIXME uuid required" "" 1
   return 1
 }
 

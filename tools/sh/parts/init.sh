@@ -111,6 +111,9 @@ init-err()
   exit 1
 }
 
+
+# Groups
+
 check()
 {
   default >/dev/null || init-err default
@@ -118,9 +121,6 @@ check()
   git describe >/dev/null ||
     init-err "git describe: CWD should be GIT checkout and have tags in repo"
 }
-
-
-# Groups
 
 default()
 {

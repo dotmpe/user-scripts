@@ -1,12 +1,10 @@
 #!/bin/ash
+ci_env_=$_
 
+# Boilerplate env for CI scripts
 
-fnmatch() { case "$2" in $1 ) return;; * ) return 1;; esac; }
+. "./tools/ci/util.sh"
 
-assert_nonzero()
-{
-  test $# -gt 0 && test -n "$1"
-}
 
 # XXX: Map to namespace to avoid overlap with builtin names
 req_subcmd() # Alt-Prefix [Arg]
@@ -80,32 +78,49 @@ main_test_() # Test-Cat [Cmd-Args...]
 }
 
 
-#XXX: Travis errors? tools/sh/parts/env.sh
-#set -o pipefail
-#set -o nounset
-#set -o errexit
+test -x "$(which gdate)" && export gdate=gdate || export gdate=date
 
 
-. "${USER_ENV:=tools/sh/env.sh}"
+ci_phases="$ci_phases ci_env"
+ci_env_ts=$($gdate +"%s.%N")
 
-# FIXME: make
-: "${package_build_tool:=redo}"
-: "${TEST_ENV:=$ci_util/env.sh}"
+case "$TRAVIS_COMMIT_MESSAGE" in
 
-# NOTE: set default bash-profile (affects other Shell scripts)
-#: "${BASH_ENV:=$USER_ENV}"
-export USER_ENV BASH_ENV
+  *"[clear cache]"* | *"[cache clear]"* )
 
+        test -e .htd/travis.json && {
 
-case "$uname" in
-  Darwin )  export gdate=gdate gsed=gsed ggrep=ggrep ;;
-  Linux )   export gdate=date gsed=sed ggrep=grep ;;
+          rm -rf  $(jq -r '.cache.directories[]' .htd/travis.json)
+
+        } || {
+          rm -rf \
+               ./node_modules \
+               ./vendor \
+               $HOME/.local \
+               $HOME/.basher \
+               $HOME/.cache/pip \
+               $HOME/virtualenv \
+               $HOME/.npm \
+               $HOME/.composer \
+               $HOME/.rvm/ \
+               $HOME/.statusdir/ \
+               $HOME/build/apenwarr \
+               $HOME/build/ztombol \
+               $HOME/build/bvberkum/user-scripts \
+               $HOME/build/bvberkum/user-conf \
+               $HOME/build/bvberkum/docopt-mpe \
+               $HOME/build/bvberkum/git-versioning \
+               $HOME/build/bvberkum/bats-core || true
+        }
+    ;;
 esac
 
 
-. ./tools/sh/parts/print-color.sh
+. "${USER_ENV:="tools/sh/env.sh"}"
 
-. ./tools/ci/parts/util.sh
+# FIXME: make
+: "${package_build_tool:="redo"}"
+: "${TEST_ENV:="$ci_util/env.sh"}"
 
 
-print_yellow "ci:env" "Starting: $0 '$*'" >&2
+print_yellow "ci:env" "Starting: $0 '$ci_env_' '$*'" >&2

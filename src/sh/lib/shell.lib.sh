@@ -2,8 +2,6 @@
 
 shell_lib_load()
 {
-  test -n "$LOG" || return 102
-
   lib_assert os sys str || return
 
   # Dir to record env-keys snapshots:SD-Shell-Dir
@@ -39,6 +37,8 @@ shell_lib_load()
 # and also <doc/shell-builtins.tab>
 shell_lib_init()
 {
+  lib_assert log || return
+
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
   test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
@@ -46,8 +46,15 @@ shell_lib_init()
   test "$SHELL_NAME" = "dash" && D_A_SHELL=1 || D_A_SHELL=0
   test "$SHELL_NAME" = "ash" && A_SHELL=1 || A_SHELL=0
   test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
-  shell_check && sh_init_mode && sh_env_init
+
+  local log=; req_init_log || return
+  $log debug "" "Running final shell.lib init"
+
+  shell_check && sh_init_mode && sh_env_init &&
+  $log info "" "Loaded shell.lib" "$0"
 }
+
+shell_lib_log() { test -n "$LOG"&&log="$LOG"||log="$init_log";req_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
 shell_check()
@@ -106,15 +113,17 @@ shell_test_sh()
 # Define sh-env. to get plain env var name/value list, including local vars
 sh_env_init()
 {
+  local log=; shell_lib_log
+
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
-    $LOG info shell.lib "Choosing bash sh-env-init"
+    $log info shell.lib "Choosing bash sh-env-init"
     sh_env()
     {
       set | grep '^[a-zA-Z_][0-9a-zA-Z_]*=.*$'
     }
   } || {
-    $LOG info shell.lib "Choosing non-bash sh-env-init"
+    $log info shell.lib "Choosing non-bash sh-env-init"
     sh_env()
     {
       set
@@ -124,9 +133,13 @@ sh_env_init()
   {
     sh_env | grep -q "^$1="
   }
-  sh_isenv()
+  sh_isenv() # XXX: Exported vars? @Base
   {
     env | grep -q "^$1="
+  }
+  sh_genv() # Grep for var names
+  {
+    sh_env | grep "^$1="
   }
 }
 
@@ -231,13 +244,15 @@ env_keys()
 
 record_env_diff_keys()
 {
+  local log=; shell_lib_log
+
   test -n "$1" || set -- "$(ls "$SD_SHELL_DIR" | head -n 1)" "$2"
   test -n "$2" || set -- "$1" "$(ls "$SD_SHELL_DIR" | tail -n 1)"
 
   # FIXME:
   #test -e "$1" -a -e "$2" || stderr "record-env-keys-diff" '' 1
-  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $LOG error env "record-env-keys-diff" "" 1
+  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $log error env "record-env-keys-diff" "" 1
 
-  $LOG info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
+  $log info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }

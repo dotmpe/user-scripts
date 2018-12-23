@@ -1,5 +1,22 @@
 #!/bin/sh
 
+# src: deal with lines of (shell script) formatted source-code
+
+
+src_lib_load()
+{
+  test -n "$uname" || uname="$(uname -s)"
+}
+
+src_lib_init()
+{
+  lib_assert log
+
+  local log=; req_init_log
+  $log info "" "Loaded src.lib" "$0"
+}
+
+
 
 # Insert into file using `ed`. Accepts literal content as argument.
 # file-insert-at 1:file-name[:line-number] 2:content

@@ -1,0 +1,19 @@
+# varspec                              cmdspec                                #
+/LOG                                   . ./tools/sh/env.sh
+LOG=$PWD/tools/sh/log.sh
+LOG=
+
+/LOG                                   . ./tools/sh/parts/env-0.sh
+LOG=$PWD/tools/sh/log.sh
+LOG=
+
+/LOG                                   bash ./tools/sh/env.sh
+LOG=$PWD/tools/sh/log.sh
+LOG=
+
+/LOG                                   bash ./tools/sh/parts/env-0.sh
+LOG=$PWD/tools/sh/log.sh
+LOG=
+
+
+# vim:ft=bash:

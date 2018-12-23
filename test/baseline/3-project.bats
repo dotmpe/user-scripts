@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-base=project-baseline
+base='baseline:3:project'
 
 
 @test "$base: init.sh setup" {

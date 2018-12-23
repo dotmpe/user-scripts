@@ -1,3 +1,9 @@
 x 2018-11-25 Add assert and other helpers to Bats setup
 2018-10-17 Initial setup ``.build/*.sh``, ``Makefile``. TODO: git hooks, checks
 x 2018-10-17 2018-10-17 Keep (most) project docs apart in GH wiki repo </doc> @docs
+2018-12-27 TODO: Documentation consists of Wiki, Manuals and some other hardcoded and processed markdown (ie. readme, changelog and copying files plus inline strings). @Spec @Docs
+2018-12-27 TODO: Manual documentation lists unique topics per section. #MJfc @Spec
+2018-12-27 TODO: Run bin/user-box. Alias as `box`. See also +User-config and ``u-c`` helper.
+# -----
+Manual Sections: 1. General commands (ie. user executables). 2. System calls (ie. plumbing or OS). 3. Library functions. 4. Special files and drivers. 5. Formats and conventions. 6. Games. 7. Misc. 8. System admin and daemons (ie. super-user and isolated agents, emulation and virtualization). @Docs @Manual [2018-12-27] #QOHn
+#

@@ -1,6 +1,6 @@
 # Travis CI - test workflow </doc/dev/ci.md>
 
-os: Linux
+os: linux
 dist:
   - xenial
 
@@ -8,6 +8,7 @@ addons:
   apt:
     packages:
       - realpath
+      - tree
 
 sudo: false
 
@@ -24,9 +25,8 @@ env:
   - VND_SRC_PREFIX=$HOME/build
   - VND_GH_SRC=$VND_SRC_PREFIX
   - SRC_PREFIX=$VND_SRC_PREFIX
-  - export BASH_ENV=tools/ci/env.sh
   - secure: "enle3U9VEk9tkOgZLSzrOHRNQPAW/wHdC+0HfxjEAD70XUlpbrIJxRx9fX37E8+whj6KefNNw+B5L9dj8TTie+dah01uIw8Ypl6QbjgI8AtGbxlXzRf9q0brEc/03dYMd6zE3Jd5xN13dadB4D/0vtmrn06hBZqYcEze6RYauHvUq6NMPcvN5CnLXmyDcFWplDfoBk9RDMmt1+ccAC176+Z777+aX03IGQkgMOjxBhKMd4pT+A/8GLpIDjTsBRCAmIhfDqMkkAXYI0epEbORssQRAOHfDXlUP6EMZIbih2YLLbt6RzxMBauqxhcPRRKPKDvNfK42cf2RfVqNsRuuTZJrFMLNTuEBJcAhrcIa9dGb8ttMXxyom3VhDSb4natW8hPKDFSTfDlPXQZRBjcUC0I+NehIHLaX2umfKAWCopADYCmGbadMX2GBoDKUbTKFFuXpAJSel4umZZtR66Kyiq63w09gRVbRI86A4Wr2yBhZ7gs4Ey4LpCIql/v44tpbbt1FbHRyQ6+1ClVITucLG0aaCdDnPMhrHlkTZ7RnNd+wQZsE3cgUgkeGXlbahTrn2pmKetjzQnPwXF/KgcZlcyhkeJIaQZxLZ+rzlpaO6iILOmmYutAnzzLYUKponPjNUm45wIet1Hjgw771AOeGRMm/unQoQB2bIYhcbsLMxsM="
-
+  - secure: "P8n4IkptCihipjgAWZk/6/H7a+/5OoxFzIli1hB1NBQAtwJkaKD66eXv908XCzcqDKfUvXAQDZ3iY1SjSDNgf2Rhu1jr9PkL/KM8RDxLK2jv/NiRrPjt+QViyeKA8dX0j4FHE/X5YvxgFLi57ApzPaogVCtZW0ZWAHFCUG9a1wE9S+VemLcEVcROkAFUqlB8PZBnaB9F3Ifo9MnygL74/hywAuErrj8wP/4epVLV/5c5MSfdBX+DB8U4gQlJeZD9CWVV0OPiUFLpReEFG0FYpCZ+hx4RHzB+/0qNoyOoqLwP5v1xztOwdPZf7OeyfTjkikCCpztSbZDlUfm4i/A30fyebErix215T2bBVzPPtNutjxAZJ5ybnvfB1pcS4TsOgl3FXBleyxLlTY9BreGDObQjfTfKff0LWqF71+ms8GnLTwehpqGTbVNBaQP434qPSf3oPiseVzgu6d/FkEZ0M1gMvxTQhe4OqObLOoTKzGPyTaGJFLysmUHJrFKu0DQYfKRl5XqJl39nKWL4hnSsS29VsvIzRLQ5e+CbZVdC9Z1v4NEABDNC5emAaITxb4rdKJm3HudJbPOrRBM5F/EUdFWwP7jGXxZjsYZB4xJgTmTJv4usqnocLEe8N9yENqNwob13HDqND61OZxETGK9cMy/vV//n5se/jjHsb3VJc8k="
 
 before_install:
   - . ./tools/ci/before-install.sh
@@ -82,7 +82,7 @@ after_script:
 
 matrix:
   include:
-    - python: 2.7
+#   - python: 2.7
 
     - env: TRAVIS_US_PUBLISH="pre"
       if: branch = r0.0
@@ -90,16 +90,19 @@ matrix:
     - env: TRAVIS_US_PUBLISH="rc"
       if: branch = test
 
-    - python: 3.5
-      if: branch = test
+#    - python: 3.5
+#      if: branch = test
 
 #    - if: branch = test
 #      env: ENV_NAME=testing
 #    branch = test
 #      env: ENV_NAME=production
-
 #  exclude: []
-#branches:
-#  only: []
-#  except: []
+
+branches:
+  only: []
+  except: []
+
 #deploy:
+
+# Id: /0.0 .travis.yml

@@ -1,7 +1,6 @@
 #!/bin/ash
 # See .travis.yml
 
-
 # FIXME: script & build, actual project lib testing
 
 
@@ -20,59 +19,41 @@
 
 export_stage script && announce_stage
 
-announce 'Check project commit'
+bash ./sh tooling_baseline
+bash ./sh project_baseline
 
-. $PWD/tools/git-hooks/pre-commit || print_red "ci:script" git:hook:$?
 
-announce 'Check project baseline'
+#failed=/tmp/htd-build-test-$(get_uuid).failed
+#. "./tools/ci/parts/build.sh"
 
-bats test/baseline/1-shell.bats || print_red "" shell
-bats test/baseline/2-bash.bats || print_red "" bash
-bats test/baseline/3-project.bats || print_red "" project
-scriptpath= SCRIPTPATH= bats test/baseline/4-mainlibs.bats ||
-  print_red "" mainlibs
 
-bats test/baseline/bats.bats ||
-  print_red "" bats
+# XXX: restore or move to other earlier stage
+#announce 'Checking project tooling, host env, 3rd party setup...'
+#. ./tools/ci/parts/baseline.sh
 
-scriptpath= SCRIPTPATH= bats test/baseline/{realpath,git,redo}*.bats ||
-  print_red "" others
 
-exit $?
+# XXX: see +script-mpe, cleanup
+#failed=/tmp/htd-build-test-$(get_uuid).failed
+#. "./tools/ci/parts/build.sh"
 
+
+export script_end_ts="$($gdate +"%s.%N")"
+
+#announce 'Running unit tests...'
 #scriptpath= SCRIPTPATH= bats test/unit/{os,lib,logger}*bats
 #scriptpath= SCRIPTPATH= bats test/unit/{sys,shell,str,date}*bats
 #scriptpath= SCRIPTPATH= bats test/unit/*bats
+
+
+#announce 'Running other specs, features etc...'
 #scriptpath= SCRIPTPATH= bats test/spec/*bats
 
-# OK, fire it up
-announce 'Running user-script init.sh helpers'
-./tools/sh/init-here.sh "" "" "" "echo foo"
-. ./tools/sh/init.sh
-exit $?
-
-# Again
-./tools/sh/init-here.sh "" "" "" "echo foo"
-
-# More
-mkdir -vp $HOME/build/user-tools/my-new-project
-cd $HOME/build/user-tools/my-new-project
-
-git init
-. $U_S/tools/sh/init-from.sh
-find ./ -not -path '*.git*'
-git status
-
-# Return for lib smoketesting
-cd $HOME/build/bvberkum/user-scripts
-
-sh ./sh-init-here
 #lib_load script logger str logger-std
 #lib_load env-d build user-env make mkvar
 #lib_load build package build-test
 #lib_init
 
-announce "OK"
 
+close_stage && announce "Done"
 
-# XXX: . $ci_util/deinit.sh
+. "$ci_util/deinit.sh"

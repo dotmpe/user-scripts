@@ -1,130 +1,164 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 
-# Initial CLi helper for any kind of U-S checkout or install
+# Initial CLI helper for any kind of U-S checkout or install
+
+set -e # Sh, same as?:
+set -o errexit # Ash, Bash
+#set -o nounset # Ash, Bash
+set -o pipefail # Bash-only
 
 
-init()
+init() #
 {
-  test -n "U_S" || U_S="$(dirname "$(dirname "$(realpath "$0")")")"
-  U_S_VERSION="$(cd "$U_S" && git_version)"
+  test -n "$U_S" || return 100
+
+  verbosity=4
+
+  SCRIPTPATH=$HOME/bin #XXX: include for now while setting up
+
+  : "${BASHOPTS:=''}"  # XXX: keep nounset mode on
+
+  # Bootstrap SCRIPTPATH and default-libs, then return to main routine
+  . $U_S/tools/sh/init.sh &&
+
+  lib_init &&
+
+  U_S_VERSION="$(u_s_version)"
 }
 
-edit()
+edit_docs() # [Files...]
 {
-  test $# -gt 0 || set -- "$@"
+  test $# -gt 0 || set -- $U_S/src/man/*/*.md
   $EDITOR "$@"
 }
 
-git_version()
+# Edit main command scripts or anything
+edit() # [Files...]
 {
-  git describe --always
+  test $# -gt 0 || set -- "$@" $U_S/commands/u_s-*.lib.sh
+  $EDITOR "$@"
 }
 
-update()
+# Grep all libs on SCRIPTPATH for expression
+libs_grep() # Grep
 {
+  test $# -eq 1 || return
+  local grep="$(libs_paths)"
+  grep "$@" $grep
+}
+
+# List full path names for sh-lib files on SCRIPTPATH
+libs_paths() # [Glob]
+{
+  test $# -eq 1 || set -- '*'
+  echo "$SCRIPTPATH" | tr ':' '\n' | while read scriptpath
+  do
+    test -e "$scriptpath/$1.lib.sh" -o \
+      "$scriptpath/*.lib.sh" != "$(echo $scriptpath/*.lib.sh|head -1)" ||
+        continue
+    echo $scriptpath/$1.lib.sh; done
+}
+
+# List only the names of sh-libs on SCRIPTPATH
+libs_list() # [Glob]
+{
+  test $# -lt 2 || return
+  test $# -eq 1 || set -- '*'
+  echo "$SCRIPTPATH" | tr ':' '\n' | while read scriptpath
+  do
+    test -e "$scriptpath/$1.lib.sh" -o \
+      "$scriptpath/*.lib.sh" != "$(echo $scriptpath/*.lib.sh|head -1)" ||
+        continue
+
+    # NOTE: no spaces on SCRIPTPATH
+    len="${#scriptpath}"
+    echo $scriptpath/$1.lib.sh | tr ' ' '\n' |
+        sed 's/^.\{'$len'\}.\(.*\)\.lib\.sh$/\1/'
+  done
+}
+
+libs() # [Glob]
+{
+  libs_list "$@"
+}
+
+update() #
+{
+  test $# -eq 0 || return 99
   cd "$U_S"
   git fetch && git reset --hard origin/r0.0
 }
 
-reinstall()
+reinstall() # [<ns_name>/<repo_name>]
 {
   cd
-  test -n "$1" || set -- bvberkum/user-scripts
+  test $@ -gt 0 || set -- bvberkum/user-scripts
+  test $# -eq 1 || return 99
   basher uninstall "$1" &&
   BASHER_FULL_CLONE=true basher install "$1"
   u-s update
 }
 
-redo_reinit()
+redo_reinit() #
 {
+  test $# -eq 0 || return 99
   cd /src/github.com/apenwarr/redo &&
     sudo git clean -dfx &&
     sudo ./redo install
 }
 
-dckr_load()
+#
+print_user_repo_description()
 {
-  lib_load docker-sh
+  { # Try to validate the .git is OK to catch some kinds of repo failures, but
+    # not all. GIT fsck has no --quick or --quiet
+    cd "$1" && git status
+  } >/dev/null || return
 
-  docker_name=u-s-dckr
-  docker_image=bvberkum/treebox:dev
-  U_S_PATH=/home/treebox/.basher/cellar/packages/bvberkum/user-scripts
-  U_S_CONTAINER=$docker_name
-
-}
-dckr_init()
-{
-  docker_sh_c_init()
-  {
-    ${dckr_pref}docker exec -u root "$1" \
-      sh -c 'echo treebox:treebox | chpasswd'
-    ${dckr_pref}docker exec -w /src/github.com/bvberkum/oil "$1" \
-      sh -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal' &&
-    ${dckr_pref}docker exec -ti -u root -w /src/github.com/apenwarr/redo "$1" \
-      sh -c 'git clean -dfx && ./redo install'
-  }
-  dckr_load && docker_sh_c require
-}
-dckr_reset()
-{
-  dckr_load && docker_sh_c delete "$U_S_CONTAINER" &&
-    $LOG note u-s:dckr "Removed container"
-}
-dckr_req()
-{
-  dckr_load &&
-  docker inspect --format '{{ .Id }}' "$docker_name" >/dev/null || dckr_init
-}
-dckr_exec()
-{
-  dckr_load &&
-  ${dckr_pref}docker exec -ti -w "$U_S_PATH" "$U_S_CONTAINER" "$@"
-}
-dckr_shell()
-{
-  dckr_load && dckr_exec $docker_shell -li "$@"
-}
-dckr_cmd()
-{
-  dckr_shell -c "$*"
-}
-dckr_update()
-{
-  dckr update
-}
-dckr()
-{
-  test $# -gt 0 || set -- git-version
-  dckr_req && dckr_cmd ./bin/u-s "$@"
+  local descr="$( cd "$1" >/dev/null && git describe --always)"
+  test -n "$descr" || return
+  echo "$1 at GIT $descr"
 }
 
-travis_status()
+# List raw func names as commands. TODO: indent spec maybe shortdescr nicely
+commands() #
 {
-  test -n "$1" || set -- "bvberkum/user-scripts" "$2"
-  test -n "$2" || set -- "$1" "r0.0"
-
-  #lib_load statusdir
-
-  out=/tmp/u-s-travis-$2.svg
-  curl -s 'https://api.travis-ci.org/'"$1"'.svg?branch='$2 >"$out"
-
-  grep -q failing "$out" && r=1 || {
-    grep -q error "$out" && r=2 || {
-      r=0
-    }
-  }
-  return $r
+  test $# -eq 0 || return 99
+  set -- "$0" $U_S/commands/*.lib.sh
+  grep -h '^[a-z_][a-z0-9_]*()' "$@" | cut -d'{' -f1
 }
 
-commands()
+# XXX: topic should be parts of files, not file names? Like commands. #MJfc
+topics() #
 {
-  grep '^[a-z_]()' "$0" | cut -d'{' -f1
+  test $# -eq 0 || return 99
+  local base="$U_S/src/man/"
+
+  for sec in 1 2 3 4 5 6 7 8
+  do
+    test "$base$sec/*.md" != "$(echo $base$sec/*.md)" || continue
+    for y in $base$sec/*.md
+    do echo "$(basename $y .md) ($sec)"
+    done
+  done | sort
+}
+
+# TODO: print topic for section properly, sort content into sections. #MJfc
+print_topic()
+{
+  test $# -eq 1 || return 99
+  test -e $U_S/src/man/$1.md || return
+  cat $U_S/src/man/$1.md
 }
 
 print_help()
 {
   echo "Main commands: "
+  echo "  libs - see libs-list"
+  echo "  libs-grep <regex> - list matches for regex in sh-lib files"
+  echo "  libs-list [glob] - list matching sh-lib names found on SCRIPTPATH"
+  echo "  libs-paths [glob] - list full paths to lib files (with matching names)"
+  echo
   echo "  update [version] - fetch and hard-reset to latest version"
   echo "  reinstall"
   echo
@@ -133,42 +167,96 @@ print_help()
   echo "  dckr-reset - Delete docker container"
   echo "  dckr-shell CMD - Execute login shell at U-S dir"
   echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
-  echo
   echo "  dckr-cmd make [init|check|base|lint|units|specs|build|test|clean]"
   echo
-  echo "use 'commands' for full list."
+  echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
+  echo
+  echo "Use 'commands' for a full list; or 'topics' to index other manuals."
 }
 print_usage()
 {
   echo "Usage: u-s [CMD [ARG...]]"
 }
-help()
+
+# Print log-like to stderr
+print_err()
 {
-  print_usage
-  print_help
+  test -n "$LOG" -a -x "$LOG" && {
+    $LOG "$@"; return $?;
+  }
+
+  test -z "$verbosity" -a -z "$DEBUG" && return
+  test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
+  test -z "$verbosity" -a -n "$DEBUG" || {
+
+    case "$1" in [0-9]* ) true ;; * ) false ;; esac &&
+      lvl=$(log_level_name "$1") ||
+      lvl=$(log_level_num "$1")
+
+    test $verbosity -ge $lvl || {
+      test -n "$5" && exit $5 || {
+        return 0
+      }
+    }
+  }
+
+  printf -- "%s\n" "[$2] $1: $3 <$4> ($5)" >&2
+  test -z "$5" || exit $5 # NOTE: also exit on '0'
 }
-usage()
+
+help() # [Topic-ID]
 {
+  test $# -lt 2 || return 99
+  test $# -gt 0 && {
+    # TODO: print help for commands as well, maybe summaries for lists of topics @Docs
+    print_topic "$@"
+    return $?
+  } || {
+    print_usage
+    print_help
+  }
+}
+
+usage() #
+{
+  test $# -eq 0 || return 99
   help
   exit 1
 }
 
-main()
+version() #
 {
+  test $# -eq 0 || return 99
+  echo "$U_S_VERSION"
+}
+
+main() # [SUBCMD [ARGS...]]
+{
+  # Get SCRIPTPATH and bootstrap libs
   init || return
-  #. ./tools/sh/init.sh && init || return
+
+  # Call sub-command shell function
   test $# -gt 0 || set -- usage
-  mkvid "$1" 
+  test "$1" != "main" || return # NOTE: Huh. Sanity.
+
+  mkvid "$1"
   local subcmd="$1" cmdid=$vid
   shift
   $vid "$@"
 }
 
-# TODO: make u-s proper install by expanding source lines below
-
+# TODO: make u-s proper install by expanding source below
 . "$(dirname "$(realpath "$0")")/../tools/sh/u-s-env.sh"
 
-. $U_S/tools/sh/init.sh
-lib_init
+# Setup to include other commands in parts to keep script size down.
+
+test -d $U_S/commands -a -f "$U_S/tools/sh/init.sh" ||
+  print_err "error" "" "Incomplete install, missing parts" \
+    "$U_S/commands $U_S/tools/sh/init.sh"
+
+for u_s_lib in $U_S/commands/u_s-*.lib.sh
+do
+  . "$u_s_lib"
+done
 
 main "$@"

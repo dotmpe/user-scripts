@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-base=shell-baseline
+base='baseline-1:shell'
 
 
 @test "$base: LOG (normal mode, no debug, verbosity < 7)" {
@@ -22,15 +22,17 @@ base=shell-baseline
 
 @test "$base: another simple shell baseline check for logging sys" {
 
+  #load extra
+  load stdtest
+
+  skip "FIXME: logger testing"
+
   #_r() { LOG=logger_stderr BASH_ENV=tools/sh/env.sh \
   #  $SHELL -c 'echo $LOG'; }; run _r
 
   #test "${lines[*]}" = "logger_stderr" || {
   #  echo "${lines[*]}" >&2 && false
   #}
-
-  #load extra
-  load stdtest
 
   U_S=$HOME/project/user-script
   for verbosity in "" 7 6 5 4 3 2 1

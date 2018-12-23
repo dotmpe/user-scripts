@@ -1,28 +1,15 @@
-#!/bin/sh
+#!/bin/ash
 
 # Executes before commit-msg is determined, to check stage or tree and abort if desired
 
 # See man 5 githooks
 
-set -e
+
+test -z "${scm_nok:-}" || exit $scm_nok
+
 
 BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
 
-
-# Always from the right dir.. realpath would help, but not depending on that.
-test -n "$U_S" || {
-  U_S="$(dirname "$(dirname "$(dirname "$0")")")"
-}
-
-# XXX: Load lib-env for GIT hook
-#. "${TEST_ENV:=tools/sh/env.sh}"
-. "${TEST_ENV:=tools/ci/env.sh}"
-
-#. $U_S/tools/sh/init.sh
-#lib_init
-
-# TODO: some source-code checks
-#
 
 # Compare to-be committed against HEAD or emty for initial commit
 
@@ -35,6 +22,7 @@ else
 fi
 
 # Use config hooks.allownonascii to configure this check
+# If you want to allow non-ASCII filenames set hooks.allownonascii to true.
 allownonascii=$(git config --bool hooks.allownonascii) || true
 
 # Redirect output to stderr.
@@ -68,12 +56,16 @@ fi
 git diff-index --check --cached $against --
 
 
-# TODO: setup libs to pre-commit whitespace, lint, etc. checks. Then
-# bootstrap/init hook(s) as required. Run global check for now.
-#. .build/check.sh
+test ! -x $HOME/.git-checks || {
 
-# scriptpath=$(git get repo basedir) . .build/init.sh
-# lib_load vc && .build/check.sh $(vc_staged)
+  . ~/.git-checks
+}
 
-# XXX: @current warn on tag in tools, after cleanup track src too
-./test/lint.sh tags tools || true
+
+# From GIT Annex hooks
+
+test ! -d .git/annex || {
+  git annex pre-commit . || error "GIT Annex pre-commit hook failed" $?
+}
+
+# Id: /0.0 tools/git-hooks/pre-commit.sh

@@ -1,0 +1,105 @@
+# varspec                                              cmdspec                #
+
+# XXX: cleanup
+#unset LOG SCRIPTPATH scriptpath scriptname base LOG verbosity INIT_LOG CWD
+
+CWD=$PWD                                               . ./tools/ci/util.sh
+
+/CWD                                                   . ./tools/sh/parts/env-0.sh
+CWD=$PWD/tools/sh/log.sh
+CWD=
+
+/LOG
+LOG=$PWD/tools/sh/log.sh
+LOG=
+
+/SCRIPTPATH
+SCRIPTPATH=$PWD
+SCRIPTPATH=
+
+# varspec                                              cmdspec                #
+/CWD                                                   CWD= . ./tools/sh/env.sh
+
+# varspec                                              cmdspec                #
+set +o nounset                                         . ./tools/sh/init.sh
+#BASHOPTS=-                                             . ./tools/sh/init.sh
+# init_sh_libs= init_sh_boot=
+#  __load_lib=
+#   . ./tools/sh/parts/env-dev.sh
+#    . ./tools/sh/parts/env-test.sh
+#     . ./tools/sh/parts/env-test-bats.sh
+#      . ./tools/sh/parts/env-src.sh
+#       . ./tools/sh/parts/env-0.sh
+#        . ./tools/sh/parts/env-std.sh
+
+# varspec                                              cmdspec                #
+#/CWD
+#/CWD                                                  . ./tools/sh/init.sh
+#  /LOG
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=$PWD/tools/sh/log.sh
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+# CWD=$PWD/tools/sh/log.sh
+#  /LOG
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=$PWD/tools/sh/log.sh
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#CWD=
+#  /LOG
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=$PWD/tools/sh/log.sh
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#  LOG=
+#   /SCRIPTPATH
+#   SCRIPTPATH=$PWD
+#   SCRIPTPATH=
+#/LOG
+#  /SCRIPTPATH
+#  SCRIPTPATH=$PWD
+#  SCRIPTPATH=
+#LOG=$PWD/tools/sh/log.sh
+#  /SCRIPTPATH
+#  SCRIPTPATH=$PWD
+#  SCRIPTPATH=
+#LOG=
+#  /SCRIPTPATH
+#  SCRIPTPATH=$PWD
+#  SCRIPTPATH=
+
+#v=4                                     bats test/baseline/1-shell.bats
+#v=4                                     bats test/baseline/2-bash.bats
+#v=5                                     bats test/baseline/3-project.bats
+#v=4                                     bats test/baseline/4-mainlibs.bats
+#v=1                                     bats test/baseline/bats.bats
+##/CWD                                  . ./tools/ci/env.sh
+#v=4                                     bats test/baseline/git.bats
+#v=4                                     bats test/baseline/realpath.bats
+#v=4                                     bats test/baseline/redo.bats
+
+#  bats test/baseline/1-shell.bats || return
+#  bats test/baseline/2-bash.bats || return
+#  bats test/baseline/3-project.bats || return
+#  bats test/baseline/4-mainlibs.bats || return
+
+
+# vim:ft=bash:

@@ -1,3 +1,11 @@
+#!/bin/sh
+
+match_lib_init()
+{
+  test -n "$INIT_LOG" || return 102
+  $INIT_LOG info "" "Loaded match.lib" "$0"
+}
+
 
 # Take any string and return a Regex to match that exact string, see
 # match-grep-pattern-test.

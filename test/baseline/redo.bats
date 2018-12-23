@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-base=redo-baseline
 load ../init
+base='baseline:redo'
 
 setup()
 {

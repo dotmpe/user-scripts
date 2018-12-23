@@ -1,7 +1,11 @@
 #!/bin/sh
 
-set -e
 
+vc_lib_init()
+{
+  test -n "$INIT_LOG" || return 102
+  $INIT_LOG info "" "Loaded vc.lib" "$0"
+}
 
 vc_gitdir()
 {

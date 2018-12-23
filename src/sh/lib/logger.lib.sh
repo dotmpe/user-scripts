@@ -109,7 +109,7 @@ logger_strfmt() # line-type target-ids description source-ids
 logger_stderr() # syslog-level target-ids description source-ids status-code
 {
   test -n "$1" || set -- "$stderr_log_level" "$2" "$3" "$4" "$5"
-  fnmatch "[0-9]" "$1" || set -- "$(logger_stderr_num "$1")" "$2" "$3" "$4" "$5"
+  fnmatch "[0-9]" "$1" || set -- "$(log_level_num "$1")" "$2" "$3" "$4" "$5"
 
   test -n "$stderr_log_channel" || stderr_log_channel=$scriptname
   test -n "$2" || set -- "$1" "$stderr_log_channel" "$3" "$4" "$5"
@@ -130,7 +130,7 @@ logger_stderr() # syslog-level target-ids description source-ids status-code
 
 
 # Return level number as string for use with line-type or logger level, channel
-logger_stderr_level() # Level-Num
+log_level_name() # Level-Num
 {
   case "$1" in
       1 ) echo emerg ;;
@@ -144,7 +144,7 @@ logger_stderr_level() # Level-Num
   esac
 }
 
-logger_stderr_num() # Level-Name
+log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
@@ -165,8 +165,8 @@ logger_demo()
   for level in $(seq 7 1)
   do
     #logger_stderr 5 logger:demo "$level"
-    logger_log "$level" "logger:demo" "$(logger_stderr_level $level) demo line"
-    #logger_stderr "$level" "logger:demo" "$(logger_stderr_level $level) demo line"
+    logger_log "$level" "logger:demo" "$(log_level_name $level) demo line"
+    #logger_stderr "$level" "logger:demo" "$(log_level_name $level) demo line"
   done
 }
 

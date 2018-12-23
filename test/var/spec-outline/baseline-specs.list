@@ -1,0 +1,12 @@
+unset SCRIPTPATH scriptpath scriptname base LOG verbosity INIT_LOG CWD
+  ;LOG=; LOG=$PWD/tools/sh/log.sh;
+    ;INIT_LOG=; INIT_LOG=$PWD/tools/sh/log.sh;
+      SCRIPTPATH=$PWD/src/sh/lib
+        . ./tools/sh/env.sh
+        . ./tools/sh/parts/env-0.sh
+        sh ./tools/sh/env.sh
+        sh ./tools/sh/parts/env-0.sh
+        bash ./tools/sh/env.sh
+        bash ./tools/sh/parts/env-0.sh
+
+# vim:ft=bash:

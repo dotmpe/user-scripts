@@ -4,12 +4,15 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
-  test -n "$LOG" || return 102
+  test -n "$LOG" && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
+  test -n "$str_lib_log" || return 102
+
   test -n "$uname" || uname="$(uname -s)"
+
   case "$uname" in
       Darwin ) expr=bash-substr ;;
       Linux ) expr=sh-substr ;;
-      * ) $LOG error "str" "Unable to init expr for '$uname'" "" 1;;
+      * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
   esac
 
   test -n "$ext_groupglob" || {
@@ -27,9 +30,13 @@ str_lib_load()
   #        || ext_sh_sub=0
   #  #debug "Initialized ext_sh_sub=$ext_sh_sub"
   #}
+}
 
+str_lib_init()
+{
   test -x "$(which php)" && bin_php=1 || bin_php=0
 }
+
 
 # ID for simple strings without special characters
 mkid()
@@ -59,6 +66,20 @@ x_re()
 fnmatch() # PATTERN STRING
 {
   case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
+}
+
+# Insert tab-character at x position (awk)
+awk_insert_char() # Char Line-Chars-Offset
+{
+  test $# -eq 2 || return 99
+  awk -vFS="" -vOFS="" '{$'"$2"'=$'"$2"'"'"$1"'"}1'
+}
+
+# Insert tab-character at x position (sed)
+sed_insert_char() # Char Line-Chars-Offset
+{
+  test $# -eq 2 || return 99
+  sed 's/./&'"$1"'/'"$3"
 }
 
 # Remove last n chars from stream at stdin

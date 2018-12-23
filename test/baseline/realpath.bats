@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-base=realpath-baseline
 load ../init
+base='baseline:realpath'
 
 setup()
 {

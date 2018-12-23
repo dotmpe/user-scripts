@@ -9,7 +9,23 @@ test -z "$verbosity" && {
   test -n "$DEBUG" && verbosity=7 || verbosity=6
 }
 
-logger_stderr_num() # Level-Name
+
+# Return level number as string for use with line-type or logger level, channel
+log_level_name() # Level-Num
+{
+  case "$1" in
+      1 ) echo emerg ;;
+      2 ) echo crit ;;
+      3 ) echo error ;;
+      4 ) echo warn ;;
+      5 ) echo note ;;
+      6 ) echo info ;;
+      7 ) echo debug ;;
+      * ) return 1 ;;
+  esac
+}
+
+log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
@@ -23,17 +39,21 @@ logger_stderr_num() # Level-Name
   esac
 }
 
+
 __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
 {
   test -n "$2" || {
-    test -n "$scriptname" && set -- "$1" "$scriptname" "$3" "$4" "$5"
+    set -- "$1" "$scriptname" "$3" "$4" "$5"
+    # XXX: prolly want shell-lib-load base macro instead
+    test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
+    test -n "$2" || set -- "$1" "$0" "$3" "$4" "$5"
   }
 
-  lvl=$(logger_stderr_num "$1")
+  lvl=$(log_level_num "$1")
   test -z "$lvl" || {
     test $verbosity -ge $lvl || {
       test -n "$5" && exit $5 || {
-        return
+        return 0
       }
     }
   }

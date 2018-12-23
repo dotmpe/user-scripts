@@ -1,0 +1,16 @@
+varspec1=foo
+  varspec2=a; varspec2=b
+    cmdline
+  var3
+    cmd2
+    cmd3
+    cmd4 -f
+
+    var4
+      cmdz
+    var5
+      cmdxx
+  var6
+    cmd 123
+
+# vim:ft=bash:
