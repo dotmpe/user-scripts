@@ -5,7 +5,7 @@
 export publish_ts=$($gdate +%s.%N)
 ci_stages="$ci_stages publish"
 
-announce "Starting ci:publish"
+ci_announce "Starting ci:publish"
 
 lib_load git vc vc-htd
 

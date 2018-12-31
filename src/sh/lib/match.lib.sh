@@ -3,6 +3,14 @@
 match_lib_init()
 {
   test -n "$INIT_LOG" || return 102
+
+  test -n "$uname" || uname=$(uname -s)
+  case "$uname" in
+      Darwin ) gsed=gsed; ggrep=ggrep;;
+      Linux ) gsed=sed; ggrep=grep ;;
+      * ) $LOG "error" "" "GNU toolkit required" "$uname" 100
+  esac
+
   $INIT_LOG info "" "Loaded match.lib" "$0"
 }
 
@@ -25,4 +33,3 @@ match_grep_pattern_test()
     return 1
   }
 }
-

@@ -2,10 +2,7 @@
 
 # Look at host / env and export u-s install type
 
-#unset SCRIPTPATH scriptpath scriptname \
-#    base DEBUG \
-#    lib_loaded default_lib
-
+# TODO: some dynamic parts to bin/u-s env
 #if usr
 #elif usr-local
 
@@ -17,8 +14,13 @@ test -n "${U_S:-}" || U_S="$(dirname "$(dirname "$(realpath "$0")")")"
 #else dev-local
 #test -n "$U_S" || U_S="$(pwd -P)"
 
-. "$U_S/tools/sh/parts/env-0.sh"
-. "$U_S/tools/sh/parts/env-dev.sh"
+: "${script_util:="$U_S/tools/sh"}"
+. "${script_util}/util.sh"
+. "${script_util}/parts/print-color.sh"
+. "${script_util}/parts/env-0.sh"
+. "${script_util}/parts/env-dev.sh"
+
+set +o nounset # NOTE: apply nounset only during init
 
 U_S_ENV=dev
 export U_S_ENV U_S

@@ -1,4 +1,5 @@
-#!/bin/ash
+#!/usr/bin/env bash
+test -z "${ci_util_:-}" && ci_util_=1 || exit 98 # Recursion
 
 : "${ci_stages:=}"
 
@@ -15,7 +16,7 @@ announce_stage() {
   test -n "$2" || set -- "$1" "$stage_id"
   test -n "$2" || set -- "$1" "$1"
 
-  print_yellow "$stage" "Starting stage... ($($gdate --iso=ns -d @$(eval echo \$${2}_ts)))"
+  print_yellow "$scriptname:$stage" "Starting stage... ($($gdate --iso=ns -d @$(eval echo \$${2}_ts)))"
 }
 
 close_stage()
@@ -27,25 +28,21 @@ close_stage()
   print_yellow "$stage" "$1 ($($gdate --iso=ns))"
 }
 
-announce()
+ci_announce()
 {
-  print_yellow "$stage" "$1 ($($gdate --iso=ns))"
+  print_yellow "$scriptname:$stage" "$1 ($($gdate --iso=ns))"
 }
 
-
-fnmatch() { case "$2" in $1 ) return ;; * ) return 1 ;; esac; }
-
-assert_nonzero()
+ci_bail()
 {
-  test $# -gt 0 && test -n "$1"
+  test $# -eq 1 || return
+  print_red "$1" >&2 ; return 1
 }
 
-
-. "${script_util:-"$CWD/tools/sh"}/parts/print-color.sh"
-
-. "${print_color:="tools/ci/parts/std-runner.sh"}"
-. "${print_color:="tools/ci/parts/std-reporter.sh"}"
-
-print_yellow "ci:util" "Loaded"
+ci_abort()
+{
+  test $# -eq 1 || return
+  print_red "$1" >&2 ; exit 1
+}
 
 #

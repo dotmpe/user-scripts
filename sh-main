@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Shell script wrapper for $PWD/sh-* scripts and other project/CI tooling
+
+set -e
+set -o nounset
+set -o pipefail
+set -o errexit
+
+. "${script_util:="$PWD/tools/sh"}/env.sh"
+
+test $# -gt 0 || set -- sh-treebox-us sh-baseline.tab '*'
+
+print_yellow "" "Starting '$*'"
+test -e "$1" && {
+
+  $SCRIPT_SHELL \
+    "$@" && print_green "" "Completed '$*'" || print_red "" "Failed '$*'"
+
+} || {
+  "$@" && print_green "" "Completed '$*'" || print_red "" "Failed '$*'"
+}
+
+# vim:ft=bash:

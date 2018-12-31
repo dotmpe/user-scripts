@@ -34,16 +34,19 @@ test -n "$scriptpath" || scriptpath="$U_S$sh_src_base"
 test -n "$scriptname" || scriptname="$(basename "$0")"
 test -n "$script_util" || script_util="$U_S$sh_util_base"
 
-test -n "$script_env" || {
-  test -e "$PWD$sh_util_base/user-env.sh" &&
-    script_env=$PWD$sh_util_base/user-env.sh ||
-    script_env=$U_S$sh_util_base/user-env.sh
-}
-
-$INIT_LOG "info" "" "Loading user-script env..." "$script_env"
-. "$script_env"
+# XXX: cleanup
+#test -n "$script_env" || {
+#  test -e "$PWD$sh_util_base/user-env.sh" &&
+#    script_env=$PWD$sh_util_base/user-env.sh ||
+#    script_env=$U_S$sh_util_base/user-env.sh
+#}
+#
+#$INIT_LOG "info" "" "Loading user-script env..." "$script_env"
+#. "$script_env"
 
 # Now include module with `lib_load`
+test -z "$DEBUG" ||
+  echo . $U_S$sh_src_base/lib.lib.sh >&2
 {
 . $scriptpath/lib.lib.sh &&
   lib_lib_load && lib_lib_loaded=1 &&
@@ -73,6 +76,8 @@ test "$init_sh_libs" = "0" || {
     test "$init_sh_boot" != "1" || init_sh_boot=stderr-console-logger
   }
 
+  test -z "$DEBUG" ||
+    echo script_util=$script_util scripts_init $init_sh_boot >&2
   scripts_init $init_sh_boot ||
     $INIT_LOG "error" "init.sh" "Failed at bootstrap '$init_sh_boot' $?" "" 1
 

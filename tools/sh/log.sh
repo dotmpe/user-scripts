@@ -5,9 +5,13 @@
 #   log.sh [Line-Type] [Header] [Msg] [Ctx] [Exit]
 
 
-test -z "$verbosity" && {
+test -n "$verbosity" || {
+  test -z "$v" || verbosity="$v"
+}
+test -n "$verbosity" || {
   test -n "$DEBUG" && verbosity=7 || verbosity=6
 }
+test $verbosity -lt 7 || DEBUG=1
 
 
 # Return level number as string for use with line-type or logger level, channel
@@ -50,7 +54,7 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
   }
 
   lvl=$(log_level_num "$1")
-  test -z "$lvl" || {
+  test -z "$lvl" -o -z "$verbosity" || {
     test $verbosity -ge $lvl || {
       test -n "$5" && exit $5 || {
         return 0

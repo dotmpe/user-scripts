@@ -19,16 +19,18 @@
 
 export_stage script && announce_stage
 
+# . "./tools/ci/parts/init-build-cache.sh"
+
 bash ./sh tooling_baseline
 bash ./sh project_baseline
 
 
-#failed=/tmp/htd-build-test-$(get_uuid).failed
-#. "./tools/ci/parts/build.sh"
+failed=/tmp/htd-build-test-$(get_uuid).failed
+. "./tools/ci/parts/build.sh"
 
 
 # XXX: restore or move to other earlier stage
-#announce 'Checking project tooling, host env, 3rd party setup...'
+#ci_announce 'Checking project tooling, host env, 3rd party setup...'
 #. ./tools/ci/parts/baseline.sh
 
 
@@ -39,13 +41,13 @@ bash ./sh project_baseline
 
 export script_end_ts="$($gdate +"%s.%N")"
 
-#announce 'Running unit tests...'
+#ci_announce 'Running unit tests...'
 #scriptpath= SCRIPTPATH= bats test/unit/{os,lib,logger}*bats
 #scriptpath= SCRIPTPATH= bats test/unit/{sys,shell,str,date}*bats
 #scriptpath= SCRIPTPATH= bats test/unit/*bats
 
 
-#announce 'Running other specs, features etc...'
+#ci_announce 'Running other specs, features etc...'
 #scriptpath= SCRIPTPATH= bats test/spec/*bats
 
 #lib_load script logger str logger-std
@@ -53,7 +55,9 @@ export script_end_ts="$($gdate +"%s.%N")"
 #lib_load build package build-test
 #lib_init
 
+# XXX: old shippable-CI hack
+test "$SHIPPABLE" = true || test ! -e "$failed"
 
-close_stage && announce "Done"
+close_stage && ci_announce "Done"
 
 . "$ci_util/deinit.sh"

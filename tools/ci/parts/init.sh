@@ -15,7 +15,7 @@ $LOG note "" "CI Env:"
 
 $LOG note "" "GIT version: $GIT_DESCRIBE"
 
-announce '---------- Finished CI setup'
+ci_announce '---------- Finished CI setup'
 echo "Terminal: $TERM"
 echo "Shell: $SHELL"
 echo "Shell-Options: $-"
@@ -36,15 +36,18 @@ echo "User Bin: $(cd ~/bin 2>/dev/null && git describe --always)" || true
 echo "User static lib: $(find ~/lib 2>/dev/null)" || true
 echo
 echo "Script-Path:"
-echo "$SCRIPTPATH" | tr ' ' '\n'
+echo "$SCRIPTPATH" | tr ':' '\n'
 echo "Script-Name: $scriptname"
 echo "Verbosity: $verbosity"
 echo "Color-Scheme: $CS"
 echo "Debug: $DEBUG"
+echo "Src-Prefix: $SRC_PREFIX"
+echo "Vnd-Src-Prefix: $VND_SRC_PREFIX"
+echo "Vnd-Gh-Prefix: $VND_GH_PREFIX"
 echo
-announce '---------- Listing user checkouts'
+ci_announce '---------- Listing user checkouts'
 ./bin/u-s user-repos
 echo
 $LOG note "" "ci/parts/init Done"
-announce '---------- Starting build'
+ci_announce '---------- Starting build'
 # From: script-mpe/0.0.4-dev tools/ci/parts/init.sh

@@ -1,9 +1,29 @@
-#!/bin/ash
-ci_env_=$_
+#!/usr/bin/env bash
 
 # Boilerplate env for CI scripts
 
-. "./tools/ci/util.sh"
+test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
+
+: "${script_util:="$CWD/tools/sh"}"
+. "${script_util}/util.sh"
+. "${script_util}/parts/print-color.sh"
+print_yellow "sh:util" "Loaded"
+
+: "${ci_util:="$CWD/tools/ci"}"
+. "${ci_util}/util.sh"
+. "${ci_util}/parts/std-runner.sh"
+. "${ci_util}/parts/std-reporter.sh"
+print_yellow "ci:util" "Loaded"
+
+
+# FIXME: make
+: "${package_build_tool:="redo"}"
+: "${u_s_version:="feature/docker-ci"}"
+: "${u_s_version:="r0.0"}"
+
+: "${DOCKER_NS:="bvberkum"}"
+: "${SHIPPABLE:=}"
+: "${PS1:=}"
 
 
 # XXX: Map to namespace to avoid overlap with builtin names
@@ -78,13 +98,8 @@ main_test_() # Test-Cat [Cmd-Args...]
 }
 
 
-test -x "$(which gdate)" && export gdate=gdate || export gdate=date
 
-
-ci_phases="$ci_phases ci_env"
-ci_env_ts=$($gdate +"%s.%N")
-
-case "$TRAVIS_COMMIT_MESSAGE" in
+case "${TRAVIS_COMMIT_MESSAGE:-}" in
 
   *"[clear cache]"* | *"[cache clear]"* )
 
@@ -115,12 +130,34 @@ case "$TRAVIS_COMMIT_MESSAGE" in
     ;;
 esac
 
+# FIXME: need this too early during prototyping, see ci/parts/init
+#test -d "$HOME/build/bvberkum/user-scripts/.git" && {
+#  ( cd "$HOME/build/bvberkum/user-scripts" &&
+#      git fetch origin && git reset --hard origin/${u_s_version} ) ||
+#        print_red "" "Git ERR:$?"
+#
+#} || {
+#
+#  git clone https://github.com/bvberkum/user-scripts $HOME/build/bvberkum/user-scripts
+#  ( cd "$HOME/build/bvberkum/user-scripts" &&
+#      git checkout -t origin/${u_s_version} -b ${u_s_version}
+#   ) || print_red "" "Git ERR:$?"
+#}
 
-. "${USER_ENV:="tools/sh/env.sh"}"
 
-# FIXME: make
-: "${package_build_tool:="redo"}"
-: "${TEST_ENV:="$ci_util/env.sh"}"
+test -x "$(which gdate)" && export gdate=gdate || export gdate=date
+
+ci_env_ts=$($gdate +"%s.%N")
+ci_stages="$ci_stages ci_env"
 
 
-print_yellow "ci:env" "Starting: $0 '$ci_env_' '$*'" >&2
+. "${script_util}/env.sh"
+test -n "${IS_BASH:-}" || $LOG error "Not OK" "Need to know shell dist" "" 1
+lib_load build-htd env-deps web
+
+ci_env_end_ts=$($gdate +"%s.%N")
+$LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
+$LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
+
+print_yellow "ci:env" "Starting: $0 '$*'" >&2
+# From: script-mpe/0.0.4-dev tools/ci/env.sh

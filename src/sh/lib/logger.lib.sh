@@ -19,6 +19,13 @@ logger_lib_load()
 # logger handler.
 logger_log() # level target-ids description source-ids status-code
 {
+  test $# -gt 1 || return
+  test $# -eq 2 && set -- "$@" "" "" "" || {
+    test $# -eq 3 && set -- "$@" "" "" || {
+      test $# -eq 4 && set -- "$@" ""
+    }
+  }
+
   { test -z "$1" || {
       test $1 -le $logger_log_threshold
     }
@@ -108,6 +115,13 @@ logger_strfmt() # line-type target-ids description source-ids
 # is too low; exit with given status.
 logger_stderr() # syslog-level target-ids description source-ids status-code
 {
+  test $# -gt 1 || return
+  test $# -eq 2 && set -- "$@" "" "" "" || {
+    test $# -eq 3 && set -- "$@" "" "" || {
+      test $# -eq 4 && set -- "$@" ""
+    }
+  }
+
   test -n "$1" || set -- "$stderr_log_level" "$2" "$3" "$4" "$5"
   fnmatch "[0-9]" "$1" || set -- "$(log_level_num "$1")" "$2" "$3" "$4" "$5"
 
@@ -127,6 +141,9 @@ logger_stderr() # syslog-level target-ids description source-ids status-code
     test $1 -gt $logger_exit_threshold || exit -$1
   }
 }
+
+logger_stderr_num() { log_level_num "$@"; }
+logger_stderr_level() { log_level_name "$@"; }
 
 
 # Return level number as string for use with line-type or logger level, channel

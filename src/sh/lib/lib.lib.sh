@@ -71,7 +71,7 @@ lib_load()
   do
     lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')
     test -n "$lib_id" || {
-      $lib_lib_log error lib "err: lib_id=$lib_id" "" 1 || return
+      $lib_lib_log error $scriptname:lib "err: lib_id=$lib_id" "" 1 || return
     }
     f_lib_loaded=$(eval printf -- \"\$${lib_id}_lib_loaded\")
 
@@ -87,14 +87,14 @@ lib_load()
           done)"
 
         test -n "$f_lib_path" || {
-          $lib_lib_log error "lib" "No path for lib '$1'" "" 1 || return
+          $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "" 1 || return
         }
         . "$f_lib_path"
 
         # again, func_exists is in sys.lib.sh. But inline here:
         type ${lib_id}_lib_load  2> /dev/null 1> /dev/null && {
           ${lib_id}_lib_load || {
-            $lib_lib_log error "lib" "in lib-load $1 ($?)" "$f_lib_path" 1
+            $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($?)" "$f_lib_path" 1
             return $?
           }
         } || true
@@ -103,7 +103,7 @@ lib_load()
         eval ${lib_id}_lib_loaded=1
         lib_loaded="$lib_loaded $lib_id"
         # FIXME sep. profile/front-end for shell vs user-scripts
-        # $lib_lib_log info "lib" "Finished loading ${lib_id}: OK"
+        # $lib_lib_log info "$scriptname:lib" "Finished loading ${lib_id}: OK"
         unset lib_id
     }
     shift
@@ -118,7 +118,7 @@ lib_assert()
   do
     mkvid "$1"
     test "$(eval "echo \$${vid}_lib_loaded")" = "1" || {
-      $lib_lib_log error lib "Assert loaded $1" "" 1
+      $lib_lib_log error $scriptname:lib "Assert loaded $1" "" 1
       return 1
     }
     shift
@@ -135,7 +135,7 @@ lib_init()
   do
     type ${1}_lib_init 2> /dev/null 1> /dev/null && {
       ${1}_lib_init || {
-        $lib_lib_log error "lib" "in lib-init $1 ($?)" "" 1
+        $lib_lib_log error "$scriptname:lib" "in lib-init $1 ($?)" "" 1
         return $?
       }
     }

@@ -1,27 +1,27 @@
 # varspec                                              cmdspec                #
 
+# Variable- and command specs for baseline suite. +U_s
+# Usage:
+#   ./sh-main tooling-baseline
+
 # XXX: cleanup
 #unset LOG SCRIPTPATH scriptpath scriptname base LOG verbosity INIT_LOG CWD
 
-CWD=$PWD                                               . ./tools/ci/util.sh
+LOG=$PWD/tools/sh/log.sh                               ./tools/git-hooks/pre-commit.sh
+LOG=$PWD/tools/sh/log.sh                               ./.git/hooks/pre-commit
 
-/CWD                                                   . ./tools/sh/parts/env-0.sh
-CWD=$PWD/tools/sh/log.sh
-CWD=
-
-/LOG
-LOG=$PWD/tools/sh/log.sh
-LOG=
-
-/SCRIPTPATH
-SCRIPTPATH=$PWD
-SCRIPTPATH=
+true                                                   . ./tools/sh/util.sh
+true                                                   . ./tools/ci/util.sh
+true                                                   . ./tools/sh/parts/env-0.sh
 
 # varspec                                              cmdspec                #
-/CWD                                                   CWD= . ./tools/sh/env.sh
+CWD=$PWD                                                . ./tools/sh/env.sh
 
 # varspec                                              cmdspec                #
-set +o nounset                                         . ./tools/sh/init.sh
+LOG=$PWD/tools/sh/log.sh                               . ./tools/sh/init.sh
+ BASHOPTS=
+  set -o nounset                                       . ./tools/sh/init.sh
+
 #BASHOPTS=-                                             . ./tools/sh/init.sh
 # init_sh_libs= init_sh_boot=
 #  __load_lib=

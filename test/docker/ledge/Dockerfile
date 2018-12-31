@@ -1,6 +1,6 @@
 FROM scratch
-MAINTAINER Abulafia
-ADD logs /statusdir/logs
-ADD tree /statusdir/tree
-ADD index /statusdir/index
+MAINTAINER Prime Radiant
+ADD logs /statusdir/
+ADD tree /statusdir/
+ADD index /statusdir/
 ENTRYPOINT ["false"]

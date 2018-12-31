@@ -1,11 +1,17 @@
-#!/bin/ash
+#!/usr/bin/env bash
 
-announce 'Initializing for build-cache'
+ci_announce 'Initializing for build-cache'
 
-echo "$DOCKER_HUB_PASSWD" | docker login --username bvberkum --password-stdin
+: "${dckr_pref:="sudo"}"
+
+test -n "${DOCKER_HUB_PASSWD:-}" || {
+  $LOG "error" "" "Docker Hub password required"
+  return
+}
+echo "$DOCKER_HUB_PASSWD" | ${dckr_pref} docker login --username $DOCKER_NS --password-stdin
 
 
-mkdir ~/.statusdir/{logs,tree,index}
+mkdir -p ~/.statusdir/{logs,tree,index}
 
 builds_log="$HOME/.statusdir/logs/travis-user-scripts.list"
 
@@ -21,6 +27,7 @@ echo '------------ New log'
 tail -n 1 "$builds_log"
 echo '------------'
 
+ledge_tag="$(printf -- "$TRAVIS_BRANCH" | tr -c 'A-Za-z0-9_-' '-')"
 
 #docker pull bvberkum/ledge:latest && {
 #
@@ -44,8 +51,8 @@ echo '------------'
 
 
 cp test/docker/ledge/Dockerfile ~/.statusdir
-docker build -t bvberkum/ledge:$TRAVIS_JOB_NUMBER ~/.statusdir/
-docker push bvberkum/ledge:$TRAVIS_JOB_NUMBER
+${dckr_pref} docker build -t bvberkum/ledge:$ledge_tag ~/.statusdir
+${dckr_pref} docker push bvberkum/ledge:$ledge_tag
 
 
 #docker run \

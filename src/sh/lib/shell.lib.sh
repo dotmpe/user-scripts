@@ -120,7 +120,10 @@ sh_env_init()
     $log info shell.lib "Choosing bash sh-env-init"
     sh_env()
     {
-      set | grep '^[a-zA-Z_][0-9a-zA-Z_]*=.*$'
+      {
+        set | grep '^[_A-Za-z][A-Za-z0-9_]*=.*$'
+        env
+      } | sort -u
     }
   } || {
     $log info shell.lib "Choosing non-bash sh-env-init"

@@ -42,6 +42,7 @@ check-git()
 init-basher()
 {
   git clone https://github.com/basherpm/basher.git ~/.basher/
+  export PATH=$PATH:$HOME/.basher/bin:$HOME/.basher/cellar/bin
 }
 
 check-basher()

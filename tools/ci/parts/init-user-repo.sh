@@ -1,6 +1,6 @@
 #!/bin/ash
 
-announce "Entry for CI install phase ($scriptname)"
+ci_announce "Entry for CI install phase ($scriptname)"
 
 # TODO: list versions/tags per supportlib or checkout latest tag
 
@@ -12,8 +12,9 @@ update_supportlib()
   test -n "$1" || set -- "master" "$2"
   test -n "$2" || set -- "$1" "origin"
 
-  git fetch --all --quiet && git fetch --tags --quiet &&
-  git reset --quiet --hard $2/$1
+  git fetch --quiet "$2" &&
+    git fetch --tags --quiet "$2" &&
+    git reset --quiet --hard $2/$1
 }
 
 

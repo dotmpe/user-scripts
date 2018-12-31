@@ -1,6 +1,9 @@
 #!/bin/ash
 
-: "${INIT_LOG:="$PWD/tools/sh/log.sh"}"
+# Env without any pre-requisites.
+
+
+: "${INIT_LOG:="$U_S/tools/sh/log.sh"}"
 
 
 # Env pre-checks
@@ -18,10 +21,11 @@ test -z "${CWD:-}" || {
 }
 
 
-# Start env
+# Start 0. env
 
 : "${CWD:="$PWD"}"
 : "${DEBUG:=}"
+: "${BASHOPTS:=}"
 : "${OUT:="echo"}"
 : "${TAB_C:="	"}"
 #: "${TAB_C:="`printf '\t'`"}"

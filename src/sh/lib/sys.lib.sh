@@ -104,7 +104,7 @@ try_exec_func()
   $func "$@" || return $?
 }
 
-# TODO: redesign
+# TODO: redesign @Dsgn
 try_var()
 {
   local value="$(eval echo "\$$1")"
@@ -123,6 +123,16 @@ try_value()
   }
   test -n "$value" || return 1
   echo "$value"
+}
+
+# require vars to be initialized, regardless of value
+req_vars()
+{
+  while test $# -gt 0
+  do
+    sh_isset "$1" || { error "Missing req-var '$1'" ; return 1 ; }
+    shift
+  done
 }
 
 # setup-tmp [(RAM_)TMPDIR]

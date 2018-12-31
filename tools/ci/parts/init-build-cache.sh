@@ -1,5 +1,5 @@
 #!/bin/sh
 
-announce 'Preparing for build-cache'
+ci_announce 'Preparing for build-cache'
 
 

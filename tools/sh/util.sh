@@ -1,46 +1,51 @@
-#!/bin/sh
+#!/usr/bin/env bash
+test -z "${sh_util_:-}" && sh_util_=1 || return 98 # Recursion
 
-# Must be started from u-s project root or set before
-test -n "$scriptpath" || scriptpath="$(pwd -P)"
+# Fallback for undefined $LOG etc. Maybe remove later.
+debug() { echo "Error 'debug $*'"; return 97; }
+info() { echo "Error 'info $*'"; return 97; }
+note() { echo "Error 'note $*'"; return 97; }
+error() { echo "Error 'error $*'"; return 97; }
+warn() { echo "Error 'warn $*'"; return 97; }
 
-test -n "$script_util" || script_util=$scriptpath/tools/sh
+# Print log-like to stderr
+print_err()
+{
+  test -n "$LOG" -a -x "$LOG" && {
+    $LOG "$@"; return $?;
+  }
 
-. $script_util/init.sh
+  test -z "$verbosity" -a -z "$DEBUG" && return
+  test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
+  test -z "$verbosity" -a -n "$DEBUG" || {
 
+    case "$1" in [0-9]* ) true ;; * ) false ;; esac &&
+      lvl=$(log_level_name "$1") ||
+      lvl=$(log_level_num "$1")
 
-case "$0" in
-
-  "-"*|"" ) ;;
-
-  * )
-
-      test -n "$f_lib_load" && {
-        # never
-        echo "util.sh assert failed: f-lib-load is set ($0: $*)" >&2
-        exit 1
-
-      } || {
-
-        test -n "$__load_mode" || __load_mode=$__load
-        case "$__load_mode" in
-
-          # Setup SCRIPTPATH and include other scripts
-          boot|main )
-              util_boot "$@"
-            ;;
-
-        esac
+    test $verbosity -ge $lvl || {
+      test -n "$5" && exit $5 || {
+        return 0
       }
-      test -n "$SCRIPTPATH" || {
-        util_init
-      }
-      case "$__load_mode" in
-        boot )
-            lib_load
-          ;;
-        #ext|load-*|* ) ;; # External include, do nothing
-      esac
-    ;;
-esac
+    }
+  }
 
-# Id: user-script/0.0.1-dev tools/sh/util.sh
+  printf -- "%s\n" "[$2] $1: $3 <$4> ($5)" >&2
+  test -z "$5" || exit $5 # NOTE: also exit on '0'
+}
+
+
+git_version()
+{
+  test $# -eq 1 -a -d "$1" || return
+  ( test "$PWD" = "$1" || cd "$1"
+    git describe --always )
+}
+
+
+fnmatch() { case "$2" in $1 ) return ;; * ) return 1 ;; esac; }
+
+assert_nonzero()
+{
+  test $# -gt 0 && test -n "$1"
+}
