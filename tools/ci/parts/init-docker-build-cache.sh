@@ -5,7 +5,7 @@ announce 'Initializing for build-cache'
 echo "$DOCKER_HUB_PASSWD" | docker login --username bvberkum --password-stdin
 
 
-mkdir ~/.statusdir/{logs,tree,index}
+mkdir -p ~/.statusdir/{logs,tree,index}
 
 builds_log="$HOME/.statusdir/logs/travis-user-scripts.list"
 
@@ -44,8 +44,8 @@ echo '------------'
 
 
 cp test/docker/ledge/Dockerfile ~/.statusdir
-docker build -t bvberkum/ledge:$TRAVIS_JOB_NUMBER ~/.statusdir/
-docker push bvberkum/ledge:$TRAVIS_JOB_NUMBER
+docker build -t bvberkum/ledge:$TRAVIS_BRANCH ~/.statusdir/
+docker push bvberkum/ledge:$TRAVIS_BRANCH
 
 
 #docker run \
