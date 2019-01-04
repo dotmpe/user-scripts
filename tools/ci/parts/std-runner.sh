@@ -181,8 +181,6 @@ sh_spec_table_inner()
   }
 
   test $indent -gt $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "Push" "$indent $last_indent"
 
       ind_push "$indent" && varspec_push "$new_varspec"
 
@@ -190,8 +188,6 @@ sh_spec_table_inner()
   }
 
   test $indent -lt $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "Pop" "$indent $last_indent"
 
       while test "$(ind_pop && echo "$ind")" != "$indent"
       do
@@ -203,8 +199,6 @@ sh_spec_table_inner()
   }
 
   test $indent -eq $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "New" "$indent $last_indent"
 
       test -z "$ind_d" || {
         ind_pop && varspec_pop

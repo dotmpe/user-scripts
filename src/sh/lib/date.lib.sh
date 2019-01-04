@@ -26,6 +26,8 @@ date_lib_load()
   # much if below is only used for fmtdate-relative.
   export _1MONTH=$(( 4 * $_1WEEK ))
   export _1YEAR=$(( 365 * $_1DAY ))
+
+  datefmt_suffix=
 }
 
 
@@ -33,9 +35,10 @@ date_lib_init()
 {
   lib_assert sys os str std log || return
 
-  case "$uname" in
-    Darwin ) gdate="gdate" ;;
-    Linux ) gdate="date" ;;
+  test -n "$gdate" || case "$uname" in
+    darwin ) gdate="gdate" ;;
+    linux ) gdate="date" ;;
+    * ) $LOG error "" uname "$uname" 1 ;;
   esac
 
   TZ_OFF_1=$($gdate -d '1 Jan' +%z)
@@ -146,6 +149,9 @@ date_newest() # ( FILE | DTSTR | @TS ) ( FILE | DTSTR | @TS )
 # X sec/min/hr/days/weeks/months/years ago
 fmtdate_relative() # [ Previous-Timestamp | ""] [Delta] [suffix=" ago"]
 {
+  test $# -le 3 || return
+  while test $# -lt 3 ; do set -- "$@" "" ; done
+  test -n "$1" || return
     # Calculate delta based on now
   test -n "$2" || set -- "$1" "$(( $(date +%s) - $1 ))" "$3"
     # Set default suffix

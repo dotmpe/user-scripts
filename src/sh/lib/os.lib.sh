@@ -5,7 +5,7 @@
 
 os_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
+	test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   test -n "$os" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
@@ -160,10 +160,10 @@ filemtype() # File..
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    Darwin )
+    darwin )
         file -${flags}I "$1" || return 1
       ;;
-    Linux )
+    linux )
         file -${flags}i "$1" || return 1
       ;;
     * ) error "filemtype: $uname?" 1 ;;
@@ -175,7 +175,7 @@ fileformat()
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    Darwin | Linux )
+    darwin | linux )
         file -${flags} "$1" || return 1
       ;;
     * ) error "fileformat: $uname?" 1 ;;
@@ -188,10 +188,10 @@ filesize() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%z' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filesize: $1?" "" 1 ;;
@@ -205,10 +205,10 @@ filectime() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%c' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filectime: $1?" "" 1 ;;
@@ -222,10 +222,10 @@ filemtime() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%m' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%Y' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filemtime: $1?" "" 1 ;;
@@ -345,11 +345,16 @@ normalize_relative()
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
 read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
+  test $# -gt 1 -a $# -le 2 || return 98
   test -n "$1" || return 1
   test -n "$2" || set -- "$1" '^\s*(#.*|\s*)$'
-  test -z "$3" || $os_lib_log error "os" "read-nix-style-file: surplus arguments '$2'" "" 1
-  cat $cat_f "$1" | grep -Ev "$2" || return 1
+  test -z "$cat_f" && {
+    grep -Ev "$2" "$1" || return 1
+  } || {
+    cat $cat_f "$1" | grep -Ev "$2" || return 1
+  }
 }
+# Copy: HT:tools/u-s/parts/sh-read.inc.sh vim:ft=bash:
 
 grep_nix_lines()
 {
@@ -459,7 +464,7 @@ count_lines()
   test -z "$1" -o "$1" = "-" && {
     wc -l | awk '{print $1}'
   } || {
-    while test -n "$1"
+    while test $# -gt 0
     do
       wc -l $1 | awk '{print $1}'
       shift

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# TODO: Describe all repos on SCRIPTPATH...
 # XXX: just take a SRC-PREFIX or other dir and take each dir as a GIT
 # checkout,, or dir of checkouts.
 user_repos() # [match-repo] [match-group-or-team] [github.com] [Vnd-Src-Prefix]
@@ -35,4 +36,17 @@ user_repos() # [match-repo] [match-group-or-team] [github.com] [Vnd-Src-Prefix]
         done
     }
   done
+}
+
+#
+print_user_repo_description()
+{
+  { # Try to validate the .git is OK to catch some kinds of repo failures, but
+    # not all. GIT fsck has no --quick or --quiet
+    cd "$1" && git status
+  } >/dev/null || return
+
+  local descr="$( cd "$1" >/dev/null && git describe --always)"
+  test -n "$descr" || return
+  echo "$1 at GIT $descr"
 }

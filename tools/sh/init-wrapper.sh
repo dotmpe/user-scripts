@@ -1,13 +1,8 @@
 #!/bin/sh
 
+test -n "$U_S" || U_S=/srv/project-local/user-scripts
+
 # Dev-Module for lib_loadXXX: cli wrapper, see init.sh
-
-# Must be started from u-s project root or set before
-#test -n "$scriptpath" || scriptpath="$(pwd -P)"
-#test -n "$script_util" || script_util=$scriptpath/tools/sh
-
-# XXX: +script-mpe cleanup . $U_S/src/sh/lib/lib.lib.sh
-#. $script_util/init.sh
 . $U_S/src/sh/lib/lib.lib.sh
 
 
@@ -16,6 +11,17 @@ lib_lib_load()
   test -n "$default_lib" ||
       default_lib="os std sys str log shell stdio src main argv match vc std-ht"
 }
+
+
+. $U_S/src/sh/lib/lib-util.lib.sh
+
+
+# Main
+
+# XXX: @Spec @Htd util-mode
+# ext: external, sourced file gets to do everything. Here simply return.
+# lib: set to try to load the default-lib required, but fail on missing envs
+# boot: setup env, then load default-lib
 
 case "$0" in
 
@@ -30,24 +36,39 @@ case "$0" in
 
       } || {
 
-        test -n "$__load_mode" || __load_mode=$__load
-        case "$__load_mode" in
-
-          # Setup SCRIPTPATH and include other scripts
-          boot|main )
-              util_boot "$@"
-            ;;
-
-        esac
+        # Set util_mode before sourcing util.sh to do anything else
+        test -n "$util_mode" || util_mode=ext
       }
-      test -n "$SCRIPTPATH" || {
-        util_init
-      }
-      case "$__load_mode" in
+
+      # Return now for 'ext'
+      test "$util_mode" = "ext" && return
+
+      # XXX: for logger
+      export scriptname base
+
+      # Or either start given mode
+      case "$util_mode" in
+        boot|lib )
+            lib_lib_load || return
+
+      # Or return errstat on first unmatched case (or errors per step).
+      esac || return
+
+      case "$util_mode" in
         boot )
-            lib_load
-          ;;
-        #ext|load-*|* ) ;; # External include, do nothing
+            lib_util_init || return ;;
+      esac
+
+      case "$util_mode" in
+        boot|lib )
+            lib_lib_init || return
+            lib_load $default_lib || return ;;
+      esac
+
+      case "$util_mode" in
+        boot )
+            lib_init || return
+            lib_util_deinit || return ;;
       esac
     ;;
 esac

@@ -1,29 +1,23 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# See .travis.yml
 
+set -u
 export_stage install && announce_stage
 
-# Call for dev setup, see +U_s
-$script_util/parts/init.sh all
-
-# Give private user-script repoo its place
-# TODO: test user-scripts instead/also +U_s +script_mpe
-test -d $HOME/bin/.git || {
-  test "$USER" = "travis" || return 100
-
-  rm -rf $HOME/bin || true
-  ln -s $HOME/build/bvberkum/script-mpe $HOME/bin
-}
-
+# XXX: Call for dev setup, see +U_s
+#$script_util/parts/init.sh all
 
 ci_announce "Sourcing env (II)..."
-unset SCRIPTPATH ci_env_ sh_env_ sh_util_ ci_util_
-. "${BASH_ENV:="$CWD/tools/ci/env.sh"}"
+$LOG "info" "" "Stages:" "$ci_stages"
+unset SCRIPTPATH ci_env_ sh_env_ sh_util_ ci_util_ sh_usr_env_
+. "${ci_util}/env.sh"
+ci_stages="$ci_stages ci_env_2 sh_env_2"
+ci_env_2_ts=$ci_env_ts sh_env_2_ts=$sh_env_ts sh_env_2_end_ts=$sh_env_end_ts
+$LOG "info" "" "Stages:" "$ci_stages"
 
+echo "Script-Path:"
+echo "$SCRIPTPATH" | tr ':' '\n'
+export SCRIPTPATH
 
-#set +o nounset
-. "./tools/sh/init.sh"
-
-
-close_stage
-
-. "$ci_util/deinit.sh"
+stage_id=install close_stage
+set +u

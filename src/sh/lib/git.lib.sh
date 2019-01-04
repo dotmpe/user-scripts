@@ -39,7 +39,7 @@ git_scm_find() # <user>/<repo>
       git_scm_list "*$1.git"
     }
   } | tee "$git_scm_find_out"
-  test $(count_lines "$git_scm_find_out") -gt 0
+  test -s "$git_scm_find_out"
 }
 
 git_scm_get() # VENDOR <user>/<repo>

@@ -44,12 +44,10 @@ sh_ansi_tpl_lib_load()
   then
 
     alias tree='tree -C'
-    case "$(uname)" in
-      Darwin )
-          alias ls='ls -G'
+    case "$uname" in
+      darwin ) alias ls='ls -G'
         ;;
-      Linux )
-          alias ls='ls --color=auto'
+      linux ) alias ls='ls --color=auto'
           #alias dir='dir --color=auto'
           #alias vdir='vdir --color=auto'
         ;;

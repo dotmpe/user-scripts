@@ -41,7 +41,7 @@ test -n "${sh_util_:-}" || {
 test -z "$DEBUG" || print_yellow "" "Starting sh:env '$_' '$*' <$0>"
 
 # Keep current shell settings and mute while preparing env, restore at the end
-shopts=$-
+: "${shopts:="$-"}"
 
 #test -n "$DEBUG" && {
 #    set -x || true;
@@ -78,10 +78,15 @@ export SCRIPT_ENV USER_ENV
 func_exists error || ci_bail "std.lib missing"
 func_exists req_vars || error "sys.lib missing" 1
 
-req_vars scriptname uname verbosity DEBUG CWD userscript LOG INIT_LOG
+# FIXME: @Travis DEBUG
+#req_vars scriptname uname verbosity userscript
+
+#req_vars scriptname uname verbosity userscript LOG INIT_LOG CWD ||
+#  echo FIXME:ERR:$?
 
 set +o nounset # NOTE: apply nounset only during init
-lib_load projectenv
+#lib_load projectenv
+
 
 ### Start of build job parameterisation
 
@@ -117,6 +122,10 @@ test -n "$ENV_NAME" || {
 
   esac
 }
+
+
+export GIT_DESCRIBE="$(git describe --always)"
+
 
 ## Per-env settings
 

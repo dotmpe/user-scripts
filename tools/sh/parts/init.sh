@@ -105,6 +105,60 @@ init-github-release()
   go get github.com/aktau/github-release
 }
 
+init-deps()
+{
+  test -d "$VND_GH_SRC" -a -w "$VND_GH_SRC" || return
+
+  test $# -eq 1 || set -- dependencies.txt
+
+  grep -v '^\s*\(#.*\|\s*\)$' "$1" |
+  while read installer supportlib version
+  do
+    $LOG "info" "" "Checking $intaller $supportlib..." "$version"
+
+    : "${version:="master"}"
+
+    ns_name="$(dirname "$supportlib")"
+    test -d "$VND_GH_SRC/$ns_name" || mkdir -p "$VND_GH_SRC/$ns_name"
+
+    # Create clone at path, check for Git dir to not be fooled by any cache/mount
+    test -e "$VND_GH_SRC/$supportlib/.git" || {
+
+      test ! -e "$VND_GH_SRC/$supportlib" || rm -rf "$VND_GH_SRC/$supportlib"
+      git clone --quiet https://github.com/$supportlib "$VND_GH_SRC/$supportlib" || return
+    }
+
+    cd "$VND_GH_SRC/$supportlib" && { {
+        git fetch --quiet "origin" &&
+        git fetch --tags --quiet "origin"
+      } || {
+        $LOG "error" "$?" "Error retrieving from origin" "$supportlib"
+      }
+      git reset --quiet --hard origin/$version || {
+        $LOG "error" "$?" "Error resetting to $version" "$supportlib"
+      }
+    }
+    $LOG "note" "" "Checked $intaller $supportlib..." "$version"
+  done
+}
+
+init-symlinks()
+{
+  test -d "$VND_GH_SRC" -a -w "$VND_GH_SRC" &&
+    $LOG note ci:install "Using Github vendor dir" "$VND_GH_SRC" ||
+    $LOG error ci:install "Writable Github vendor dir expected" "$VND_GH_SRC" 1
+
+  # Give private user-script repoo its place
+  # TODO: test user-scripts instead/also +U_s +script_mpe
+  test -d $HOME/bin/.git || {
+    test "$USER" = "travis" || return 100
+
+    rm -rf $HOME/bin || true
+    ln -s $HOME/build/bvberkum/script-mpe $HOME/bin
+  }
+}
+
+
 init-err()
 {
   $LOG error "" "failed during init" "$*"
@@ -155,12 +209,11 @@ all()
   BATS_VERSION_="$(bats --version)"
   { test -x "$(which bats)" && fnmatch "Bats 1.1.*" "$BATS_VERSION_"
   } || {
-    $LOG warn "" "Found $BATS_VERSION_, getting 1.1..."
+    echo $LOG warn "" "Found $BATS_VERSION_, getting 1.1..."
+
+    echo PREFIX=$HOME/.local init-bats || return
     PREFIX=$HOME/.local init-bats || return
   }
-
-  #reset-cache
-  #rm -rf $VND_GH_SRC/ztombol || true
 
   for helper in bats-assert bats-file bats-support
   do
@@ -177,6 +230,6 @@ all()
 
 # Main
 
-type req_subcmd >/dev/null 2>&1 || . "${TEST_ENV:=tools/ci/env.sh}"
+type req_subcmd >/dev/null 2>&1 || . "${ci_util:="tools/ci"}/env.sh"
 # Fallback func-name to init namespace to avoid overlap with builtin names
 main_ "init" "$@"

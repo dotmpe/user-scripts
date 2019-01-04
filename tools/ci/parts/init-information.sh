@@ -4,7 +4,6 @@ export ci_init_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages ci_init"
 
 
-
 $LOG note "" "Entry for CI pre-install / init phase"
 
 $LOG note "" "PWD: $(pwd && pwd -P)"
@@ -13,8 +12,8 @@ $LOG note "" "CI Env:"
 { env | grep -i 'shippable\|travis\|ci' | sed 's/^/	/' >&2; } || true
 
 
+#. "$ci_util/parts/check-git.sh"
 $LOG note "" "GIT version: $GIT_DESCRIBE"
-
 ci_announce '---------- Finished CI setup'
 echo "Terminal: $TERM"
 echo "Shell: $SHELL"

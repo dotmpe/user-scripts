@@ -14,6 +14,14 @@ log_level_name() # Level-Num
       5 ) echo note ;;
       6 ) echo info ;;
       7 ) echo debug ;;
+
+      5.1 ) echo ok ;;
+      4.2 ) echo fail ;;
+      3.3 ) echo err ;;
+      6.4 ) echo skip ;;
+      2.5 ) echo bail ;;
+      7.6 ) echo diag ;;
+
       * ) return 1 ;;
   esac
 }
@@ -22,12 +30,13 @@ log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
-      crit  ) echo 2 ;;
-      error ) echo 3 ;;
-      warn* ) echo 4 ;;
-      note|notice  ) echo 5 ;;
-      info  ) echo 6 ;;
-      debug ) echo 7 ;;
+      crit  | bail ) echo 2 ;;
+      error | err ) echo 3 ;;
+      warn  | fail ) echo 4 ;;
+      note  | notice | ok ) echo 5 ;;
+      info  | skip | TODO ) echo 6 ;;
+      debug | diag ) echo 7 ;;
+
       * ) return 1 ;;
   esac
 }
@@ -48,6 +57,8 @@ diag() { echo "$@"; }
 # but does not add (vars) to env.
 err_() # [type] [cat] [msg] [tags] [status]
 {
+  test $# -gt 0 || return
+  test $# -gt 1 || set -- "$@" "" "" "" ""
   test -z "$verbosity" -a -z "$DEBUG" && return
   test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
   test -z "$verbosity" -a -n "$DEBUG" || {

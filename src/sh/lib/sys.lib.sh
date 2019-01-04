@@ -4,8 +4,9 @@
 
 sys_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
-  test -n "$hostname" || hostname="$(hostname -s | tr 'A-Z' 'a-z')"
+  test -n "$uname" || uname="$(uname -s | tr 'A-Z' 'a-z')"
+  test -n "$HOST" || HOST="$(hostname -s | tr 'A-Z' 'a-z')"
+  test -n "$hostname" || hostname="$HOST"
 }
 
 sys_lib_init()
@@ -62,7 +63,7 @@ not_trueish()
 # Error unless non-empty and falseish
 falseish()
 {
-  test -n "$1" || return 1
+  test -n "$1" || return 0
   case "$1" in
     [Oo]ff|[Ff]alse|[Nn]|[Nn]o|0)
       return 0;;
@@ -128,16 +129,21 @@ try_value()
 # require vars to be initialized, regardless of value
 req_vars()
 {
-  while test $# -gt 0
+  for varname in "$@"
   do
-    sh_isset "$1" || { error "Missing req-var '$1'" ; return 1 ; }
-    shift
+    #sh_isset "$varname" || { error "Missing req-var '$varname' ($SHELL_NAME)"; return 1; }
+    sh_isset "$varname" || {
+      $LOG error "" "Missing req-var '$varname' ($SHELL_NAME)"
+      return 1
+    }
   done
 }
 
 # setup-tmp [(RAM_)TMPDIR]
 setup_tmpd()
 {
+  test $# -le 2 || return
+  while test $# -lt 2 ; do set -- "$@" "" ; done
   test -n "$1" || set -- "$base-$(get_uuid)" "$2"
   test -n "$RAM_TMPDIR" || {
         test -w "/dev/shm" && RAM_TMPDIR=/dev/shm/tmp
@@ -157,10 +163,11 @@ setup_tmpd()
 # setup-tmp [ext [uuid [(RAM_)TMPDIR]]]
 setup_tmpf() # [Ext [UUID [TMPDIR]]]
 {
+  test $# -le 3 || return
+  while test $# -lt 3 ; do set -- "$@" "" ; done
   test -n "$1" || set -- .out "$2" "$3"
   test -n "$2" || set -- $1 $(get_uuid) "$3"
   test -n "$1" -a -n "$2" || $sys_lib_log error sys "empty arg(s)" "" 1
-  test -z "$4" || $sys_lib_log error sys "surplus arg(s) '$3'" "" 1
 
   test -n "$3" || set -- "$1" "$2" "$(setup_tmpd)"
   test -n "$3" -a -d "$3" || $sys_lib_log error sys "Not a dir: '$3'" "" 1
@@ -209,7 +216,7 @@ add_env_path() # Prepend-Value Append-Value
     }
   }
   # XXX: to export or not to launchctl
-  #test "$uname" != "Darwin" || {
+  #test "$uname" != "darwin" || {
   #  launchctl setenv "$1" "$(eval echo "\$$1")" ||
   #    echo "Darwin setenv '$1' failed ($?)" >&2
   #}
@@ -270,7 +277,7 @@ init_uconfdir_path()
 {
   # Add path dirs in $UCONFDIR to $PATH
   local name
-  for name in $uname Generic
+  for name in $uname $(uname -s) Generic
   do
     local user_PATH=$UCONFDIR/path/$name
     if test -d "$user_PATH"

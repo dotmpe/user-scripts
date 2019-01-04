@@ -8,20 +8,19 @@ addons:
   apt:
     packages:
       - realpath
-      - tree
 
 sudo: false
 
-#services: []
+services:
+- docker
 
 #language: shell
 language: python # Use Python build-env for NPM, PIP setup etc.
-#python:
-#  - "2.7" # 2.7.14 [2018-12-07] 
 
 env:
   matrix: []
   global:
+  - verbosity=5
   - VND_SRC_PREFIX=$HOME/build
   - VND_GH_SRC=$VND_SRC_PREFIX
   - SRC_PREFIX=$VND_SRC_PREFIX
@@ -80,18 +79,18 @@ after_script:
   - . ./tools/ci/after.sh
 
 
-matrix:
-  include:
-#   - python: 2.7
-
-    - env: TRAVIS_US_PUBLISH="pre"
-      if: branch = r0.0
-
-    - env: TRAVIS_US_PUBLISH="rc"
-      if: branch = test
-
-#    - python: 3.5
+#matrix:
+#  include:
+#    - python: "2.7" # 2.7.14 [2018-12-07] 
+#
+#    - env: TRAVIS_US_PUBLISH="pre"
+#      if: branch = r0.0
+#
+#    - env: TRAVIS_US_PUBLISH="rc"
 #      if: branch = test
+
+    #- python: 3.5
+    #  if: branch = test
 
 #    - if: branch = test
 #      env: ENV_NAME=testing

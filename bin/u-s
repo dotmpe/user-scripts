@@ -12,8 +12,22 @@ init() #
 {
   test -n "$U_S" || return 100
 
+  sys_man=$(which man)
+  man() { u_s_man; }
+  : "${offline:=}"
+
   # Bootstrap SCRIPTPATH and default-libs, then return to main routine
-  . $U_S/tools/sh/init.sh && lib_init && U_S_VERSION="$(u_s_version)"
+  . $U_S/tools/sh/init.sh || {
+    $PWD/tools/sh/log.sh "error" "" "During init.sh" $?
+    return 1
+  }
+  INIT_LOG=$PWD/tools/sh/log.sh lib_init || {
+    $PWD/tools/sh/log.sh "error" "" "During lib init" $?
+    return 1
+  }
+  U_S_VERSION="$(u_s_version)"
+
+  u_s_env_init
 }
 
 edit_docs() # [Files...]
@@ -67,26 +81,23 @@ libs_list() # [Glob]
   done
 }
 
+# Listing matching lib names (see libs-list)
 libs() # [Glob]
 {
   libs_list "$@"
 }
 
-update() #
+update() # [Repo-Release] [Repo-Id] [Repo-URL]
 {
-  test $# -eq 0 || return 99
-  cd "$U_S"
-  git fetch && git reset --hard origin/r0.0
+  test $# -le 3 || return 99
+  test "$PWD" = "$U_S" || cd "$U_S"
+  git_reset_hard "$@"
 }
 
 reinstall() # [<ns_name>/<repo_name>]
 {
-  cd
-  test $@ -gt 0 || set -- bvberkum/user-scripts
-  test $# -eq 1 || return 99
-  basher uninstall "$1" &&
-  BASHER_FULL_CLONE=true basher install "$1"
-  u-s update
+  cd  # Move out of U-s to HOME so CWD doesn't get confused
+  u_s_reinstall
 }
 
 redo_reinit() #
@@ -97,48 +108,12 @@ redo_reinit() #
     sudo ./redo install
 }
 
-#
-print_user_repo_description()
-{
-  { # Try to validate the .git is OK to catch some kinds of repo failures, but
-    # not all. GIT fsck has no --quick or --quiet
-    cd "$1" && git status
-  } >/dev/null || return
-
-  local descr="$( cd "$1" >/dev/null && git describe --always)"
-  test -n "$descr" || return
-  echo "$1 at GIT $descr"
-}
-
 # List raw func names as commands. TODO: indent spec maybe shortdescr nicely
 commands() #
 {
   test $# -eq 0 || return 99
   set -- "$0" $U_S/commands/*.lib.sh
   grep -h '^[a-z_][a-z0-9_]*()' "$@" | cut -d'{' -f1
-}
-
-# XXX: topic should be parts of files, not file names? Like commands. #MJfc
-topics() #
-{
-  test $# -eq 0 || return 99
-  local base="$U_S/src/man/"
-
-  for sec in 1 2 3 4 5 6 7 8
-  do
-    test "$base$sec/*.md" != "$(echo $base$sec/*.md)" || continue
-    for y in $base$sec/*.md
-    do echo "$(basename $y .md) ($sec)"
-    done
-  done | sort
-}
-
-# TODO: print topic for section properly, sort content into sections. #MJfc
-print_topic()
-{
-  test $# -eq 1 || return 99
-  test -e $U_S/src/man/$1.md || return
-  cat $U_S/src/man/$1.md
 }
 
 print_help()
@@ -157,7 +132,6 @@ print_help()
   echo "  dckr-reset - Delete docker container"
   echo "  dckr-shell CMD - Execute login shell at U-S dir"
   echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
-  echo "  dckr-cmd make [init|check|base|lint|units|specs|build|test|clean]"
   echo
   echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
   echo
@@ -168,9 +142,9 @@ print_usage()
   echo "Usage: u-s [CMD [ARG...]]"
 }
 
-help() # [Topic-ID]
+help() # [Section] [Name]
 {
-  test $# -lt 2 || return 99
+  test $# -le 2 || return 99
   test $# -gt 0 && {
     # TODO: print help for commands as well, maybe summaries for lists of topics @Docs
     print_topic "$@"
@@ -188,6 +162,7 @@ usage() #
   exit 1
 }
 
+# Excho version retrieved from Git on load/init. See u-s-git and u-s-version.
 version() #
 {
   test $# -eq 0 || return 99
@@ -196,17 +171,28 @@ version() #
 
 main() # [SUBCMD [ARGS...]]
 {
+  print_err "info" "" "Initialzing shell..."
   # Get SCRIPTPATH and bootstrap libs
   init || return
+  print_err "ok" "" "Initialized, booting cmd..."
 
   # Call sub-command shell function
   test $# -gt 0 || set -- usage
-  test "$1" != "main" || return # NOTE: Huh. Sanity.
+  test "$1" != "main" || return # NOTE: Sanity.
 
-  mkvid "$1"
-  local subcmd="$1" cmdid=$vid
+  mkvid "$1" || return
+  local subcmd="$1" cmdid=$vid cmdgrp=
+
+  test $# -eq 1 || {
+    mkvid "$cmdid-$2" || return
+    func_exists "$vid" && {
+      print_err "info" "" "Found group-cmd" "$subcmd:$2"
+      subcmd=$subcmd:$2 cmdgrp=$cmdid cmdid=$vid 
+      shift
+    }
+  }
   shift
-  $vid "$@"
+  $cmdid "$@"
 }
 
 # TODO: make u-s proper install by expanding source below

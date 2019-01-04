@@ -4,6 +4,14 @@
 
 test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
+test -x "$(which gdate)" && export gdate=gdate || export gdate=date
+
+ci_env_ts=$($gdate +"%s.%N")
+: "${ci_stages:=""}"
+ci_stages="$ci_stages ci_env"
+
+: "${CWD:="$PWD"}"
+
 : "${script_util:="$CWD/tools/sh"}"
 . "${script_util}/util.sh"
 . "${script_util}/parts/print-color.sh"
@@ -20,6 +28,8 @@ print_yellow "ci:util" "Loaded"
 : "${package_build_tool:="redo"}"
 : "${u_s_version:="feature/docker-ci"}"
 : "${u_s_version:="r0.0"}"
+
+: "${BUILD_STEPS:=}"
 
 : "${DOCKER_NS:="bvberkum"}"
 : "${SHIPPABLE:=}"
@@ -60,8 +70,6 @@ req_usage_fail()
 
 main_() # [Base] [Cmd-Args...]
 {
-  export TEST_ENV package_build_tool
-
   local main_ret= base="$1" ; shift 1
   test -n "$base" || base="$(basename "$0" .sh)"
 
@@ -145,19 +153,17 @@ esac
 #}
 
 
-test -x "$(which gdate)" && export gdate=gdate || export gdate=date
-
-ci_env_ts=$($gdate +"%s.%N")
-ci_stages="$ci_stages ci_env"
-
+sh_env_ts=$($gdate +"%s.%N")
+ci_stages="$ci_stages sh_env"
 
 . "${script_util}/env.sh"
+
+sh_env_end_ts=$($gdate +"%s.%N")
 test -n "${IS_BASH:-}" || $LOG error "Not OK" "Need to know shell dist" "" 1
-lib_load build-htd env-deps web
+#lib_load build-htd env-deps web
 
-ci_env_end_ts=$($gdate +"%s.%N")
 $LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
+ci_env_end_ts=$($gdate +"%s.%N")
 $LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
-
 print_yellow "ci:env" "Starting: $0 '$*'" >&2
 # From: script-mpe/0.0.4-dev tools/ci/env.sh

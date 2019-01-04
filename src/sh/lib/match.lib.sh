@@ -4,10 +4,10 @@ match_lib_init()
 {
   test -n "$INIT_LOG" || return 102
 
-  test -n "$uname" || uname=$(uname -s)
+	test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   case "$uname" in
-      Darwin ) gsed=gsed; ggrep=ggrep;;
-      Linux ) gsed=sed; ggrep=grep ;;
+      darwin ) gsed=gsed; ggrep=ggrep;;
+      linux ) gsed=sed; ggrep=grep ;;
       * ) $LOG "error" "" "GNU toolkit required" "$uname" 100
   esac
 

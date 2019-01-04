@@ -5,7 +5,7 @@
 
 std_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
+  test -n "$uname" || uname="$(uname -s | tr 'A-Z' 'a-z')"
 }
 
 std_lib_init()
@@ -27,8 +27,8 @@ std_iotype_check()
 {
   case "$uname" in
 
-    Linux | CYGWIN_NT-* ) ;;
-    Darwin ) ;;
+    linux | cygwin_nt-* ) ;;
+    darwin ) ;;
 
     * ) error "No stdio-type for $uname" ;;
   esac
@@ -56,7 +56,7 @@ stdio_type()
   test -n "$1" && io=$1 || io=1
   case "$uname" in
 
-    Linux | CYGWIN_NT-* )
+    linux | cygwin_nt-* )
         test -n "$2" && pid=$2 || pid=$$
         test -e /proc/$pid/fd/${io} || error "No $uname FD $io"
         if readlink /proc/$pid/fd/$io | grep -q "^pipe:"; then
@@ -68,7 +68,7 @@ stdio_type()
         fi
       ;;
 
-    Darwin )
+    darwin )
 
         test -e /dev/fd/${io} || error "No $uname FD $io"
         if file /dev/fd/$io | grep -q 'named.pipe'; then

@@ -7,11 +7,9 @@ str_lib_load()
   test -n "$LOG" && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
   test -n "$str_lib_log" || return 102
 
-  test -n "$uname" || uname="$(uname -s)"
-
   case "$uname" in
-      Darwin ) expr=bash-substr ;;
-      Linux ) expr=sh-substr ;;
+      darwin ) expr=bash-substr ;;
+      linux ) expr=sh-substr ;;
       * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
   esac
 

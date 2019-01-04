@@ -2,7 +2,7 @@
 
 # Shell user-env profile script
 
-test -z "${sh_usr_env:-}" && sh_usr_env=1 || exit 98 # Recursion
+test -z "${sh_usr_env_:-}" && sh_usr_env_=1 || exit 98 # Recursion
 
 test -z "$DEBUG" || print_yellow "" "Including sh:usr:env parts..."
 

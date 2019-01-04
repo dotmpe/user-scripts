@@ -1,1 +1,30 @@
-/srv/home-local/bin/sh-treebox-ci
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+: "${dckr_user:="treebox"}"
+: "${repo_id:="origin"}"
+: "${repo_rev:="feature/docker-ci"}"
+: "${repo_slug:="bvberkum/user-scripts"}"
+
+w=/src/github.com/${repo_slug}
+u=${dckr_user}
+c=u-s-dckr
+
+docker exec -u $u -ti ${c} \
+  sh -c "test -e '$w' || { mkdir -p $(dirname $w) && git clone http://github.com/$repo_slug $w; } "
+
+: "${repo_id:="24-2-bare"}"
+: "${repo_url:="/srv/scm-git-24-2-notus-brix/bvberkum/x-ci.git"}"
+
+docker exec -w $w -u $u -ti ${c} git describe
+test "$repo_id" = "origin" || {
+  docker exec -w $w -u $u -ti ${c}  \
+    sh -c "git config remote.$repo_id.url || { git remote add $repo_id $repo_url && git fetch --all $repo_id; }"
+}
+
+docker exec -w $w -u $u -ti ${c} git reset --hard ${repo_id}/${repo_rev}
+
+docker exec -w $w -u $u -ti ${c} bash -c '. ./sh-ci'
+
+# Id: u-s/0.0 sh-treebox-ci

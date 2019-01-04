@@ -4,8 +4,8 @@
 
 lib_util_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
-  case "$uname" in Darwin ) default_lib="$default_lib darwin" ;; esac
+	test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  case "$uname" in darwin ) default_lib="$default_lib Darwin" ;; esac
 
   test -n "$lib_util_env_d_default" ||
       lib_util_env_d_default=init-log\ ucache\ scriptpath

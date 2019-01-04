@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+( docker inspect --format '{{ .Id }}' "$docker_name" >/dev/null ) || {
+
+  ./bin/u-s dckr-init &&
+  ./bin/u-s dckr update-ext feature/docker-ci 24-2-bare
+}

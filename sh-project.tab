@@ -1,4 +1,5 @@
-# varspec           cmdspec                                 #
+# varspec           cmdspec                                                   #
+
 /LOG                true
  /SCRIPTPATH        ./bin/u-s
 true                . ./tools/sh/init.sh

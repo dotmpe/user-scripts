@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/usr/bin/env bash
 
 export U_S="${U_S:="$CWD"}"
 
@@ -46,9 +46,12 @@ export script_util ci_util
 : "${init_sh_boot:=""}"
 
 . "$script_util/parts/env-0-5-lib-log.sh"
-
+. "$script_util/parts/env-0-6-lib-git.sh"
+. "$script_util/parts/env-0-7-lib-vc.sh"
 . "$script_util/parts/env-0-1-lib-shell.sh"
 
+: "${TMPDIR:=/tmp}"
+: "${RAM_TMPDIR:=}"
 
 # Locate ztombol helpers and other stuff from github
 : "${VND_GH_SRC:="/srv/src-local/github.com"}"

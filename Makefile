@@ -1,6 +1,8 @@
 BASH := $(shell which bash)
 export SHELL=$(BASH)
 export BASH_ENV=tools/ci/env.sh
+CWD := $(shell pwd)
+export CWD
 
 MAKEFLAGS += --no-builtin-rules
 #MAKEFLAGS += --no-builtin-variables

@@ -45,14 +45,13 @@ test -n "$script_util" || script_util="$U_S$sh_util_base"
 #. "$script_env"
 
 # Now include module with `lib_load`
-test -z "$DEBUG" ||
-  echo . $U_S$sh_src_base/lib.lib.sh >&2
+test -z "$DEBUG" || echo . $scriptpath/lib.lib.sh >&2
 {
-. $scriptpath/lib.lib.sh &&
-  lib_lib_load && lib_lib_loaded=1 &&
+  . $scriptpath/lib.lib.sh || return
+  lib_lib_load && lib_lib_loaded=1 || return
   lib_lib_init
 } ||
-  $INIT_LOG "error" "init.sh" "Failed at lib.lib $?" "" 1
+  $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1
 
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
@@ -61,14 +60,14 @@ test "$init_sh_libs" = "0" || {
   test -n "$init_sh_libs" -a "$init_sh_libs" != "1" ||
     init_sh_libs=sys\ os\ str\ script\ log\ shell
 
-  $INIT_LOG "info" "sh:init" "Loading" "$init_sh_libs"
+  $INIT_LOG "info" "$scriptname:sh:init" "Loading" "$init_sh_libs"
   test -n "$LOG" || LOG=$INIT_LOG
 
   lib_load $init_sh_libs ||
-    $INIT_LOG "error" "init.sh" "Failed loading libs: $?" "$init_sh_libs" 1
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed loading libs: $?" "$init_sh_libs" 1
 
   lib_init $init_sh_libs ||
-    $INIT_LOG "error" "init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
 
   test -n "$init_sh_boot" || init_sh_boot=1
   test -n "$init_sh_boot" && {
@@ -79,8 +78,7 @@ test "$init_sh_libs" = "0" || {
   test -z "$DEBUG" ||
     echo script_util=$script_util scripts_init $init_sh_boot >&2
   scripts_init $init_sh_boot ||
-    $INIT_LOG "error" "init.sh" "Failed at bootstrap '$init_sh_boot' $?" "" 1
-
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed at bootstrap '$init_sh_boot'" $? 1
 }
 
 test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG

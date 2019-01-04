@@ -7,15 +7,22 @@ ci_stages="$ci_stages publish"
 
 ci_announce "Starting ci:publish"
 
-lib_load git vc vc-htd
+set +u
+lib_load git vc os-htd git-htd vc-htd
+set -u
+
+test -e /srv/scm-git-local || {
+  sudo mkdir -vp /srv/scm-git-local/ || true
+  sudo chown travis /srv/scm-git-local || true
+}
 
 set -- "bvberkum/script-mpe"
 git_scm_find "$1" || {
   git_scm_get "$SCM_VND" "$1" || return
 }
 
+# FIXME: pubish
 . "./tools/ci/parts/report-times.sh"
 
-# FIXME: pubish
 
 # From: script-mpe/0.0.4-dev tools/ci/parts/publish.sh

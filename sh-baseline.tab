@@ -4,102 +4,69 @@
 # Usage:
 #   ./sh-main tooling-baseline
 
-# XXX: cleanup
-#unset LOG SCRIPTPATH scriptpath scriptname base LOG verbosity INIT_LOG CWD
 
-LOG=$PWD/tools/sh/log.sh                               ./tools/git-hooks/pre-commit.sh
-LOG=$PWD/tools/sh/log.sh                               ./.git/hooks/pre-commit
+# varspec                                              cmdspec                #
+
+#LOG=$PWD/tools/sh/log.sh                               ./tools/git-hooks/pre-commit.sh
 
 true                                                   . ./tools/sh/util.sh
 true                                                   . ./tools/ci/util.sh
 true                                                   . ./tools/sh/parts/env-0.sh
+true                                                   . ./tools/sh/parts/env-0-src.sh
+true                                                   . ./tools/sh/parts/env-std.sh
+true                                                   . ./tools/sh/parts/env-dev.sh
+true                                                   . ./tools/sh/parts/env-test.sh
+true                                                   . ./tools/sh/parts/env-test-bats.sh
 
-# varspec                                              cmdspec                #
 CWD=$PWD                                                . ./tools/sh/env.sh
 
-# varspec                                              cmdspec                #
-LOG=$PWD/tools/sh/log.sh                               . ./tools/sh/init.sh
- BASHOPTS=
-  set -o nounset                                       . ./tools/sh/init.sh
-
-#BASHOPTS=-                                             . ./tools/sh/init.sh
-# init_sh_libs= init_sh_boot=
-#  __load_lib=
-#   . ./tools/sh/parts/env-dev.sh
-#    . ./tools/sh/parts/env-test.sh
-#     . ./tools/sh/parts/env-test-bats.sh
-#      . ./tools/sh/parts/env-src.sh
-#       . ./tools/sh/parts/env-0.sh
-#        . ./tools/sh/parts/env-std.sh
 
 # varspec                                              cmdspec                #
-#/CWD
-#/CWD                                                  . ./tools/sh/init.sh
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-# CWD=$PWD/tools/sh/log.sh
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#CWD=
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#/LOG
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
-#LOG=$PWD/tools/sh/log.sh
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
-#LOG=
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
 
-#v=4                                     bats test/baseline/1-shell.bats
-#v=4                                     bats test/baseline/2-bash.bats
-#v=5                                     bats test/baseline/3-project.bats
-#v=4                                     bats test/baseline/4-mainlibs.bats
-#v=1                                     bats test/baseline/bats.bats
-##/CWD                                  . ./tools/ci/env.sh
-#v=4                                     bats test/baseline/git.bats
-#v=4                                     bats test/baseline/realpath.bats
-#v=4                                     bats test/baseline/redo.bats
+# TODO: wrap in bats cases
+true                                                   ./bin/u-s help >/dev/null
+true                                                   ./bin/u-s libs >/dev/null
+true                                                   ./bin/u-s libs-paths >/dev/null
+true                                                   ./bin/u-s commands >/dev/null
+true                                                   ./bin/u-s topics >/dev/null
+true                                                   ./bin/u-s dckr-cmd . ./sh-treebox-us-req
+#true                                                   ./bin/u-s dckr update-ext feature/docker-ci 24-2-bare
+true                                                   ./bin/u-s dckr-cmd verbosity=7 DEBUG=1 ./bin/u-s version
+true                                                   ./bin/u-s dckr-cmd verbosity=0 ./bin/u-s version
+true                                                   ./bin/u-s dckr help
+#true                                                   ./bin/u-s dckr-reset
 
-#  bats test/baseline/1-shell.bats || return
-#  bats test/baseline/2-bash.bats || return
-#  bats test/baseline/3-project.bats || return
-#  bats test/baseline/4-mainlibs.bats || return
+
+# varspec                                              cmdspec                #
+
+CWD=$PWD                                               . ./tools/sh/init.sh    
+ set -o nounset; set -e; BASHOPTS=
+  LOG=$PWD/tools/sh/log.sh                             
+   true
+   # ./bin/u-s update
+   f_lib_load= util_mode= default_lib=                 . ./tools/sh/init-wrapper.sh
+    SCRIPTPATH=
+
+
+# varspec                                              cmdspec                #
+
+# FIXME: special syntax for bats; severly misbehaving, killing off the wrong process?
+
+#v=4                                                    ; ( bats test/baseline/*.bats )
+v=4                                                    ;( bats test/baseline/1-shell.bats )
+v=4                                                    ;( bats test/baseline/2-bash.bats )
+#v=5                                                    ; ( bats test/baseline/3-project.bats )
+#v=4                                                    ; ( bats test/baseline/4-mainlibs.bats )
+v=1                                                    ;( bats test/baseline/bats.bats )
+v=4                                                    ;( bats test/baseline/git.bats )
+v=4                                                    ;( bats test/baseline/realpath.bats )
+v=4                                                    ;( bats test/baseline/redo.bats )
+
+
+# varspec                                              cmdspec                #
+
+# TODO: CI tool env and test suites; see sh-treebox docker isolated testing.
+#/CWD                                                 . ./tools/ci/env.sh
 
 
 # vim:ft=bash:

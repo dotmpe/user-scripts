@@ -134,7 +134,7 @@ sh_env_init()
   }
   sh_isset()
   {
-    sh_env | grep -q "^$1="
+    sh_env | grep -qi '^'$1=
   }
   sh_isenv() # XXX: Exported vars? @Base
   {
