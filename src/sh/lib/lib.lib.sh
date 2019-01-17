@@ -11,7 +11,8 @@ lib_lib_load()
 
 lib_lib_init()
 {
-  test -n "$LOG" && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
   test -n "$lib_lib_log" || return 102
 
   $lib_lib_log info "" "Loaded lib.lib" "$0"
@@ -58,12 +59,12 @@ lib_lookup()
 # Lookup and load sh-lib on SCRIPTPATH
 lib_load()
 {
-  test -n "$1" || return 1
-  test -n "$lib_lib_log" || exit 102 # NOTE: sanity
+  test -n "$1" || return 198
+  test -n "$lib_lib_log" || return 102 # NOTE: sanity
 
   $lib_lib_log debug "" "Loading lib(s)" "$*"
 
-  local lib_id= f_lib_loaded= f_lib_path=
+  local lib_id= f_lib_loaded= f_lib_path= r=
 
   # __load_lib: true if inside util.sh:lib-load
   test -n "$__load_lib" || local __load_lib=1
@@ -89,13 +90,16 @@ lib_load()
         test -n "$f_lib_path" || {
           $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "" 1 || return
         }
-        . "$f_lib_path"
+        . "$f_lib_path" || { r=$?; lib_src_stat=$r
+          $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
+          return $lib_src_stat
+        }
 
         # again, func_exists is in sys.lib.sh. But inline here:
         type ${lib_id}_lib_load  2> /dev/null 1> /dev/null && {
-          ${lib_id}_lib_load || {
-            $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($?)" "$f_lib_path" 1
-            return $?
+          ${lib_id}_lib_load || { r=$?; lib_load_stat=$r
+            $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($r)" "$f_lib_path"
+            return $lib_load_stat
           }
         } || true
 

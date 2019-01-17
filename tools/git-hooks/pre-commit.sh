@@ -12,8 +12,7 @@ test -x "${LOG:-}" || exit 103
 set -euo pipefail -o posix
 
 : "${PROJECT_BASE:="`git rev-parse --show-toplevel`"}"
-
-BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
+# XXX: "${BRANCH_NAME:="$(git rev-parse --abbrev-ref HEAD)"}"
 
 # TODO: limit output to about one screen max, about 80 lines;
 # start with top-10's for below scans.
@@ -21,7 +20,6 @@ BRANCH_NAME="$(git rev-parse --abbrev-ref HEAD)"
 : "${max_lines_per_check:=10}"
 
 # Compare to-be committed against HEAD or emty for initial commit
-
 if git rev-parse --verify HEAD >/dev/null 2>&1
 then
   against=HEAD

@@ -19,7 +19,7 @@ logger_lib_load()
 # logger handler.
 logger_log() # level target-ids description source-ids status-code
 {
-  test $# -gt 1 || return
+  test $# -gt 1 || return 98
   test $# -eq 2 && set -- "$@" "" "" "" || {
     test $# -eq 3 && set -- "$@" "" "" || {
       test $# -eq 4 && set -- "$@" ""
@@ -102,10 +102,12 @@ logger_strfmt() # line-type target-ids description source-ids
 
   test -n "$3" && {
 
-    eval printf -- \"$tpl\\n\" \""$1"\" \""$2"\" \""$3"\"
+    eval "printf -- \"$tpl %s\\n\" \"$1\" \"$2\" \"$3\""
+    return $?
   } || {
 
-    eval printf -- \"$tpl\\n\" \""$1"\" \""$2"\"
+    eval "printf -- \"$tpl\\n\" \"$1\" \"$2\""
+    return $?
   }
   true
 }
@@ -115,7 +117,7 @@ logger_strfmt() # line-type target-ids description source-ids
 # is too low; exit with given status.
 logger_stderr() # syslog-level target-ids description source-ids status-code
 {
-  test $# -gt 1 || return
+  test $# -gt 1 || return 98
   test $# -eq 2 && set -- "$@" "" "" "" || {
     test $# -eq 3 && set -- "$@" "" "" || {
       test $# -eq 4 && set -- "$@" ""

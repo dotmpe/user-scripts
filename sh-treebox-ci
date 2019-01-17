@@ -4,8 +4,8 @@ set -euo pipefail
 
 : "${dckr_user:="treebox"}"
 : "${repo_id:="origin"}"
-: "${repo_rev:="feature/docker-ci"}"
-: "${repo_slug:="bvberkum/user-scripts"}"
+: "${repo_rev:="feature/docker-ci"}" # No-Sync
+: "${repo_slug:="bvberkum/user-scripts"}" # No-Sync
 
 w=/src/github.com/${repo_slug}
 u=${dckr_user}

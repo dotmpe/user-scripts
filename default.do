@@ -79,7 +79,7 @@ default_main()
     build-* )     ./.build.sh "$(echo "$1" | cut -c7- )" ;;
 
 
-    x-* ) exec $script_util/init-here.sh /src "$(cat <<EOM
+    x-* ) exec $sh_tools/init-here.sh /src "$(cat <<EOM
 lib_load package build-test
 
 EOM
@@ -109,5 +109,5 @@ EOM
 }
 
 # FIXME: user profile env
-unset SCRIPTPATH scriptpath script_util U_S LOG
+unset SCRIPTPATH scriptpath sh_tools U_S LOG
 default_main "$@"

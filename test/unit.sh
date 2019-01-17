@@ -24,7 +24,7 @@ all()
 
   # FIXME: rebuild TAP repors based on changed prereq. only
 
-  type lib_load >/dev/null 2>&1 || . "$script_util/init.sh"
+  type lib_load >/dev/null 2>&1 || . "$sh_tools/init.sh"
   lib_load build
   lib_init
 
@@ -41,4 +41,6 @@ all()
 
 . "${TEST_ENV:=tools/ci/env.sh}"
 
-main_test_ "$(basename "$0" .sh)" "$@"
+main_test_ "$(basename -- "$0" .sh)" "$@"
+
+# Derive: tools/sh/parts/init.sh

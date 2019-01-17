@@ -11,7 +11,8 @@ sys_lib_load()
 
 sys_lib_init()
 {
-  test -n "$LOG" && sys_lib_log="$LOG" || sys_lib_log="$INIT_LOG"
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
   test -n "$sys_lib_log" || return 102
 
 # XXX: cleanup
@@ -47,11 +48,12 @@ getidx()
 # Error unless non-empty and true-ish value
 trueish() # Str
 {
-  test -n "$1" || return 1
+  test $# -eq 1 -a -n "${1:-}" || return
   case "$1" in [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1) return 0;;
     * ) return 1;;
   esac
 }
+# Id: sh-trueish
 
 # No error on empty, or not trueish match
 not_trueish()
@@ -63,7 +65,7 @@ not_trueish()
 # Error unless non-empty and falseish
 falseish()
 {
-  test -n "$1" || return 0
+  test $# -eq 1 -a -n "${1:-}" || return
   case "$1" in
     [Oo]ff|[Ff]alse|[Nn]|[Nn]o|0)
       return 0;;

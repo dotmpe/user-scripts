@@ -4,7 +4,8 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
-  test -n "$LOG" && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
   test -n "$str_lib_log" || return 102
 
   case "$uname" in
@@ -45,6 +46,14 @@ mkid()
 # to filter strings to variable id name
 mkvid()
 {
+  trueish "$upper" && {
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
+    return
+  }
+  falseish "$upper" && {
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
+    return
+  }
   vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
   # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
 }

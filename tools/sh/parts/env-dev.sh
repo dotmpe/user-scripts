@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-export U_S="${U_S:="$CWD"}"
-
-test -n "${LOG:-}" -a -x "${LOG:-}" || export LOG=$U_S/tools/sh/log.sh
+#test -n "$U_S" -a -d "$U_S" || source ./tools/sh/parts/env-0-u_s.sh
+export U_S="${U_S:="$CWD"}" # No-Sync
 
 : "${hostname:="`hostname -s`"}"
 
 : "${sh_src_base:="/src/sh/lib"}"
 : "${sh_util_base:="/tools/sh"}"
+: "${ci_util_base:="/tools/ci"}"
 
-: "${scriptpath:="$U_S$sh_src_base"}"
+#: "${scriptpath:="$U_S$sh_src_base"}" # No-Sync
 : "${userscript:="$U_S"}"
 
 # Define now, Set/use later
@@ -19,18 +19,15 @@ test -n "${LOG:-}" -a -x "${LOG:-}" || export LOG=$U_S/tools/sh/log.sh
 : "${LIB_SRC:=""}"
 
 : "${CWD:="$PWD"}"
-: "${script_util:="$CWD/tools/sh"}"
-: "${ci_util:="$CWD/tools/ci"}"
-#: "${script_util:="$userscript/tools/sh"}"
-#: "${ci_util:="$userscript/tools/ci"}"
-export script_util ci_util
+: "${sh_tools:="$CWD$sh_util_base"}"
+: "${ci_tools:="$CWD$ci_util_base"}"
 
-#. "$script_util/parts/env-init-log.sh"
+type sh_include >/dev/null 2>&1 || {
+  . "$U_S/tools/sh/parts/include.sh" || return
+}
 
-. "$script_util/parts/env-0-src.sh"
-. "$script_util/parts/env-std.sh"
-. "$script_util/parts/env-ucache.sh"
-. "$script_util/parts/env-scriptpath.sh"
+# XXX . "$sh_tools/parts/env-init-log.sh"
+sh_include env-0-src env-std env-ucache || return
 
 # XXX: remove from env; TODO: disable undefined check during init.sh,
 # or when dealing with other dynamic env..
@@ -38,21 +35,13 @@ export script_util ci_util
 : "${__load_lib:=""}"
 : "${lib_loaded:=""}"
 
-. "$script_util/parts/env-0-1-lib-sys.sh"
-. "$script_util/parts/env-0-2-lib-os.sh"
-. "$script_util/parts/env-0-3-lib-str.sh"
-. "$script_util/parts/env-0-4-lib-script.sh"
+sh_include env-0-1-lib-sys env-0-2-lib-os env-0-3-lib-str env-0-4-lib-script ||
+  return
 
 : "${init_sh_boot:=""}"
 
-. "$script_util/parts/env-0-5-lib-log.sh"
-. "$script_util/parts/env-0-6-lib-git.sh"
-. "$script_util/parts/env-0-7-lib-vc.sh"
-. "$script_util/parts/env-0-1-lib-shell.sh"
+sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc env-0-1-lib-shell ||
+  return
 
 : "${TMPDIR:=/tmp}"
 : "${RAM_TMPDIR:=}"
-
-# Locate ztombol helpers and other stuff from github
-: "${VND_GH_SRC:="/srv/src-local/github.com"}"
-: "${VND_SRC_PREFIX:="$VND_GH_SRC"}"

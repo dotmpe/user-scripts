@@ -2,11 +2,6 @@
 
 # Initial CLI helper for any kind of U-S checkout or install
 
-set -e # Sh, same as?:
-set -o errexit # Ash, Bash
-set -o nounset # Ash, Bash
-set -o pipefail # Bash-only
-
 
 init() #
 {
@@ -49,6 +44,11 @@ libs_grep() # Grep
   test $# -eq 1 || return
   local grep="$(libs_paths)"
   grep "$@" $grep
+}
+
+libs_path() #
+{
+  echo "$SCRIPTPATH" | tr ':' '\n'
 }
 
 # List full path names for sh-lib files on SCRIPTPATH
@@ -106,6 +106,13 @@ redo_reinit() #
   cd /src/github.com/apenwarr/redo &&
     sudo git clean -dfx &&
     sudo ./redo install
+}
+
+run_test()
+{
+  ./sh-main run-baseline
+  ./sh-main run-test
+  ./sh-main dckr retest-suite
 }
 
 # List raw func names as commands. TODO: indent spec maybe shortdescr nicely
@@ -171,9 +178,10 @@ version() #
 
 main() # [SUBCMD [ARGS...]]
 {
-  print_err "info" "" "Initialzing shell..."
+  print_err "info" "" "Initializing shell..."
   # Get SCRIPTPATH and bootstrap libs
-  init || return
+  init ||
+    print_err "error" "" "During shell init" "$?" 1
   print_err "ok" "" "Initialized, booting cmd..."
 
   # Call sub-command shell function
@@ -192,21 +200,28 @@ main() # [SUBCMD [ARGS...]]
     }
   }
   shift
+  test -z "${DEBUG:-}" ||
+    print_err "note" "" "Starting..." "$*"
   $cmdid "$@"
 }
 
-# TODO: make u-s proper install by expanding source below
-. "$(dirname "$(realpath "$0")")/../tools/sh/u-s-env.sh"
+case "$0" in "-*" ) * ;; */u-s )
 
-# Setup to include other commands in parts to keep script size down.
+  set -e # Sh, same as?:
+  set -o errexit # Ash, Bash
+  set -o nounset # Ash, Bash
+  set -o pipefail # Bash-only
+  #set -o posix
+  
+  : "${CWD:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
+  . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || return
 
-test -d $U_S/commands -a -f "$U_S/tools/sh/init.sh" ||
-  print_err "error" "" "Incomplete install, missing parts" \
-    "$U_S/commands $U_S/tools/sh/init.sh"
+  for x in basher dckr git man travis user
+  do
+    . "$U_S/commands/u_s-$x.lib.sh" ||
+      print_err "error" "" "Loading parts" "$? $x" $?
+  done
+  unset x
 
-for u_s_lib in $U_S/commands/u_s-*.lib.sh
-do
-  . "$u_s_lib"
-done
-
-main "$@"
+  main "$@"
+;; esac

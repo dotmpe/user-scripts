@@ -17,7 +17,7 @@ topics() #
   do
     test "$base$sec/*.md" != "$(echo $base$sec/*.md)" || continue
     for y in $base$sec/*.md
-    do echo "$(basename $y .md) ($sec)"
+    do echo "$(basename -- "$y" .md) ($sec)"
     done
   done | sort
 }

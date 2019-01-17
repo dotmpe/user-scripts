@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -- "$@" "$(dirname "$1")/$(basename "$1" .tap)"
+set -- "$@" "$(dirname -- "$1")/$(basename -- "$1" .tap)"
 test -e "$4.bats" || exit 20
 
 # move to project dir before testing for ease of managing paths

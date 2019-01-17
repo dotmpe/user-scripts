@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Logger: arg-to-colored ansi line output
+# Logger - arg-to-colored ansi line output
 # Usage:
 #   log.sh [Line-Type] [Header] [Msg] [Ctx] [Exit]
 
@@ -71,8 +71,9 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
   }
 
   indent=""
+  linetype=$(echo $1 | tr '[:upper:]' '[:lower:]')
 
-  case "$1" in
+  case "$linetype" in
 
     emerg|crit| error|warn|warning )
         prefix="[$2] $1:"

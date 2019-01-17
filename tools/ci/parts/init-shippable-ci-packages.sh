@@ -1,7 +1,7 @@
 #!/bin/sh
 
 test "$(whoami)" = "travis" || {
-  export sudo=sudo
+  sudo=sudo
 
   test -x "$(which apt-get)" && {
     test -z "$APT_PACKAGES" ||

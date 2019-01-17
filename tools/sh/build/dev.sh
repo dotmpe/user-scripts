@@ -10,4 +10,4 @@ uptime
 # FIXME: may want to get stats of running builds, backlog
 # Don't really understant why there are so few container builds
 ci_announce '-------------------'
-# From: script-mpe/0.0.4-dev tools/sh/build/dev.sh
+# Id: user-script/ tools/sh/build/dev.sh

@@ -76,7 +76,7 @@ git_src_get() # <user>/<repo>
     )
   }
 
-  name="$(basename "$1")"
+  name="$(basename -- "$1")"
   test -e "$PROJECT_DIR/$name" && {
     echo "$1: $PROJECT_DIR/$name -> $(readlink "$PROJECT_DIR/$name")"
   } || {

@@ -13,12 +13,10 @@ shell_lib_load()
   test -n "$MPE_ENV_NAME" || MPE_ENV_NAME=dev
   test -n "$CS" || CS=dark
 
-  test -n "$base" || base=$(test -e "$0" && basename "$0" .sh || printf -- "$0")
-
-  test -n "$SH_SID" || SH_SID=$(get_uuid)
+  test -n "$base" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
 
   # Shell Name (no path/ext)
-  SHELL_NAME="$(basename "$SHELL")"
+  SHELL_NAME="$(basename -- "$SHELL")"
 }
 
 # Init env by testing for key vars, set <SHELL>_SH=[01] based on name,
@@ -39,6 +37,8 @@ shell_lib_init()
 {
   lib_assert log || return
 
+  test -n "$SH_SID" || SH_SID=$(get_uuid) || return
+
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
   test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
@@ -55,6 +55,7 @@ shell_lib_init()
 }
 
 shell_lib_log() { test -n "$LOG"&&log="$LOG"||log="$init_log";req_log; }
+#shell_lib_log() { req_init_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
 shell_check()

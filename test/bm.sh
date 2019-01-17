@@ -35,4 +35,6 @@ default()
 
 . "${TEST_ENV:=tools/ci/env.sh}"
 
-main_test_ "$(basename "$0" .sh)" "$@"
+main_test_ "$(basename -- "$0" .sh)" "$@"
+
+# Derive: tools/sh/parts/init.sh

@@ -1,20 +1,20 @@
 #!/usr/bin/env bats
 
+load ../init
 base='baseline-1:shell'
+
+setup()
+{
+  init
+}
 
 
 @test "$base: LOG (normal mode, no debug, verbosity < 7)" {
 
+  export DEBUG= verbosity=4
+
   run $LOG "info" "" "Tester de test" "" 0
   test $status -eq 0 && test -z "${lines[*]}"
-
-  test -z "$DEBUG"
-
-  test -z "$verbosity" || {
-    test $verbosity -lt 7
-  }
-
-  #skip FIXME
 
   # Again, no harnass.
   # XXX: $LOG "info" "" "Tester de test" "" 0

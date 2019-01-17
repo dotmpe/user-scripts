@@ -5,8 +5,8 @@
 : "${base:=}"
 : "${lookup_test:=}"
 
-: ${HOST:="`hostname -s | tr 'A-Z' 'a-z'`"}
-: ${uname:-"`uname -s | tr 'A-Z' 'a-z'`"}
+: ${HOST:="`hostname -s | tr '[:upper:]' '[:lower:]'`"}
+export uname=${uname:-"`uname -s | tr '[:upper:]' '[:lower:]'`"}
 
 # Set GNU 'aliases' to try to build on Darwin/BSD
 
@@ -19,10 +19,13 @@ case "$uname" in
       export gstat=${gstat:-"gstat"}
       export guniq=${guniq:-"guniq"}
       export gsort=${gsort:-"gsort"}
+      export gcut=${gcut:-"gcut"}
       export greadlink=${greadlink:-"greadlink"}
       export grealpath=${grealpath:-"grealpath"}
     ;;
-  linux )
+  #linux )
+  * ) test "$uname" = "linux" ||
+        $LOG "warn" "" "Unknown OS" "$uname"
       export gsed=${gsed:-"sed"}
       export ggrep=${ggrep:-"grep"}
       export gawk=${gawk:-"awk"}
@@ -30,10 +33,9 @@ case "$uname" in
       export gstat=${gstat:-"stat"}
       export guniq=${guniq:-"uniq"}
       export gsort=${gsort:-"sort"}
+      export gcut=${gcut:-"cut"}
       export greadlink=${greadlink:-"readlink"}
       export grealpath=${grealpath:-"realpath"}
-    ;;
-  * ) $LOG "warn" "" "Unknown OS" "$uname"
     ;;
 esac
 

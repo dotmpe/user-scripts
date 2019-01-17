@@ -76,6 +76,7 @@ sh_spec_outline()
 
     } || {
 
+# XXX: cleanup sh-spec-outline
       #test $indent -lt $last_indent && {
       $OUT "$last_line"
       $OUT "# end $last_indent"
@@ -108,7 +109,11 @@ sh_spec_outline()
 
 sh_spec_outline_vspec()
 {
-  fnmatch "*=*" "$1" && var_d="$var_d $1" || spec_d="$spec_d; $1"
+  { fnmatch "*;*" "$1"; }||{
+      fnmatch "*=*" "$1"&&{ var_d="$var_d $1"; return; }
+  }
+
+  fnmatch "*;" "$spec_d"&&{ spec_d="$spec_d $1"; }||{ spec_d="$spec_d; $1"; }
 }
 
 fnmatch() { case "$2" in $1 ) return ;; * ) return 1 ;; esac; }
@@ -137,13 +142,16 @@ sh_spec_table() # [varspec-width] [pass-through]
   sh_new_stack ind
   sh_new_stack varspec
 
+  #TAB_C="`printf '\t'`"
+  TAB_C="	"
+
   # Insert tab-character at x position (awk)
   awk -vFS="" -vOFS="" '{$'$1='$'$1'"\t"}1' |
 
   # Read lines
   until test -n "$done"
   do
-    IFS="$TAB_C" read new_varspec new_cmdspec || done=1
+    IFS=$TAB_C read new_varspec new_cmdspec || done=1
 
     sh_spec_table_inner || return
   done
@@ -226,17 +234,20 @@ sh_spec_d_out() # Varspec CmdSpec
 
   local varexpr="$( printf %s "$varspec_d" \
     | tr '\t' '\n' \
-    | grep -v '^[A-Za-z_][A-Za-z0-9_]*=' \
+    | $ggrep -v '^[A-Za-z_][A-Za-z0-9_]*=[^;]*$' \
     | while read varspec
     do \
       fnmatch "/*" "$varspec" \
       && printf "unset $(echo "$varspec" | cut -c2-); " \
-      || printf %s "$varspec; "; \
+      || {
+        case "$varspec" in *";" ) printf %s "$varspec ";;
+          * ) printf %s "$varspec; " ;; esac; \
+      }; \
     done )"\
 
   local lvar="$( printf %s "$varspec_d" \
     | tr '\t' '\n' \
-    | grep '^[A-Za-z_][A-Za-z0-9_]*=' \
+    | $ggrep '^[A-Za-z_][A-Za-z0-9_]*=[^;]*$' \
     | tr '\n' ' ' )"
 
   $OUT "$varexpr$lvar$2"
@@ -252,20 +263,24 @@ sh_spec() # File-Path
 
   test -n "${1:-}" || {
     local header="`head -n 1 "$specfile"`"
-    test "`echo $header`" = "# varspec cmdspec #" ||
+    test "`echo $header`" = "# varspec cmdspec #" || {
       $LOG "error" "" "No width and cannot read header" "$specfile '$header'" 1
+      return 1
+    }
 
-    local width_="`printf %s "$header"| sed s/cmdspec.*//`"
+    local width_="`printf %s "$header"| sed 's/cmdspec.*//'`"
     test -n "$width_" || $LOG "error" "" "Unable to determine width" "" 1
     set -- ${#width_}
   }
 
   fnmatch "*.list" "$specfile" && {
-    grep -Ev '^\s*(#.*|\s*)$' "$specfile" | sh_spec_outline "$@"
+    sh-read "$specfile" | sh_spec_outline "$@"
     return $?
 
   } || {
 
-    grep -Ev '^\s*(#.*|\s*)$' "$specfile" | sh_spec_table "$@"
+    sh-read "$specfile" | sh_spec_table "$@"
   }
 }
+
+# Id:

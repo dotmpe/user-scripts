@@ -56,3 +56,5 @@ all()
 . "${TEST_ENV:=tools/ci/env.sh}"
 
 main_test_ "" "$@"
+
+# Derive: tools/sh/parts/init.sh

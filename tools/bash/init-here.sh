@@ -9,16 +9,18 @@
 
 # provisionary logger setup
 test -n "${LOG:-}" && LOG_ENV=1 || LOG_ENV=
-test -n "${LOG:-}" -a -x "${LOG:-}" && INIT_LOG=$LOG || INIT_LOG=$PWD/tools/sh/log.sh
+test -n "${LOG:-}" -a -x "${LOG:-}" -o \
+  "$(type -t "${LOG:-}" 2>/dev/null )" = "function" &&
+  INIT_LOG=$LOG || INIT_LOG=$CWD/tools/sh/log.sh
+# Sh-Sync: tools/sh/parts/env-init-log.sh
 
 test -n "$U_S" || U_S="$(dirname "$(dirname "$(dirname "$0")" )" )"
 
 : "${sh_src_base:="/src/sh/lib"}"
-: "${sh_util_base:="/tools/sh"}"
 
 : "${scriptpath:="$U_S$sh_src_base"}"
-: "${scriptname:="$(basename "$0")"}"
-: "${script_util:="$U_S$sh_util_base"}"
+: "${scriptname:="$(basename -- "$0")"}"
+: "${sh_tools:="$U_S/tools/sh"}"
 
 test -n "${1:-}" && {
   SCRIPTPATH=$1:$scriptpath
@@ -46,10 +48,10 @@ test "$init_sh_libs" = "0" || {
   script_init "$init_sh_boot"
 }
 
-test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
+# XXX: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
 
 shift 3
 
 eval "$@"
 
-# Id: script-mpe/0.0.4-dev tools/sh/init-here.sh
+# Id: user-script/ tools/sh/init-here.sh

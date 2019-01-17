@@ -1,6 +1,6 @@
 redo-ifchange "sh-libs.list"
 
-docid="$(basename $1 -lib.func-list)" &&
+docid="$(basename -- "$1" -lib.func-list)" &&
 case "$docid" in
     default.functions-list ) exit 21 ;; # refuse to build non lib
     "*.func-list" ) exit 22 ;; # refuse to build non lib

@@ -6,7 +6,7 @@ build_tests()
 
   for x in "$@"
     do
-      echo "$(dirname $x)/$(basename $x .$test_fmt).$report_fmt"
+      echo "$(dirname $x)/$(basename -- "$x" .$test_fmt).$report_fmt"
     done
 }
 

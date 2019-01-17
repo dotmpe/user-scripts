@@ -1,39 +1,34 @@
-# varspec           cmdspec                                                   #
+# varspec                        cmdspec                                      #
 
-/LOG                true
- /SCRIPTPATH        ./bin/u-s
-true                . ./tools/sh/init.sh
-true                ./tools/sh/init-here.sh
+/LOG                             true
+ /SCRIPTPATH                     ./bin/u-s help
+#. ./tools/sh/env.sh              . ./tools/sh/init.sh
+#                                 ./tools/sh/init-here.sh
 
-true                sh ./sh-init-here
-true                sh ./sh-test
-true                sh ./sh-package
-true                sh ./sh-composure
+#true                             sh ./sh-init-here
+#true                             sh ./sh-test
+#true                             sh ./sh-package
+#true                             sh ./sh-composure
 
-true                bats test/baseline/1-shell.bats
-true                bats test/baseline/2-bash.bats
-true                bats test/baseline/3-project.bats
-true                bats test/baseline/4-mainlibs.bats
-true                bats test/baseline/bats-negative.bats
-true                bats test/baseline/bats.bats
-true                bats test/baseline/git.bats
-true                bats test/baseline/realpath.bats
-true                bats test/baseline/redo.bats
-true                bats test/baseline/std-runner.bats
+LOG=$PWD/tools/sh/log.sh
+ set -euo pipefail; export LOG
+ . tools/sh/env.sh
+  . tools/ci/util.sh
+    verbosity=4                  ci_test test/unit/lib-lib.bats # No-Sync
+    verbosity=4                  ci_test test/unit/date-lib.bats # No-Sync
+#    verbosity=4                  ci_test test/unit/logger-lib.bats
+    verbosity=4                  ci_test test/unit/logger-std-lib.bats
+    verbosity=4                  ci_test test/unit/os-lib.bats
+    verbosity=4                  ci_test test/unit/str-lib.bats
+    verbosity=4                  ci_test test/unit/sys-lib.bats
+    verbosity=4                  ci_test test/unit/std-stack.bats
+    verbosity=4                  ci_test test/unit/setup-sh-tpl.bats
+# varspec                        cmdspec                                      #
+#    verbosity=4                  ci_test test/unit/shell-lib.bats
+#    verbosity=4                  ci_test test/unit/src-lib.bats
+# FIXME: make, ck, functions unit tests
+#    verbosity=4                  ci_test test/unit/make-lib.bats
+#    verbosity=4                  ci_test test/unit/ck-lib.bats
+#    v=4                          ci_test test/unit/functions-lib.bats
 
-true                bats test/unit/ck-lib.bats
-true                bats test/unit/date-lib.bats
-true                bats test/unit/functions-lib.bats
-true                bats test/unit/lib-lib.bats
-true                bats test/unit/logger-lib.bats
-true                bats test/unit/logger-std-lib.bats
-true                bats test/unit/make-lib.bats
-true                bats test/unit/os-lib.bats
-true                bats test/unit/setup-sh-tpl.bats
-true                bats test/unit/shell-lib.bats
-true                bats test/unit/src-lib.bats
-true                bats test/unit/std-stack.bats
-true                bats test/unit/str-lib.bats
-true                bats test/unit/sys-lib.bats
-
-# vim:ft=bash:
+# :vim:ft=bash:nowrap:cc=33,79:

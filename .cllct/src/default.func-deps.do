@@ -1,5 +1,5 @@
-funcname="$(basename "$1" .func-deps)"
-docid="$(basename "$(dirname "$1")" -lib)"
+funcname="$(basename -- "$1" .func-deps)"
+docid="$(basename -- "$(dirname "$1")" -lib)"
 case "$docid" in
     default.func-deps ) exit 21 ;; # refuse to build non lib
     "*.func-deps" ) exit 22 ;; # refuse to build non lib

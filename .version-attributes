@@ -1,0 +1,7 @@
+App-Id: user-scripts
+Description: An attempt to provide some fuel for ~erichs' Composure and shell
+Long-Description: Bourne shell compatible scripts in various modules, and a method for loading modules.
+Topics: shell bash busybox shellcheck composure docker web literal-docs
+Main-File: README.md
+Other-Files: bin/* tools/*/*.sh tools/*/parts/*.sh test/*.bash test/helper/*.bash src/sh/lib/util.lib.sh test/unit/os-lib.bat
+# vim:ft=meta:nowrap:

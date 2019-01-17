@@ -1,4 +1,4 @@
-docid="$(basename $1 -lib.lib-deps)" &&
+docid="$(basename -- "$1" -lib.lib-deps)" &&
 case "$docid" in
     default.lib-deps ) exit 21 ;; # refuse to build non lib
     "*.lib-deps" ) exit 22 ;; # refuse to build non lib

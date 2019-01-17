@@ -8,12 +8,9 @@ user_repos() # [match-repo] [match-group-or-team] [github.com] [Vnd-Src-Prefix]
   test $# -gt 0 || set -- '*'
   test $# -gt 1 || set -- "$1" '*'
   test $# -gt 2 || set -- "$1" "$2" "$VND_SRC_PREFIX"
-  test -n "$3"  || set -- "$1" "$2" 'github.com'
-  test $# -gt 4 || set -- "$1" "$2" "$3" "$SRC_PREFIX"
-  test -n "$4"  || set -- "$1" "$2" "$3" "/src/"
 
   print_err "info" "u-s:user-repos" "Listing user-checkouts" "$*"
-  for user_repo in $4$3/$1/$2
+  for user_repo in $3/$1/$2
   do
     test -d "$user_repo" || {
       print_err "warn" "" "Expected directory '$user_repo'"

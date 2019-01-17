@@ -124,7 +124,7 @@ _log()
 
   local key=
   test -n "$SHELL" \
-    && key="$scriptname.$(basename "$SHELL")" \
+    && key="$scriptname.$(basename -- "$SHELL")" \
     || key="$scriptname.(sh)"
 
   case $stdout_type in
@@ -233,7 +233,7 @@ std_exit()
 {
   test -n "$1" || return 0
   case "$1" in [0-9] ) ;;
-    * ) $script_util/log.sh "error" "" "std-ext '$1'" "" 1
+    * ) $sh_tools/log.sh "error" "" "std-ext '$1'" "" 1
       return $?
       ;;
   esac

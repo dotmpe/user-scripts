@@ -5,13 +5,14 @@
 
 os_lib_load()
 {
-	test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   test -n "$os" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 os_lib_init()
 {
-  test -n "$LOG" && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
   test -n "$os_lib_log" || return 102
   $os_lib_log info "" "Loaded os.lib" "$0"
 }
@@ -42,7 +43,7 @@ pathname() # PATH EXT...
   shift 1
   for ext in $@
   do
-    name="$(basename "$name" "$ext")"
+    name="$(basename -- "$name" "$ext")"
   done
   test -n "$dirname" -a "$dirname" != "." && {
     printf -- "$dirname/$name\\n"
@@ -89,14 +90,7 @@ basedir()
 
 dotname() # Path [Ext-to-Strip]
 {
-  echo $(dirname "$1")/.$(basename "$1" "$2")
-}
-
-short()
-{
-  test -n "$1" || set -- "$(pwd)"
-  # XXX maybe replace python script. Only replaces home
-  $scriptpath/short-pwd.py -1 "$1"
+  echo $(dirname -- "$1")/.$(basename -- "$1" "$2")
 }
 
 # [exts=] basenames [ .EXTS ] PATH...
@@ -114,7 +108,7 @@ basenames()
     shift
     for ext in $exts
     do
-      name="$(basename "$name" "$ext")"
+      name="$(basename -- "$name" "$ext")"
     done
     echo "$name"
   done
@@ -124,7 +118,7 @@ basenames()
 filenamext() # Name..
 {
   while test -n "$1"; do
-    basename "$1"
+    basename -- "$1"
   shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
 }
 
@@ -134,7 +128,7 @@ filenamext() # Name..
 filestripext() # Name
 {
   ext="$(filenamext "$1")"
-  basename "$1" ".$ext"
+  basename -- "$1" ".$ext"
 }
 
 # Check wether name has extension, return 0 or 1
@@ -354,7 +348,7 @@ read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
     cat $cat_f "$1" | grep -Ev "$2" || return 1
   }
 }
-# Copy: HT:tools/u-s/parts/sh-read.inc.sh vim:ft=bash:
+# Sh-Copy: HT:tools/u-s/parts/sh-read.inc.sh
 
 grep_nix_lines()
 {
@@ -448,7 +442,7 @@ go_to_dir_with()
   while true
   do
     test -e "$1" && break
-    go_to_before=$(basename "$(pwd)")/$go_to_before
+    go_to_before=$(basename -- "$(pwd)")/$go_to_before
     test "$(pwd)" = "/" && break
     cd ..
   done

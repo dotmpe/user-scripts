@@ -2,33 +2,26 @@
 
 set -euo pipefail
 
-scriptname=sh-treebox-ci
-unset LOG INIT_LOG CWD U_S
+#scriptname=sh-ci
+. "tools/ci/before-install.sh"
+. "tools/ci/install.sh"
 
-: "${CWD:="$PWD"}"
+. "tools/ci/before.sh"
 
-: "${ci_util:="$CWD/tools/ci"}"
+. "tools/ci/script.sh" || sh_ci_script_status=$?
 
-: "${U_S:="$HOME/.basher/cellar/packages/bvberkum/user-scripts"}"
-: "${script_util:="$U_S/tools/sh"}"
-: "${LOG:="$script_util/log.sh"}"
-: "${INIT_LOG:="$LOG"}"
+. "tools/ci/before-cache.sh"
 
-. "$ci_util/before-install.sh"
-#. "$ci_util/install.sh"
+if test $sh_ci_script_status -eq 0
+then
+  TRAVIS_TEST_RESULT=1
+  . "tools/ci/after-success.sh"
+else
+  TRAVIS_TEST_RESULT=0
+  . "tools/ci/after-failure.sh"
+fi
 
-. "$ci_util/before.sh"
-. "$ci_util/script.sh"
-
-#. "$ci_util/before-cache.sh"
-#. "$ci_util/cache.sh"
-
-#test $SCRIPT_RESULT -eq 0 && {
-#  . "$ci_util/after-success.sh"
-#} || {
-#  . "$ci_util/after-failure.sh"
-#}
-#. "$ci_util/after.sh"
+. "tools/ci/after.sh"
 
 ci_announce "$scriptname OK"
-# Id: user-scripts/0.0 sh-ci
+# Id: user-scripts/0.0 sh-ci vim:ft=bash:nowrap:

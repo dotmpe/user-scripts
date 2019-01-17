@@ -1,9 +1,24 @@
+# Id: <HT:to/do-in-user-scripts.list> vim:ft=todo:nowrap:cc=2,8,19,30:
+
+# TODO.txt with User-Scripts [+U_s] enhancements.
+
 x 2018-11-25 Add assert and other helpers to Bats setup
 2018-10-17 Initial setup ``.build/*.sh``, ``Makefile``. TODO: git hooks, checks
 x 2018-10-17 2018-10-17 Keep (most) project docs apart in GH wiki repo </doc> @docs
 2018-12-27 TODO: Documentation consists of Wiki, Manuals and some other hardcoded and processed markdown (ie. readme, changelog and copying files plus inline strings). @Spec @Docs
 2018-12-27 TODO: Manual documentation lists unique topics per section. #MJfc @Spec
 2018-12-27 TODO: Run bin/user-box. Alias as `box`. See also +User-config and ``u-c`` helper.
+
+2019-01-26 TODO: todo.txt syntax is locked up with old x-tasks? See also doc/dev/sentinel-lines on syntax.
+2019-01-27 TODO: pd-table group test document <sentinel-lines.md>
+2019-01-27 XXX: +U_s does not use package.y*ml but a simpler setup with committed plain text or shell variables (currently), and also `.version-attributes`. May want to commit .htd ie. `attributes`, `meta.sh` and `app-id` but going for consicese and simple, fitting to project.
+2019-01-27 TODO: derive some wiki docs from each other. Ie. pick up ideas for structuring across wikis, push interwiki section. @Docs
+
 # -----
 Manual Sections: 1. General commands (ie. user executables). 2. System calls (ie. plumbing or OS). 3. Library functions. 4. Special files and drivers. 5. Formats and conventions. 6. Games. 7. Misc. 8. System admin and daemons (ie. super-user and isolated agents, emulation and virtualization). @Docs @Manual [2018-12-27] #QOHn
-#
+Don't fear the Unix chainsaw <https://github.com/erichs/composure>
+"Libraries for bash are out there, but not common." <https://stackoverflow.com/questions/11369522/bash-utility-script-library> @Also
+A community Bash framework <https://github.com/Bash-it/bash-it> @Also
+git hooks manager <https://github.com/git-hooks/git-hooks> @Also
+
+# ----- -- ---- @_

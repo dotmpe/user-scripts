@@ -10,8 +10,6 @@ test -z "${INIT_DEBUG:=}" || set +x
 
 # Look at host / env and export u-s install type
 
-: "${U_S:="$(dirname "$(dirname "$(realpath "$0")")")"}"
-
 # TODO: cleanup some dynamic parts to bin/u-s env
 #if usr
 #elif usr-local
@@ -21,6 +19,10 @@ test -z "${INIT_DEBUG:=}" || set +x
 
 #else dev-local
 #test -n "$U_S" || U_S="$(pwd -P)"
+
+: "${CWD:="$PWD"}"
+: "${ci_tools:="$CWD/tools/ci"}"
+. "$ci_tools/env.sh" || return
 
 { test -x "$(which basher 2>/dev/null)" &&
   test "$(basher package-path "$U_S_REPO")" = "$U_S"
@@ -42,18 +44,9 @@ u_s_env_init()
   esac
 }
 
-: "${CWD:="$PWD"}"
-: "${script_util:="$U_S/tools/sh"}"
-. "${script_util}/util.sh"
-. "${script_util}/parts/print-color.sh"
-. "${script_util}/parts/env-0.sh"
-. "${script_util}/parts/env-dev.sh"
-
 test -z "$INIT_DEBUG" || set +x
-set +o nounset # NOTE: apply nounset only during init
 
-unset INIT_LOG
+# XXX: unset INIT_LOG
 U_S_ENV=dev
-export U_S_ENV U_S
 
 test -z "$DEBUG" || set -x

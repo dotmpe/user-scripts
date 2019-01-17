@@ -25,6 +25,7 @@ base='baseline:3:project'
 @test "$base: tools/sh/log" {
 
   load ../init
+  init
   load extra
   load stdtest
   LOG=tools/sh/log.sh
@@ -37,6 +38,7 @@ base='baseline:3:project'
   { test_nok_nonempty 1 && test_lines " msg <tag3>"
   } || stdfail 1.B.
 
+  verbosity=5
   run $LOG ok "tag1 tag2" "A longer message" "tag3 tag4"
   { test_ok_nonempty 1 &&
     test_lines '\[tag1 tag2] OK: A longer message <tag3 tag4>'

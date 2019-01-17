@@ -11,6 +11,7 @@ setup()
 
 @test "$base: truncate_trailing_lines: " {
 
+  skip FIXME truncate_trailing_lines
   echo
   tmpd
   out=$tmpd/truncate_trailing_lines
