@@ -1,6 +1,7 @@
 #!/bin/sh
 
 
+# Execute frontend command, auto-start session to log pass/failed steps.
 ci_exec()
 {
   local r= session= suite_lbl="Command or function"

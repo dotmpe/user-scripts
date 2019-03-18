@@ -33,7 +33,7 @@ date_lib_load()
 
 date_lib_init()
 {
-  lib_assert sys os str std log || return
+  # XXX: lib_assert sys os str std log || return
 
   test -n "$gdate" || case "$uname" in
     darwin ) gdate="gdate" ;;

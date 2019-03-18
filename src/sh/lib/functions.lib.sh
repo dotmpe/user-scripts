@@ -30,15 +30,15 @@ list_functions_foreach()
 }
 
 # List functions matching grep pattern in files
-find_functions() # Grep Sh-Files
+functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Grep> <Sh-Files>
 {
+  test -n "$1" -a $# -gt 1 || return 98
   local grep="$1" ; shift
-  falseish "$first_match" && first_match=
-  for file in $@
+  not_trueish "$first_match" && first_match=0 || first_match=1
+  for file in "$@"
   do
-    grep -q '^\s*'"$grep"'().*$' $file || continue
-    echo "$file"
-    test -n "$first_match" || break
+    grep -Hn '^\s*'"$grep"'().*$' "$file" || continue
+    test 0 -eq $first_match || break
   done
 }
 

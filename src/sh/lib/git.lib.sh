@@ -10,6 +10,12 @@ git_lib_load()
     test -e "/srv/project-local" &&
       PROJECT_DIR=/srv/project-local || PROJECT_DIR=$HOME/project
   }
+  test -n "$PROJECTS" || {
+    PROJECTS="$(for path in $PROJECT_DIR $HOME/project /srv/project-local /src/*.*/ /src/local/
+      do
+          echo ":$path"
+      done | remove_dupes | tr -d '\n' | tail -c +2 )"
+  }
 }
 
 git_lib_init()
@@ -83,4 +89,45 @@ git_src_get() # <user>/<repo>
     test -h "$PROJECT_DIR/$name" && rm -v "$PROJECT_DIR/$name"
     ln -vs "$VND_GH_SRC/$1" "$PROJECT_DIR/$name"
   }
+}
+
+git_commit_date() # <Commit-ish>
+{
+  git show -s --format=%cI "$1"
+}
+
+git_author_date() # <Commit-ish>
+{
+  git show -s --format=%aI "$1"
+}
+
+# Select first and last date from found commit/author dates for path
+git_commit_range_file() # <Path>
+{
+  local f=
+  true "${choice_follow:=1}"
+  trueish "$choice_follow" && f=--follow
+
+  # NOTE: echo hash, iso-date and timestamp per date, sort on latter
+  {
+    git log --format='%H %cI %ct
+%H %aI %at' $f --diff-filter=A -- "$@" || return
+    git log --format='%H %cI %ct
+%H %aI %at' $f -n 1 --diff-filter=M -- "$@"
+    return $?
+  } | sort -k3 -u | awk 'NR==1; END{print}'
+}
+
+# Echo two lines; the date the file was added (or renamed if choice_follow=0)
+# and the last date of update
+git_dates() # ~ <Path>
+{
+  { git_commit_range_file "$@" || return
+  } | cut -d' ' -f2
+}
+
+# List renames for commit-range
+git_renames() # ~ <Commit-or-Range>
+{
+  git diff --name-status --diff-filter=R -C "$1"
 }

@@ -100,6 +100,7 @@ func_exists()
 try_exec_func()
 {
   test -n "$1" || return 97
+  test -n "$sys_lib_log" || return 102
   $sys_lib_log debug "sys" "try-exec-func '$1'"
   func_exists $1 || return $?
   local func=$1

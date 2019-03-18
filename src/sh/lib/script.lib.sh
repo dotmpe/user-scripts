@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Initial tools to help boot env for project/script
+# Initial tools to help boot env for a project (tooling) or other set of scripts
 
 script_lib_load()
 {
@@ -30,7 +30,9 @@ scripts_init()
   done
 }
 
-script_init()
+# helper for final step in init.sh: boot after lib load & init.
+# TODO: add more sh-include-path options, consolidate with other tooling
+script_init() # ( SCR-PATH | BOOT-NAME )
 {
   test -n "$script_log" || script_lib_init_
   test -f "$1" && {

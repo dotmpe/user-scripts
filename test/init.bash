@@ -211,8 +211,8 @@ bats_autosetup_common_includes()
   test ! -d $BASHER_PACKAGES ||
     BATS_LIB_PATH_DEFAULTS="$BATS_LIB_PATH_DEFAULTS $BASHER_PACKAGES"
 
-  test -e /src/ &&
-    : "${VND_SRC_PREFIX:="/src"}" ||
+  test -e /src/local &&
+    : "${VND_SRC_PREFIX:="/src/local"}" ||
     : "${VND_SRC_PREFIX:="$HOME/build"}"
 
   : "${VENDORS:="google.com github.com bitbucket.org"}"

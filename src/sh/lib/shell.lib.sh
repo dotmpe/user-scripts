@@ -194,15 +194,15 @@ sh_aliasinfo() # ALIAS
 }
 
 
-# Tell what given CMD name is, like `type`
-sh_execinfo() # CMD...
+# Tell what given CMD name is, like `type` but as a short lower-case abbrev
+sh_execinfo() # run execinfo-inner for each arg ~ CMD...
 {
   local i= ; test $# -gt 1 && i=":\$1"
   s= p= act=sh_execinfo_ foreach_do "$@"
 }
 
 # Inner foreach-do routine for sh-execinfo
-sh_execinfo_() # CMD
+sh_execinfo_() # echo shell symbol type code ~ CMD
 {
   sh_is_type_na "$1" && {
 
@@ -217,7 +217,7 @@ sh_execinfo_() # CMD
   true
 }
 
-sh_deps()
+sh_deps() # Fetch script callees by Oil-shell compiler ~
 {
   oshc deps
 }

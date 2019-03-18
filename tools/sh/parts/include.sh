@@ -3,7 +3,7 @@
 sh_include() # Parts...
 {
   test $# -gt 0 || return
-  : "${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"}" || return
+  true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return
 
   for part in $*
   do
@@ -18,5 +18,7 @@ sh_include() # Parts...
       print_err error "" "at sh_include $part" "$?" $?
   done
 }
+
+alias sh-parts=sh_include
 
 # Id: U-S:

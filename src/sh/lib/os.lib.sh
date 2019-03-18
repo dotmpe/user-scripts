@@ -339,8 +339,8 @@ normalize_relative()
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
 read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
-  test $# -gt 1 -a $# -le 2 || return 98
-  test -n "$1" || return 1
+  test $# -gt 0 -a $# -le 2 || return 98
+  test -n "$1" -a -e "$1" || return 1
   test -n "$2" || set -- "$1" '^\s*(#.*|\s*)$'
   test -z "$cat_f" && {
     grep -Ev "$2" "$1" || return 1
