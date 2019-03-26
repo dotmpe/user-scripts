@@ -43,5 +43,7 @@ sh_include env-0-1-lib-sys env-0-2-lib-os env-0-3-lib-str env-0-4-lib-script ||
 sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc env-0-1-lib-shell ||
   return
 
+sh_include exec || return
+
 : "${TMPDIR:=/tmp}"
 : "${RAM_TMPDIR:=}"

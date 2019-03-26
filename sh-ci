@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+unset U_S
+
 #scriptname=sh-ci
 . "tools/ci/before-install.sh"
 . "tools/ci/install.sh"

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # XXX: Old initial automatic SCRIPTPATH heuristic scans some preset paths.
 # TODO: remove additional config and use vendor deps to either setup SCRIPTPATH
@@ -15,7 +15,7 @@ support_libs="user-scripts user-scripts-support user-scripts-incubator user-conf
 # XXX: Prefer dev/build/src location for CI
 base_dirs="$HOME/project /srv/project-local $VND_GH_SRC/user-tools $VND_GH_SRC/bvberkum $HOME/lib/sh $HOME/.basher/cellar/packages/user-tools $HOME/.basher/cellar/packages/bvberkum"
 
-test -n "$sh_src_base" || sh_src_base=/src/sh/lib
+true "${sh_src_base:="/src/sh/lib"}"
 
 
 # Pipe interesting paths to SCRIPTPATH-builder
@@ -41,7 +41,7 @@ do
   for base in "" /script/lib /script /commands /contexts $sh_src_base
   do
     test -d "$path$base" || continue
-    /usr/local/bin/realpath "$path$base"
+    realpath "$path$base"
   done
 done | awk '!a[$0]++' | tr '\n' ':' | sed 's/:$/\
 /' | {
@@ -61,14 +61,14 @@ read SCRIPTPATH_ <"$ENV_D_SCRIPTPATH"
 rm "$ENV_D_SCRIPTPATH"
 unset ENV_D_SCRIPTPATH
 
-test -n "$SCRIPTPATH" && {
+test -n "${SCRIPTPATH:-}" && {
 
   $LOG "info" "" "Adding to SCRIPTPATH" "$SCRIPTPATH_"
   SCRIPTPATH=$SCRIPTPATH_:$SCRIPTPATH
 } || {
 
-  $LOG "info" "" "New SCRIPTPATH" "$SCRIPTPATH"
   SCRIPTPATH=$SCRIPTPATH_
+  $LOG "info" "" "New SCRIPTPATH" "$SCRIPTPATH"
 }
 unset SCRIPTPATH_ support_libs base_dirs
 export SCRIPTPATH

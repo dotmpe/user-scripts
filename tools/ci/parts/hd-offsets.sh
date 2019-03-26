@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-sh-hd-offsets() # Tab Cols...
+hd-offsets() # Tab Cols...
 {
-  about 'Header offsets'
-
   local tab="$1"; shift
 
   $ggrep -m 1 -E '^#\ [^\!\/\.,]+$' "$tab" | {

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ci_announce 'Initializing for build-cache'
+ci_announce 'Initializing for build-stats and statusdir-cache'
+
+mkdir -p ~/.statusdir/{logs,tree,index}
+
+sh_include env-docker-cache
 
 ci_announce "Logging into docker hub $DOCKER_USERNAME"
 # NOTE: use stdin to prevent user re-prompt; but cancel build on failure
 echo "$DOCKER_HUB_PASSWD" | \
   ${dckr_pref}docker login --username $DOCKER_USERNAME --password-stdin
-
-mkdir -p ~/.statusdir/{logs,tree,index}
-
-sh_include env-docker-cache
 
 SCRIPTPATH=$SCRIPTPATH:$CWD/commands
 u_s_dckr_lib_loaded= lib_load u_s-dckr
@@ -48,4 +48,8 @@ ci_announce 'New log:'
 tail -n 1 "$builds_log"
 wc -l "$builds_log" || true
 
-dckr_pushlogs
+trueish "${announce:-}" && {
+
+  dckr_pushlogs
+
+} || true

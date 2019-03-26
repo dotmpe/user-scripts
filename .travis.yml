@@ -20,6 +20,8 @@ language: shell
 env:
   matrix: []
   global:
+    - announce=1
+    - VND_SRC_PREFIX=$HOME/build
     - secure: "c2g4VSU982GjA7rAoCu5NhjPzRkCRWnvloG7/5weFOy5JRN9G/aVXPL19VZtQiHaz5O37bL2aC2pNL2Z1AXONtimqPpleYQBq4CEz1gMRQ1uNIT4bUopwGOo1zXXUVeMLO2DxRU2oLB0SnP0ENqY9vg47WewPBkdv9WrXwlTFku/sJkJvZu37z6HLHaZXkIQP2NrD0Gd1VrtV6TNkoZBBFQesP6lR9cc5VjtxqrlHP5EKq9fmFvfsukAdpzinmJnE4XhmjnpmRJ+WiLgSg/miKXyLkTN2UWm0iPRoq22QgAOVJj47naKaUiL2P3uB63Ufaddvkhnqhlbi0PQPgqthY5MdTVcGjEq8cYImA9fgilZIt3bQ/fQeNLrzBV7XZfRbtc6BxlXGbI3I5nf+QMxoFcWLodBqOc4njXvc+SiEN7x+nLjVNCTAOo5Hr+6tOzi7dOUu8/rObKAZm1a96c7Ip4jwNl7SHdjgpO1c74KLf9vvlyRYzTBgZM6muJROJHbSLtv0sLC3bjt2b82Aayj40FZeAd21RwomvjYJNpBqyIimrCOxG6dkqfRtFBhb37AAgkjcras2pOL04AWrgt8ikYlTbxUPan708ZhBno95gDdhTbNLy/kU0dNocUZB9/iLpeAKo5omw8OZ8WXq2ftx3UH0fhI9Xx+No4RQ+klY88="
 
 before_install:
