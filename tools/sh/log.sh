@@ -113,6 +113,7 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
     printf "%s%s %s\n" "$indent" "$prefix" "$3" >&2
   }
 
+  unset lvl linetype prefix indent suffix
   test -z "$5" || exit $5
 }
 
