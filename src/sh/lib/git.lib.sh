@@ -27,7 +27,7 @@ git_lib_init()
 }
 
 # Use find to list repos on $PROJECTS path
-git_list() # PROJECTS ~
+git_list() # Find repos [PROJECTS] ~
 {
   for path in $(echo "$PROJECTS" | tr ':' '\n' | realpaths | remove_dupes )
   do
