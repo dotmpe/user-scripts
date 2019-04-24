@@ -33,6 +33,8 @@ test -n "${IS_BASH:-}" || $INIT_LOG error "Not OK" "Need to know shell dist" "" 
 
 $INIT_LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
 ci_env_end_ts=$($gdate +"%s.%N")
+
 $INIT_LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
 print_yellow "ci:env" "Starting: $0 '$*'" >&2
+
 # From: Script.mpe/0.0.4-dev tools/ci/env.sh
