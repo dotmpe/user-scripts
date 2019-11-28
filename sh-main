@@ -9,6 +9,7 @@ usage() # Short usage help or spec list for (partial) command name ~ [Command]
     echo 'Usage:'
     echo '  ./sh-main <function name> <func args>'
     echo '  ./sh-main ( usage [command] | commands )'
+    echo ''
     echo 'Allowing for any profile and functions to be loaded to particular or generic scripts'
   } ||  {
     src= sh_cmd_funcs "$1"
@@ -19,7 +20,7 @@ spec() # Combine and execute var/cmd specs with test-shell ~ ...
 {
   test $# -gt 0 || set -- sh-baseline.tab
   test $# -gt 1 || set -- "$1" "*"
-  test $# -le 2 -a -f "$1" || return 98
+  test $# -eq 2 -a -f "$1" || return 98
 
   sh_include std-stack std-runner
 
@@ -35,9 +36,13 @@ spec() # Combine and execute var/cmd specs with test-shell ~ ...
     #continue
     #IFS="$OLDIFS"
 
+    # Skip if filter arg does not match line
     case "$scriptline" in $2 ) ;; * ) continue ;; esac
 
-    c-run "$scriptline" || return
+    # Execute scriptline
+    #c-run "$scriptline" || return
+    #eval "$scriptline"
+    /bin/bash -c "$scriptline"
 
   done
   #IFS="$OLDIFS"
@@ -160,12 +165,6 @@ run-ci()
 
 # Main: wrap/exec cmd or func matching first argument
 
-BASH_BIN=$(which bash)
-bash-c() # Bash -c helper ~ Command-Line...
-{
-  $BASH_BIN -c "$@"
-}
-
 case "$(basename -- "$0" .sh)" in
   -bash ) ;;
 
@@ -186,22 +185,22 @@ case "$(basename -- "$0" .sh)" in
         esac
       }
 
+      : "${SCRIPT_NAME:=$(basename "$SCRIPT_SHELL")}"
+
+      eval "$(cat <<EOM
+$SCRIPT_NAME-c() # Command-Line...
+{
+  $SCRIPT_SHELL -c "\$1"
+}
+EOM
+)"
+
       # XXX: test ! -e "$PWD"/"$1" test local only?
       test ! -e "$1" -o -x "$1" || {
         specfile="$1"; shift
         set -- "$(ci_file_exec "$specfile")" "$specfile" "$@"
         unset specfile
       }
-
-      : "${SCRIPT_NAME:=$(basename "$SCRIPT_SHELL")}"
-
-      eval "$(cat <<EOM
-$SCRIPT_NAME-c() # Command-Line...
-{
-  $SCRIPT_SHELL -c "\$@"
-}
-EOM
-)"
 
       # Execute/wrap unknown first-argv as shell command
       test -x "$1" -o "$(type -t "$1")" = "function" || set -- $SCRIPT_NAME-c "$@"

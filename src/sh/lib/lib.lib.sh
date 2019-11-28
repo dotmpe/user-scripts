@@ -88,7 +88,7 @@ lib_load()
           done)"
 
         test -n "$f_lib_path" || {
-          $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "" 1 || return
+          $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "$SCRIPTPATH" 1 || return
         }
         . "$f_lib_path" || { r=$?; lib_src_stat=$r
           $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
