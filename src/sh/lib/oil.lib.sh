@@ -3,8 +3,8 @@
 oil_lib_load()
 {
   OIL_CONTAINER=u-s-oil-treebox
-  OIL_IMAGE=bvberkum/treebox:dev
-  OIL_PATH=/src/github.com/bvberkum/oil
+  OIL_IMAGE=dotmpe/treebox:dev
+  OIL_PATH=/src/github.com/dotmpe/oil
   lib_load docker-sh
 }
 

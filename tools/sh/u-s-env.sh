@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 U_S_REPO_ID="origin"
-U_S_REPO="bvberkum/user-scripts"
+U_S_REPO="dotmpe/user-scripts"
 # FIXME ssh setup U_S_REPO_URL="git@github.com:"
 U_S_REPO_URL="https://github.com/$U_S_REPO"
 U_S_RELEASE="r0.0"

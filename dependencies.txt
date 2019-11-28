@@ -2,12 +2,12 @@
 # basher user-tools/user-scripts-incubator
 # basher user-tools/user-conf
 
-basher bvberkum/git-versioning
+basher dotmpe/git-versioning
 
-git bvberkum/script-mpe features/docker-ci # No-Sync
-# git bvberkum/user-scripts r0.0
-git bvberkum/user-scripts-incubator test # No-Sync
-# git bvberkum/user-conf
+git dotmpe/script-mpe features/docker-ci # No-Sync
+# git dotmpe/user-scripts r0.0
+git dotmpe/user-scripts-incubator test # No-Sync
+# git dotmpe/user-conf
 
 git ztombol/bats-file
 git ztombol/bats-support

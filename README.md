@@ -1,4 +1,4 @@
-# User Scripts [![](http://img.shields.io/travis/bvberkum/user-scripts/master.svg)](https://travis-ci.org/bvberkum/user-scripts) ![repo license](https://img.shields.io/github/license/bvberkum/user-scripts.svg) ![commits per year](https://img.shields.io/github/commit-activity/y/bvberkum/user-scripts.svg) ![code size](https://img.shields.io/github/languages/code-size/bvberkum/user-scripts.svg) ![repo size](https://img.shields.io/github/repo-size/bvberkum/user-scripts.svg)
+# User Scripts [![](http://img.shields.io/travis/dotmpe/user-scripts/master.svg)](https://travis-ci.org/dotmpe/user-scripts) ![repo license](https://img.shields.io/github/license/dotmpe/user-scripts.svg) ![commits per year](https://img.shields.io/github/commit-activity/y/dotmpe/user-scripts.svg) ![code size](https://img.shields.io/github/languages/code-size/dotmpe/user-scripts.svg) ![repo size](https://img.shields.io/github/repo-size/dotmpe/user-scripts.svg)
 
 > every complex working system started out simple -- Gall's Law
 
@@ -37,7 +37,7 @@ scriptpath=$PWD . ./tools/sh/init.sh
 A predefined set of modules is loaded.
 
 ```sh
-U_S=/src/github.com/bvberkum/user-script
+U_S=/src/github.com/dotmpe/user-script
 
 # Load into current shell
 scriptpath=$U_S/src/sh/lib . $U_S/tools/init.sh
@@ -70,7 +70,7 @@ Version: 0.0
 
 ### Sections
 
-- [Docs](doc) ([Wiki](https://github.com/bvberkum/user-scripts/wiki))
+- [Docs](doc) ([Wiki](https://github.com/dotmpe/user-scripts/wiki))
 - [Dev-Docs](wiki/dev/main)
 - [ChangeLog](CHANGELOG.md)
 

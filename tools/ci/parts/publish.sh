@@ -14,7 +14,7 @@ test -e /srv/scm-git-local || {
   sudo chown travis /srv/scm-git-local || true
 }
 
-#set -- "bvberkum/script-mpe"
+#set -- "dotmpe/script-mpe"
 #git_scm_find "$1" || {
 #  git_scm_get "$SCM_VND" "$1" || return
 #}

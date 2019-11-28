@@ -6,10 +6,10 @@ AGE git 3600
 
 # XXX: u-c does not do GIT-ref checkouts, also add depth param ie. for non-dev checkouts
 
-SH mkdiv -vp /src/{,local/{docs,dev}/}github.com/bvberkum
+SH mkdiv -vp /src/{,local/{docs,dev}/}github.com/dotmpe
 
-GIT git@github.com:bvberkum/user-scripts.git /src/github.com/bvberkum/
+GIT git@github.com:dotmpe/user-scripts.git /src/github.com/dotmpe/
 
-GIT git@github.com:bvberkum/user-scripts.git /src/local/dev/github.com/bvberkum/ origin r0.0
-GIT git@github.com:bvberkum/user-scripts.git /src/local/dev-docs/github.com/bvberkum/ origin doc-0.1
+GIT git@github.com:dotmpe/user-scripts.git /src/local/dev/github.com/dotmpe/ origin r0.0
+GIT git@github.com:dotmpe/user-scripts.git /src/local/dev-docs/github.com/dotmpe/ origin doc-0.1
 
