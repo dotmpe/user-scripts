@@ -7,9 +7,9 @@
 dckr_lib_load()
 {
   : "${docker_name:="u-s-dckr"}"
-  : "${docker_image:="bvberkum/sandbox:dev"}"
+  : "${docker_image:="dotmpe/sandbox:dev"}"
 
-  : "${U_S_PATH:="/home/treebox/.basher/cellar/packages/bvberkum/user-scripts"}"
+  : "${U_S_PATH:="/home/treebox/.basher/cellar/packages/dotmpe/user-scripts"}"
 }
 
 # Load and init libraries and log
@@ -41,7 +41,7 @@ dckr_init() #
           usermod -a -G docker treebox && \
           echo "treebox    ALL=NOPASSWD:$(which docker) *" >>/etc/sudoers.d/treebox' || return
 
-    ${dckr_pref}docker exec -w /src/github.com/bvberkum/oil "$1" \
+    ${dckr_pref}docker exec -w /src/github.com/dotmpe/oil "$1" \
       sh -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal' || return
 
     # Accept Oil-shell install error
@@ -168,12 +168,12 @@ dckr_showlog()
 {
   sh_include env-docker-cache
 
-  ${dckr_pref}docker pull bvberkum/ledge:$ledge_tag >/dev/null || return
+  ${dckr_pref}docker pull dotmpe/ledge:$ledge_tag >/dev/null || return
 
   ${dckr_pref}docker pull busybox >/dev/null
   ${dckr_pref}docker create --name ledge \
     -v ledge-statusdir:/statusdir \
-    bvberkum/ledge:$ledge_tag >/dev/null
+    dotmpe/ledge:$ledge_tag >/dev/null
 
   ${dckr_pref}docker run -t --rm \
       --volumes-from ledge \
@@ -188,7 +188,7 @@ dckr_ledge_exists()
 {
   test -n "${ledge_tag:-}" || sh_include env-docker-cache
 
-  ${dckr_pref}docker pull bvberkum/ledge:$ledge_tag >/dev/null
+  ${dckr_pref}docker pull dotmpe/ledge:$ledge_tag >/dev/null
 }
 
 dckr_ledge_pull()
@@ -197,7 +197,7 @@ dckr_ledge_pull()
 
   ${dckr_pref}docker create --name ledge \
     -v ledge-statusdir:/statusdir \
-    bvberkum/ledge:$ledge_tag >/dev/null
+    dotmpe/ledge:$ledge_tag >/dev/null
 
   ${dckr_pref}docker run -t --rm \
     --volumes-from ledge \
@@ -245,7 +245,7 @@ dckr_listlogs()
 
   ${dckr_pref}docker create --name ledge \
     -v ledge-statusdir:/statusdir \
-    bvberkum/ledge:$ledge_tag >/dev/null
+    dotmpe/ledge:$ledge_tag >/dev/null
 
   ${dckr_pref}docker run -t --rm \
     --volumes-from ledge \
@@ -260,7 +260,7 @@ dckr_refreshlogs()
 {
   test -n "${ledge_tag:-}" || sh_include env-docker-cache
 
-  ${dckr_pref}docker rmi -f bvberkum/ledge:$ledge_tag >/dev/null
+  ${dckr_pref}docker rmi -f dotmpe/ledge:$ledge_tag >/dev/null
 
   dckr_ledge_exists || return
   dckr_ledge_pull
@@ -272,14 +272,14 @@ dckr_pushlogs()
   test -n "${ledge_tag:-}" || sh_include env-docker-cache
 
   # Rebuild ledge (for this repo/branch)
-  ${dckr_pref}docker rmi -f bvberkum/ledge:$ledge_tag >/dev/null
+  ${dckr_pref}docker rmi -f dotmpe/ledge:$ledge_tag >/dev/null
 
   cp test/docker/ledge/Dockerfile ~/.statusdir
-  ${dckr_pref}docker build -qt bvberkum/ledge:$ledge_tag ~/.statusdir && {
+  ${dckr_pref}docker build -qt dotmpe/ledge:$ledge_tag ~/.statusdir && {
     print_yellow "" "Pushing new image... <$ledge_tag>"
 
     # Push new image
-    ${dckr_pref}docker push bvberkum/ledge:$ledge_tag >/dev/null &&
+    ${dckr_pref}docker push dotmpe/ledge:$ledge_tag >/dev/null &&
       print_green "" "Pushed build announce log line onto ledge" ||
       print_red "" "Failued pushing build announce log line"
   }

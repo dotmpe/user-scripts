@@ -18,9 +18,9 @@ test -n "${LOG:-}" -a -x "${LOG:-}" -o \
 
 test -n "$sh_src_base" || sh_src_base=/src/sh/lib
 
-case "$0" in -* ) ;; * )
-  U_S="$(dirname "$(dirname "$(dirname "$0")" )" )"
-;; esac
+case "$0" in -* ) ;; * ) # No-Sync
+  U_S="$(dirname "$(dirname "$(dirname "$0")" )" )" # No-Sync
+;; esac # No-Sync
 test -n "$U_S" -a -d "$U_S" || . $PWD$sh_util_base/parts/env-0-u_s.sh
 test -n "$U_S" -a -d "$U_S" || return
 
@@ -47,10 +47,10 @@ test -z "$DEBUG" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script
 
 test "$init_sh_libs" = "0" || {
-  lib_load $init_sh_libs
+  lib_load $init_sh_libs && lib_init
 
   test -n "$2" && init_sh_boot="$2" || init_sh_boot=stderr-console-logger
-  script_init "$init_sh_boot"
+  script_init "$init_sh_boot" || return
 }
 
 # XXX: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG

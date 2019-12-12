@@ -35,7 +35,7 @@ echo "Scm-Vnd: $SCM_VND"
 echo "Keep-Going: '${keep_going:-}'"
 echo "Lib-Loaded: '${lib_loaded:-}'"
 #echo "User-Scripts version: $( cd $U_S && git describe --always )" # No-Sync
-echo "User-Scripts version: $( cd $HOME/build/bvberkum/user-scripts && git describe --always )"
+echo "User-Scripts version: $( cd $HOME/build/dotmpe/user-scripts && git describe --always )"
 echo
 ci_announce 'Listing u-s SCRIPTPATH'
 ./bin/u-s libs-path

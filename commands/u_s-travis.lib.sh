@@ -1,7 +1,7 @@
 #!/bin/sh
 travis_status()
 {
-  test -n "$1" || set -- "bvberkum/user-scripts" "$2"
+  test -n "$1" || set -- "dotmpe/user-scripts" "$2"
   test -n "$2" || set -- "$1" "r0.0"
 
   #lib_load statusdir

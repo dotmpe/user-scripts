@@ -44,7 +44,7 @@ script_init() # ( SCR-PATH | BOOT-NAME )
 
     sh_include_path=$U_S/tools/sh/boot sh_include "$1" || {
 
-      $script_log error "script" "failed boot '$1' at <$sh_tools>" "" 103 || return
+      $script_log error "script" "failed boot '$1' at <$sh_tools>" "" 107 || return
     }
   }
 }
