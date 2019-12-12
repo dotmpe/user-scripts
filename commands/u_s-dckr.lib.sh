@@ -281,7 +281,7 @@ dckr_pushlogs()
     # Push new image
     ${dckr_pref}docker push dotmpe/ledge:$ledge_tag >/dev/null &&
       print_green "" "Pushed build announce log line onto ledge" ||
-      print_red "" "Failued pushing build announce log line"
+      print_red "" "Failed pushing build announce log line"
   }
 }
 
