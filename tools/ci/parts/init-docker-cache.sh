@@ -9,7 +9,7 @@ sh_include env-docker-cache
 
 ci_announce "Logging into docker hub $DOCKER_USERNAME"
 # NOTE: use stdin to prevent user re-prompt; but cancel build on failure
-echo "$DOCKER_HUB_PASSWD" | \
+echo "$DOCKER_PASSWORD" | \
   ${dckr_pref}docker login --username $DOCKER_USERNAME --password-stdin
 
 SCRIPTPATH=$SCRIPTPATH:$CWD/commands

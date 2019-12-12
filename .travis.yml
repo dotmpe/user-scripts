@@ -22,7 +22,6 @@ env:
   global:
     - announce=1
     - VND_SRC_PREFIX=$HOME/build
-    - secure: "kJSGgY5edmiWYSSt/vCv9wdTwiRcOHX5ktPSapGjoq+Rf+G0Fc0QMHxGddAJGMhN5yDxq6Ni7d+sxuEdRkMtmtjZPIAApId84EqAvNH9YvVFVgdTdggEoHAVqOtP5mWSf0ZXi6JRLx8TMurKUwYtQt2a37CQaXyX9fRQasgEzIGGSMKSbDCN2m/sn+3u+NVTNqg46sdDztH20IXKgo1pxvEaaqPRbkX/g5bpWrNh+ZkILTkn5IP7GOCFhQPuNSOraPExj1FN8SGSjK86pdntfpQEzI200KoH0aowo2IqRuqhdk63Vxrt/9mm3rli7jTdYdzHbDQG8w08TaUac8BdPE6o7ryTLbAzc7+rnxf/4s18U4Q+4A8DWIIfGawGcCNUsv9o6Fap0gbgwTfpjC6JXAJuvRmT4JLzWSOv2Mcj20HA0NshT5rXIC0wT/auqL0vKZSUGFP911p2ob46oneeO2oJFircCGwU/ALYUtS5rdf3VNpSELQpZt4WElay3LV3+3XVtuN7odPNxivfBvEer6oP2o9a8vzxRzM4I1/zpiYnTIBumD3oXWQJyOrGZsJfd5MQRzBp4cfQ4CS6VLE2H8mMEFzRi15IP2mO5HWgOyyHxuySityGhaeWFN+L5tSIz8vnRixOFNU1qpjb0Rr4s5LB/bWRJGDDb+MpQIbgAQI="
 
 before_install:
   - . ./tools/ci/before-install.sh
