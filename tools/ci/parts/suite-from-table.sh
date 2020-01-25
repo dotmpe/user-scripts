@@ -4,8 +4,8 @@ suite_from_table() # Table Name-Column Order-Column Order-Prefix
   local tab="$1" name="$2" order="$3" pref=${4:-}; shift
   local parts_w= offset= end=
 
-  eval $( hd-offsets "$tab" "$name" ) ; name_c=$offset name_w=$end
-  eval $( hd-offsets "$tab" "$order" )
+  eval $( hd_offsets "$tab" "$name" ) ; name_c=$offset name_w=$end
+  eval $( hd_offsets "$tab" "$order" )
 
   {
     $ggrep -v '^\s*\(#.*\)\?$' "$tab" |

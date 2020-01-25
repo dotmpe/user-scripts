@@ -74,7 +74,7 @@ lib_load()
     test -n "$lib_id" || {
       $lib_lib_log error $scriptname:lib "err: lib_id=$lib_id" "" 1 || return
     }
-    f_lib_loaded=$(eval printf -- \"\$${lib_id}_lib_loaded\")
+    f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
     test -n "$f_lib_loaded" || {
 
