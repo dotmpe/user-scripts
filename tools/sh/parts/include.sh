@@ -3,6 +3,8 @@
 sh_include() # Parts...
 {
   test $# -gt 0 || return
+  true ${ci_tools:=tools/ci}
+  true ${sh_tools:=tools/sh}
   true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return
 
   for part in $*
