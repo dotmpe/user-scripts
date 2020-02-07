@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-hd-offsets() # Tab Cols...
+hd_offsets() # Tab Cols...
 {
   local tab="$1"; shift
 

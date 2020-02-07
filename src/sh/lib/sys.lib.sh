@@ -30,7 +30,7 @@ fi
 incr() # VAR [AMOUNT=1]
 {
   local incr_amount
-  test -n "$2" && incr_amount=$2 || incr_amount=1
+  test -n "${2-}" && incr_amount=$2 || incr_amount=1
   v=$(eval echo \$$1)
   eval $1=$(( $v + $incr_amount ))
 }
