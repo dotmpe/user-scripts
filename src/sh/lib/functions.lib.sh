@@ -2,6 +2,7 @@
 
 functions_lib_load()
 {
+  # XXX: use coffeescript/NPM bash-parser package?
   #which -s "coffee" && {
   #  # Use NPM bash-parser to try and get command/function calls from src
   #  sh_list_calls="coffee $(lookup_path PATH sh.coffee | head -n1)"
@@ -37,7 +38,7 @@ functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Gre
   not_trueish "$first_match" && first_match=0 || first_match=1
   for file in "$@"
   do
-    grep -Hn '^\s*'"$grep"'().*$' "$file" || continue
+    grep -Hn '^\s*'"$grep"'()' "$file" || continue
     test 0 -eq $first_match || break
   done
 }
