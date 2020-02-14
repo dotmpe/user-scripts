@@ -10,7 +10,7 @@ log_lib_init()
 
 req_log()
 {
-  test -n "$log" || exit 102 # NOTE: sanity
+  test -n "$log" || exit 111 # NOTE: sanity
 }
 
 req_init_log()

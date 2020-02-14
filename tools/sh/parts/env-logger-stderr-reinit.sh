@@ -5,7 +5,7 @@
 test -n "${LOG:-}" -a -x "${LOG:-}" -o \
   "$(type -t "${LOG:-}" 2>/dev/null )" = "function" || {
 
-  type $LOG  2>/dev/null >&2 || {
+  type $LOG 2>/dev/null >&2 || {
     test "$LOG" = "logger_stderr" || return 102
     $CWD/tools/sh/log.sh info "sh:env" "Reloading existing logger env"
 

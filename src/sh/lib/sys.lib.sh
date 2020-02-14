@@ -13,7 +13,7 @@ sys_lib_init()
 {
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
-  test -n "$sys_lib_log" || return 102
+  test -n "$sys_lib_log" || return 108
 
 # XXX: cleanup
 if [ -z "$(which realpath)" ]
@@ -100,7 +100,7 @@ func_exists()
 try_exec_func()
 {
   test -n "$1" || return 97
-  test -n "$sys_lib_log" || return 102
+  test -n "$sys_lib_log" || return 108
   $sys_lib_log debug "sys" "try-exec-func '$1'"
   func_exists $1 || return $?
   local func=$1

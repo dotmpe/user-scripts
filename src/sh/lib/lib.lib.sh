@@ -13,7 +13,7 @@ lib_lib_init()
 {
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
-  test -n "$lib_lib_log" || return 102
+  test -n "$lib_lib_log" || return 108
 
   $lib_lib_log info "" "Loaded lib.lib" "$0"
 }
@@ -60,7 +60,7 @@ lib_lookup()
 lib_load()
 {
   test -n "$1" || return 198
-  test -n "$lib_lib_log" || return 102 # NOTE: sanity
+  test -n "$lib_lib_log" || return 108 # NOTE: sanity
 
   $lib_lib_log debug "" "Loading lib(s)" "$*"
 

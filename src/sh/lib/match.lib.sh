@@ -2,7 +2,7 @@
 
 match_lib_init()
 {
-  test -n "$INIT_LOG" || return 102
+  test -n "$INIT_LOG" || return 109
   test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   case "$uname" in
       darwin ) gsed=gsed; ggrep=ggrep;;

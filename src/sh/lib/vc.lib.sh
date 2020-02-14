@@ -3,7 +3,7 @@
 
 vc_lib_init()
 {
-  test -n "$INIT_LOG" || return 102
+  test -n "$INIT_LOG" || return 109
   $INIT_LOG info "" "Loaded vc.lib" "$0"
 }
 

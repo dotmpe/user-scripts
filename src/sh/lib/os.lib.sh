@@ -13,7 +13,7 @@ os_lib_init()
 {
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
-  test -n "$os_lib_log" || return 102
+  test -n "$os_lib_log" || return 108
   $os_lib_log info "" "Loaded os.lib" "$0"
 }
 

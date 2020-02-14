@@ -6,7 +6,7 @@ str_lib_load()
 {
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
-  test -n "$str_lib_log" || return 102
+  test -n "$str_lib_log" || return 108
 
   case "$uname" in
       darwin ) expr=bash-substr ;;

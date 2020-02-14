@@ -102,7 +102,7 @@ test_env_load()
   unset part env_d
 
   test -n "$base" || return 12 # NOTE: sanity
-  test -n "$INIT_LOG" || return 102 # NOTE: sanity
+  test -n "$INIT_LOG" || return 109 # NOTE: sanity
   $INIT_LOG "info" "" "Env initialized from parts"
 }
 
