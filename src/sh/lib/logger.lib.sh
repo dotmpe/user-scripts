@@ -9,6 +9,8 @@ logger_lib_load()
   test -n "$logger_exit_threshold" || logger_exit_threshold=4
 
   test -n "$logger_log_threshold" || logger_log_threshold=9 # Everything
+
+  test -n "$status" || status=exit
 }
 
 
@@ -44,9 +46,9 @@ logger_log() # level target-ids description source-ids status-code
     }
   }
 
-  test -n "$5" && exit $5
+  test -n "$5" && $status $5
   test -z "$1" || {
-    test $1 -gt $logger_exit_threshold || exit -$1
+    test $1 -gt $logger_exit_threshold || $status -$1
   }
 }
 
@@ -138,9 +140,9 @@ logger_stderr() # syslog-level target-ids description source-ids status-code
     logger_hook=stderr logger_strfmt "$@" >&2
   }
 
-  test -n "$5" && exit $5
+  test -n "$5" && $status $5
   test -z "$1" || {
-    test $1 -gt $logger_exit_threshold || exit -$1
+    test $1 -gt $logger_exit_threshold || $status -$1
   }
 }
 

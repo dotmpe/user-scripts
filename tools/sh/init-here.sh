@@ -27,6 +27,10 @@ test -n "$U_S" -a -d "$U_S" || return
 test -n "$scriptname" || scriptname="$(basename -- "$0")" # No-Sync
 test -n "$sh_tools" || sh_tools="$U_S/tools/sh"
 
+type sh_include >/dev/null 2>&1 || {
+  . "$sh_tools/parts/include.sh" || return
+}
+
 #test -n "$1" && {
 #  SCRIPTPATH=$1:$scriptpath
 #} || {
@@ -44,7 +48,7 @@ test -z "$DEBUG" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
-test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script
+test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script\ log
 
 test "$init_sh_libs" = "0" || {
   lib_load $init_sh_libs && lib_init

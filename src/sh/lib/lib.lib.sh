@@ -67,7 +67,7 @@ lib_load()
   local lib_id= f_lib_loaded= f_lib_path= r=
 
   # __load_lib: true if inside util.sh:lib-load
-  test -n "$__load_lib" || local __load_lib=1
+  test -n "${__load_lib-}" || local __load_lib=1
   while test $# -gt 0
   do
     lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')

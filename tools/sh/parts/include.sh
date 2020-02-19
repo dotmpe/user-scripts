@@ -5,7 +5,7 @@ sh_include() # Parts...
   test $# -gt 0 || return
   true ${ci_tools:=tools/ci}
   true ${sh_tools:=tools/sh}
-  true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return
+  true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return 112
 
   for part in $*
   do
@@ -14,13 +14,13 @@ sh_include() # Parts...
     done
 
     test -e "$base/$part.sh" ||
-      print_err error "" "no sh_include $part" "$?" 1
+      echo print_err error "" "no sh_include $part" "$?" 1
 
     . "$base/$part.sh" ||
-      print_err error "" "at sh_include $part" "$?" $?
+      echo print_err error "" "at sh_include $part" "$?" $?
   done
 }
 
-alias sh-parts=sh_include
+#alias sh-parts=sh_include
 
 # Id: U-S:
