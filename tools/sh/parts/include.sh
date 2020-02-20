@@ -21,7 +21,10 @@ sh_include() # Parts...
     . "$base/$part.sh" || {
       print_err error "" "at sh_include $part" "$?" 1$?
     }
+
+    print_err ok "" "sh_include part" "$part"
   done
+  unset part
 }
 
 #alias sh-parts=sh_include
