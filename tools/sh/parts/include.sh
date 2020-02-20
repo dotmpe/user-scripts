@@ -22,7 +22,7 @@ sh_include() # Parts...
       print_err error "" "at sh_include $part" "$?" 1$?
     }
 
-    print_err ok "" "sh_include part" "$part"
+    print_err "ok" "" "sh_include part" "$part"
   done
   unset part
 }
