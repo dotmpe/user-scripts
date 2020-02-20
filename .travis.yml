@@ -61,6 +61,7 @@ cache:
      - $HOME/build/user-tools/user-scripts
      - $HOME/build/user-tools/user-conf
      - $HOME/build/dotmpe/user-conf
+     - $HOME/build/dotmpe/script-mpe
      - $HOME/build/dotmpe/docopt-mpe
      - $HOME/build/dotmpe/git-versioning
      - $HOME/build/bats-core/bats-core
