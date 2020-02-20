@@ -22,6 +22,7 @@ env:
   global:
     - announce=1
     - VND_SRC_PREFIX=$HOME/build
+    - DEBUG=1
 
 before_install:
   - . ./tools/ci/before-install.sh
