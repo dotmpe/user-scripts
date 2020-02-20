@@ -15,20 +15,15 @@ sh_include() # Parts...
     done
 
     test -e "$base/$sh_include_part.sh" || {
-      echo "sh_include_path: $sh_include_path '$*'" >&2
       print_err error "" "no sh_include $sh_include_part" "$?" 1
     }
 
     sh_include_path= \
     . "$base/$sh_include_part.sh" || {
-      print_err error "" "at sh_include $sh_include_part" "$?" 1$?
+      print_err error "" "at sh_include $sh_include_part" "$?" $?
     }
-
-    print_err "ok" "" "sh_include_part" "$sh_include_part"
   done
 
 }
-
-#alias sh-parts=sh_include
 
 # Id: U-S:

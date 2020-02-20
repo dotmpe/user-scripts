@@ -70,9 +70,7 @@ ci_cleanup()
   echo '------ ci-cleanup: Exited: '$exit  >&2
   # NOTE: BASH_LINENO is no use at travis, 'secure'
   echo "At $BASH_COMMAND:$LINENO"
-  echo "In 0:$0"
-  echo "In scriptname:$scriptname"
-  echo SCRIPTPATH=$SCRIPTPATH
+  echo "In 0:$0 scriptname:$scriptname"
   test "$USER" = "travis" || return $exit
   sleep 5 # Allow for buffers to clear?
   return $exit
