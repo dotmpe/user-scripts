@@ -5,6 +5,8 @@
 type unique-paths >/dev/null 2>&1 || return 101
 test -n "${INIT_LOG:-}" || return 109
 
+$INIT_LOG note "env-scriptpath-deps" "Current SCRIPTPATH" "$SCRIPTPATH"
+
 : "${SCRIPTPATH:="$U_S/src/sh/lib"}"
 : "${VND_PATHS:="$(unique-paths $HOME/build ~/.basher/cellar/packages $VND_GH_SRC $VND_SRC_PREFIX)"}" # /src/*/ )"}"
 
