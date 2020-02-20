@@ -14,13 +14,13 @@ print_err()
       lvl=$(log_level_num "$1")
 
     test $verbosity -ge $lvl || {
-      test -n "$5" && exit $5 || {
+      test -n "${5:-}" && exit $5 || {
         return 0
       }
     }
   }
 
-  printf -- "%s\n" "[$2] $1: $3 <$4> ($5)" >&2
-  test -z "$5" || exit $5 # NOTE: also exit on '0'
+  printf -- "%s\n" "[$2] $1: $3 <${4:-}> (${5:-})" >&2
+  test -z "${5:-}" || exit $5 # NOTE: also exit on '0'
 }
 # Id: U-S:
