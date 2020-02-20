@@ -1,13 +1,13 @@
 # Print log-like to stderr
 print_err()
 {
-  test -n "$LOG" -a -x "$LOG" && {
+  test -n "${LOG:-}" -a -x "${LOG:-}" && {
     $LOG "$@"; return $?;
   }
 
-  test -z "$verbosity" -a -z "$DEBUG" && return
-  test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
-  test -z "$verbosity" -a -n "$DEBUG" || {
+  test -z "${verbosity:-}" -a -z "${DEBUG:-}" && return
+  test -n "${2:-}" || set -- "$1" "$base" "$3" "$4" "$5"
+  test -z "${verbosity:-}" -a -n "${DEBUG:-}" || {
 
     case "$1" in [0-9]* ) true ;; * ) false ;; esac &&
       lvl=$(log_level_name "$1") ||
