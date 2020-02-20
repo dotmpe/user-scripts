@@ -6,7 +6,7 @@ print_err()
   }
 
   test -z "${verbosity:-}" -a -z "${DEBUG:-}" && return
-  test -n "${2:-}" || set -- "$1" "$base" "$3" "$4" "$5"
+  test -n "${2:-}" || set -- "$1" "$base" "$3" "${4:-}" "${5:-}"
   test -z "${verbosity:-}" -a -n "${DEBUG:-}" || {
 
     case "$1" in [0-9]* ) true ;; * ) false ;; esac &&

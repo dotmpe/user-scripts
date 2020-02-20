@@ -8,7 +8,6 @@ sh_include() # Parts...
   test -n "${sh_include_path:-}" || local sh_include_path
   true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return 112
 
-  echo "sh_include_path: $sh_include_path '$*'" >&2
   for sh_include_part in $*
   do
     for base in $(eval echo $sh_include_path)
@@ -16,6 +15,7 @@ sh_include() # Parts...
     done
 
     test -e "$base/$sh_include_part.sh" || {
+      echo "sh_include_path: $sh_include_path '$*'" >&2
       print_err error "" "no sh_include $sh_include_part" "$?" 1
     }
 

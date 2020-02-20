@@ -42,7 +42,6 @@ script_init() # ( SCR-PATH | BOOT-NAME )
 
   } || {
 
-    echo sh_include_path=$U_S/tools/sh/boot sh_include "$1" >&2
     sh_include_path=$U_S/tools/sh/boot sh_include "$1" || {
 
       unset sh_include_path
