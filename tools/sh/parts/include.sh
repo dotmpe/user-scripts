@@ -24,7 +24,6 @@ sh_include() # Parts...
 
     print_err "ok" "" "sh_include part" "$part"
   done
-  unset part
 }
 
 #alias sh-parts=sh_include
