@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 
-ci_cleanup()
+sh_debug_exit()
 {
-  exit=$? ; sync
-  echo '------ Exited: '$exit  >&2
+  local exit=$? ; sync
+  echo '------ sh-debug-exit: Exited: '$exit  >&2
   # NOTE: BASH_LINENO is no use at travis, 'secure'
-  #echo "At $BASH_COMMAND:$LINENO"
+  echo "At $BASH_COMMAND:$LINENO"
+  echo "In 0:$0"
+  echo "In scriptname:$scriptname"
+  echo SCRIPTPATH=$SCRIPTPATH
   test "$USER" = "travis" || return $exit
   sleep 5 # Allow for buffers to clear?
   return $exit
 }
 
-trap ci_cleanup EXIT
+trap sh_debug_exit EXIT

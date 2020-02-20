@@ -24,19 +24,13 @@ env:
     - VND_SRC_PREFIX=$HOME/build
 
 before_install:
-  - echo 1a SCRIPTPATH=$SCRIPTPATH
   - . ./tools/ci/before-install.sh
-  - echo 1b SCRIPTPATH=$SCRIPTPATH
 
 install:
-  - echo 2a SCRIPTPATH=$SCRIPTPATH
   - . ./tools/ci/install.sh
-  - echo 2b SCRIPTPATH=$SCRIPTPATH
 
 before_script:
-  - echo 3a SCRIPTPATH=$SCRIPTPATH
   - . ./tools/ci/before.sh
-  - echo 3b SCRIPTPATH=$SCRIPTPATH
 
 script:
   - . ./tools/ci/script.sh
