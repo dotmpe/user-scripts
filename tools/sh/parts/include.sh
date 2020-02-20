@@ -22,7 +22,9 @@ sh_include() # Parts...
       print_err error "" "at sh_include $part" "$?" 1$?
     }
 
-    $LOG "ok" "" "sh_include part" "$part"
+    echo "ok" "" "sh_include part" "$part" >&2
+    sleep 5
+    print_err "ok" "" "sh_include part" "$part"
   done
   unset part
 }
