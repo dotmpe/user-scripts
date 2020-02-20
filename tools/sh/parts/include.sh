@@ -8,21 +8,21 @@ sh_include() # Parts...
   true ${sh_include_path:="{$ci_tools,$sh_tools,$U_S/tools/{ci,sh}}/{parts,boot}"} || return 112
 
   echo "sh_include_path: $sh_include_path '$*'" >&2
-  for part in $*
+  for sh_include_part in $*
   do
     for base in $(eval echo $sh_include_path)
-    do test -e "$base/$part.sh" && break || continue
+    do test -e "$base/$sh_include_part.sh" && break || continue
     done
 
-    test -e "$base/$part.sh" || {
-      print_err error "" "no sh_include $part" "$?" 1
+    test -e "$base/$sh_include_part.sh" || {
+      print_err error "" "no sh_include $sh_include_part" "$?" 1
     }
 
-    . "$base/$part.sh" || {
-      print_err error "" "at sh_include $part" "$?" 1$?
+    . "$base/$sh_include_part.sh" || {
+      print_err error "" "at sh_include $sh_include_part" "$?" 1$?
     }
 
-    print_err "ok" "" "sh_include part" "$part"
+    print_err "ok" "" "sh_include_part" "$sh_include_part"
   done
 }
 
