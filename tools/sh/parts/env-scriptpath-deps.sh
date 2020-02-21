@@ -8,7 +8,7 @@ test -n "${INIT_LOG:-}" || return 109
 $INIT_LOG note "env-scriptpath-deps" "Current SCRIPTPATH" "$SCRIPTPATH"
 
 : "${SCRIPTPATH:="$U_S/src/sh/lib:$U_S/commands"}"
-: "${VND_PATHS:="$(unique-paths ~/build ~/.basher/cellar/packages $VND_GH_SRC $VND_SRC_PREFIX)"}" # /src/*/ )"}"
+: "${VND_PATHS:="$(unique-paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"}" # /src/*/ )"}"
 
 for supportlib in $(grep '^git ' $CWD/dependencies.txt|cut -d' ' -f2);
 do
