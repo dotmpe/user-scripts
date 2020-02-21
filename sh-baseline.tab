@@ -13,17 +13,12 @@ true                                           test -n "$SCRIPTPATH"
 true                                           test -n "$LOG"
 true                                           test -z "$INIT_LOG"
 
-true                                           echo SCRIPTPATH=$SCRIPTPATH
-
 set -u
  /SCRIPTPATH                                   test -z "${SCRIPTPATH:-}"
 
-true                                           echo SCRIPTPATH=$SCRIPTPATH
-
-export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
- CWD=$PWD                                      echo PWD=$PWD SCRIPTPATH=$SCRIPTPATH
- CWD=$PWD                                      . ./tools/sh/env.sh
- CWD=$PWD                                      . ./tools/ci/env.sh
+#export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
+true                                           . ./tools/sh/env.sh
+true                                           . ./tools/ci/env.sh
 
 #export U_S; echo U-s:$U_S                      . ./tools/sh/util.sh
 sh_tools=tools/sh ci_tools=tools/ci            . ./tools/sh/util.sh
