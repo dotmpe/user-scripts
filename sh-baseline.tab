@@ -13,8 +13,12 @@ true                                           test -n "$SCRIPTPATH"
 true                                           test -n "$LOG"
 true                                           test -z "$INIT_LOG"
 
+true                                           echo SCRIPTPATH=$SCRIPTPATH
+
 set -u
  /SCRIPTPATH                                   test -z "${SCRIPTPATH:-}"
+
+true                                           echo SCRIPTPATH=$SCRIPTPATH
 
 export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
  CWD=$PWD                                      echo PWD=$PWD SCRIPTPATH=$SCRIPTPATH
