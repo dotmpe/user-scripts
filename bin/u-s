@@ -214,7 +214,7 @@ case "$0" in "-*" ) * ;; */u-s )
   #set -o posix
   
   : "${CWD:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
-  . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || return
+  . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || exit 101
 
   for x in basher dckr git man travis user
   do

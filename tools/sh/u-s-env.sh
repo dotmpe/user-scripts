@@ -22,8 +22,11 @@ test -z "${INIT_DEBUG:=}" || set +x
 
 : "${CWD:="$PWD"}"
 : "${ci_tools:="$CWD/tools/ci"}"
+echo 1
 . "$CWD/tools/sh/parts/unique-paths.sh" || return
+echo 2
 . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
+echo 3
 . "$ci_tools/env.sh" || return
 
 { test -x "$(which basher 2>/dev/null)" &&
