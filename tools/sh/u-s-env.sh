@@ -25,7 +25,7 @@ test -z "${INIT_DEBUG:=}" || set +x
 echo 1
 . "$CWD/tools/sh/parts/unique-paths.sh" || return
 echo 2
-. "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
+INIT_LOG=$LOG . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
 echo 3
 . "$ci_tools/env.sh" || return
 
@@ -51,7 +51,6 @@ u_s_env_init()
 
 test -z "$INIT_DEBUG" || set +x
 
-# XXX: unset INIT_LOG
 U_S_ENV=dev
 
 test -z "$DEBUG" || set -x
