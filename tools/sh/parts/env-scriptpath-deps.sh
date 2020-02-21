@@ -15,9 +15,9 @@ do
   for vnd_base in $VND_PATHS;
   do
     lib_path="$vnd_base/$supportlib";
-    tree -ifgup -L 1 $lib_path
-    test -f $lib_path/load.bash || continue
     echo . "$lib_path/load.bash";
+    test -d "$lib_path" && ls -la $lib_path/load*
+    test -f $lib_path/load.bash || continue
     . "$lib_path/load.bash";
   done;
 done
