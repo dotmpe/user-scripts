@@ -35,9 +35,10 @@ init-all                    -   -   21  -    21
 init-dependencies           -   -   27  23   -
 unset SCRIPTPATH            -   -   29  -    -
 env-scriptpath-deps         -   -   29  -    -  
-init-information            -   -   29  29   -
+export SCRIPTPATH           -   -   30  30   -
 
 # 3. Check/Before script:
+init-information            -   -   30  30   -
 check-all                   -   -   31  -    31
 
 # Parts                     Sh  U-S CI  Main Test                             #
