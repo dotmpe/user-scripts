@@ -26,7 +26,9 @@ echo u-s-env SCRIPTPATH=$SCRIPTPATH
 #. "$CWD/tools/sh/parts/remove-dupes.sh" || return
 #INIT_LOG=$CWD/tools/sh/log.sh . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
 : "${sh_tools:="$CWD/tools/sh"}"
+echo 1
 . "$sh_tools/env.sh" || return
+echo 2
 
 { test -x "$(which basher 2>/dev/null)" &&
   test "$(basher package-path "$U_S_REPO")" = "$U_S"
