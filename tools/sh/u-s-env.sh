@@ -22,10 +22,9 @@ test -z "${INIT_DEBUG:=}" || set +x
 
 : "${CWD:="$PWD"}"
 : "${ci_tools:="$CWD/tools/ci"}"
-echo 1
 . "$CWD/tools/sh/parts/unique-paths.sh" || return
-echo 2
-INIT_LOG=$LOG . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
+. "$CWD/tools/sh/parts/remove-dupes.sh" || return
+INIT_LOG=$CWD/tools/sh/log.sh . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
 echo 3
 . "$ci_tools/env.sh" || return
 
