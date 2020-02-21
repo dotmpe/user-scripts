@@ -33,9 +33,9 @@ restore-cache               -   -   18  -    -
 # 2. Install:
 init-all                    -   -   21  -    21
 init-dependencies           -   -   27  23   -
+unset SCRIPTPATH            -   -   29  -    -
+env-scriptpath-deps         -   -   29  -    -  
 init-information            -   -   29  29   -
-unset SCRIPTPATH            -   -   -   29   -
-env-scriptpath-deps         -   -   -   29   -  
 
 # 3. Check/Before script:
 check-all                   -   -   31  -    31
