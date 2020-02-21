@@ -12,6 +12,7 @@ ci_announce "Logging into docker hub $DOCKER_USERNAME"
 echo "$DOCKER_PASSWORD" | \
   ${dckr_pref}docker login --username $DOCKER_USERNAME --password-stdin
 
+SCRIPTPATH=$SCRIPTPATH:$CWD/commands
 u_s_dckr_lib_loaded= lib_load u_s-dckr
 
 ci_announce "Looking for image at hub..."
