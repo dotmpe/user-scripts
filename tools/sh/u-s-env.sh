@@ -27,7 +27,9 @@ echo u-s-env SCRIPTPATH=$SCRIPTPATH
 #INIT_LOG=$CWD/tools/sh/log.sh . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
 : "${sh_tools:="$CWD/tools/sh"}"
 echo 1
+set -x
 . "$sh_tools/env.sh" || return
+set +x
 echo 2
 
 { test -x "$(which basher 2>/dev/null)" &&
