@@ -27,7 +27,6 @@ sh_include \
   env-0-1-lib-sys \
   print-color remove-dupes unique-paths \
   env-0-src
-SCRIPTPATH=
 
 test -z "${DEBUG:-}" -a -z "${CI:-}" ||
   print_yellow "${SUITE} Env parts" "$(suite_from_table "${build_tab}" "Parts" "${SUITE}" 0|tr '\n' ' ')" >&2

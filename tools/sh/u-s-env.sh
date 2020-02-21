@@ -21,12 +21,12 @@ test -z "${INIT_DEBUG:=}" || set +x
 #test -n "$U_S" || U_S="$(pwd -P)"
 
 : "${CWD:="$PWD"}"
-echo u-s-env SCRIPTPATH=$SCRIPTPATH
 #. "$CWD/tools/sh/parts/unique-paths.sh" || return
 #. "$CWD/tools/sh/parts/remove-dupes.sh" || return
 #INIT_LOG=$CWD/tools/sh/log.sh . "$CWD/tools/sh/parts/env-scriptpath-deps.sh" || return
 : "${sh_tools:="$CWD/tools/sh"}"
 echo 1
+echo u-s-env SCRIPTPATH=$SCRIPTPATH
 set -x
 . "$sh_tools/env.sh" || return
 set +x
