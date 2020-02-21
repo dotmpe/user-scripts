@@ -16,10 +16,10 @@ true                                           test -z "$INIT_LOG"
 set -u
  /SCRIPTPATH                                   test -z "${SCRIPTPATH:-}"
 
-#export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
-# CWD=$PWD                                      echo PWD=$PWD SCRIPTPATH=$SCRIPTPATH
-# CWD=$PWD                                      . ./tools/sh/env.sh
-# CWD=$PWD                                      . ./tools/ci/env.sh
+export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
+ CWD=$PWD                                      echo PWD=$PWD SCRIPTPATH=$SCRIPTPATH
+ CWD=$PWD                                      . ./tools/sh/env.sh
+ CWD=$PWD                                      . ./tools/ci/env.sh
 
 #export U_S; echo U-s:$U_S                      . ./tools/sh/util.sh
 sh_tools=tools/sh ci_tools=tools/ci            . ./tools/sh/util.sh
