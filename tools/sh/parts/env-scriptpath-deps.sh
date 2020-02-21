@@ -10,13 +10,12 @@ $INIT_LOG note "env-scriptpath-deps" "Current SCRIPTPATH" "$SCRIPTPATH"
 : "${SCRIPTPATH:="$U_S/src/sh/lib"}"
 : "${VND_PATHS:="$(unique-paths ~/build ~/.basher/cellar/packages $VND_GH_SRC $VND_SRC_PREFIX)"}" # /src/*/ )"}"
 
-echo VND_PATHS: $VND_PATHS
-
 for supportlib in $(grep '^git ' $CWD/dependencies.txt|cut -d' ' -f2,3);
 do
   for vnd_base in $VND_PATHS;
   do
     lib_path="$vnd_base/$supportlib";
+    tree -ifgup -L 1 $lib_path
     test -f $lib_path/load.bash || continue
     echo . "$lib_path/load.bash";
     . "$lib_path/load.bash";
