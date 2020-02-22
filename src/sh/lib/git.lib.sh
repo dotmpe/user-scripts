@@ -2,15 +2,15 @@
 
 git_lib_load()
 {
-  test -n "$SRC_DIR" || SRC_DIR=/src
-  test -n "$SCM_VND" || SCM_VND=github.com
-  test -n "$VND_GH_SRC" || VND_GH_SRC=$SRC_DIR/$SCM_VND
-  test -n "$GIT_SCM_SRV" || GIT_SCM_SRV=/srv/scm-git-local
-  test -n "$PROJECT_DIR" || {
+  true "${SRC_DIR:="/src"}"
+  true "${SCM_VND:="github.com"}"
+  true "${VND_GH_SRC:="$SRC_DIR/$SCM_VND"}"
+  true "${GIT_SCM_SRV:="/srv/scm-git-local"}"
+  test -n "${PROJECT_DIR:-}" || {
     test -e "/srv/project-local" &&
       PROJECT_DIR=/srv/project-local || PROJECT_DIR=$HOME/project
   }
-  test -n "$PROJECTS" || {
+  test -n "${PROJECTS:-}" || {
     PROJECTS="$(for path in $PROJECT_DIR $HOME/project /srv/project-local /src/*.*/ /src/local/
       do
           echo ":$path"
@@ -20,10 +20,10 @@ git_lib_load()
 
 git_lib_init()
 {
-  test -d "$SRC_DIR" &&
-  test -d "$VND_GH_SRC" &&
-  test -d "$GIT_SCM_SRV" &&
-  test -d "$PROJECT_DIR"
+  test -d "${SRC_DIR:-}" &&
+  test -d "${VND_GH_SRC:-}" &&
+  test -d "${GIT_SCM_SRV:-}" &&
+  test -d "${PROJECT_DIR:-}"
 }
 
 # Use find to list repos on $PROJECTS path
