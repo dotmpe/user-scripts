@@ -7,6 +7,7 @@ test -n "${INIT_LOG:-}" || return 109
 
 $INIT_LOG note "env-scriptpath-deps" "Current SCRIPTPATH" "$SCRIPTPATH"
 
+SCRIPTPATH="$U_S/src/sh/lib:$U_S/commands" # XXX:
 : "${SCRIPTPATH:="$U_S/src/sh/lib:$U_S/commands"}"
 : "${VND_PATHS:="$(unique-paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"}" # /src/*/ )"}"
 
