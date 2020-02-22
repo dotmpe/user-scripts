@@ -66,8 +66,9 @@ test "$init_sh_libs" = "0" || {
 
   test -n "$init_sh_boot" || init_sh_boot=1
   test -n "$init_sh_boot" && {
+
     test "$init_sh_boot" != "0" || init_sh_boot=null
-    test "$init_sh_boot" != "1" || init_sh_boot=stderr-console-logger
+    test "$init_sh_boot" != "1" || init_sh_boot=null # FIXME: stderr-console-logger
   }
 
   test -z "$DEBUG" ||
