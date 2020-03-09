@@ -216,7 +216,7 @@ case "$0" in "-*" ) * ;; */u-s )
   : "${CWD:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
   . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || exit 101
 
-  for x in basher dckr git man travis user
+  for x in basher dckr ledge git man travis user
   do
     . "$U_S/commands/u_s-$x.lib.sh" ||
       print_err "error" "" "Loading parts" "$? $x" $?

@@ -2,12 +2,7 @@
 
 docker_sh_lib_load()
 {
-  test -n "$dckr_pref" || dckr_pref=
-  test -n "$docker_sh_c" || docker_sh_c=
-  test -n "$docker_sh_c_port" || docker_sh_c_port=22
-  test -n "$docker_name" || docker_name=
-  test -n "$docker_image" || docker_image=
-  test -n "$docker_shell" || docker_shell=bash
+  true "${dckr_pref:=}"
 }
 
 docker_sh_names()

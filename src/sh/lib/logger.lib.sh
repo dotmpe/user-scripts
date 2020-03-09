@@ -13,7 +13,6 @@ logger_lib_load()
   test -n "$status" || status=exit
 }
 
-
 # Wrapper function for logger handler(s). Output and/or relay behaviour is by
 # actual handler, multiple may be handled the messeage in sequence.
 #

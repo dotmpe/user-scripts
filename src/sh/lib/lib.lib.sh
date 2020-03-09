@@ -76,7 +76,9 @@ lib_load()
     }
     f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
-    test -n "$f_lib_loaded" || {
+    test -n "$f_lib_loaded" && {
+        $lib_lib_log debug "$scriptname:lib" "Skipped loaded lib '$1'" ""
+      } || {
 
         # Note: the equiv. code using sys.lib.sh is above, but since it is not
         # loaded yet keep it written out using plain shell.
@@ -90,6 +92,8 @@ lib_load()
         test -n "$f_lib_path" || {
           $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "$SCRIPTPATH" 1 || return
         }
+
+        $lib_lib_log debug "$scriptname:lib" "Loading lib '$1'" ""
         . "$f_lib_path" || { r=$?; lib_src_stat=$r
           $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
           return $lib_src_stat
@@ -122,7 +126,7 @@ lib_assert()
   do
     mkvid "$1"
     test "$(eval "echo \$${vid}_lib_loaded")" = "1" || {
-      $lib_lib_log error $scriptname:lib "Assert loaded $1" "" 1
+      $lib_lib_log error $scriptname:lib "Assert loaded '$1'" "" 1
       return 1
     }
     shift
@@ -133,6 +137,7 @@ lib_assert()
 lib_init()
 {
   test $# -gt 0 || set -- $lib_loaded
+  $lib_lib_log info "$scriptname:lib" "Init libs '$*'" "" 1
 
   # TODO: init only once, set lib_initd=...
   while test $# -gt 0

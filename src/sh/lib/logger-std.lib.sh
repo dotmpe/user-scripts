@@ -5,7 +5,7 @@
 
 logger_std_lib_load()
 {
-  lib_load logger logger-theme
+  lib_load logger logger-theme log
 }
 
 logger_std_init()

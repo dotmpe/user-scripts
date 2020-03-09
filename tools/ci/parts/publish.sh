@@ -44,7 +44,7 @@ ci_announce 'Last three results:'
 tail -n 3 "$results_log" || true
 
 mv /tmp/docker-config.json $HOME/.docker/config.json
-dckr_pushlogs
+ledge_pushlogs
 
 sh_include build-info
 
