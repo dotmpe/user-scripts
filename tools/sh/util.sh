@@ -47,8 +47,8 @@ mkid() # Str Extra-Chars Substitute-Char
 # For real pretty would want lookup for abbrev. Too complex so another function.
 mksid()
 {
-  test $# -gt 2 || set -- "$1" "$2" "_"
-  mkid "$@" ; sid=$id
+  test $# -gt 2 || set -- "${1-}" "${2-}" "_"
+  mkid "$@" ; sid=$id ; unset id
 }
 # Sync-Sh: BIN:str-htd.lib.sh
 

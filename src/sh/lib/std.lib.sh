@@ -46,7 +46,7 @@ std_iotype_check()
 
 get_stdio_type() # IO-Num PId
 {
-  test -z "$2" || {
+  test -z "${2-}" || {
     test $$ -eq $2 || return
   }
   eval echo \$stdio_${1}_type
@@ -59,7 +59,7 @@ stdio_type()
   case "$uname" in
 
     linux | cygwin_nt-* )
-        test -n "$2" && pid=$2 || pid=$$
+        test -n "${2-}" && pid=$2 || pid=$$
         test -e /proc/$pid/fd/${io} || error "No $uname FD $io"
         if readlink /proc/$pid/fd/$io | grep -q "^pipe:"; then
           eval stdio_${io}_type=p
@@ -88,13 +88,13 @@ stdio_type()
 
 var_log_key()
 {
-  test -n "$log_key" || {
-    test -n "$log" && {
+  test -n "${log_key-}" || {
+    test -n "${log-}" && {
       log_key="$log"
     } || {
-      test -n "$base" || base=$scriptname
+      test -n "${base-}" || base=$scriptname
       test -n "$base" && {
-        test -n "$scriptext" || scriptext=.sh
+        test -n "${scriptext-}" || scriptext=.sh
         log_key=$base$scriptext
       } || echo "Cannot get var-log-key" 1>&2;
     }
@@ -165,7 +165,7 @@ err()
   warn "err() is deprecated, see stderr()"
   # TODO: turn this on and fix tests warn "err() is deprecated, see stderr()"
   log "$1" 1>&2
-  test -z "$2" || exit $2
+  test -z "${2-}" || exit $2
 }
 
 _stderr()
@@ -178,14 +178,14 @@ _stderr()
 # FIXME: move all highlighting elsewhere / or transform/strip for specific log-TERM
 stderr() # level msg exit
 {
-  test -z "$4" || {
+  test $# -le 3 || {
     echo "Surplus arguments '$4'" >&2
     exit 200
   }
 
-  fnmatch "*%*" "$2" && set -- "$1" "$(echo "$2" | sed 's/%/%%/g')" "$3"
+  fnmatch "*%*" "$2" && set -- "$1" "$(echo "$2" | sed 's/%/%%/g')" "${3-}"
   # XXX seems ie grep strips colors anyway?
-  test -n "$stdout_type" || stdout_type=$stdio_2_type
+  test -n "${stdout_type-}" || stdout_type=${stdio_2_type-t}
   case "$(echo $1 | tr 'A-Z' 'a-z')" in
 
     crit*)
@@ -212,12 +212,12 @@ stderr() # level msg exit
         bb=${grn}; bk=$grey
         log "${default}$2${norm}" 1>&2 ;;
     * )
-        bb=${drgrey} ; bk=$dgrey
+        bb=${drgrey} ; bk=$grey
         log "${grey}$2${norm}" 1>&2 ;;
 
   esac
-  test -z "$4" || {
-    exit $4
+  test -z "${3-}" || {
+    exit $3
   }
 }
 
@@ -245,42 +245,42 @@ std_exit()
 emerg()
 {
   local log=; req_init_log
-  std_v 1 || std_exit $2 || return 0
-  stderr "Emerg" "$1" $2
+  std_v 1 || std_exit ${2-} || return 0
+  stderr "Emerg" "$1" ${2-}
 }
 crit()
 {
   local log=; req_init_log
-  std_v 2 || std_exit $2 || return 0
-  stderr "Crit" "$1" $2
+  std_v 2 || std_exit ${2-} || return 0
+  stderr "Crit" "$1" ${2-}
 }
 error()
 {
   local log=; req_init_log
-  std_v 3 || std_exit $2 || return 0
-  stderr "Error" "$1" $2
+  std_v 3 || std_exit ${2-} || return 0
+  stderr "Error" "$1" ${2-}
 }
 warn()
 {
   local log=; req_init_log
-  std_v 4 || std_exit $2 || return 0
-  stderr "Warning" "$1" $2
+  std_v 4 || std_exit ${2-} || return 0
+  stderr "Warning" "$1" ${2-}
 }
 note()
 {
   local log=; req_init_log
-  std_v 5 || std_exit $2 || return 0
-  stderr "Notice" "$1" $2
+  std_v 5 || std_exit ${2-} || return 0
+  stderr "Notice" "$1" ${2-}
 }
 std_info()
 {
   local log=; req_init_log
-  std_v 6 || std_exit $2 || return 0
-  stderr "Info" "$1" $2
+  std_v 6 || std_exit ${2-} || return 0
+  stderr "Info" "$1" ${2-}
 }
 debug()
 {
   local log=; req_init_log
-  std_v 7 || std_exit $2 || return 0
-  stderr "Debug" "$1" $2
+  std_v 7 || std_exit ${2-} || return 0
+  stderr "Debug" "$1" ${2-}
 }

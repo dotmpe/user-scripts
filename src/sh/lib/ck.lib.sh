@@ -16,9 +16,9 @@ ck_lib_load()
 # abbrev=7 (default) allow abbreviated checksums even only 1 char, set minimum
 ck_git() # File [Check]
 {
-  test -n "$abbrev" || abbrev=7
+  test -n "${abbrev-}" || abbrev=7
   cksum="$(git hash-object "$1")" || return
-  test -n "$2" && {
+  test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || { # length should be 40
       test $abbrev -gt 0 || return
       # Partial match but at least N chars
@@ -32,9 +32,9 @@ ck_git() # File [Check]
 # See ck-git for description.
 ck_md5()
 {
-  test -n "$abbrev" || abbrev=7
+  test -n "${abbrev-}" || abbrev=7
   cksum="$(md5sum "$1" | cut -f1 -d' ')" || return
-  test -n "$2" && {
+  test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
       # Partial match but at least N chars
@@ -49,9 +49,9 @@ ck_md5()
 # TODO: rewrite prefix; ck_sha() { ck_sha1 "$@"; }
 ck_sha1()
 {
-  test -n "$abbrev" || abbrev=7
+  test -n "${abbrev-}" || abbrev=7
   cksum="$(sha1sum "$1" | cut -f1 -d' ')" || return
-  test -n "$2" && {
+  test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
       # Partial match but at least N chars
@@ -65,9 +65,9 @@ ck_sha1()
 # See ck-git for description.
 ck_sha2()
 {
-  test -n "$abbrev" || abbrev=7
+  test -n "${abbrev-}" || abbrev=7
   cksum="$(sha256sum "$1" | cut -f1 -d' ')" || return
-  test -n "$2" && {
+  test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
       # Partial match but at least N chars
@@ -79,7 +79,7 @@ ck_sha2()
 }
 ck_sha2_a()
 {
-  test -n "$abbrev" || abbrev=7
+  test -n "${abbrev-}" || abbrev=7
   cksum="$(shasum -a 256 "$1" | cut -f1 -d' ')" || return
   test -n "$2" && {
     test ${#2} -eq ${#cksum} || {

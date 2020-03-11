@@ -77,7 +77,10 @@ logger_theme_lib_load()
       cyan="$(tput setaf 6)"
       default="$(tput setaf 7)"
       grey="${default}"
+      darkgrey=
+      drgrey=
       bdefault="${bold}${default}"
     fi
+    norm=$normal
   fi
 }

@@ -7,8 +7,8 @@ functions_lib_load()
   #  # Use NPM bash-parser to try and get command/function calls from src
   #  sh_list_calls="coffee $(lookup_path PATH sh.coffee | head -n1)"
   #} ||
-  test -n "$cllct_src_base" || cllct_src_base=.cllct/src
-  test -n "$src_stat" || src_stat=$PWD/$cllct_src_base
+  test -n "${cllct_src_base-}" || cllct_src_base=.cllct/src
+  test -n "${src_stat-}" || src_stat=$PWD/$cllct_src_base
 }
 
 # NOTE: its a bit fuzzy on the part after '<id>()' but works
@@ -16,7 +16,7 @@ functions_lib_load()
 list_functions() # Sh-Files...
 {
   try_value list_functions_head || true
-  trueish "$list_functions_scriptname" && {
+  trueish "${list_functions_scriptname-}" && {
     grep '^[A-Za-z0-9_\/-]*().*$' $1 | sed "s#^#$1 #"
   } || {
     grep '^[A-Za-z0-9_\/-]*().*$' $1
