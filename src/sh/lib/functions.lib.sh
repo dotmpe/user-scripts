@@ -103,7 +103,7 @@ functions_cmdnames()
 
 functions_calls()
 {
-  lib_load build-htd # XXX: for sh-calls, move to sep. lib later
+  #lib_load build-htd # XXX: for sh-calls, move to sep. lib later
 
   functions_list "$@" | sed 's/().*$//g' | while read -r func
   do
