@@ -10,10 +10,12 @@ src_lib_load()
 
 src_lib_init()
 {
-  lib_assert log
+  test "$src_lib_init" = "0" || {
+    lib_assert log || return
 
-  local log=; req_init_log
-  $log info "" "Loaded src.lib" "$0"
+    local log=; req_init_log
+    $log info "" "Loaded src.lib" "$0"
+  }
 }
 
 

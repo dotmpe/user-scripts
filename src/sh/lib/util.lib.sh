@@ -14,13 +14,9 @@ util_lib_init()
 
 # Main
 
-case "$0" in
+case "$0" in "-"* ) ;; * )
 
-  "-"*|"" ) ;;
-
-  * )
-
-set -e
+  set -e
 
   test -n "$scriptname" || scriptname="$(basename -- "$0" .sh)"
   test -n "$verbosity" || verbosity=5

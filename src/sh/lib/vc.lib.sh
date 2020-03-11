@@ -3,8 +3,10 @@
 
 vc_lib_init()
 {
-  test -n "$INIT_LOG" || return 109
-  $INIT_LOG info "" "Loaded vc.lib" "$0"
+  test "$vc_lib_init" = "0" || {
+    test -n "$INIT_LOG" || return 109
+    $INIT_LOG debug "" "Initialized vc.lib" "$0"
+  }
 }
 
 vc_gitdir()

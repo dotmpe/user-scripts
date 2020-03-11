@@ -4,31 +4,33 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
-  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
-    && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
-  test -n "$str_lib_log" || return 108
+  test "$str_lib_init" = "0" || {
+    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+      && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
+    test -n "$str_lib_log" || return 108
 
-  case "$uname" in
-      darwin ) expr=bash-substr ;;
-      linux ) expr=sh-substr ;;
-      * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
-  esac
+    case "$uname" in
+        darwin ) expr=bash-substr ;;
+        linux ) expr=sh-substr ;;
+        * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
+    esac
 
-  test -n "$ext_groupglob" || {
-    test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
-          && ext_groupglob=1 \
-          || ext_groupglob=0
-    # FIXME: part of [vc.bash:ps1] so need to fix/disable verbosity
-    #debug "Initialized ext_groupglob=$ext_groupglob"
-  }
+    test -n "$ext_groupglob" || {
+      test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
+            && ext_groupglob=1 \
+            || ext_groupglob=0
+      # FIXME: part of [vc.bash:ps1] so need to fix/disable verbosity
+      #debug "Initialized ext_groupglob=$ext_groupglob"
+    }
 
-  test -n "$ext_sh_sub" || ext_sh_sub=0
+    test -n "$ext_sh_sub" || ext_sh_sub=0
 
+    # XXX:
   #      echo "${1/$2/$3}" ... =
   #        && ext_sh_sub=1 \
   #        || ext_sh_sub=0
   #  #debug "Initialized ext_sh_sub=$ext_sh_sub"
-  #}
+  }
 }
 
 str_lib_init()

@@ -40,7 +40,7 @@ lib_loaded() # [Check-Libs...]
     return
 
   } || {
-    sh_genv '[a-z][a-z0-9]*_lib_loaded' | sed 's/_lib_loaded=1$//' | sort
+    sh_genv '[a-z][a-z0-9]*_lib_loaded' | sed 's/_lib_loaded=0$//' | sort
   }
 }
 
@@ -76,9 +76,9 @@ lib_load()
     }
     f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
-    test -n "$f_lib_loaded" && {
+    test "$f_lib_loaded" = "0" && {
         $lib_lib_log debug "$scriptname:lib" "Skipped loaded lib '$1'" ""
-      } || {
+    } || {
 
         # Note: the equiv. code using sys.lib.sh is above, but since it is not
         # loaded yet keep it written out using plain shell.
@@ -101,14 +101,17 @@ lib_load()
 
         # again, func_exists is in sys.lib.sh. But inline here:
         type ${lib_id}_lib_load  2> /dev/null 1> /dev/null && {
-          ${lib_id}_lib_load || { r=$?; lib_load_stat=$r
+
+          ${lib_id}_lib_load || { r=$?;
+            eval ${lib_id}_lib_loaded=$r
             $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($r)" "$f_lib_path"
-            return $lib_load_stat
+            # XXX: return $r
+            continue
           }
         } || true
 
+        eval ${lib_id}_lib_loaded=0
         eval "LIB_SRC=\"$LIB_SRC $f_lib_path\""
-        eval ${lib_id}_lib_loaded=1
         lib_loaded="$lib_loaded $lib_id"
         # FIXME sep. profile/front-end for shell vs user-scripts
         # $lib_lib_log info "$scriptname:lib" "Finished loading ${lib_id}: OK"
@@ -125,7 +128,7 @@ lib_assert()
   while test $# -gt 0
   do
     mkvid "$1"
-    test "$(eval "echo \$${vid}_lib_loaded")" = "1" || {
+    test "$(eval "echo \$${vid}_lib_loaded")" = "0" || {
       $lib_lib_log error $scriptname:lib "Assert loaded '$1'" "" 1
       return 1
     }
@@ -143,10 +146,11 @@ lib_init()
   while test $# -gt 0
   do
     type ${1}_lib_init 2> /dev/null 1> /dev/null && {
-      ${1}_lib_init || {
-        $lib_lib_log error "$scriptname:lib" "in lib-init $1 ($?)" "" 1
-        return $?
+      ${1}_lib_init && false || { r=$?
+        $lib_lib_log error "$scriptname:lib" "in lib-init $1 ($r)" "" 1
+        return $r
       }
+      eval ${1}_lib_init=0
     }
     shift
   done

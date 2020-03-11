@@ -32,7 +32,7 @@ test -n "${1:-}" && {
 test -z "$DEBUG" || echo . $scriptpath/lib.lib.sh >&2
 {
   . $scriptpath/lib.lib.sh || return
-  lib_lib_load && lib_lib_loaded=1 || return
+  lib_lib_load && lib_lib_loaded=0 || return
   lib_lib_init
 } ||
   $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1

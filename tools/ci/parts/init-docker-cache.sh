@@ -12,7 +12,11 @@ mkdir -p ~/.statusdir/{logs,tree,index}
 
 sh_include env-docker-cache
 
-u_s_dckr_lib_loaded= lib_load u_s-dckr u_s-ledge
+echo u_s_ledge_lib_loaded=$u_s_ledge_lib_loaded
+echo u_s_dckr_lib_loaded=$u_s_dckr_lib_loaded
+u_s_dckr_lib_loaded= \
+u_s_ledge_lib_loaded= \
+lib_load u_s-dckr u_s-ledge
 
 ci_announce "Looking for image at hub..."
 
