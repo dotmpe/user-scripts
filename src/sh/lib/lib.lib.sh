@@ -105,8 +105,7 @@ lib_load()
           ${lib_id}_lib_load || { r=$?;
             eval ${lib_id}_lib_loaded=$r
             $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($r)" "$f_lib_path"
-            # XXX: return $r
-            continue
+            return $r
           }
         } || true
 
