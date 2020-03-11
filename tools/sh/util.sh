@@ -29,8 +29,8 @@ mkid() # Str Extra-Chars Substitute-Char
   # Use empty c if given explicitly, else default
   test $# -gt 2 || c='\.\\\/:_'
   test -n "$s" || s=-
-  test -n "$upper" && {
-    trueish "$upper" && {
+  test -n "${upper-}" && {
+    trueish "${upper-}" && {
       id=$(printf -- "%s" "$1" | tr -sc 'A-Za-z0-9'"$c$s" "$s" | tr 'a-z' 'A-Z')
     } || {
       id=$(printf -- "%s" "$1" | tr -sc 'A-Za-z0-9'"$c$s" "$s" | tr 'A-Z' 'a-z')
@@ -56,12 +56,12 @@ mksid()
 # mkvid STR
 mkvid()
 {
-  test -n "$1" || error "mkvid argument expected ($*)" 1
-  trueish "$upper" && {
+  test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
+  trueish "${upper-}" && {
     vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
     return
   }
-  falseish "$upper" && {
+  falseish "${upper-}" && {
     vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
     return
   }

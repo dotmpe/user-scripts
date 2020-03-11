@@ -4,9 +4,9 @@
 
 sys_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s | tr 'A-Z' 'a-z')"
-  test -n "$HOST" || HOST="$(hostname -s | tr 'A-Z' 'a-z')"
-  test -n "$hostname" || hostname="$HOST"
+  test -n "${uname-}" || uname="$(uname -s | tr 'A-Z' 'a-z')"
+  test -n "${HOST-}" || HOST="$(hostname -s | tr 'A-Z' 'a-z')"
+  test -n "${hostname-}" || hostname="$HOST"
 }
 
 sys_lib_init()
@@ -377,8 +377,8 @@ default_env() # VAR-NAME DEFAULT-VALUE
 {
   test -n "$1" -a $# -eq 2 || error "default-env requires two args ($*)" 1
   local vid= sid= id=
-  trueish "$title" && upper= || {
-    test -n "$upper" || upper=1
+  trueish "${title-}" && upper= || {
+    test -n "${upper-}" || upper=1
   }
   mkvid "$1"
   mksid "$1"

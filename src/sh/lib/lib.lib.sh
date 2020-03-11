@@ -128,7 +128,7 @@ lib_assert()
   while test $# -gt 0
   do
     mkvid "$1"
-    test "$(eval "echo \$${vid}_lib_loaded")" = "0" || {
+    test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
       $lib_lib_log error $scriptname:lib "Assert loaded '$1'" "" 1
       return 1
     }

@@ -48,6 +48,7 @@ mkid()
 # to filter strings to variable id name
 mkvid()
 {
+  test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
   trueish "${upper-}" && {
     vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
     return
