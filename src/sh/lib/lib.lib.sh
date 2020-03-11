@@ -142,11 +142,11 @@ lib_init()
   test $# -gt 0 || set -- $lib_loaded
   $lib_lib_log info "$scriptname:lib" "Init libs '$*'" "" 1
 
-  # TODO: init only once, set lib_initd=...
+  # TODO: init only once, set <libid>_lib_init=...
   while test $# -gt 0
   do
     type ${1}_lib_init 2> /dev/null 1> /dev/null && {
-      ${1}_lib_init && false || { r=$?
+      ${1}_lib_init || { r=$?
         $lib_lib_log error "$scriptname:lib" "in lib-init $1 ($r)" "" 1
         return $r
       }
