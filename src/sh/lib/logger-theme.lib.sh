@@ -32,14 +32,15 @@ logger_theme_lib_load()
 
   if test -n "$ncolors" && test $ncolors -ge 8; then
 
+    normal="$(tput sgr0)"
+    norm=$normal
     bold="$(tput bold)"
+    bld=$bold
     underline="$(tput smul)"
     standout="$(tput smso)"
 
-    normal="$(tput sgr0)"
-
     if test $ncolors -ge 256; then
-      #blackb="\e[0;90m"
+      blackb="\033[0;90m"
       #grey="\e[0;37m"
       purple="\033[38;5;135m"
       blue="\033[38;5;27m"
@@ -69,6 +70,7 @@ logger_theme_lib_load()
 
 
       black="$(tput setaf 0)"
+      #blackb="$(tput setab 0)"
       red="$(tput setaf 1)"
       grn="$(tput setaf 2)"
       yellow="$(tput setaf 3)"
@@ -81,6 +83,5 @@ logger_theme_lib_load()
       drgrey=
       bdefault="${bold}${default}"
     fi
-    norm=$normal
   fi
 }

@@ -121,3 +121,15 @@ join_lines() # [Src] [Delim]
 			print i "'"$2"'" a[i]
 	}' "$1"
 }
+
+expr_substr()
+{
+  test -n "$expr" || error "expr init req" 1
+  case "$expr" in
+      sh-substr )
+          expr substr "$1" "$2" "$3" ;;
+      bash-substr )
+          bash -c 'MYVAR=_"'"$1"'"; printf -- "${MYVAR:'$2':'$3'}"' ;;
+      * ) error "unable to substr $expr" 1
+  esac
+}
