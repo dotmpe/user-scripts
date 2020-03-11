@@ -11,7 +11,7 @@ sys_lib_load()
 
 sys_lib_init()
 {
-  test "${sys_lib_init:-}" = "0" || {
+  test "${sys_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
       && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
     test -n "$sys_lib_log" || return 108

@@ -10,7 +10,7 @@ u_s_ledge_lib_load()
 # Pull ledge-image and list entire log for current project
 ledge_showbuilds()
 {
-  sh_include env-docker-cache
+  sh_include env-docker-cache || return
 
   $LOG "note" "ledge:showbuilds" "Using ledge" "$ledge_tag"
   ${dckr_pref}docker pull dotmpe/ledge:$ledge_tag >/dev/null || return

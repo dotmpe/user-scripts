@@ -4,12 +4,13 @@
 
 script_lib_load()
 {
-  test -n "$LOG" || return 102
-  test -n "$sh_tools" || sh_tools=$(pwd -P)/tools/sh
+  test -n "${sh_tools-}" || sh_tools=$(pwd -P)/tools/sh
 }
 
 script_lib_init()
 {
+  test "${script_lib_init-}" = "0" && return
+  test -n "$LOG" || return 102
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && script_log="$LOG" || script_log="$INIT_LOG"
 }

@@ -2,7 +2,7 @@
 
 match_lib_init()
 {
-  test "$match_lib_init" = "0" || {
+  test "${match_lib_init-}" = "0" || {
     test -n "$INIT_LOG" || return 109
     test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
     case "$uname" in

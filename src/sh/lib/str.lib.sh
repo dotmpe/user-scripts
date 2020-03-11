@@ -4,7 +4,7 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
-  test "$str_lib_init" = "0" || {
+  test "${str_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
       && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
     test -n "$str_lib_log" || return 108

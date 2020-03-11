@@ -10,7 +10,7 @@ std_lib_load()
 
 std_lib_init()
 {
-  test "${std_lib_init:-}" = "0" || {
+  test "${std_lib_init-}" = "0" || {
     test -n "$INIT_LOG" || return 109
     test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
     test -x "$(which file)" || error "file util required for stdio-type" 1

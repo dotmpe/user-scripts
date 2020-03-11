@@ -33,7 +33,7 @@ date_lib_load()
 
 date_lib_init()
 {
-  test "$date_lib_init" = "0" || {
+  test "${date_lib_init-}" = "0" || {
     # XXX: lib_assert sys os str std log || return
 
     test -n "$gdate" || case "$uname" in
