@@ -112,7 +112,7 @@ not_falseish()
 }
 
 # Read file filtering octothorp comments and empty lines
-sh-read () # ( FILE | - )
+sh_read () # ( FILE | - )
 {
   test $# -gt 0 -a $# -le 2 || return 98
   test -n "$1" -a -e "$1" || return 97
