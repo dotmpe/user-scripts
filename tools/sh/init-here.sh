@@ -18,14 +18,15 @@ test -n "${LOG:-}" -a -x "${LOG:-}" -o \
 
 test -n "$sh_src_base" || sh_src_base=/src/sh/lib
 
+test -n "$1" && scriptpath=$1 || scriptpath=$(pwd -P)
+test -n "$scriptname" || scriptname="$(basename -- "$0")" # No-Sync
+test -n "$sh_tools" || sh_tools="$U_S/tools/sh"
+
 case "$0" in -* ) ;; * ) # No-Sync
   U_S="$(dirname "$(dirname "$(dirname "$0")" )" )" # No-Sync
 ;; esac # No-Sync
 test -n "$U_S" -a -d "$U_S" || . $PWD$sh_util_base/parts/env-0-u_s.sh
 test -n "$U_S" -a -d "$U_S" || return
-
-test -n "$scriptname" || scriptname="$(basename -- "$0")" # No-Sync
-test -n "$sh_tools" || sh_tools="$U_S/tools/sh"
 
 type sh_include >/dev/null 2>&1 || {
   . "$sh_tools/parts/include.sh" || return

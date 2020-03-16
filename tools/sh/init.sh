@@ -59,10 +59,10 @@ test "$init_sh_libs" = "0" || {
   test -n "$LOG" || LOG=$INIT_LOG
 
   lib_load $init_sh_libs ||
-    $INIT_LOG "error" "$scriptname:init.sh" "Failed loading libs: $?" "$init_sh_libs" 1
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed loading libs: $?" "$SCRIPTPATH" 1
 
   lib_init $init_sh_libs ||
-    $INIT_LOG "error" "$scriptname:init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed init'ing libs: $?" "" 1
 
   test -n "$init_sh_boot" || init_sh_boot=1
   test -n "$init_sh_boot" && {

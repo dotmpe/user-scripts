@@ -6,7 +6,7 @@ logger_lib_load()
 {
   test -n "$logger_log_hooks" || logger_log_hooks=stderr
 
-  test -n "$logger_exit_threshold" || logger_exit_threshold=4
+  test -n "$logger_exit_threshold" || logger_exit_threshold=3 # Error and above
 
   test -n "$logger_log_threshold" || logger_log_threshold=9 # Everything
 

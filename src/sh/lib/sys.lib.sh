@@ -4,9 +4,9 @@
 
 sys_lib_load()
 {
-  test -n "${HOST-}" || HOST="$(hostname -s | tr '[:upper:]' '[:lower:]')"
   test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  test -n "${hostname-}" || hostname="$HOST"
+  test -n "${hostname-}" || hostname="$(hostname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${HOST-}" || HOST=$hostname
 }
 
 sys_lib_init()
@@ -26,7 +26,6 @@ fi
     $sys_lib_log debug "" "Initialized sys.lib" "$0"
   }
 }
-
 
 # Sh var-based increment
 incr() # VAR [AMOUNT=1]
@@ -50,7 +49,7 @@ getidx()
 # Error unless non-empty and true-ish value
 trueish() # Str
 {
-  test $# -eq 1 -a -n "${1:-}" || return
+  test $# -eq 1 -a -n "${1-}" || return
   case "$1" in [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1) return 0;;
     * ) return 1;;
   esac
@@ -262,6 +261,51 @@ remove_env_path_lookup()
   export $1="$newval"
 }
 
+# List individual entries/paths in lookup path env-var (ie. PATH or CLASSPATH)
+lookup_path_list() # VAR-NAME
+{
+  test -n "$1" || error "lookup-path varname expected" 1
+  eval echo \"\$$1\" | tr ':' '\n'
+}
+
+path_exists()
+{
+  test -e "$1/$2" && echo "$1/$2"
+}
+
+# lookup-path List existing local paths, or fail if second arg is not listed
+# lookup-test: command to test equality with, default test_exists
+# lookup-first: boolean setting to stop after first success
+lookup_path() # VAR-NAME LOCAL-PATH
+{
+  test -n "$lookup_test" || lookup_test="path_exists"
+
+  lookup_path_list $1 | while read _PATH
+  do
+    eval $lookup_test \""$_PATH"\" \""$2"\" && {
+      trueish "$lookup_first" && return 0 || continue
+    } || continue
+  done
+}
+
+# Test if local path/name is overruled. Lists paths for hidden LOCAL instances.
+lookup_path_shadows() # VAR-NAME LOCAL
+{
+  local r=
+  tmpf=$(setup_tmpf .lookup-shadows)
+  lookup_first=false lookup_path "$@" >$tmpf
+  lines=$( count_lines $tmpf )
+  test "$lines" = "0" && { r=2
+    } || { r=0
+      test "$lines" = "1" || { r=1
+          cat $tmpf
+          #tail +2 "$tmpf"
+      }
+    }
+  rm $tmpf
+  return $r
+}
+
 init_user_env()
 {
   local key= value=
@@ -364,31 +408,34 @@ my_env_git_bash_prompt()
 # http://code-and-hacks.peculier.com/bash/setting-terminal-title-in-gnu-screen/
 settitle()
 {
-	if [ -n "$STY" ] ; then         # We are in a screen session
-		printf "\033k%s\033\\" "$@"
-		screen -X eval "at \\# title $@" "shelltitle \"$@\""
-	else
-		printf "\033]0;%s\007" "$@"
-	fi
+  if [ -n "$STY" ] ; then         # We are in a screen session
+    printf "\033k%s\033\\" "$@"
+    screen -X eval "at \\# title $@" "shelltitle \"$@\""
+  else
+    printf "\033]0;%s\007" "$@"
+  fi
 }
 
-# Return 1 if env was provided, or 0 if default was set
+# Return non-zero if default was set, or present value does not match default
 default_env() # VAR-NAME DEFAULT-VALUE
 {
   test -n "${1-}" -a $# -eq 2 || error "default-env requires two args ($*)" 1
-  local vid= sid= id=
+  local vid= sid= id= v=
   trueish "${title-}" && upper= || {
     test -n "${upper-}" || upper=1
   }
   mkvid "$1"
   mksid "$1"
   unset upper
-  test -n "$(eval echo \$$vid 2>/dev/null )" || {
+  v="$(eval echo \$$vid 2>/dev/null )"
+  test -n "$v" && {
+    test "$v" = "${2-}"
+    return $?
+  } || {
     debug "No $sid env ($vid), using '${2-}'"
     eval $vid="${2-}"
     return 0
   }
-  return 1
 }
 
 rnd_passwd()
