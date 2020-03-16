@@ -53,7 +53,7 @@ test -z "$DEBUG" || echo . $u_s_lib/lib.lib.sh >&2
 
 test "$init_sh_libs" = "0" || {
   test -n "$init_sh_libs" -a "$init_sh_libs" != "1" ||
-    init_sh_libs=sys\ os\ str\ script\ log\ shell
+    init_sh_libs=os\ sys\ str\ script\ log\ shell
 
   $INIT_LOG "info" "$scriptname:sh:init" "Loading" "$init_sh_libs"
   test -n "$LOG" || LOG=$INIT_LOG
