@@ -4,6 +4,7 @@
 
 sys_lib_load()
 {
+  test -n "${LOG-}" || return 102
   test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   test -n "${hostname-}" || hostname="$(hostname -s | tr '[:upper:]' '[:lower:]')"
   test -n "${HOST-}" || HOST=$hostname

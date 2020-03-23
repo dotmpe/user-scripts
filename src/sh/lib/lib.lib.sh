@@ -139,7 +139,7 @@ lib_assert()
 lib_init()
 {
   test $# -gt 0 || set -- $lib_loaded
-  $lib_lib_log info "$scriptname:lib" "Init libs '$*'" "" 1
+  $lib_lib_log info "$scriptname:lib" "Init libs '$*'" ""
 
   # TODO: init only once, set <libid>_lib_init=...
   while test $# -gt 0

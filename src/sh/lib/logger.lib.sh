@@ -131,9 +131,7 @@ logger_stderr() # syslog-level target-ids description source-ids status-code
   test -n "$stderr_log_channel" || stderr_log_channel=$scriptname
   test -n "$2" || set -- "$1" "$stderr_log_channel" "$3" "$4" "$5"
 
-  { test -z "$1" || {
-      test $1 -le $logger_log_threshold
-    }
+  { test -z "$1" || test $1 -le $logger_log_threshold
   } && {
 
     logger_hook=stderr logger_strfmt "$@" >&2
