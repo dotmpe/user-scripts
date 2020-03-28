@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# XXX:
 status=return
 true "${status:=return}"
 
@@ -38,6 +39,8 @@ run-scr()
 {
   # Execute shell requests on-host, no need to prefix with 'exec'
   case "$1" in sh | dash | posh | ksh | zsh | bash ) set -- exec "$@" ; esac
+
+  test -z "${DEBUG-}" || echo run-scr $* >&2
 
   local scriptcmd="$1"; shift
 
