@@ -11,8 +11,8 @@
 
 make_lib_load()
 {
-  test -n "$ggrep" || ggrep=ggrep
-  test -n "$make_op_fd" || make_op_fd=4
+  test -n "${ggrep-}" || ggrep=ggrep
+  test -n "${make_op_fd-}" || make_op_fd=4
 
   # Special (GNU) Makefile vars
   make_special_v="$(echo MAKEFILE_LIST .DEFAULT_GOAL MAKE_RESTARTS \

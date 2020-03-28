@@ -7,10 +7,10 @@ lib_util_lib_load()
 	test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   case "$uname" in darwin ) default_lib="$default_lib Darwin" ;; esac
 
-  test -n "$lib_util_env_d_default" ||
+  test -n "${lib_util_env_d_default-}" ||
       lib_util_env_d_default=init-log\ ucache\ scriptpath
-  test -n "$sh_tools" || {
-      test -n "$scriptpath" || return 106
+  test -n "${sh_tools-}" || {
+      test -n "${scriptpath-}" || return 106
       sh_tools=$scriptpath/tools/sh
   }
 }

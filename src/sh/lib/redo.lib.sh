@@ -2,10 +2,10 @@
 
 redo_lib_load()
 {
-  test -n "$redo_db" || {
+  test -n "${redo_db-}" || {
     test -e ".redo/db.sqlite3" && redo_db=.redo/db.sqlite3
   }
-  test ! -e "$redo_db" || {
+  test ! -e "${redo_db-}" || {
     test -w ".redo/db.sqlite3" || {
       cp redo_db=.redo/db.sqlite3 .cllct/redo-db.sqlite3
       redo_db=.cllct/redo-db.sqlite3

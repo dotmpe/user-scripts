@@ -12,7 +12,7 @@ set -e
 # use first word as keywords
 get_setting_keyword()
 {
-  test -n "$1" || error "expected first word '$1'" 1
+  test -n "${1-}" || error "expected first word '${1-}'" 1
   firstword=$(echo "$1" | awk '{print $1}')
   test ${#firstword} -gt 2 || { error "keyword too small: $firstword"; return 4; }
   echo $firstword
@@ -21,9 +21,9 @@ get_setting_keyword()
 # Print linenumer(s) that setting keyword occurs on
 find_setting()
 {
-  test -f "$1" || error "expected file path '$1'" 1
-  test -n "$2" || error "expected config keyword" 1
-  test -z "$4" || error "surplus arguments '$4'" 1
+  test -f "${1-}" || error "expected file path '${1-}'" 1
+  test -n "${2-}" || error "expected config keyword" 1
+  test -z "${4-}" || error "surplus arguments '${4-}'" 1
 
   kw=$(get_setting_keyword "$2")
 
@@ -42,10 +42,10 @@ find_setting()
 # return true if setting at line matches given setting
 setting_matches()
 {
-  test -f "$1" || error "expected file path '$1'" 1
-  test -n "$2" -a $2 -gt 0 || error "expected setting line number" 1
-  test -n "$3" || error "expected setting line" 1
-  test -z "$4" || error "surplus arguments '$3'" 1
+  test -f "${1-}" || error "expected file path '$1'" 1
+  test -n "${2-}" -a ${2-} -gt 0 || error "expected setting line number" 1
+  test -n "${3-}" || error "expected setting line" 1
+  test -z "${4-}" || error "surplus arguments '$3'" 1
   echo 'TODO: setting-matches '$1' "'$2'"'
 }
 

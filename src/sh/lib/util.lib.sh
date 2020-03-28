@@ -7,7 +7,7 @@ util_lib_load()
 
 util_lib_init()
 {
-  test -n "$LOG" || return 102
+  test -n "${LOG-}" || return 102
 }
 
 

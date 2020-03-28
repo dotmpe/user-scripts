@@ -4,7 +4,7 @@
 vc_lib_init()
 {
   test "${vc_lib_init-}" = "0" && return
-  test -n "$INIT_LOG" || return 109
+  test -n "${INIT_LOG-}" || return 109
   $INIT_LOG debug "" "Initialized vc.lib" "$0"
 }
 

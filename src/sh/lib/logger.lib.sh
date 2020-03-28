@@ -1,16 +1,16 @@
-#!/bin/sh
+f#!/bin/sh
 
 # Module to provide basic LOG routine. This merges old mkdocs log and script std.lib
 
 logger_lib_load()
 {
-  test -n "$logger_log_hooks" || logger_log_hooks=stderr
+  test -n "${logger_log_hooks-}" || logger_log_hooks=stderr
 
-  test -n "$logger_exit_threshold" || logger_exit_threshold=3 # Error and above
+  test -n "${logger_exit_threshold-}" || logger_exit_threshold=3 # Error and above
 
-  test -n "$logger_log_threshold" || logger_log_threshold=9 # Everything
+  test -n "${logger_log_threshold-}" || logger_log_threshold=9 # Everything
 
-  test -n "$status" || status=exit
+  test -n "${status-}" || status=exit
 }
 
 # Wrapper function for logger handler(s). Output and/or relay behaviour is by

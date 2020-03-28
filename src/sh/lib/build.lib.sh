@@ -17,6 +17,6 @@ build_test()
 
 build()
 {
-  test -n "$package_build_tool" || return 1
+  test -n "${package_build_tool-}" || return 1
   $package_build_tool "$@"
 }

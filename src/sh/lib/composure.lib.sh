@@ -3,7 +3,7 @@
 
 composure_lib_load()
 {
-  test -n "$COMPOSURE" || COMPOSURE=$HOME/.local/composure
+  test -n "${COMPOSURE-}" || COMPOSURE=$HOME/.local/composure
 }
 
 composure_lib_init()

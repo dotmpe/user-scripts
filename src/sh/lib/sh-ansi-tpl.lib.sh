@@ -4,8 +4,9 @@
 
 sh_ansi_tpl_lib_load()
 {
-  test -n "$COLORIZE" || COLORIZE=1
-  test -n "$CS" || CS=dark
+  test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${COLORIZE-}" || COLORIZE=1
+  test -n "${CS-}" || CS=dark
   #force_color_prompt=yes
 
   if test "$COLORIZE" = "1"
@@ -30,6 +31,7 @@ sh_ansi_tpl_lib_load()
     GREEN=
     BLUE=
     NORMAL=
+    BWHITE=
     SEP=
   fi
   PSEP="$BWHITE:$NORMAL"

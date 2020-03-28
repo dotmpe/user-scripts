@@ -2,7 +2,7 @@
 
 docker_sh_lib_load()
 {
-  true "${dckr_pref:=}"
+  "${dckr_pref:=}"
 }
 
 docker_sh_names()

@@ -5,7 +5,7 @@
 
 lib_lib_load()
 {
-  test -n "$default_lib" || default_lib="os sys str src shell"
+  test -n "${default_lib-}" || default_lib="os sys str src shell"
   # XXX testing default_lib="argv match vc"
 }
 

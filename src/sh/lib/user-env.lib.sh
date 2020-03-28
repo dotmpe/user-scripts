@@ -3,13 +3,13 @@
 user_env_lib_load()
 {
   # Dir to record env-keys snapshots:SD-Shell-Dir
-  test -n "$SD_SHELL_DIR" || SD_SHELL_DIR="$HOME/.statusdir/shell"
+  test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="$HOME/.statusdir/shell"
 
   # Set defaults for required vars
   #test -n "$ENV_NAME" || ENV_NAME=development
 
   user_env_init
-  test -n "$lib_loaded" || lib_loaded=
+  test -n "${lib_loaded-}" || lib_loaded=
 }
 
 user_env_init()
