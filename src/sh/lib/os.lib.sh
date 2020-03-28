@@ -5,8 +5,8 @@
 
 os_lib_load()
 {
-  test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  test -n "$os" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${os-}" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 os_lib_init()

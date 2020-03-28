@@ -2,6 +2,7 @@
 
 sh_include() # Parts...
 {
+  local sh_include_part base
   test $# -gt 0 || return
   true ${ci_tools:=tools/ci}
   true ${sh_tools:=tools/sh}

@@ -5,7 +5,7 @@
 
 std_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s | tr 'A-Z' 'a-z')"
+  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 std_lib_init()

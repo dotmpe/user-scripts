@@ -4,7 +4,7 @@
 
 lib_util_lib_load()
 {
-	test -n "$uname" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+	test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   case "$uname" in darwin ) default_lib="$default_lib Darwin" ;; esac
 
   test -n "$lib_util_env_d_default" ||
