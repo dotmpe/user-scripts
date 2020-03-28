@@ -4,7 +4,9 @@
 # Execute frontend command, auto-start session to log pass/failed steps.
 ci_exec()
 {
-  local r= session= suite_lbl="Command or function" stage="$1"
+  test -n "${1-}" || return
+  local r= session= suite_lbl="Command or function"
+  test -n "${stage-}" || local stage="$1"
   test -e "$1" && suite_lbl=Script
 
   test $verbosity -le 4 ||
