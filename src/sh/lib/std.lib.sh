@@ -89,8 +89,8 @@ stdio_type()
 var_log_key()
 {
   test -n "${log_key-}" || {
-    test -n "${log-}" && {
-      log_key="$log"
+    test -n "${stderr_log_channel-}" && {
+      log_key="$stderr_log_channel"
     } || {
       test -n "${base-}" || base=$scriptname
       test -n "$base" && {
@@ -156,7 +156,7 @@ _log()
 log()
 {
   var_log_key
-  printf -- "[$log_key] $1\n"
+  printf -- "[$(eval echo \"$log_key\")] $1\n"
   unset log_key
 }
 
