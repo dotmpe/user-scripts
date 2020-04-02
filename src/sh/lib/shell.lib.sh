@@ -36,7 +36,7 @@ shell_lib_init()
 {
   lib_assert log || return
 
-  test -n "$SH_SID" || SH_SID=$(get_uuid) || return
+  test -n "${SH_SID-}" || SH_SID=$(get_uuid) || return
 
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
@@ -53,7 +53,7 @@ shell_lib_init()
   $log info "" "Loaded shell.lib" "$0"
 }
 
-shell_lib_log() { test -n "$LOG"&&log="$LOG"||log="$INIT_LOG";req_log; }
+shell_lib_log() { test -n "${LOG-}"&&log="$LOG"||log="$INIT_LOG";req_log; }
 #shell_lib_log() { req_init_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.

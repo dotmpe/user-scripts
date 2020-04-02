@@ -110,8 +110,8 @@ lib_load()
         } || true
 
         eval ${lib_id}_lib_loaded=0
-        eval "LIB_SRC=\"$LIB_SRC $f_lib_path\""
-        lib_loaded="$lib_loaded $lib_id"
+        eval "LIB_SRC=\"${LIB_SRC-} $f_lib_path\""
+        lib_loaded="${lib_loaded-} $lib_id"
         # FIXME sep. profile/front-end for shell vs user-scripts
         # $lib_lib_log info "$scriptname:lib" "Finished loading ${lib_id}: OK"
         unset lib_id

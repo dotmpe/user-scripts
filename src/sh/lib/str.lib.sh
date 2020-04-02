@@ -15,7 +15,7 @@ str_lib_load()
         * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
     esac
 
-    test -n "$ext_groupglob" || {
+    test -n "${ext_groupglob-}" || {
       test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
             && ext_groupglob=1 \
             || ext_groupglob=0
@@ -23,7 +23,7 @@ str_lib_load()
       #debug "Initialized ext_groupglob=$ext_groupglob"
     }
 
-    test -n "$ext_sh_sub" || ext_sh_sub=0
+    test -n "${ext_sh_sub-}" || ext_sh_sub=0
 
     # XXX:
   #      echo "${1/$2/$3}" ... =

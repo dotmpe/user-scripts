@@ -1,7 +1,7 @@
 #!/bin/sh
 
-test -z "$U_S" && u_s= || u_s=$U_S
-test -e "$U_S" || US=
+test -z "${U_S-}" && u_s= || u_s=$U_S
+test -e "${U_S-}" || US=
 
 test -e "$U_S" || {
   test -d "$HOME/project/user-scripts/.git" &&
@@ -20,6 +20,7 @@ test -e "$U_S" || {
     U_S=$HOME/build/dotmpe/user-scripts
 }
 test -e "$U_S" || U_S=$u_s
+$LOG "info" "" "Using U-s:" "$U_S"
 unset u_s
 
 

@@ -1,4 +1,4 @@
-f#!/bin/sh
+#!/bin/sh
 
 # Module to provide basic LOG routine. This merges old mkdocs log and script std.lib
 

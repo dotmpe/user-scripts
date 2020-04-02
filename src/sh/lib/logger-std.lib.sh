@@ -13,7 +13,7 @@ logger_std_init()
   test $# -eq 1 || set -- "$scriptname"
 
   stderr_log_channel="$1"
-  test -z "$verbosity" && {
+  test -z "${verbosity-}" && {
     stderr_log_level=4
     logger_log_threshold=4
   } || {
