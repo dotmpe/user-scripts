@@ -233,7 +233,7 @@ std_v()
 
 std_exit()
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   case "$1" in [0-9] ) ;;
     * ) $sh_tools/log.sh "error" "" "std-ext '$1'" "" 1
       return $?

@@ -17,6 +17,8 @@ sys_lib_init()
       && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
     test -n "$sys_lib_log" || return 108
 
+    setup_tmpd >/dev/null
+
 # XXX: cleanup
 if [ -z "$(which realpath)" ]
 then # not perfect?
@@ -123,7 +125,7 @@ try_value()
 {
   local value=
   test $# -gt 1 && {
-    value="$(eval echo "\"\$$(echo_local "$@")\"")"
+    value="$(eval echo "\"\$$(echo_local "$@")\"" 2>/dev/null || return )"
   } || {
     value="$(echo $(eval echo "\$$1"))"
   }
@@ -150,7 +152,7 @@ setup_tmpd()
   test $# -le 2 || return
   while test $# -lt 2 ; do set -- "$@" "" ; done
   test -n "$1" || set -- "$base-$(get_uuid)" "$2"
-  test -n "$RAM_TMPDIR" || {
+  test -n "${RAM_TMPDIR-}" || {
         test -w "/dev/shm" && RAM_TMPDIR=/dev/shm/tmp
       }
   test -n "$2" -o -z "$RAM_TMPDIR" || set -- "$1" "$RAM_TMPDIR"
@@ -279,12 +281,12 @@ path_exists()
 # lookup-first: boolean setting to stop after first success
 lookup_path() # VAR-NAME LOCAL-PATH
 {
-  test -n "$lookup_test" || lookup_test="path_exists"
+  test -n "${lookup_test-}" || lookup_test="path_exists"
 
   lookup_path_list $1 | while read _PATH
   do
     eval $lookup_test \""$_PATH"\" \""$2"\" && {
-      trueish "$lookup_first" && return 0 || continue
+      trueish "${lookup_first-}" && return 0 || continue
     } || continue
   done
 }

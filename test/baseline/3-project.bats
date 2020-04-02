@@ -4,9 +4,12 @@ base='baseline:3:project'
 
 
 @test "$base: init.sh setup" {
+  load ../helper/extra
+  load ../helper/stdtest
 
+  export verbosity=3 DEBUG=
   run . ./tools/sh/init.sh
-  test $status -eq 0 && test -z "${lines[*]}"
+  test $status -eq 0 && test -z "${lines[*]}" || stdfail
 
   # Again, no harnass.
   . ./tools/sh/init.sh
@@ -24,10 +27,11 @@ base='baseline:3:project'
 
 @test "$base: tools/sh/log" {
 
+  # FIXME: test/init:init
   load ../init
-  init
-  load extra
-  load stdtest
+  #init
+  load ../helper/extra
+  load ../helper/stdtest
   LOG=tools/sh/log.sh
 
   run $LOG tag1 tag2 msg tag3 0

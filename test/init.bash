@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Helpers for BATS project test env.
 
@@ -60,8 +60,8 @@ err_() # [type] [cat] [msg] [tags] [status]
 {
   test $# -gt 0 || return
   test $# -gt 1 || set -- "$@" "" "" "" ""
-  test -z "$verbosity" -a -z "$DEBUG" && return
-  test -n "$2" || set -- "$1" "$base" "$3" "$4" "${5:-}"
+  test -z "${verbosity:-}" -a -z "${DEBUG:-}" && return
+  test -n "$2" || set -- "$1" "$base" "$3" "${4:-}" "${5:-}"
   test -z "$verbosity" -a -n "$DEBUG" || {
 
     case "$1" in [0-9]* ) true ;; * ) false ;; esac && {
@@ -261,7 +261,7 @@ load_init_bats()
   : ${BATS_LIB_DEFAULT:=load}
 }
 
-load() # ( PATH | NAME )
+load_override() # ( PATH | NAME )
 {
   test $# -gt 0 || return 1
   : "${lookup_exts:=${BATS_LIB_EXTS}}"

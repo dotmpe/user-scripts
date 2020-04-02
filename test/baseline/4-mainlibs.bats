@@ -5,6 +5,7 @@ base="baseline-4:mainlibs"
 
 setup()
 {
+  # FIXME: test/init.bash:init interferes with Bats normal and tap output
   case "$BATS_TEST_NUMBER" in
     
     2|4 ) init 1 0 0 0 ;;
