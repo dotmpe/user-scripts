@@ -312,7 +312,7 @@ lookup_path_shadows() # VAR-NAME LOCAL
 init_user_env()
 {
   local key= value=
-  for key in UCONFDIR HTDIR DCKR_VOL TMPDIR
+  for key in UCONF HTDIR DCKR_VOL TMPDIR
   do
     value=$(eval echo \$$key)
     default=$(eval echo \$DEFAULT_$key)
@@ -327,11 +327,11 @@ init_user_env()
 
 init_uconfdir_path()
 {
-  # Add path dirs in $UCONFDIR to $PATH
+  # Add path dirs in $UCONF to $PATH
   local name
   for name in $uname $(uname -s) Generic
   do
-    local user_PATH=$UCONFDIR/path/$name
+    local user_PATH=$UCONF/path/$name
     if test -d "$user_PATH"
     then
       add_env_path $user_PATH
