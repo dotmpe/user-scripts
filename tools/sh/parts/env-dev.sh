@@ -9,7 +9,6 @@ export U_S="${U_S:="$CWD"}" # No-Sync
 : "${sh_util_base:="/tools/sh"}"
 : "${ci_util_base:="/tools/ci"}"
 
-#: "${scriptpath:="$U_S$sh_src_base"}" # No-Sync
 : "${userscript:="$U_S"}"
 
 # Define now, Set/use later

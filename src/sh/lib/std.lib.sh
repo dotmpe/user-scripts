@@ -86,19 +86,27 @@ stdio_type()
   esac
 }
 
-var_log_key()
+# Wash var_log_key()
+log_src_id_var()
 {
   test -n "${log_key-}" || {
     test -n "${stderr_log_channel-}" && {
       log_key="$stderr_log_channel"
     } || {
-      test -n "${base-}" || base=$scriptname
+      test -n "${base-}" || {
+        base=\$\$:\$scriptname
+      }
       test -n "$base" && {
         test -n "${scriptext-}" || scriptext=.sh
-        log_key=$base$scriptext
+        log_key=\$base\$scriptext
       } || echo "Cannot get var-log-key" 1>&2;
     }
   }
+}
+
+log_src_id()
+{
+  eval echo \"$log_key\"
 }
 
 log_bw()
@@ -120,6 +128,8 @@ log_256()
 # 1:str 2:exit
 _log()
 {
+  # XXX: cleanup unused _log
+  exit 213
   test -n "$1" || exit 201
   test -n "$stdout_type" || stdout_type="$stdio_1_type"
   test -n "$stdout_type" || stdout_type=t
@@ -155,9 +165,8 @@ _log()
 # stdio helper functions
 log()
 {
-  var_log_key
-  printf -- "[$(eval echo \"$log_key\")] $1\n"
-  unset log_key
+  test -n "${log_key:-}" || log_src_id_var
+  printf -- "[$(log_src_id)] $1\n"
 }
 
 err()

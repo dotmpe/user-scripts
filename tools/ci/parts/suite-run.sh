@@ -1,5 +1,6 @@
-# Execute lines from table, source parts, re-eval suiteline if part is function
+#!/usr/bin/env bash
 
+# Execute lines from table, source parts, re-eval suiteline if part is function
 suite_run() # Execute table specs ~ Table Suite Prefix
 {
   test $# -ge 2 -a -f "${1:-}" -a $# -le 3 || return 98

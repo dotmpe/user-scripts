@@ -40,6 +40,7 @@ logger_theme_lib_load()
     standout="$(tput smso)"
 
     if test $ncolors -ge 256; then
+      black="$(tput setaf 0)"
       blackb="\033[0;90m"
       #grey="\e[0;37m"
       purple="\033[38;5;135m"

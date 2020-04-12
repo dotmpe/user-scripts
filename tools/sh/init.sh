@@ -29,12 +29,6 @@ test -n "${LOG-}" -a -x "${LOG-}" -o \
   LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tools/sh/log.sh
 # Sh-Sync: tools/sh/parts/env-init-log.sh
 
-test -n "${SH_EXT-}" || {
-  test -n "${REAL_SHELL-}" ||
-    REAL_SHELL=$(ps --pid $$ --format cmd --no-headers | cut -d' ' -f1)
-  SH_EXT=$(basename "$REAL_SHELL")
-}
-
 # Must be set after U-s:load
 test -n "${U_S-}" -a -d "${U_S-}" || . $CWD/tools/sh/parts/env-0-u_s.sh
 
@@ -75,14 +69,14 @@ test "${init_sh_libs-}" = "0" || {
   lib_init $init_sh_libs ||
     $INIT_LOG "error" "$scriptname:init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
 
-  test -n "$init_sh_boot" || init_sh_boot=1
+  test -n "${init_sh_boot-}" || init_sh_boot=1
   test -n "$init_sh_boot" && {
 
     test "$init_sh_boot" != "0" || init_sh_boot=null
     test "$init_sh_boot" != "1" || init_sh_boot=null # FIXME: stderr-console-logger
   }
 
-  test -z "$DEBUG" || echo sh_tools=$sh_tools scripts_init $init_sh_boot >&2
+  test -z "${DEBUG-}" || echo sh_tools=$sh_tools scripts_init $init_sh_boot >&2
   scripts_init $init_sh_boot ||
     $INIT_LOG "error" "$scriptname:init.sh" "Failed at bootstrap '$init_sh_boot'" $? 1
 }

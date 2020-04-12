@@ -59,8 +59,8 @@ pathname() # PATH EXT...
 # Simple iterator over pathname
 pathnames() # exts=... [ - | PATHS ]
 {
-  test -n "$exts" || exit 40
-  test -n "$*" -a "$1" != "-" && {
+  test -n "${exts-}" || exit 40
+  test -n "$*" -a "${1-}" != "-" && {
     for path in "$@"
     do
       pathname "$path" $exts
@@ -101,10 +101,10 @@ dotname() # Path [Ext-to-Strip]
 # and starts with a period '.' it is used as the value for exts.
 basenames()
 {
-  test -n "$exts" || {
+  test -n "${exts-}" || {
     test -e "$1" || fnmatch ".*" "$1" && { exts="$1"; shift; }
   }
-  while test -n "$1"
+  while test -n "${1-}"
   do
     name="$1"
     shift

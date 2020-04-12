@@ -17,7 +17,7 @@ run()
     while test $# -gt 0
     do
       argv=()
-      while test $# -gt 0 -a "$1" != "--"
+      while test $# -gt 0 -a "${1-}" != "--"
       do
         argv+=("$1")
         shift
