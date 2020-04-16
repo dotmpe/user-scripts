@@ -212,7 +212,7 @@ stderr() # level msg exit
             && warning_label_c="\033[38;5;255;48;5;220m"\
             || warning_label_c="${dylw}";
         log "${bld}${warning_label_c}$1${norm}${grey}${bld}: ${default}$2${norm}" 1>&2 ;; notice )
-        bb=${prpl}; bk=$grey
+        bb=${purple}; bk=$grey
         log "${grey}${default}$2${norm}" 1>&2 ;;
     info )
         bb=${blue}; bk=$grey

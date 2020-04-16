@@ -33,16 +33,17 @@ sh_include() # Parts...
     for sh_include_base in $sh_include_path
     do test -e "$sh_include_base/$sh_include_partid.sh" && break || continue
     done
-
     test -e "$sh_include_base/$sh_include_partid.sh" || {
-      print_err error "" "no sh_include $sh_include_partid" "$?" 1
+      type print_err
+      print_err error "" "no sh_include $sh_include_partid" "$?"
+      return 1
     }
 
     test -n "${sh_include_dry:-}" &&
-      echo "$sh_include_base/$sh_include_partid.sh" || {
-      sh_include_path= \
-      . "$sh_include_base/$sh_include_partid.sh" || {
-        print_err error "" "at sh_include $sh_include_partid" "$?" $?
+      echo "sh-include $sh_include_base/$sh_include_partid.sh" || {
+        sh_include_path= \
+        . "$sh_include_base/$sh_include_partid.sh" || {
+          print_err error "" "at sh_include $sh_include_partid" "$?" $?
       }
     }
   done

@@ -5,11 +5,11 @@ oil_lib_load()
   OIL_CONTAINER=u-s-oil-treebox
   OIL_IMAGE=dotmpe/treebox:dev
   OIL_PATH=/src/github.com/dotmpe/oil
-  lib_load docker-sh
 }
 
 oil_docker_init()
 {
+  lib_assert docker-sh
   docker_name=$OIL_CONTAINER
   docker_image=$OIL_IMAGE
   docker_sh_c_init()
