@@ -12,19 +12,18 @@ test "${DEBUG-}" = "1" && set -x
 : "${ci_tools:="$CWD/tools/ci"}"
 : "${sh_tools:="$CWD/tools/sh"}"
 : "${U_S:="$CWD"}" # No-Sync
+: "${keep_going:=1}" # No-Sync
 
-. ./tools/jk
-: "${gdate:="date"}"
+. "./tools/sh/parts/debug-exit.sh"
+
+. "./tools/sh/parts/env-0-1-lib-sys.sh"
 
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
-: "${keep_going:=1}" # No-Sync
-
 sh_env_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages sh_env"
 
-. "$sh_tools/parts/debug-exit.sh"
 . "${CWD}/tools/sh/env.sh"
 
 sh_env_end_ts=$($gdate +"%s.%N")
