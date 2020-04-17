@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#test -n "$U_S" -a -d "$U_S" || source ./tools/sh/parts/env-0-u_s.sh
+# XXX: test -n "$U_S" -a -d "$U_S" || source ./tools/sh/parts/env-0-u_s.sh
 export U_S="${U_S:="$CWD"}" # No-Sync
 
 : "${hostname:="`hostname -s`"}"
@@ -39,7 +39,7 @@ sh_include env-0-1-lib-sys env-0-2-lib-os env-0-3-lib-str env-0-4-lib-script ||
 
 : "${init_sh_boot:=""}"
 
-sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc env-0-1-lib-shell ||
+sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc ||
   return
 
 sh_include exec || return

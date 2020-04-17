@@ -6,10 +6,7 @@ test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
 : "${CWD:="$PWD"}"
 : "${sh_tools:="$CWD/tools/sh"}"
-. "$sh_tools/parts/debug-exit.sh"
-
 : "${gdate:="date"}"
-set -x
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
@@ -20,6 +17,7 @@ ci_stages="${ci_stages:-} ci_env"
 sh_env_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages sh_env"
 
+. "$sh_tools/parts/debug-exit.sh"
 . "${CWD}/tools/sh/env.sh"
 
 sh_env_end_ts=$($gdate +"%s.%N")
