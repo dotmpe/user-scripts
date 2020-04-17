@@ -25,6 +25,8 @@ type sh_include >/dev/null 2>&1 || {
   . "$U_S/tools/sh/parts/include.sh" || return
 }
 
+sh_include unique-paths
+
 # XXX . "$sh_tools/parts/env-init-log.sh"
 sh_include env-0-src env-std env-ucache || return
 
