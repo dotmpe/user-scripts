@@ -207,10 +207,10 @@ stderr() # level msg exit
         bb=${red}; bk=$grey
         log "${bld}${red}$1${blackb}: ${norm}${bdefault}$2${norm}" 1>&2 ;;
     warn*|fail*)
-        bb=${dylw}; bk=$grey
+        bb=${darkyellow}; bk=$grey
         test "$CS" = "light" \
             && warning_label_c="\033[38;5;255;48;5;220m"\
-            || warning_label_c="${dylw}";
+            || warning_label_c="${darkyellow}";
         log "${bld}${warning_label_c}$1${norm}${grey}${bld}: ${default}$2${norm}" 1>&2 ;; notice )
         bb=${purple}; bk=$grey
         log "${grey}${default}$2${norm}" 1>&2 ;;
