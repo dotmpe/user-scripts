@@ -1,6 +1,6 @@
 # Expand to realpath if exists, remove duplicates
 
-unique-paths () # PATHNAME...
+unique_paths () # PATHNAME...
 {
   for path in "$@"
   do

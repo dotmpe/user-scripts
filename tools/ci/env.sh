@@ -17,7 +17,6 @@ test "${DEBUG-}" = "1" && set -x
 . "./tools/sh/parts/debug-exit.sh"
 
 . "./tools/sh/parts/env-0-1-lib-sys.sh"
-. "./tools/sh/parts/unique-paths.sh"
 
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
