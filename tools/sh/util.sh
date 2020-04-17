@@ -135,8 +135,8 @@ sh_read () # ( FILE | - )
 . "$U_S/tools/ci/parts/print-err.sh" # No-Sync
 . "$U_S/tools/sh/parts/include.sh" # No-Sync
 
-sh_include hd-offsets suite-from-table suite-source suite-run
-sh_include env-0-1-lib-sys print-color
+sh_include unique-paths hd-offsets suite-from-table suite-source suite-run \
+  env-0-1-lib-sys print-color
 #  remove-dupes unique-paths
 #  env-0-src
 
