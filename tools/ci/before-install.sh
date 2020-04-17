@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+
 # CI suite stage 1. See .travis.yml
+
 set -ueo pipefail
 
 : "${SUITE:="CI"}"

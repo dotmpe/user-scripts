@@ -6,17 +6,15 @@ test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
 : "${CWD:="$PWD"}"
 : "${sh_tools:="$CWD/tools/sh"}"
-
 . "$sh_tools/parts/debug-exit.sh"
 
+: "${gdate:="date"}"
 set -x
-#. "$sh_tools/parts/env-0-1-lib-sys.sh"
-
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
 : "${SUITE:="CI"}"
-#: "${DEBUG:=1}"
+: "${DEBUG:=}"
 : "${keep_going:=1}" # No-Sync
 
 sh_env_ts=$($gdate +"%s.%N")
