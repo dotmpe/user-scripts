@@ -8,8 +8,6 @@ test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 : "${sh_tools:="$CWD/tools/sh"}"
 : "${U_S:="$CWD"}"
 
-. "$U_S/tools/sh/parts/env-strict.sh"
-
 : "${ci_tools:="$CWD/tools/ci"}"
 : "${build_tab:="build.txt"}"
 

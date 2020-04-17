@@ -47,7 +47,6 @@ set -euo pipefail
 true                                           ./sh-main lines sh-baseline.tab >/dev/null
 
 set -euo pipefail
-  true                                         . ./tools/sh/parts/env-strict.sh
   DOCKER_NS=dotmpe                             . ./tools/sh/parts/env-docker-hub.sh
   true                                         . ./tools/sh/parts/env-dev.sh
   true                                         . ./tools/sh/parts/env-0.sh
