@@ -4,14 +4,21 @@
 
 test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
+set -ueo pipefail
+test "${DEBUG-}" = "1" && set -x
+
+: "${SUITE:="CI"}"
 : "${CWD:="$PWD"}"
+: "${ci_tools:="$CWD/tools/ci"}"
 : "${sh_tools:="$CWD/tools/sh"}"
+: "${U_S:="$CWD"}" # No-Sync
+
+. ./tools/jk
 : "${gdate:="date"}"
+
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
-: "${SUITE:="CI"}"
-: "${DEBUG:=}"
 : "${keep_going:=1}" # No-Sync
 
 sh_env_ts=$($gdate +"%s.%N")

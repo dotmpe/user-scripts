@@ -2,15 +2,10 @@
 
 # CI suite stage 1. See .travis.yml
 
-set -ueo pipefail
+ci_env_= . "./tools/ci/env.sh"
 
-: "${SUITE:="CI"}"
-: "${CWD:="$PWD"}"
-: "${ci_tools:="$CWD/tools/ci"}"
-: "${U_S:="$CWD"}" # No-Sync
 echo "Sourcing $SUITE env (I) <$CWD, $ci_tools>" >&2
 
-. "${ci_tools}/env.sh"
 ci_stages="$ci_stages sh_env_1 ci_env_1"
 ci_env_1_ts=$ci_env_ts
 sh_env_1_ts=$sh_env_ts

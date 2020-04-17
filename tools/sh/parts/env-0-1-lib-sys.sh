@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-: "${sys_lib_loaded:=""}"
-
-# XXX: ~/bin/sys
-: "${base:=}"
-: "${lookup_test:=}"
 
 : ${HOST:="`hostname -s | tr '[:upper:]' '[:lower:]'`"}
 export uname=${uname:-"`uname -s | tr '[:upper:]' '[:lower:]'`"}
