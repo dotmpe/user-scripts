@@ -8,7 +8,7 @@ logger_std_lib_load()
   lib_load logger logger-theme log
 }
 
-logger_std_init()
+logger_std_init() # [Log-Channel]
 {
   test $# -eq 1 || set -- "$scriptname"
 
