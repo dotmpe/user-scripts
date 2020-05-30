@@ -30,11 +30,12 @@ sh_include() # Parts...
 
   for sh_include_partid in $*
   do
+    test -z "${sh_include_debug:-}" ||
+      print_err info "" "looking for $sh_include_partid at" "$sh_include_path"
     for sh_include_base in $sh_include_path
     do test -e "$sh_include_base/$sh_include_partid.sh" && break || continue
     done
     test -e "$sh_include_base/$sh_include_partid.sh" || {
-      type print_err
       print_err error "" "no sh_include $sh_include_partid" "$?"
       return 1
     }

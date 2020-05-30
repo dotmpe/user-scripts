@@ -59,7 +59,7 @@ log_src_id_key_var()
       log_key="$stderr_log_channel"
     } || {
       test -n "${base-}" -a -z "$scriptname" || {
-        log_key="\$CTX_PID:\$scriptname"
+        log_key="\$CTX_PID:\$scriptname/\$\$"
       }
       test -n "$log_key" || {
         test -n "${scriptext-}" || scriptext=.sh
@@ -81,6 +81,7 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
   test -n "$2" || {
     test -n "${log_key:-}" || log_src_id_key_var
     test -n "$2" || set -- "$1" "$(log_src_id)" "$3" "$4" "$5"
+    test -n "$2" || set -- "$1" "$0" "$3" "$4" "$5"
   }
   lvl=$(log_level_num "$1")
   test -z "$lvl" -o -z "$verbosity" || {

@@ -25,18 +25,18 @@ assert_nonzero()
 mkid() # Str Extra-Chars Substitute-Char
 {
   #test -n "$1" || error "mkid argument expected" 1
-  local s="$2" c="$3"
+  local s="${2-}" c="${3-}"
   # Use empty c if given explicitly, else default
   test $# -gt 2 || c='\.\\\/:_'
   test -n "$s" || s=-
   test -n "${upper-}" && {
     trueish "${upper-}" && {
-      id=$(printf -- "%s" "$1" | tr -sc 'A-Za-z0-9'"$c$s" "$s" | tr 'a-z' 'A-Z')
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'a-z' 'A-Z')
     } || {
-      id=$(printf -- "%s" "$1" | tr -sc 'A-Za-z0-9'"$c$s" "$s" | tr 'A-Z' 'a-z')
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'A-Z' 'a-z')
     }
   } || {
-    id=$(printf -- "%s" "$1" | tr -sc 'A-Za-z0-9'"$c$s" "$s" )
+    id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" )
   }
 }
 # Sync-Sh: BIN:str-htd.lib.sh

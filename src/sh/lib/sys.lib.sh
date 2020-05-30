@@ -271,7 +271,9 @@ lookup_path_list() # VAR-NAME
   eval echo \"\$$1\" | tr ':' '\n'
 }
 
-path_exists()
+# Translate Lookup path element and given/local name to filesystempath,
+# or return err-stat.
+lookup_exists() # DIR NAME
 {
   test -e "$1/$2" && echo "$1/$2"
 }
@@ -281,19 +283,23 @@ path_exists()
 # lookup-first: boolean setting to stop after first success
 lookup_path() # VAR-NAME LOCAL-PATH
 {
-  test -n "${lookup_test-}" || lookup_test="path_exists"
+  test $# -eq 2 || return
+  test -n "${lookup_test-}" || lookup_test="lookup_exists"
 
-  lookup_path_list $1 | while read _PATH
-  do
-    eval $lookup_test \""$_PATH"\" \""$2"\" && {
-      trueish "${lookup_first-}" && return 0 || continue
-    } || continue
-  done
+  lookup_path_list $1 | { while read _PATH
+    do
+      eval $lookup_test \""$_PATH"\" \""$2"\" && {
+        trueish "${lookup_first-}" && break || continue
+      } || continue
+    done
+    cat - >/dev/null # Flush remainder of lookup-path-list
+  }
 }
 
 # Test if local path/name is overruled. Lists paths for hidden LOCAL instances.
 lookup_path_shadows() # VAR-NAME LOCAL
 {
+  test $# -eq 2 || return
   local r=
   tmpf=$(setup_tmpf .lookup-shadows)
   lookup_first=false lookup_path "$@" >$tmpf

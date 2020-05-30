@@ -86,7 +86,7 @@ stdio_type()
   esac
 }
 
-# Wash var_log_key()
+# Was var_log_key()
 log_src_id_var()
 {
   test -n "${log_key-}" || {
@@ -94,7 +94,7 @@ log_src_id_var()
       log_key="$stderr_log_channel"
     } || {
       test -n "${base-}" || {
-        base=\$\$:\$scriptname
+        base="\$\$/\$scriptname"
       }
       test -n "$base" && {
         test -n "${scriptext-}" || scriptext=.sh
@@ -198,10 +198,10 @@ stderr() # level msg exit
   case "$(echo $1 | tr 'A-Z' 'a-z')" in
 
     crit*)
-        bb=${ylw}; bk=$default
+        bb=${yellow}; bk=$default
         test "$CS" = "light" \
           && crit_label_c="\033[38;5;226;48;5;249m" \
-          || crit_label_c="${ylw}"
+          || crit_label_c="${yellow}"
         log "${bld}${crit_label_c}$1${norm}${blackb}: ${bdefault}$2${norm}" 1>&2 ;;
     err*)
         bb=${red}; bk=$grey

@@ -20,19 +20,13 @@ lib_lib_init()
 
 lib_lib_log() { test -n "$LOG" && log="$LOG" || log="$lib_lib_log"; }
 
-lib_path_exists()
-{
-  test -e "$1/$2.lib.sh" || return 1
-  echo "$1/$2.lib.sh"
-}
-
 lib_loaded() # [Check-Libs...]
 {
   test $# -gt 0 && {
 
     while test $# -gt 0
     do
-      lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')
+      lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
 
       test "$1" = "$(eval echo \$${lib_id}_lib_loaded)" || return
       shift
@@ -44,11 +38,17 @@ lib_loaded() # [Check-Libs...]
   }
 }
 
+# See sys.lib.sh lookup-exists
+lib_exists() # DIR NAME
+{
+  test -e "$1/$2.lib.sh" && echo "$1/$2.lib.sh"
+}
+
 # Echo every occurence of *.lib.sh on SCRIPTPATH
 lib_path() # local-name path-var-name
 {
-  test -n "$2" || set -- "$1" SCRIPTPATH
-  lookup_test=lib_path_exists lookup_path $2 "$1"
+  test -n "${2-}" || set -- "$1" SCRIPTPATH
+  lookup_test=${lookup_test:-"lib_exists"} lookup_path $2 "$1"
 }
 
 lib_lookup()
@@ -64,13 +64,13 @@ lib_load()
 
   $lib_lib_log debug "" "Loading lib(s)" "$*"
 
-  local lib_id= f_lib_loaded= f_lib_path= r=
+  local lib_id= f_lib_loaded= f_lib_path= r= lookup_test=${lookup_test:-"lib_exists"}
 
   # __load_lib: true if inside util.sh:lib-load
   test -n "${__load_lib-}" || local __load_lib=1
   while test $# -gt 0
   do
-    lib_id=$(printf -- "${1}" | tr -Cs 'A-Za-z0-9_' '_')
+    lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
     test -n "$lib_id" || {
       $lib_lib_log error $scriptname:lib "err: lib_id=$lib_id" "" 1 || return
     }
@@ -80,13 +80,13 @@ lib_load()
         $lib_lib_log debug "$scriptname:lib" "Skipped loaded lib '$1'" ""
     } || {
 
-        # Note: the equiv. code using sys.lib.sh is above, but since it is not
-        # loaded yet keep it written out using plain shell.
-        f_lib_path="$( echo "$SCRIPTPATH" | tr ':' '\n' | while read sp
+        # Note: the equiv. code using sys.lib.sh is above, but since it may not
+        # have been loaded yet keep it written out using plain shell.
+        f_lib_path="$( echo "$SCRIPTPATH" | tr ':' '\n' | while read _PATH
           do
-            test -e "$sp/$1.lib.sh" || continue
-            echo "$sp/$1.lib.sh"
-            break
+            $lookup_test "$_PATH" "$1" && {
+              test ${lookup_first:-0} -eq 0 && break || continue
+            } || continue
           done)"
 
         test -n "$f_lib_path" || {
@@ -94,12 +94,25 @@ lib_load()
         }
 
         $lib_lib_log debug "$scriptname:lib" "Loading lib '$1'" ""
-        . "$f_lib_path" || { r=$?; lib_src_stat=$r
-          $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
-          return $lib_src_stat
+        test ${lookup_first:-0} -eq 0 && {
+
+          . "$f_lib_path" || { r=$?; lib_src_stat=$r
+            $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
+            return $lib_src_stat
+          }
+
+        } || {
+
+          for f_lib_path_ in $f_lib_path
+          do
+            . "$f_lib_path_" || { r=$?; lib_src_stat=$r
+              $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path_" 1
+              return $lib_src_stat
+            }
+          done
         }
 
-        # again, func_exists is in sys.lib.sh. But inline here:
+        # like func_exists is in sys.lib.sh. But inline here:
         type ${lib_id}_lib_load  2> /dev/null 1> /dev/null && {
 
           ${lib_id}_lib_load || { r=$?;
@@ -154,3 +167,7 @@ lib_init()
     shift
   done
 }
+
+#lib_unload() See COMPO:c-lib-reset
+#{
+#}

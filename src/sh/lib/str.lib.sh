@@ -40,9 +40,21 @@ str_lib_init()
 
 
 # ID for simple strings without special characters
-mkid()
+mkid() # Str Extra-Chars Substitute-Char
 {
-  id=$(printf -- "$1" | tr -sc 'A-Za-z0-9\/:_-' '-' )
+  local s="${2-}" c="${3-}"
+  # Use empty c if given explicitly, else default
+  test $# -gt 2 || c='\.\\\/:_'
+  test -n "$s" || s=-
+  test -n "${upper-}" && {
+    trueish "${upper-}" && {
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'a-z' 'A-Z')
+    } || {
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'A-Z' 'a-z')
+    }
+  } || {
+    id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" )
+  }
 }
 
 # to filter strings to variable id name
