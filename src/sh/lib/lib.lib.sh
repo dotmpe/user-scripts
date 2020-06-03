@@ -15,7 +15,8 @@ lib_lib_init()
     && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
   test -n "$lib_lib_log" || return 108
 
-  $lib_lib_log info "" "Loaded lib.lib" "$0"
+  scriptname=$scriptname:lib.lib:init scriptpid=$$ \
+    $lib_lib_log info "" "Loaded lib.lib" "$0"
 }
 
 lib_lib_log() { test -n "$LOG" && log="$LOG" || log="$lib_lib_log"; }
@@ -62,7 +63,8 @@ lib_load()
   test -n "$1" || return 198
   test -n "$lib_lib_log" || return 108 # NOTE: sanity
 
-  $lib_lib_log debug "" "Loading lib(s)" "$*"
+  scriptname=$scriptname:lib:load scriptpid=$$ \
+    $lib_lib_log debug "" "Loading lib(s)" "$*"
 
   local lib_id= f_lib_loaded= f_lib_path= r= lookup_test=${lookup_test:-"lib_exists"}
 
@@ -72,12 +74,14 @@ lib_load()
   do
     lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
     test -n "$lib_id" || {
-      $lib_lib_log error $scriptname:lib "err: lib_id=$lib_id" "" 1 || return
+      scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+        $lib_lib_log error "" "err: lib_id=$lib_id" "" 1 || return
     }
     f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
     test "$f_lib_loaded" = "0" && {
-        $lib_lib_log debug "$scriptname:lib" "Skipped loaded lib '$1'" ""
+      scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+        $lib_lib_log debug "" "Skipped loaded lib '$1'" ""
     } || {
 
         # Note: the equiv. code using sys.lib.sh is above, but since it may not
@@ -90,14 +94,17 @@ lib_load()
           done)"
 
         test -n "$f_lib_path" || {
-          $lib_lib_log error "$scriptname:lib" "No path for lib '$1'" "$SCRIPTPATH" 1 || return
+          scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+            $lib_lib_log error "" "No path for lib '$1'" "$SCRIPTPATH" 1 || return
         }
 
-        $lib_lib_log debug "$scriptname:lib" "Loading lib '$1'" ""
+        scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+          $lib_lib_log debug "" "Loading lib '$1'" ""
         test ${lookup_first:-0} -eq 0 && {
 
           . "$f_lib_path" || { r=$?; lib_src_stat=$r
-            $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path" 1
+            scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+              $lib_lib_log error "" "sourcing $1 ($r)" "$f_lib_path" 1
             return $lib_src_stat
           }
 
@@ -106,7 +113,8 @@ lib_load()
           for f_lib_path_ in $f_lib_path
           do
             . "$f_lib_path_" || { r=$?; lib_src_stat=$r
-              $lib_lib_log error "$scriptname:lib" "sourcing $1 ($r)" "$f_lib_path_" 1
+              scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+                $lib_lib_log error "" "sourcing $1 ($r)" "$f_lib_path_" 1
               return $lib_src_stat
             }
           done
@@ -117,7 +125,8 @@ lib_load()
 
           ${lib_id}_lib_load || { r=$?;
             eval ${lib_id}_lib_loaded=$r
-            $lib_lib_log error "$scriptname:lib" "in lib-load $1 ($r)" "$f_lib_path"
+            scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+              $lib_lib_log error "" "in lib-load $1 ($r)" "$f_lib_path"
             return $r
           }
         } || true
@@ -141,7 +150,8 @@ lib_assert()
   do
     mkvid "$1"
     test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
-      $lib_lib_log error $scriptname:lib "Assert loaded '$1'" "" 1
+      scriptname=$scriptname:lib.lib:assert:$1 scriptpid=$$ \
+        $lib_lib_log error "" "Assert loaded '$1'" "" 1
       return 1
     }
     shift
@@ -152,14 +162,16 @@ lib_assert()
 lib_init()
 {
   test $# -gt 0 || set -- $lib_loaded
-  $lib_lib_log info "$scriptname:lib" "Init libs '$*'" ""
+  scriptname=$scriptname:lib:init scriptpid=$$ \
+    $lib_lib_log info "" "Init libs '$*'" ""
 
   # TODO: init only once, set <libid>_lib_init=...
   while test $# -gt 0
   do
     type ${1}_lib_init 2> /dev/null 1> /dev/null && {
       ${1}_lib_init || { r=$?
-        $lib_lib_log error "$scriptname:lib" "in lib-init $1 ($r)" "" 1
+        scriptname=$scriptname:lib:init:$1 scriptpid=$$ \
+          $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
         return $r
       }
       eval ${1}_lib_init=0

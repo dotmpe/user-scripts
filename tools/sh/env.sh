@@ -4,11 +4,8 @@
 
 test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 
-: "${CWD:="$PWD"}"
-: "${sh_tools:="$CWD/tools/sh"}"
-: "${U_S:="$CWD"}"
+set -o | grep -q pipefail || sh_include env-strict
 
-: "${ci_tools:="$CWD/tools/ci"}"
 : "${build_tab:="build.txt"}"
 
 : "${APP_ID:="user-scripts"}" # No-Sync

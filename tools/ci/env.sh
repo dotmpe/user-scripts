@@ -4,7 +4,11 @@
 
 test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
-set -ueo pipefail
+sh_include env-strict env-0-1-lib-sys debug-exit
+
+ci_env_ts=$($gdate +"%s.%N")
+ci_stages="${ci_stages:-} ci_env"
+
 test "${DEBUG-}" = "1" && set -x
 
 : "${SUITE:="CI"}"
@@ -13,13 +17,6 @@ test "${DEBUG-}" = "1" && set -x
 : "${sh_tools:="$CWD/tools/sh"}"
 : "${U_S:="$CWD"}" # No-Sync
 : "${keep_going:=1}" # No-Sync
-
-. "./tools/sh/parts/debug-exit.sh"
-
-. "./tools/sh/parts/env-0-1-lib-sys.sh"
-
-ci_env_ts=$($gdate +"%s.%N")
-ci_stages="${ci_stages:-} ci_env"
 
 sh_env_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages sh_env"
