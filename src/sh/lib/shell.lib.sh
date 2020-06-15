@@ -47,10 +47,12 @@ shell_lib_init()
   test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
 
   local log=; req_init_log || return
-  $log debug "" "Running final shell.lib init"
+  local log_key=$scriptname/$$:u-s:shell:lib:init
+
+  log_key=$log_key $log debug "" "Running final shell.lib init"
 
   shell_check && sh_init_mode && sh_env_init &&
-  $log info "" "Loaded shell.lib" "$0"
+  log_key=$log_key $log info "" "Loaded shell.lib" "$0"
 }
 
 shell_lib_log() { test -n "${LOG-}"&&log="$LOG"||log="$INIT_LOG";req_log; }

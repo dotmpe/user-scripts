@@ -285,6 +285,10 @@ lookup_path() # VAR-NAME LOCAL-PATH
 {
   test $# -eq 2 || return
   test -n "${lookup_test-}" || lookup_test="lookup_exists"
+  func_exists $lookup_test || {
+    $LOG error "" "No lookup-test handler" "$lookup_test"
+    return 1
+  }
 
   lookup_path_list $1 | { while read _PATH
     do

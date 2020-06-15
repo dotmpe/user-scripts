@@ -213,7 +213,8 @@ case "$0" in "-*" ) * ;; */u-s )
   set -o pipefail # Bash-only
   #set -o posix
   
-  : "${CWD:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
+  : "${U_S:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
+  : "${CWD:="$U_S"}"
   . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || exit 101
 
   for x in basher dckr ledge git man travis user

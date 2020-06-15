@@ -15,12 +15,13 @@ lib_lib_init()
     && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
   test -n "$lib_lib_log" || return 108
 
-  scriptname=$scriptname:lib.lib:init scriptpid=$$ \
+  log_key=$scriptname/$$:u-s:\$1:lib:init \
     $lib_lib_log info "" "Loaded lib.lib" "$0"
 }
 
 lib_lib_log() { test -n "$LOG" && log="$LOG" || log="$lib_lib_log"; }
 
+# Check if loaded or list all loaded libs
 lib_loaded() # [Check-Libs...]
 {
   test $# -gt 0 && {
@@ -39,31 +40,34 @@ lib_loaded() # [Check-Libs...]
   }
 }
 
-# See sys.lib.sh lookup-exists
-lib_exists() # DIR NAME
+# Echoes if path exists. See sys.lib.sh lookup-exists
+lib_exists() # Dir Name
 {
   test -e "$1/$2.lib.sh" && echo "$1/$2.lib.sh"
 }
 
 # Echo every occurence of *.lib.sh on SCRIPTPATH
-lib_path() # local-name path-var-name
+lib_path() # Local-Name Path-Var-Name
 {
   test -n "${2-}" || set -- "$1" SCRIPTPATH
   lookup_test=${lookup_test:-"lib_exists"} lookup_path $2 "$1"
 }
 
-lib_lookup()
+# Echo only first result for lib_path
+lib_lookup() # Lib
 {
   lib_path "$1" | head -n 1
 }
 
 # Lookup and load sh-lib on SCRIPTPATH
-lib_load()
+lib_load() # Libs...
 {
-  test -n "$1" || return 198
-  test -n "$lib_lib_log" || return 108 # NOTE: sanity
+  test -n "${1-}" || return 198
+  test -n "${lib_lib_log-}" || return 108 # NOTE: sanity
 
-  scriptname=$scriptname:lib:load scriptpid=$$ \
+  local log_key=$scriptname/$$:u-s:lib:load
+
+  log_key=$log_key \
     $lib_lib_log debug "" "Loading lib(s)" "$*"
 
   local lib_id= f_lib_loaded= f_lib_path= r= lookup_test=${lookup_test:-"lib_exists"}
@@ -74,13 +78,13 @@ lib_load()
   do
     lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
     test -n "$lib_id" || {
-      scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+      log_key=$log_key \
         $lib_lib_log error "" "err: lib_id=$lib_id" "" 1 || return
     }
     f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
     test "$f_lib_loaded" = "0" && {
-      scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+      log_key=$log_key \
         $lib_lib_log debug "" "Skipped loaded lib '$1'" ""
     } || {
 
@@ -94,16 +98,15 @@ lib_load()
           done)"
 
         test -n "$f_lib_path" || {
-          scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+          log_key=$log_key \
             $lib_lib_log error "" "No path for lib '$1'" "$SCRIPTPATH" 1 || return
         }
 
-        scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
-          $lib_lib_log debug "" "Loading lib '$1'" ""
+        log_key=$log_key $lib_lib_log debug "" "Loading lib '$1'" ""
         test ${lookup_first:-0} -eq 0 && {
 
           . "$f_lib_path" || { r=$?; lib_src_stat=$r
-            scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+            log_key=$log_key \
               $lib_lib_log error "" "sourcing $1 ($r)" "$f_lib_path" 1
             return $lib_src_stat
           }
@@ -113,7 +116,7 @@ lib_load()
           for f_lib_path_ in $f_lib_path
           do
             . "$f_lib_path_" || { r=$?; lib_src_stat=$r
-              scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+              log_key=$log_key \
                 $lib_lib_log error "" "sourcing $1 ($r)" "$f_lib_path_" 1
               return $lib_src_stat
             }
@@ -125,7 +128,7 @@ lib_load()
 
           ${lib_id}_lib_load || { r=$?;
             eval ${lib_id}_lib_loaded=$r
-            scriptname=$scriptname:lib:load:$1 scriptpid=$$ \
+            log_key=$log_key \
               $lib_lib_log error "" "in lib-load $1 ($r)" "$f_lib_path"
             return $r
           }
@@ -143,15 +146,15 @@ lib_load()
 }
 
 # Verify lib was loaded or bail out
-lib_assert()
+lib_assert() # Libs...
 {
+  local log_key=$scriptname/$$:u-s:lib:assert
   test $# -gt 0 || return
   while test $# -gt 0
   do
     mkvid "$1"
     test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
-      scriptname=$scriptname:lib.lib:assert:$1 scriptpid=$$ \
-        $lib_lib_log error "" "Assert loaded '$1'" "" 1
+      log_key=$log_key $lib_lib_log error "" "Assert loaded '$1'" "" 1
       return 1
     }
     shift
@@ -162,16 +165,15 @@ lib_assert()
 lib_init()
 {
   test $# -gt 0 || set -- $lib_loaded
-  scriptname=$scriptname:lib:init scriptpid=$$ \
-    $lib_lib_log info "" "Init libs '$*'" ""
+  local log_key=$scriptname/$$:u-s:lib:init
+  log_key=$log_key $lib_lib_log info "" "Init libs '$*'" ""
 
   # TODO: init only once, set <libid>_lib_init=...
   while test $# -gt 0
   do
     type ${1}_lib_init 2> /dev/null 1> /dev/null && {
       ${1}_lib_init || { r=$?
-        scriptname=$scriptname:lib:init:$1 scriptpid=$$ \
-          $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
+        log_key=$log_key $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
         return $r
       }
       eval ${1}_lib_init=0
