@@ -125,9 +125,9 @@ try_value()
 {
   local value=
   test $# -gt 1 && {
-    value="$(eval echo "\"\$$(echo_local "$@")\"" 2>/dev/null || return )"
+    value="$(eval echo "\"\${$(echo_local "$@")-}\"" || return )"
   } || {
-    value="$(echo $(eval echo "\$$1" 2>/dev/null))"
+    value="$(echo $(eval echo "\${${1-}-}"))"
   }
   test -n "$value" || return 1
   echo "$value"
@@ -172,6 +172,7 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
 {
   test $# -le 3 || return
   while test $# -lt 3 ; do set -- "$@" "" ; done
+
   test -n "$1" || set -- .out "$2" "$3"
   test -n "$2" || set -- $1 $(get_uuid) "$3"
   test -n "$1" -a -n "$2" || $sys_lib_log error sys "empty arg(s)" "" 1

@@ -1,7 +1,9 @@
 #!/bin/sh
 
+# Look for load file at path and source shell script if found
 script_package_include() # SH_EXT ~ SCRIPT_PATH
 {
+  test $# -eq 1 || return
   set -- "$(realpath "$1")"
   for sh_ext in $SH_EXT sh
   do

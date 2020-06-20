@@ -67,10 +67,9 @@ lib_load() # Libs...
 
   local log_key=$scriptname/$$:u-s:lib:load
 
-  log_key=$log_key \
-    $lib_lib_log debug "" "Loading lib(s)" "$*"
+  log_key=$log_key $lib_lib_log debug "" "Loading lib(s)" "$*"
 
-  local lib_id= f_lib_loaded= f_lib_path= r= lookup_test=${lookup_test:-"lib_exists"}
+  local lib_id f_lib_loaded f_lib_path r lookup_test=${lookup_test:-"lib_exists"}
 
   # __load_lib: true if inside util.sh:lib-load
   test -n "${__load_lib-}" || local __load_lib=1
@@ -84,8 +83,7 @@ lib_load() # Libs...
     f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
 
     test "$f_lib_loaded" = "0" && {
-      log_key=$log_key \
-        $lib_lib_log debug "" "Skipped loaded lib '$1'" ""
+      log_key=$log_key $lib_lib_log debug "" "Skipped loaded lib '$1'" ""
     } || {
 
         # Note: the equiv. code using sys.lib.sh is above, but since it may not
@@ -182,6 +180,24 @@ lib_init()
   done
 }
 
+# TODO: lib-unload
 #lib_unload() See COMPO:c-lib-reset
 #{
 #}
+
+lib_require() # Libs...
+{
+  test -z "${__load_lib-}" || {
+    LIB_REQ="${LIB_REQ:-}$* "
+    return
+  }
+  test -z "${1-}" || lib_load "$@" || return
+  test -n "${LIB_REQ-}" || return 0
+  until test -z "${LIB_REQ-}"
+  do
+    set -- $LIB_REQ ; unset LIB_REQ
+    lib_load "$@"
+  done
+}
+
+# Id: U-S:src/sh/lib/lib.lib.sh                                   vim:ft=bash:

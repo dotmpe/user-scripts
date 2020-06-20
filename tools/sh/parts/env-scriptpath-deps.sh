@@ -43,14 +43,21 @@ trueish "${ENV_DEV-}" && {
 test -n "${VND_PATHS-}" ||
   VND_PATHS="$(unique_paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"
 
+# Look for deps at each VND_PATHS, source load.*sh file to let it setup
+# SCRIPTPATH
 for supportlib in $(grep '^\(git\|basher\) ' $CWD/dependencies.txt | cut -d' ' -f2);
 do
+
+  # Override VND_PATHS in Dev-Mode with basenames from ~/project that match
+  # dependency basename
   trueish "${ENV_DEV-}" && {
     test -d "$PROJECT_DIR/$(basename "$supportlib")" && {
       script_package_include "$PROJECT_DIR/$(basename "$supportlib")" && break
       $INIT_LOG "error" "" "Error including script-package at $PROJECT_DIR/$(basename "$supportlib")" 1
     }
   }
+
+  # Go over known locations and include user-script packages matching dependency
   for vnd_base in $VND_PATHS
   do
     test -d "$vnd_base/$supportlib" || continue

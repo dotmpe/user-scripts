@@ -13,19 +13,20 @@ functions_lib_load()
 
 # NOTE: its a bit fuzzy on the part after '<id>()' but works
 
-list_functions() # Sh-Files...
+list_functions() # Sh-File
 {
-  try_value list_functions_head || true
+  local file=$1
+  eval "echo \"$(try_value list_functions_head)\""
   trueish "${list_functions_scriptname-}" && {
     grep '^[A-Za-z0-9_\/-]*().*$' $1 | sed "s#^#$1 #"
   } || {
     grep '^[A-Za-z0-9_\/-]*().*$' $1
   }
-  try_value list_functions_tail || true
+  eval "echo \"$(try_value list_functions_tail)\""
   return 0
 }
 
-list_functions_foreach()
+list_functions_foreach() # Sh-Files...
 {
   p= s= act=list_functions foreach_do "$@"
 }
