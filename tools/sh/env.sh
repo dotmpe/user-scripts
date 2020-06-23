@@ -4,7 +4,8 @@
 
 test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 
-set -o | grep -q pipefail || sh_include env-strict
+: "${CWD:="$PWD"}"
+. "$CWD/tools/sh/parts/env-strict.sh"
 
 : "${build_tab:="build.txt"}"
 
