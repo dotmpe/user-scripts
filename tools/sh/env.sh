@@ -15,7 +15,7 @@ export scriptname=${scriptname:-"`basename -- "$0"`"}
 
 test -n "${sh_util_:-}" || {
 
-  . "$sh_tools/util.sh"
+  . "${sh_tools:=$CWD/tools/sh}/util.sh"
 }
 
 sh_include \
