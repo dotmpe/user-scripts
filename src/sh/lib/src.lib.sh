@@ -273,9 +273,9 @@ grep_all_before() # File Line Grep
 # find '<func>()' line and see if its preceeded by a comment. Return comment text.
 func_comment()
 {
-  test -n "$1" || error "function name expected" 1
-  test -n "$2" -a -e "$2" || error "file expected: '$2'" 1
-  test -z "$3" || error "surplus arguments: '$3'" 1
+  test -n "${1-}" || error "function name expected" 1
+  test -n "${2-}" -a -e "${2-}" || error "file expected: '$2'" 1
+  test -z "${3-}" || error "surplus arguments: '$3'" 1
 
   # find function line number, or return 1 ending function for no comment
   grep_line="$(grep -n "^\s*$1()" "$2" | cut -d ':' -f 1)"

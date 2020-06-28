@@ -463,7 +463,7 @@ go_to_dir_with()
 # Count lines with wc (no EOF termination correction)
 count_lines()
 {
-  test -z "$1" -o "$1" = "-" && {
+  test -z "${1-}" -o "${1-}" = "-" && {
     wc -l | awk '{print $1}'
   } || {
     while test $# -gt 0
@@ -477,7 +477,7 @@ count_lines()
 # Wrap wc but correct files with or w.o. trailing posix line-end
 line_count()
 {
-  test -s "$1" || return 42
+  test -s "${1-}" || return 42
   test $(filesize "$1") -gt 0 || return 43
   lc="$(echo $(od -An -tc -j $(( $(filesize $1) - 1 )) $1))"
   case "$lc" in "\n" ) ;;
@@ -491,7 +491,7 @@ line_count()
 # Count words
 count_words()
 {
-  test -z "$1" -o "$1" = "-" && {
+  test -z "${1-}" -o "${1-}" = "-" && {
     wc -w | awk '{print $1}'
   } || {
     while test -n "$1"
@@ -505,7 +505,7 @@ count_words()
 # Count every character
 count_chars()
 {
-  test -n "$1" && {
+  test -n "${1-}" && {
     while test -n "$1"
     do
       wc -c $1 | awk '{print $1}'
@@ -528,7 +528,7 @@ count_char() # Char
 # Count tab-separated columns on first line. One line for each file.
 count_cols()
 {
-  test -n "$1" && {
+  test -n "${1-}" && {
     while test -n "$1"
     do
       { printf '\t'; head -n 1 "$1"; } | count_char '\t'
