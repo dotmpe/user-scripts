@@ -140,18 +140,25 @@ init-git-dep()
   } )
 }
 
-init-basher-dep()
+init-basher-dep() # Repo Version-Ref
 {
   test $# -ge 1 -a $# -le 2 || return 98
-  test -z "${2:-}" && {
+  local package_path=$(basher package-path "$1")
+  test -e "$package_path" && {
 
-    basher install "$1" || return
+    basher upgrade "$1"
+
   } || {
+    test -z "${2:-}" && {
 
-    BASHER_FULL_CLONE=true basher install "$1" || return
-    (
-      cd $(basher package-path "$1") && git reset --quiet --hard origin/$2
-    )
+      basher install "$1" || return
+    } || {
+
+      BASHER_FULL_CLONE=true basher install "$1" || return
+      (
+        cd $(basher package-path "$1") && git reset --quiet --hard origin/$2
+      )
+    }
   }
 }
 
