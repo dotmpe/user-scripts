@@ -115,7 +115,8 @@ try_exec_func()
 # TODO: redesign @Dsgn
 try_var()
 {
-  local value="$(eval echo "\$$1")"
+  local value=
+  eval "value=\"\$$1\"" >/dev/null 2>/dev/null
   test -n "$value" || return 1
   echo $value
 }
