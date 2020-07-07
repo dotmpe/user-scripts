@@ -53,7 +53,7 @@ sh_include() # Parts...
 
   test -n "${sh_include_path:-}" || {
     local sh_include_path
-    sh_include_path_dirs="$( sh_include_path_dirs ${sh_include_path_basedirs:-} )"
+    sh_include_path="$( sh_include_path_dirs ${sh_include_path_basedirs:-} )"
   }
 
   local sh_include_partid sh_include_base
@@ -62,7 +62,7 @@ sh_include() # Parts...
   do
     test -z "${sh_include_debug:-}" ||
       print_err info "" "looking for $sh_include_partid at" "$sh_include_path"
-    for sh_include_base in $sh_include_path_dirs
+    for sh_include_base in $sh_include_path
     do test -e "$sh_include_base/$sh_include_partid.sh" && break || continue
     done
 

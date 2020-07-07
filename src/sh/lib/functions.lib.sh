@@ -156,3 +156,18 @@ list_sh_calls_foreach()
   }
   p= s= act=list_sh_calls_foreach_inner foreach_do "$@"
 }
+
+# List functions matching grep pattern in files
+functions_find() # Grep Sh-Files
+{
+  local grep="$1" ; shift
+  falseish "$first_match" && first_match=
+  for file in $@
+  do
+    grep -q '^\s*'"$grep"'().*$' $file || continue
+    echo "$file"
+    test -n "$first_match" || break
+  done
+}
+
+#

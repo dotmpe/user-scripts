@@ -19,7 +19,6 @@ src_lib_init()
 }
 
 
-
 # Insert into file using `ed`. Accepts literal content as argument.
 # file-insert-at 1:file-name[:line-number] 2:content
 # file-insert-at 1:file-name 2:line-number 3:content
@@ -27,7 +26,6 @@ file_insert_at_spc=" ( FILE:LINE | ( FILE LINE ) ) INSERT "
 file_insert_at()
 {
   test -x "$(which ed)" || error "'ed' required" 1
-
   test -n "$*" || error "arguments required" 1
 
   local file_name= line_number=
@@ -325,14 +323,14 @@ read_head_comment()
 # backup-header-comment file [suffix-or-abs-path]
 backup_header_comment() # Src-File [.header]
 {
-  test -n "$2" || set -- "$1" ".header"
+  test -f "${1-}" || return
+  test -n "${2-}" || set -- "$1" ".header"
   fnmatch "/*" "$2" \
     && backup_file="$2" \
     || backup_file="$1$2"
   # find last line of header, add output to backup
   read_head_comment "$1" >"$backup_file" || return $?
 }
-
 
 # Return span of lines from Src, starting output at Start-Line and ending
 # Span-Lines later, or at before End-Line.
