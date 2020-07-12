@@ -60,7 +60,7 @@ pathname() # PATH EXT...
 pathnames() # exts=... [ - | PATHS ]
 {
   test -n "${exts-}" || exit 40
-  test -n "$*" -a "${1-}" != "-" && {
+  test "${1--}" != "-" && {
     for path in "$@"
     do
       pathname "$path" $exts
@@ -102,9 +102,10 @@ dotname() # Path [Ext-to-Strip]
 basenames()
 {
   test -n "${exts-}" || {
-    test -e "$1" || fnmatch ".*" "$1" && { exts="$1"; shift; }
+    fnmatch ".*" "$1" || return
+    exts="$1"; shift
   }
-  while test -n "${1-}"
+  while test $# -gt 0
   do
     name="$1"
     shift
@@ -119,9 +120,10 @@ basenames()
 # for each argument echo filename-extension suffix (last non-dot name element)
 filenamext() # Name..
 {
-  while test -n "$1"; do
+  test $# -gt 0 || return
+  while test $# -gt 0; do
     basename -- "$1"
-  shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
+    shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
 }
 
 # Return basename for one file, using filenamext to extract extension.
@@ -372,7 +374,7 @@ enum_nix_style_file()
 # Test for file or return before read
 read_if_exists()
 {
-  test -n "$1" || return 1
+  test -n "${1-}" || return 1
   read_nix_style_file "$@" 2>/dev/null || return 1
 }
 
@@ -381,7 +383,7 @@ read_if_exists()
 # is broken.
 lines_while() # CMD
 {
-  test -n "$1" || return
+  test $# -gt 0 || return
 
   line_number=0
   while read -r line
@@ -395,7 +397,7 @@ lines_while() # CMD
 # Offset content from input/file to line-based window.
 lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 {
-  test -n "$3" || error "File-Path expected" 1
+  test -n "${3-}" || error "File-Path expected" 1
   test "$3" = "-" && set -- "$1" "$2"
   test -n "$1" && {
     test -n "$2" && { # Start - End: tail + head
@@ -422,9 +424,9 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 #
 read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
 {
-  test -n "$1" || error "Argument expected (1)" 1
+  test -n "${1-}" || error "Argument expected (1)" 1
   test -f "$1" || error "Not a filename argument: '$1'" 1
-  test -n "$2" -a -z "$5" || return
+  test -n "${2-}" -a $# -le 4 || return
   local stat=''
 
   read_lines_while_inner()
@@ -463,8 +465,9 @@ go_to_dir_with()
 # Count lines with wc (no EOF termination correction)
 count_lines()
 {
-  test -z "${1-}" -o "${1-}" = "-" && {
+  test "${1-"-"}" = "-" && {
     wc -l | awk '{print $1}'
+    return
   } || {
     while test $# -gt 0
     do
@@ -491,10 +494,11 @@ line_count()
 # Count words
 count_words()
 {
-  test -z "${1-}" -o "${1-}" = "-" && {
+  test "${1:-"-"}" = "-" && {
     wc -w | awk '{print $1}'
+    return
   } || {
-    while test -n "$1"
+    while test $# -gt 0
     do
       wc -w $1 | awk '{print $1}'
       shift
@@ -505,14 +509,15 @@ count_words()
 # Count every character
 count_chars()
 {
-  test -n "${1-}" && {
-    while test -n "$1"
+  test "${1:-"-"}" = "-" && {
+    wc -w | awk '{print $1}'
+    return
+  } || {
+    while test $# -gt 0
     do
       wc -c $1 | awk '{print $1}'
       shift
     done
-  } || {
-    wc -w | awk '{print $1}'
   }
 }
 
@@ -528,8 +533,8 @@ count_char() # Char
 # Count tab-separated columns on first line. One line for each file.
 count_cols()
 {
-  test -n "${1-}" && {
-    while test -n "$1"
+  test $# -gt 0 && {
+    while test $# -gt 0
     do
       { printf '\t'; head -n 1 "$1"; } | count_char '\t'
       shift

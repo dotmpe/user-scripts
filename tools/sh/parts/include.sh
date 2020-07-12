@@ -67,7 +67,7 @@ sh_include() # Parts...
     done
 
     test -e "$sh_include_base/$sh_include_partid.sh" || {
-      print_err error "" "no sh_include $sh_include_partid" "$?"
+      print_err error "" "no sh_include $sh_include_partid" "$CWD $?"
       return 1
     }
 

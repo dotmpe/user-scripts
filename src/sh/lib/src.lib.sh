@@ -280,7 +280,7 @@ func_comment()
   case "$grep_line" in [0-9]* ) ;; * ) return 1 ;; esac
 
   lines=$(echo "$grep_line" | count_words)
-  test $lines -gt 1 && {
+  test ${lines-0} -gt 1 && {
     error "Multiple lines for function '$1'"
     return 1
   }
@@ -289,7 +289,7 @@ func_comment()
   grep_to_first '^\s*#' "$2" "$(( $grep_line - 1 ))"
 
   # return and reformat comment lines
-  source_lines "$2" $first_line $grep_line | sed -E 's/^\s*#\ ?//'
+  source_lines "$2" ${first_line-0} $grep_line | sed -E 's/^\s*#\ ?//'
 }
 
 grep_head_comment_line()
@@ -344,8 +344,8 @@ backup_header_comment() # Src-File [.header]
 source_lines() # Src Start-Line End-Line [Span-Lines]
 {
   test -f "$1" || return
-  test -n "$2" && start_line=$2 || start_line=0
-  test -n "$Span_Lines" || Span_Lines=$4
+  test -n "${2-}" && start_line=$2 || start_line=0
+  test -n "${Span_Lines-}" || Span_Lines=${4-}
   test -n "$Span_Lines" || {
     end_line=$3
     test -n "$end_line" || end_line=$(count_lines "$1")
@@ -371,7 +371,7 @@ expand_source_line() # Src-File Line
   local srcfile="$(source_lines "$1" "$2" "" 1 | awk '{print $2}')"
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile" || return
-  trueish "$keep_source" || rm $srcfile
+  trueish "${keep_source-0}" || rm $srcfile
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 
@@ -381,7 +381,7 @@ expand_srcline()
 {
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile"
-  trueish "$keep_source" || rm $srcfile
+  trueish "${keep_source-0}" || rm $srcfile
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 
