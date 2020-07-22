@@ -106,10 +106,10 @@ try_exec_func()
   test -n "$1" || return 97
   test -n "$sys_lib_log" || return 108
   $sys_lib_log debug "sys" "try-exec-func '$1'"
-  func_exists $1 || return $?
+  func_exists $1 || return
   local func=$1
   shift 1
-  $func "$@" || return $?
+  $func "$@" || return
 }
 
 # TODO: redesign @Dsgn
@@ -128,7 +128,7 @@ try_value()
   test $# -gt 1 && {
     value="$(eval echo "\"\${$(echo_local "$@")-}\"" || return )"
   } || {
-    value="$(echo $(eval echo "\${${1-}-}"))"
+    value="$(eval echo \"\${${1-}-}\" || return )"
   }
   test -n "$value" || return 1
   echo "$value"
@@ -207,7 +207,8 @@ sys_confirm()
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
 {
-  test -e "$1" -o -e "$2" || {
+  test $# -ge 1 -a -n "$1" -o -n "${2-}" || return
+  test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
   }
@@ -432,22 +433,26 @@ settitle()
 }
 
 # Return non-zero if default was set, or present value does not match default
-default_env() # VAR-NAME DEFAULT-VALUE
+default_env() # VAR-NAME DEFAULT-VALUE [Level]
 {
   test -n "${1-}" -a $# -eq 2 || error "default-env requires two args ($*)" 1
-  local vid= sid= id= v=
+  local vid= cid= id= v= c=0
   trueish "${title-}" && upper= || {
     test -n "${upper-}" || upper=1
   }
   mkvid "$1"
-  mksid "$1"
+  mkcid "$1"
   unset upper
   v="$(eval echo \$$vid 2>/dev/null )"
+  test -n "${3-}" || set -- "$1" "$2" "debug"
   test -n "$v" && {
-    test "$v" = "${2-}"
-    return $?
+    test "$v" = "${2-}" || c=$?
+      test $c -eq 0 &&
+        $3 "Default $cid env ($vid)" ||
+        $3 "Custom $cid env ($vid): '${2-}'"
+    return $c
   } || {
-    debug "No $sid env ($vid), using '${2-}'"
+    $3 "No $cid env ($vid), using default '${2-}'"
     eval $vid="${2-}"
     return 0
   }
@@ -560,3 +565,5 @@ exec_arg() # CMDLINE [ -- CMDLINE ]...
   $sys_lib_log info sys "Exec-arg: executed $execnr lines"
   test $execnr -gt 0 || return 1
 }
+
+# Sync: BIN:

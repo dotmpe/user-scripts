@@ -59,6 +59,33 @@ lib_lookup() # Lib
   lib_path "$1" | head -n 1
 }
 
+# List matching names existing on path.
+lib_glob() # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
+{
+  shopt -s nullglob
+  lib_names() # Dir Pattern
+  {
+    echo "$1/"$2".lib.sh"
+  }
+  test -n "${1-}" || set -- "*" "${2-}" "${3-"paths"}"
+  test -n "${2-}" || set -- "$1" "SCRIPTPATH" "${3-"paths"}"
+  lookup_test=${lookup_test:-"lib_names"} lookup_path $2 "$1" | {
+    case ${3-"paths"} in
+      names ) tr -s ' ' '\n' | sed 's/^.*\/\([^\.]*\)\..*$/\1/' | tr '\n' ' ' ;;
+      names-list ) tr -s ' ' '\n' | sed 's/^.*\/\([^\.]*\)\..*$/\1/' | tr '\n' ' ' | tr -s ' ' '\n' ;;
+      paths ) tr -d '\n' ;;
+      paths-list ) tr -d '\n' | tr -s ' ' '\n' ;;
+      * ) return 2 ;;
+    esac
+  }
+}
+
+# List all libs in format (see lib-glob)
+lib_list() # [Path-Var-Name] [Format]
+{
+  lib_glob "*" "${1-"SCRIPTPATH"}" "${2-"names-list"}"
+}
+
 # Lookup and load sh-lib on SCRIPTPATH
 lib_load() # Libs...
 {

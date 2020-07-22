@@ -58,7 +58,7 @@ mkid() # Str Extra-Chars Substitute-Char
 }
 
 # to filter strings to variable id name
-mkvid()
+mkvid() # STR
 {
   test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
   trueish "${upper-}" && {
@@ -72,9 +72,11 @@ mkvid()
   vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
   # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
 }
+
+# Simpler than mksid but no case-change
 mkcid()
 {
-  cid=$(echo "$1" | sed 's/\([^a-z0-9-]\|\-\)/-/g')
+  cid=$(echo "$1" | sed 's/\([^A-Za-z0-9-]\|\-\)/-/g')
 }
 
 # x-platform regex match since Bash/BSD test wont chooche on older osx

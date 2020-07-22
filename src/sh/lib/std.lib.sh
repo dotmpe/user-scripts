@@ -24,7 +24,16 @@ std_lib_check()
   std_iotype_check
 }
 
+# XXX: use as part of std suite?
+  # stdio_0_type= stdio_1_type= stdio_2_type=
+  # std.lib.sh
+  #{
+  #    stdio_type 0 $$ &&
+  #    stdio_type 1 $$ &&
+  #    stdio_type 2 $$
+  #} || return
 
+# Check for Linux, MacOS or Cygwin.
 std_iotype_check()
 {
   case "$uname" in

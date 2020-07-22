@@ -37,11 +37,13 @@ functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Gre
   test -n "$1" -a $# -gt 1 || return 98
   local grep="$1" ; shift
   not_trueish "$first_match" && first_match=0 || first_match=1
+  true "${grep_f:="-Hn"}"
   for file in "$@"
   do
-    grep -Hn '^\s*'"$grep"'()' "$file" || continue
+    grep ${grep_f}P '^\s*'"$grep"'\s*(?= \(\))' "$file" || continue
     test 0 -eq $first_match || break
   done
+  unset grep_f
 }
 
 # List all function declaration lines found in given source, or current executing

@@ -31,7 +31,7 @@ mkid() # Str Extra-Chars Substitute-Char
 # Produces ID's for env vars or maybe a issue tracker system.
 # TODO: introduce a snake+camel case variant for Pretty-Tags or Build_Vars?
 # For real pretty would want lookup for abbrev. Too complex so another function.
-mksid()
+mksid() # STR
 {
   test $# -gt 2 || set -- "${1-}" "${2-}" "_"
   mkid "$@" ; sid=$id ; unset id
@@ -39,8 +39,7 @@ mksid()
 # Sync-Sh: BIN:str-htd.lib.sh
 
 # Variable-like ID for any series of chars, only alphanumerics and underscore
-# mkvid STR
-mkvid()
+mkvid() # STR
 {
   test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
   trueish "${upper-}" && {
@@ -54,4 +53,11 @@ mkvid()
   vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
   # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
 }
+
+# Simpler than mksid but no case-change
+mkcid()
+{
+  cid=$(echo "$1" | sed 's/\([^A-Za-z0-9-]\|\-\)/-/g')
+}
+
 # Sync-Sh: BIN:str-htd.lib.sh
