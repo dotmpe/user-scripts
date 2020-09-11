@@ -159,6 +159,8 @@ init() # ( 0 | 1 [~ [~ [~]]] )
 
   load_init_bats
 
+  load() { load_override "$@"; }
+
 # FIXME: deal with sub-envs wanting to know about lib-envs exported by parent
 # ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
 # and dealing only with current env, testing lib-load and tools, user-scripts.

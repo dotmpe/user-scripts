@@ -9,6 +9,7 @@ init() #
 
   sys_man=$(which man)
   man() { u_s_man; }
+
   : "${offline:=}"
 
   # Bootstrap SCRIPTPATH and default-libs, then return to main routine
@@ -215,7 +216,8 @@ case "$0" in "-*" ) * ;; */u-s )
   
   : "${U_S:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
   : "${CWD:="$U_S"}"
-  . "${sh_tools:="$CWD/tools/sh"}/u-s-env.sh" || exit 101
+  : "${sh_tools:="$CWD/tools/sh"}"
+  . "${_ENV:="$sh_tools/u_s-env.sh"}" || exit 101
 
   for x in basher dckr ledge git man travis user
   do

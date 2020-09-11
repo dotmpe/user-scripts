@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
 docid="$(basename -- "$1" -lib.missing-deps)" &&
 case "$docid" in
     default.lib-deps ) exit 21 ;; # refuse to build non lib

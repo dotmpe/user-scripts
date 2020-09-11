@@ -1,5 +1,7 @@
 #!/bin/sh
 
+## RegEx strings
+
 match_lib_init()
 {
   test "${match_lib_init-}" = "0" || {
@@ -34,3 +36,5 @@ match_grep_pattern_test()
     return 1
   }
 }
+
+#

@@ -13,9 +13,12 @@ shell_lib_load()
   test -n "${MPE_ENV_NAME-}" || MPE_ENV_NAME=dev
   test -n "${CS-}" || CS=dark
   test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
+  test -n "${SH_SID-}" || SH_SID=$(get_uuid)
 
   # Shell Name (no path/ext)
   SHELL_NAME="$(basename -- "$SHELL")"
+
+  declare -g -A shell_cached
 }
 
 # Init env by testing for key vars, set <SHELL>_SH=[01] based on name,
@@ -144,7 +147,7 @@ sh_env_init()
   }
   sh_genv() # Grep for var names
   {
-    sh_env | grep "^$1="
+    sh_env | grep "$1"
   }
 }
 
@@ -261,3 +264,12 @@ record_env_diff_keys()
   $log info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }
+
+shell_cached () # Cmd Args...
+{
+  local vid; mkvid "$*"
+  test "${shell_cached["$vid"]+isset}" || shell_cached["$vid"]="$("$@")"
+  echo "${shell_cached["$vid"]}"
+}
+
+#

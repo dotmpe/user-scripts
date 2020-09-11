@@ -39,8 +39,7 @@ all()
 
 # Main
 
-. "${TEST_ENV:=tools/ci/env.sh}"
-
+init_sh_libs="script redo build" . "${_ENV:=tools/main/env.sh}"
 main_test_ "$(basename -- "$0" .sh)" "$@"
 
 # Derive: tools/sh/parts/init.sh

@@ -265,6 +265,7 @@ case "$(basename -- "$0" .sh)" in
       . "$CWD/tools/sh/parts/env-0-1-lib-sys.sh"
       . "$CWD/tools/sh/parts/env-0-src.sh"
       . "$CWD/tools/sh/parts/env-0.sh"
+      . "$CWD/tools/sh/parts/fnmatch.sh"
       # XXX: . "${ci_tools:="$CWD/tools/ci"}/env.sh"
 
       "$@"

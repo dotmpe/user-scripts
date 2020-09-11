@@ -1,12 +1,13 @@
 #!/bin/sh
 
+## Log helper module
+
 log_lib_init()
 {
   test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
     && init_log="$LOG" || init_log="$INIT_LOG"
   # XXX: log test -n "$LOG" && init_log="$LOG" || init_log="$INIT_LOG"
 }
-
 
 req_log()
 {

@@ -207,31 +207,32 @@ stderr() # level msg exit
   case "$(echo $1 | tr 'A-Z' 'a-z')" in
 
     crit*)
-        bb=${yellow}; bk=$default
+        bb=${yellow-}; bk=${default-}
         test "$CS" = "light" \
           && crit_label_c="\033[38;5;226;48;5;249m" \
-          || crit_label_c="${yellow}"
-        log "${bld}${crit_label_c}$1${norm}${blackb}: ${bdefault}$2${norm}" 1>&2 ;;
+          || crit_label_c="${yellow-}"
+        log "${bld-}${crit_label_c}$1${norm-}${blackb-}: ${bdefault-}$2${norm-}" 1>&2 ;;
     err*)
-        bb=${red}; bk=$grey
-        log "${bld}${red}$1${blackb}: ${norm}${bdefault}$2${norm}" 1>&2 ;;
+        bb=${red-}; bk=${grey-}
+        log "${bld-}${red-}$1${blackb-}: ${norm-}${bdefault-}$2${norm-}" 1>&2 ;;
     warn*|fail*)
-        bb=${darkyellow}; bk=$grey
+        bb=${darkyellow-}; bk=${grey-}
         test "$CS" = "light" \
             && warning_label_c="\033[38;5;255;48;5;220m"\
-            || warning_label_c="${darkyellow}";
-        log "${bld}${warning_label_c}$1${norm}${grey}${bld}: ${default}$2${norm}" 1>&2 ;; notice )
-        bb=${purple}; bk=$grey
-        log "${grey}${default}$2${norm}" 1>&2 ;;
+            || warning_label_c="${darkyellow-}";
+        log "${bld-}${warning_label_c}$1${norm-}${grey-}${bld-}: ${default-}$2${norm-}" 1>&2 ;;
+   notice )
+        bb=${purple-}; bk=${grey-}
+        log "${grey-}${default-}$2${norm-}" 1>&2 ;;
     info )
-        bb=${blue}; bk=$grey
-        log "${grey}$2${norm}" 1>&2 ;;
+        bb=${blue-}; bk=${grey-}
+        log "${grey-}$2${norm-}" 1>&2 ;;
     ok|pass* )
-        bb=${grn}; bk=$grey
-        log "${default}$2${norm}" 1>&2 ;;
+        bb=${grn-}; bk=${grey-}
+        log "${default-}$2${norm-}" 1>&2 ;;
     * )
-        bb=${drgrey} ; bk=$grey
-        log "${grey}$2${norm}" 1>&2 ;;
+        bb=${drgrey-} ; bk=${grey-}
+        log "${grey-}$2${norm-}" 1>&2 ;;
 
   esac
   test -z "${3-}" || {
@@ -242,10 +243,10 @@ stderr() # level msg exit
 
 # std-v <level>
 # if verbosity is defined, return non-zero if <level> is below verbosity treshold
-std_v()
+std_v() # Log-Level
 {
-  test -z "$verbosity" && return || {
-    test $verbosity -ge $1 && return || return 1
+  test -z "${verbosity:-${v:-}}" && return || {
+    test ${verbosity:-${v:-}} -ge $1 && return || return 1
   }
 }
 
@@ -263,42 +264,42 @@ std_exit()
 emerg()
 {
   local log=; req_init_log
-  std_v 1 || std_exit ${2-} || return 0
-  stderr "Emerg" "$1" ${2-}
+  std_v 1 && stderr "Emerg" "$1" ${2-}
+  std_exit ${2-}
 }
 crit()
 {
   local log=; req_init_log
-  std_v 2 || std_exit ${2-} || return 0
-  stderr "Crit" "$1" ${2-}
+  std_v 2 && stderr "Crit" "$1" ${2-}
+  std_exit ${2-}
 }
 error()
 {
   local log=; req_init_log
-  std_v 3 || std_exit ${2-} || return 0
-  stderr "Error" "$1" ${2-}
+  std_v 3 && stderr "Error" "$1" ${2-}
+  std_exit ${2-}
 }
 warn()
 {
   local log=; req_init_log
-  std_v 4 || std_exit ${2-} || return 0
-  stderr "Warning" "$1" ${2-}
+  std_v 4 && stderr "Warning" "$1" ${2-}
+  std_exit ${2-}
 }
 note()
 {
   local log=; req_init_log
-  std_v 5 || std_exit ${2-} || return 0
-  stderr "Notice" "$1" ${2-}
+  std_v 5 && stderr "Notice" "$1" ${2-}
+  std_exit ${2-}
 }
 std_info()
 {
   local log=; req_init_log
-  std_v 6 || std_exit ${2-} || return 0
-  stderr "Info" "$1" ${2-}
+  std_v 6 && stderr "Info" "$1" ${2-}
+  std_exit ${2-}
 }
 debug()
 {
   local log=; req_init_log
-  std_v 7 || std_exit ${2-} || return 0
-  stderr "Debug" "$1" ${2-}
+  std_v 7 && stderr "Debug" "$1" ${2-}
+  std_exit ${2-}
 }

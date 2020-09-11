@@ -1,6 +1,6 @@
 #!/bin/sh
 
-### Auto-completion
+## Bash Auto-completion
 
 bash_ac_lib_load()
 {

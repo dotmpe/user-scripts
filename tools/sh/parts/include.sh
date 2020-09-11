@@ -30,7 +30,7 @@ sh_include_path_dirs()
       set -- "$CWD" || set -- "$CWD" "$U_S"
   }
 
-  for basedir in "$@"
+  for basedir in $@
   do
     for subdir in $sh_include_path_subdirs
     do
@@ -42,9 +42,10 @@ sh_include_path_dirs()
 
 # Include file by name-id from from $PWD/tools and other tools directories.
 # By default sets sh_include_suites=ci,sh and sh_include_path=$PWD,$U_S.
-sh_include() # Parts...
+sh_include () # Source first existing ~ Parts...
 {
   test $# -gt 0 || return
+  test -n "${LOG-}" || local LOG=print_err
 
   test -n "${sh_include_path_subdirs:-}" || {
     local sh_include_path_subdirs
@@ -61,25 +62,24 @@ sh_include() # Parts...
   for sh_include_partid in $*
   do
     test -z "${sh_include_debug:-}" ||
-      print_err info "" "looking for $sh_include_partid at" "$sh_include_path"
+      $LOG info "" "looking for $sh_include_partid at" "$sh_include_path"
     for sh_include_base in $sh_include_path
     do test -e "$sh_include_base/$sh_include_partid.sh" && break || continue
     done
 
     test -e "$sh_include_base/$sh_include_partid.sh" || {
-      print_err error "" "no sh_include $sh_include_partid" "$CWD $?"
+      $LOG error "" "no sh_include $sh_include_partid" "$CWD $?: $sh_include_path"
       return 1
     }
 
     test -n "${sh_include_dry:-}" &&
-      echo "sh-include $sh_include_base/$sh_include_partid.sh" || {
+      echo "$sh_include_base/$sh_include_partid.sh" || {
         sh_include_path= \
         . "$sh_include_base/$sh_include_partid.sh" || {
-          print_err error "" "at sh_include $sh_include_partid" "$?" $?
+          $LOG error "" "at sh_include $sh_include_partid" "$?" $?
       }
     }
   done
-
 }
 
 # Id: U-S:

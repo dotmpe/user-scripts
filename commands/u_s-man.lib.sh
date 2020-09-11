@@ -1,10 +1,53 @@
 #!/usr/bin/env bash
 
+# Assemble, convert or access User-Scripts man pages
 
 u_s_man() #
 {
   print_err error "" "This is u-s man. Use help [TOPIC] or topics to access local manual sources."
   return 1
+}
+
+build_manual () # Section Topic
+{
+  pandoc -s -f markdown+definition_lists+pandoc_title_block -t man  "$@"
+}
+
+build_manual_src_parts () # Section Topic
+{
+  local fmt src section=$1 topic=$2
+
+  { grep "^[^# ]\+ $section $topic\($\| [^ ]\+\)" $U_S_MAN ||
+      $LOG warn "" "No source for manual" "$topic($section)" 120
+  } | {
+    while read fmt section topic src parts
+    do
+      true "${src:="$topic"}"
+      for part in $parts
+      do
+        build-ifchange src/$fmt/man/$src-$part.$fmt || {
+          build-keep-going || return
+        }
+      done
+      build_manual src/$fmt/man/$src*.$fmt
+    done
+  }
+}
+
+build_manuals ()
+{
+  local section topic
+  read_nix_style_file $U_S_MAN | while read _ section topic _
+  do
+    build-ifchange src/man/man$section/$topic.$section
+  done
+  true "${sh_libs_list:="$REDO_BASE/.cllct/src/sh-libs.list"}"
+  sort -u "$sh_libs_list" | while read lib_id src
+  do
+    sh_lib_base="$REDO_BASE/.cllct/src/functions/$lib_id-lib"
+    sh_lib_list="$sh_lib_base.func-list"
+    build-ifchange $REDO_BASE/src/man/man7/User-Script:$lib_id.7
+  done
 }
 
 # XXX: topic should be parts of files, not file names? Like commands. #MJfc

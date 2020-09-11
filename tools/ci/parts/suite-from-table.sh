@@ -1,3 +1,7 @@
+#!/bin/sh
+
+## Echo lines in suite
+
 suite_from_table() # Table Name-Column Order-Column Order-Prefix
 {
   test $# -ge 3 -a -f "${1:-}" || return 98

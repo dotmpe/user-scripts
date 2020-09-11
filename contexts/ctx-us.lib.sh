@@ -10,9 +10,10 @@ ctx_us_lib_init()
 
 ctx__UserScript__init_env()
 {
-  fnmatch ""
-    unset -f lib_load
-    ENV_DEV=1 CWD=$PWD . $U_S/tools/sh/init.sh
-    CTX_P+=" @UserScript"
+  true
+  #fnmatch ""
+  #  unset -f lib_load
+  #  ENV_DEV=1 CWD=$PWD . $U_S/tools/sh/init.sh
+  #  CTX_P+=" @UserScript"
   #}
 }

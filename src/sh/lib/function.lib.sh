@@ -4,7 +4,7 @@
 # Set line-number to start-line-number of Sh function
 function_linenumber() # Func-Name File-Path
 {
-  test -n "$1" -a -e "$2" || error "function-linenumber FUNC FILE" 1
+  test -n "${1-}" -a -e "${2-}" || error "function-linenumber FUNC FILE" 1
   file_where_grep "^$1()\(\ {\)\?\(\ \#.*\)\?\(.* }\)\?$" "$2" || return
   test -n "$line_number" || {
     error "No line-nr for '$1' in '$2'"
@@ -17,7 +17,7 @@ function_linenumber() # Func-Name File-Path
 # Set start-line, end-line and span-lines for Sh function ( end = start + span )
 function_linerange() # Func-Name Script-File
 {
-  test -n "$1" -a -e "$2" || error "function-linerange FUNC FILE" 1
+  test -n "${1-}" -a -e "${2-}" || error "function-linerange FUNC FILE" 1
   function_linenumber "$@" || return
   start_line=$line_number
   span_lines=$(
@@ -29,22 +29,22 @@ function_linerange() # Func-Name Script-File
 
 insert_function() # Func-Name Script-File Func-Code
 {
-  test -n "$1" -a -e "$2" -a -n "$3" || error "insert-function FUNC FILE FCODE" 1
-  file_insert_at $2 "$(cat <<-EOF
+  test -n "${1-}" -a -e "${2-}" -a -n "${3-}" || error "insert-function FUNC FILE FCODE" 1
+  file_insert_at $2 "$(cat <<HERE
 $1()
 {
 $3
 }
 
-EOF
-  ) "
+HERE
+  )"
 }
 
 
 # Output the function, including envelope
 copy_function() # Func-Name Script-File
 {
-  test -n "$1" -a -f "$2" || error "copy-function FUNC FILE" 1
+  test -n "${1-}" -a -f "${2-}" || error "copy-function FUNC FILE" 1
   function_linerange "$@" || return
   span_lines=$(( $end_line - $start_line ))
   tail -n +$start_line $2 | head -n $span_lines
@@ -53,7 +53,7 @@ copy_function() # Func-Name Script-File
 
 cut_function()
 {
-  test -n "$1" -a -f "$2" || error "cut-function FUNC FILE" 1
+  test -n "${1-}" -a -f "${2-}" || error "cut-function FUNC FILE" 1
   # Get start/span/end line numbers and remove
   copy_function "$@" || return
   file_truncate_lines "$2" "$(( $start_line - 1 ))" "$(( $end_line - 1 ))" ||
@@ -65,7 +65,7 @@ cut_function()
 # Either copy-only, or replaces code with source line to new external script.
 copy_paste_function() # Func-Name Src-File
 {
-  test -n "$1" -a -f "$2" ||
+  test -n "${1-}" -a -f "${2-}" ||
       error "copy-paste-function: Func-Name File expected " $?
   debug "copy_paste_function '$1' '$2' "
   sh_isset copy_only || copy_only=1

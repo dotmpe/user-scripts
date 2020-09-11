@@ -1,5 +1,7 @@
 #!/bin/sh
 
+## Color vars for log
+
 logger_theme_lib_load()
 {
   case $TERM in

@@ -44,13 +44,13 @@ setup()
   test -n "$BATS_LIB_PATH"
 
   # Better tested utils shipped to avoid using baselibs during test
-  run load extra
+  run load ../helper/extra
   test $status -eq 0 -a -z "${lines[*]}" || {
       printf "Status: $status\nLines:\n${lines[@]}"
       false
     }
 
-  load extra
+  load ../helper/extra
 
   # Bats test helpers
   run load stdtest

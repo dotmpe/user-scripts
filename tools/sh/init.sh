@@ -33,7 +33,7 @@ test -n "${LOG-}" -a -x "${LOG-}" -o \
 test -n "${U_S-}" -a -d "${U_S-}" || . $CWD/tools/sh/parts/env-0-u_s.sh
 
 # Must be started from script-package, or provide SCRIPTPATH
-test -n "${SCRIPTPATH-}" || . $CWD/tools/sh/parts/env-scriptpath-deps.sh
+test -n "${SCRIPTPATH-}" || . $U_S/tools/sh/parts/env-scriptpath-deps.sh
 
 test -n "${U_S-}" -a -d "${U_S-}" || $LOG "error" "" "Missing U-s" "$U_S" 1
 
@@ -55,7 +55,7 @@ test -z "${DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
 test "${init_sh_libs-}" = "0" || {
-  test -n "${init_sh_libs-}" -a "${init_sh_libs-}" != "1" ||
+  test "${init_sh_libs:-1}" != "1" ||
     init_sh_libs=sys\ os\ str\ script\ log\ shell
 
   $INIT_LOG "info" "$scriptname:sh:init" "Loading" "$init_sh_libs"
@@ -68,19 +68,23 @@ test "${init_sh_libs-}" = "0" || {
 
   lib_init $init_sh_libs ||
     $INIT_LOG "error" "$scriptname:init.sh" "Failed init'ing libs: $?" "$init_sh_libs" 1
-
-  test -n "${init_sh_boot-}" || init_sh_boot=1
-  test -n "$init_sh_boot" && {
-
-    test "$init_sh_boot" != "0" || init_sh_boot=null
-    test "$init_sh_boot" != "1" || init_sh_boot=null # FIXME: stderr-console-logger
-  }
-
-  test -z "${DEBUG-}" || echo sh_tools=$sh_tools scripts_init $init_sh_boot >&2
-  scripts_init $init_sh_boot ||
-    $INIT_LOG "error" "$scriptname:init.sh" "Failed at bootstrap '$init_sh_boot'" $? 1
 }
 
-# XXX: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
+test "$(type -f scripts_init 2>/dev/null)" = function && {
+  test "${init_sh_boot:-}" != "0" || init_sh_boot=null
+  test "${init_sh_boot:-1}" != "1" || init_sh_boot=stderr-console-logger
+
+  test -z "${DEBUG-}" || echo sh_tools=$sh_tools scripts_init $init_sh_boot >&2
+  scripts_init $init_sh_boot || {
+    $INIT_LOG "error" "$scriptname:init.sh" "Failed at bootstrap '$init_sh_boot'" $? 1
+    return $?
+  }
+
+} ||
+  test -z "${init_sh_boot-}" &&
+    $INIT_LOG "debug" "$scriptname:init.sh" "No default scripts-init" ||
+    $INIT_LOG "warn" "$scriptname:init.sh" "Ignored init.sh:boot because no scripts-init" "init.sh:boot=$init_sh_boot"
+
+# XXX: end init-phase: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
 
 # Id: user-scripts/0.0.0-dev tools/sh/init.sh

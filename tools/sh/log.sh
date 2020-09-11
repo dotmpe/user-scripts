@@ -78,7 +78,7 @@ log_src_id()
 
 __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
 {
-  test -n "$2" || {
+  test -n "${2-}" || {
     test -n "${log_key:-}" || log_src_id_key_var
     test -n "$2" || set -- "$1" "$(log_src_id)" "$3" "$4" "$5"
     test -n "$2" || set -- "$1" "$0" "$3" "$4" "$5"

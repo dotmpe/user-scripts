@@ -6,6 +6,9 @@ usage()
 {
   echo 'Usage:'
   echo '  test/lint.sh <function name>'
+  echo ''
+  echo 'Functions are defined in script file and libs. Override or refer to
+${_ENV:='"$_ENV"'} environment file for initial source. '
 }
 usage-fail() { usage && exit 2; }
 
@@ -53,8 +56,7 @@ all()
 
 # Main
 
-. "${TEST_ENV:=tools/ci/env.sh}"
-
+init_sh_libs="script redo build" . "${_ENV:=tools/main/env.sh}"
 main_test_ "" "$@"
 
 # Derive: tools/sh/parts/init.sh

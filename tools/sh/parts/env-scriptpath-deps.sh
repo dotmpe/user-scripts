@@ -8,26 +8,24 @@ test -z "${SCRIPTPATH-}" ||
   $INIT_LOG "note" "env-scriptpath-deps" "Current SCRIPTPATH" "$SCRIPTPATH"
 
 type trueish >/dev/null 2>&1 || {
-  . $CWD/tools/sh/parts/trueish.sh
+  . $sh_tools/parts/trueish.sh
 }
 type remove_dupes >/dev/null 2>&1 || {
-  . $CWD/tools/sh/parts/remove-dupes.sh
+  . $sh_tools/parts/remove-dupes.sh
 }
 type unique_paths >/dev/null 2>&1 || {
-  . $CWD/tools/sh/parts/unique-paths.sh
+  . $sh_tools/parts/unique-paths.sh
 }
 type script_package_include >/dev/null 2>&1 || {
-  . $CWD/tools/sh/parts/script-package-include.sh
+  . $sh_tools/parts/script-package-include.sh
 }
 
 test -n "${SH_EXT-}" || {
   test -n "${REAL_SHELL-}" ||
     REAL_SHELL=$(ps --pid $$ --format cmd --no-headers | cut -d' ' -f1)
-  SH_EXT=$(basename "$REAL_SHELL")
+  fnmatch "-*" "$REAL_SHELL" &&
+    SH_EXT="${REAL_SHELL:1}" || SH_EXT=$(basename -- "$REAL_SHELL")
 }
-
-script_package_include $CWD ||
-  $INIT_LOG "error" "" "Error including script-package at $CWD" 1
 
 trueish "${ENV_DEV-}" && {
   test -n "${PROJECT_DIR-}" || {
@@ -40,20 +38,42 @@ trueish "${ENV_DEV-}" && {
   }
 }
 
-test -n "${VND_PATHS-}" ||
-  VND_PATHS="$(unique_paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"
+test -n "${VND_PATHS-}" || {
+  test -n "${VND_GH_SRC-}" || VND_GH_SRC=/src/github.com
+  test -n "${VND_SRC_PREFIX-}" || VND_SRC_PREFIX=/src/local
 
-# Look for deps at each VND_PATHS, source load.*sh file to let it setup
-# SCRIPTPATH
-for supportlib in $(grep '^\(git\|basher\) ' $CWD/dependencies.txt | cut -d' ' -f2);
+  VND_PATHS="$(unique_paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"
+}
+
+# Use dependencies that include sources from dependencies.txt files, ie the git
+# and basher ones.
+
+test -n "${PROJECT_DEPS:-}" || PROJECT_DEPS=$CWD/dependencies.txt
+test -e "${PROJECT_DEPS-}" || {
+  script_package_include $CWD ||
+    $INIT_LOG "error" "" "Error including script-package at $CWD" 1
+}
+
+# Look for deps at each VND_PATHS, source load.*sh file to let it setup SCRIPTPATH
+for supportlib in $(grep -h '^\(git\|dir\|basher\) ' $PROJECT_DEPS | cut -d' ' -f2);
 do
+  fnmatch "[/~]*" "$supportlib" && {
+    supportlib="$(eval "echo $supportlib")"
+
+    test -d "$supportlib" && {
+      script_package_include "$supportlib" && continue
+      $INIT_LOG "error" "" "Error including script-package at" "$supportlib"
+      continue
+    }
+  }
 
   # Override VND_PATHS in Dev-Mode with basenames from ~/project that match
   # dependency basename
   trueish "${ENV_DEV-}" && {
     test -d "$PROJECT_DIR/$(basename "$supportlib")" && {
-      script_package_include "$PROJECT_DIR/$(basename "$supportlib")" && break
-      $INIT_LOG "error" "" "Error including script-package at $PROJECT_DIR/$(basename "$supportlib")" 1
+      script_package_include "$PROJECT_DIR/$(basename "$supportlib")" && continue
+      $INIT_LOG "error" "" "Error including script-package at" "$PROJECT_DIR/$(basename "$supportlib")" 1
+      continue
     }
   }
 
@@ -62,12 +82,15 @@ do
   do
     test -d "$vnd_base/$supportlib" || continue
     script_package_include "$vnd_base/$supportlib" && break
-    $INIT_LOG "error" "" "Error including script-package at $vnd_base/$supportlib" 1
+    $INIT_LOG "error" "" "Error including script-package at" "$vnd_base/$supportlib" 1
+    break
   done
+
+  true
 done
 
 test -z "${SCRIPTPATH:-}" &&
     $INIT_LOG "error" "" "No SCRIPTPATH found" ||
-    $INIT_LOG "note" "" "New SCRIPTPATH" "$SCRIPTPATH"
-unset supportlib vnd_base lib_path
+    $INIT_LOG "note" "" "New SCRIPTPATH from $PROJECT_DEPS" "$SCRIPTPATH"
+unset supportlib vnd_base
 export SCRIPTPATH

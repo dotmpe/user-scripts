@@ -32,7 +32,7 @@ docker_sh_c_status() # [Container]
 
 docker_sh_c_ip() # [Container]
 {
-  test -n "$1" || set -- $docker_sh_c
+  test -n "${1-}" || set -- $docker_sh_c
   test -n "$1" || set -- $docker_name
   test -n "$1" || error "dckr-ip: container required" 1
   ${dckr_pref}docker inspect --format '{{ .NetworkSettings.IPAddress }}' $1 ||
@@ -41,7 +41,7 @@ docker_sh_c_ip() # [Container]
 
 docker_sh_c_port() # [Container] [Port=22]
 {
-  test -n "$1" || set -- $docker_sh_c
+  test -n "${1-}" || set -- $docker_sh_c
   test -n "$1" || set -- $docker_name
   test -n "$1" || error "dckr-ip: container required" 1
   test -n "$2" || set -- "$1" $docker_sh_c_port
@@ -50,7 +50,7 @@ docker_sh_c_port() # [Container] [Port=22]
 
 docker_sh_c_inspect() # Expr [Container]
 {
-  test -n "$2" || set -- "$1" $docker_sh_c
+  test -n "${2-}" || set -- "${1-}" $docker_sh_c
   test -n "$2" || set -- "$1" $docker_name
   ${dckr_pref}docker inspect --format "$1" "$2"
 }

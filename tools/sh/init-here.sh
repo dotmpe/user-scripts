@@ -49,12 +49,12 @@ test -z "${DEBUG-}" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
-test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script\ log
+test -n "${3-}" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script\ log
 
 test "$init_sh_libs" = "0" || {
   lib_load $init_sh_libs && lib_init
 
-  test -n "$2" && init_sh_boot="$2" || init_sh_boot=null # FIXME: stderr-console-logger
+  test -n "${2-}" && init_sh_boot="$2" || init_sh_boot=null # FIXME: stderr-console-logger
   script_init "$init_sh_boot" || $status $?
 }
 

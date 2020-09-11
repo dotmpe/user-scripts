@@ -1,9 +1,12 @@
-# User Scripts
+% U-S(7) User-Scripts Manual: Overview | User-Scripts/0.1-alpha
 
 Main user-guide manual for `User-Scripts` [U-s] or [Us] installations.
 
-TODO: rename to provide for user script as well? Use for dev/install now.
+- The definite project documentation starts with the [README] which may not be
+  included in the installation, 
 
+TODO: rename to provide for user script as well? Use for dev/install now.
+TODO: Run bin/user-box. Alias as `box`. See also +User-config/u-c helper.
 
 ## User Profile
 

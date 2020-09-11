@@ -1,5 +1,7 @@
 #!/bin/sh
 
+## Oil Shell
+
 oil_lib_load()
 {
   OIL_CONTAINER=u-s-oil-treebox

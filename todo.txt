@@ -1,4 +1,4 @@
-# Id: <HT:to/do-in-user-scripts.list> vim:ft=todo:nowrap:cc=2,8,19,30:
+# Id: <HT:to/do-in-user-scripts.list> vim:ft=todo:nowrap:
 
 # TODO.txt with User-Scripts [+U_s] enhancements.
 
@@ -20,5 +20,11 @@ Don't fear the Unix chainsaw <https://github.com/erichs/composure>
 "Libraries for bash are out there, but not common." <https://stackoverflow.com/questions/11369522/bash-utility-script-library> @Also
 A community Bash framework <https://github.com/Bash-it/bash-it> @Also
 git hooks manager <https://github.com/git-hooks/git-hooks> @Also
+
+2020-09-09 TODO: rewrite .cllct/src/*.do to tools/redo/parts, and targets to .meta/cache.
+
+Also come up with scheme to merge in data from statusdir
+
+And commands to list all sorts of entities for local project or user env (from statusdir). Ie. features, specs, tasks.
 
 # ----- -- ---- @_

@@ -5,18 +5,17 @@
 test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
 : "${CWD:="$PWD"}"
-. "$CWD/tools/sh/parts/env-strict.sh"
-. "$CWD/tools/sh/parts/env-0-1-lib-sys.sh"
-. "$CWD/tools/sh/parts/debug-exit.sh"
+: "${sh_tools:="$CWD/tools/sh"}"
+test "${env_strict_-}" = "0" || {
+  . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
+. "$sh_tools/parts/debug-exit.sh"
+. "$sh_tools/parts/env-0-1-lib-sys.sh"
+: "${ci_tools:="$CWD/tools/ci"}"
 
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
-test "${DEBUG-}" = "1" && set -x
-
 : "${SUITE:="CI"}"
-: "${ci_tools:="$CWD/tools/ci"}"
-: "${sh_tools:="$CWD/tools/sh"}"
 : "${U_S:="$CWD"}" # No-Sync
 : "${keep_going:=1}" # No-Sync
 
@@ -32,12 +31,11 @@ test -n "${ci_util_:-}" || {
   . "$ci_tools/util.sh"
 }
 
-test -n "${IS_BASH:-}" || $INIT_LOG error "Not OK" "Need to know shell dist" "" 1
-
 $INIT_LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
 ci_env_end_ts=$($gdate +"%s.%N")
 
 $INIT_LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
-print_yellow "ci:env" "Starting: $0 '$*'" >&2
+test ${verbosity:-${v:-3}} -lt 4 ||
+  print_yellow "ci:env" "Starting: $0 #$#:'$*'" >&2
 
 # From: Script.mpe/0.0.4-dev tools/ci/env.sh

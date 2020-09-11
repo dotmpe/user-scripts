@@ -4,22 +4,33 @@
 
 test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 
+test ${DEBUG:-0} -ne 0 || DEBUG=
 : "${CWD:="$PWD"}"
-. "$CWD/tools/sh/parts/env-strict.sh"
+: "${sh_tools:="$CWD/tools/sh"}"
 
-: "${build_tab:="build.txt"}"
+test "${env_strict_-}" = "0" || {
+  . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
 
-: "${APP_ID:="user-scripts"}" # No-Sync
+# FIXME: generate local static env
+. $HOME/bin/.env.sh
+
 : "${SUITE:="Sh"}"
+: "${build_tab:="build.txt"}"
+: "${APP_LBL:="User-Scripts"}" # No-Sync
+: "${APP_ID:="user_scripts"}" # No-Sync
+: "${APP_LBL_BREV:="U-S"}" # No-Sync
+: "${APP_ID_BREV:="u_s"}" # No-Sync
 : "${sh_main_cmdl:="spec"}"
+: "${U_S_MAN:="$U_S/src/md/manuals.list"}"
 export scriptname=${scriptname:-"`basename -- "$0"`"}
 
 test -n "${sh_util_:-}" || {
 
-  . "${sh_tools:=$CWD/tools/sh}/util.sh"
+  . "$sh_tools/util.sh"
 }
 
 sh_include \
+  env-init-log \
   env-0-1-lib-sys \
   print-color remove-dupes unique-paths \
   env-0-src

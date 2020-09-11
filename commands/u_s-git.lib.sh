@@ -5,7 +5,9 @@
 
 git_version()
 {
-  git describe --always
+  test $# -eq 1 -a -d "${1-}" || return
+  ( test "$PWD" = "$1" || cd "$1"
+    git describe --always )
 }
 
 u_s_version() #
@@ -18,8 +20,7 @@ u_s_version() #
 git_update_from_repo() # Repo-Id
 {
   test $# -le 1 || return 99
-  test $# -gt 0 || set -- ""
-  test -n "$1" || set -- "${U_S_REPO_ID}"
+  test -n "${1-}" || set -- "${U_S_REPO_ID}"
   trueish "$offline" && return 1
   git fetch -q "$1" || return
   git fetch -q --tags "$1"
@@ -41,9 +42,7 @@ git_reset_hard() # [Repo-Release] [Repo-Id] [Repo-URL]
 u_s_repo_args() # Repo-Id [Repo-Url]
 {
   test $# -le 2 || return 99
-
-  test $# -gt 0 || set -- ""
-  test $# -gt 1 || set -- "$1" ""
+  test $# -gt 1 || set -- "${1-}" ""
 
   test -n "$1" || set -- "${U_S_REPO_ID}" "$2"
   test -n "$2" || set -- "$1" "${U_S_REPO_URL}"

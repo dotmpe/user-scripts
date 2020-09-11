@@ -17,7 +17,7 @@ list_functions() # Sh-File
 {
   local file=$1
   eval "echo \"$(try_value list_functions_head)\""
-  trueish "${list_functions_scriptname-}" && {
+  test ${list_functions_scriptname:-0} -eq 1 && {
     grep '^[A-Za-z0-9_\/-]*().*$' $1 | sed "s#^#$1 #"
   } || {
     grep '^[A-Za-z0-9_\/-]*().*$' $1
@@ -34,7 +34,7 @@ list_functions_foreach() # Sh-Files...
 # List functions matching grep pattern in files
 functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Grep> <Sh-Files>
 {
-  test -n "$1" -a $# -gt 1 || return 98
+  test -n "${1-}" -a $# -gt 1 || return 98
   local grep="$1" ; shift
   not_trueish "$first_match" && first_match=0 || first_match=1
   true "${grep_f:="-Hn"}"
@@ -50,16 +50,17 @@ functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Gre
 # script. To match on specific names instead, see find-functions.
 functions_list() # (ls-func|list-func(tions)) [ --(no-)list-functions-scriptname ]
 {
-  test -z "$2" || {
+  test -z "${2-}" || {
     # Turn on scriptname output prefix if more than one file is given
-    sh_isset list_functions_scriptname || list_functions_scriptname=1
+    true "${list_functions_scriptname:=1}"
+    #sh_isset list_functions_scriptname || list_functions_scriptname=1
   }
   list_functions_foreach "$@"
 }
 
 functions_ranges()
 {
-  test -n "$2" && multiple_srcs=1 || multiple_srcs=0
+  test $# -gt 1 && multiple_srcs=1 || multiple_srcs=0
   functions_list "$@" | while read a1 a2 ; do
     test -n "$a1" -o -n "$a2" || continue
     test -n "$a2" && { f=$a2; s=$a1; } || { f=$a1; s=$1; }
@@ -72,7 +73,7 @@ functions_ranges()
 
 functions_filter_ranges()
 {
-  test -n "$3" && multiple_srcs=1 || multiple_srcs=0
+  test $# -gt 2 && multiple_srcs=1 || multiple_srcs=0
   upper=0 default_env out-fmt xtl
   out_fmt=names htd__filter_functions "$@" | while read a1 a2
   do
@@ -94,7 +95,10 @@ functions_execs() # SRC...
 {
   list_sh_calls_foreach "$@" | sort -u | while read -r script cmd
     do
-      which -s "$cmd" || continue
+      which "$cmd" >/dev/null 2>&1 || {
+          $LOG "error" "" "Unable to find exec name" "$cmd"
+          continue
+      }
       echo "$(realpath "$(which "$cmd")") $script"
     done | join_lines
 }
@@ -122,9 +126,9 @@ functions_calls()
 # Scan for calls using target list
 text_lookup() # SOURCES TARGETS [FUNC_TAB]
 {
-  test -n "$1" || set -- $cllct_src_base/call-graph/sources.txt "$2" "$3"
-  test -n "$2" || set -- "$1" $cllct_src_base/call-graph/targets.txt "$3"
-  test -n "$3" || set -- "$1" "$2" $cllct_src_base/functions.list
+  test -n "${1-}" || set -- $cllct_src_base/call-graph/sources.txt "${2-}" "${3-}"
+  test -n "${2-}" || set -- "${1-}" $cllct_src_base/call-graph/targets.txt "${3-}"
+  test -n "${3-}" || set -- "$1" "$2" $cllct_src_base/functions.list
   local SOURCES=$1 TARGETS=$2
 
   mkdir -p "$(dirname "$1")"
@@ -146,7 +150,7 @@ list_sh_calls()
 {
   #$sh_list_calls "$@" || $_failed_ "$*"
   test -n "$*" || error "list-sh-calls: pathnames expected" 1
-  $HOME/project/oil/bin/oshc deps "$@" --chained-commands="sudo time" | cat
+  $HOME/project/oil/bin/oshc deps "$@" --chained-commands="sudo time"
 }
 
 list_sh_calls_foreach()

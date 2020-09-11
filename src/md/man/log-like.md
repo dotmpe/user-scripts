@@ -1,4 +1,5 @@
-# User Scripts Manual: File formats and conventions
+% LOG-LIKE(5) User Scripts Manual: File formats and conventions | User-Scripts/0.1-beta
+
 
 *Log-Like*        A command or function call where the signature corresponds to
                   ```

@@ -6,6 +6,9 @@ usage()
 {
   echo 'Usage:'
   echo '  ./.build.sh <function name>'
+  echo ''
+  echo 'Functions are defined in script file and libs. Override or refer to
+${_ENV:='"$_ENV"'} environment file for initial source. '
 }
 usage-fail() { usage && exit 2; }
 
@@ -15,7 +18,7 @@ init()
   assert_nonzero "$@" || set -- all
   ./tools/sh/parts/init.sh "$@" || return
 
-  $LOG info "" "Running final checks..." >&2
+  $LOG info "" "Running final checks..."
   ./tools/sh/parts/init.sh "default" >/dev/null
 }
 
@@ -23,10 +26,14 @@ init()
 # every test-suite.
 check()
 {
-  ./tools/sh/parts/init.sh check || {
-    $LOG error "" "sh:init check" "" 1 ; return 1; }
+  ./tools/sh/parts/init.sh check && {
+    print_green "" "sh:init: check OK" >&2
+  } || {
+    $LOG error "" "sh:init: check" "" 1 ; return 1; }
 
-  run-test check || {
+  run-test check && {
+    print_green "" "test: check OK" >&2
+  } || {
     $LOG error "" "test: check" "" 1; return 1; }
 
   print_green "" "build: check OK" >&2
@@ -37,22 +44,25 @@ baselines()
   negatives-precheck && test/base.sh all
 }
 
-build()
+manual ()
 {
-  true
+  lib_require u_s-man || return
+  build_manuals
+  print_green "" "build OK" >&2
 }
 
 run-test()
 {
   assert_nonzero "$@" || set -- all
-
-  print_yellow "" "build: run-test Starting '$*'... " >&2
-  test/base.sh "$@" || return
-  test/lint.sh "$@" || return
-  test/unit.sh "$@" || return
-  test/bm.sh "$@" || return
-  test/spec.sh "$@" || return
-  print_green "" "build: run-test '$*' OK" >&2
+  {
+    print_yellow "" "build: run-test Starting '$*'... "
+    test/base.sh "$@" || return
+    test/lint.sh "$@" || return
+    test/unit.sh "$@" || return
+    test/bm.sh "$@" || return
+    test/spec.sh "$@" || return
+    print_green "" "build: run-test '$*' OK"
+  } >&2
 }
 
 clean()
@@ -111,6 +121,7 @@ all()
 
 # Main
 
-. "${TEST_ENV:=tools/ci/env.sh}"
-# Fallback func-name to init namespace to avoid overlap with builtin names
+
+init_sh_libs="script redo build" . "${_ENV:=tools/main/env.sh}"
+$LOG "info" "" "Started sh env" "$_ENV"
 main_ "run" "$@"

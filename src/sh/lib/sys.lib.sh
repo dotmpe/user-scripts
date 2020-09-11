@@ -17,15 +17,7 @@ sys_lib_init()
       && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
     test -n "$sys_lib_log" || return 108
 
-    setup_tmpd >/dev/null
-
-# XXX: cleanup
-if [ -z "$(which realpath)" ]
-then # not perfect?
-realpath() {
-  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#.}"
-}
-fi
+    sys_tmp_init &&
     $sys_lib_log debug "" "Initialized sys.lib" "$0"
   }
 }
@@ -33,7 +25,7 @@ fi
 # Sh var-based increment
 incr() # VAR [AMOUNT=1]
 {
-  local incr_amount
+  local v incr_amount
   test -n "${2-}" && incr_amount=$2 || incr_amount=1
   v=$(eval echo \$$1)
   eval $1=$(( $v + $incr_amount ))
@@ -41,9 +33,9 @@ incr() # VAR [AMOUNT=1]
 
 getidx()
 {
-  test -n "$1" || error getidx-array 1
-  test -n "$2" || error getidx-index 1
-  test -z "$3" || error getidx-surplus 1
+  test -n "${1-}" || error getidx-array 1
+  test -n "${2-}" || error getidx-index 1
+  test -z "${3-}" || error getidx-surplus 1
   local idx=$2
   set -- $1
   eval echo \$$idx
@@ -62,7 +54,7 @@ trueish() # Str
 # No error on empty, or not trueish match
 not_trueish()
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   trueish "$1" && return 1 || return 0
 }
 
@@ -81,13 +73,13 @@ falseish()
 # No error on empty, or not-falseish match
 not_falseish() # Str
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   falseish "$1" && return 1 || return 0
 }
 
 cmd_exists()
 {
-  test -n "$1" || return
+  test -n "${1-}" || return
 
   set -- "$1" "$(which "$1")" || return
 
@@ -103,10 +95,10 @@ func_exists()
 
 try_exec_func()
 {
-  test -n "$1" || return 97
+  test -n "${1-}" || return 97
   test -n "$sys_lib_log" || return 108
   $sys_lib_log debug "sys" "try-exec-func '$1'"
-  func_exists $1 || return
+  func_exists "$1" || return
   local func=$1
   shift 1
   $func "$@" || return
@@ -147,22 +139,40 @@ req_vars()
   done
 }
 
-# setup-tmp [(RAM_)TMPDIR]
-setup_tmpd()
+# Check for RAM-fs or regular temporary directory, or set to given
+# directory which must also exist. Normally, TMPDIR will be set on Unix and
+# POSIX systems. If it does not exist then TMPDIR will be set to whatever
+# is given here or whichever exists of /dev/shm/tmp or $RAM_TMPDIR. But the
+# directory will not be created.
+sys_tmp_init () # DIR
 {
-  test $# -le 2 || return
-  while test $# -lt 2 ; do set -- "$@" "" ; done
-  test -n "$1" || set -- "$base-$(get_uuid)" "$2"
   test -n "${RAM_TMPDIR-}" || {
+        # Set to Linux ramfs path
         test -w "/dev/shm" && RAM_TMPDIR=/dev/shm/tmp
       }
-  test -n "$2" -o -z "$RAM_TMPDIR" || set -- "$1" "$RAM_TMPDIR"
-  test -n "$2" -o -z "$TMPDIR" || set -- "$1" "$TMPDIR"
-  test -n "$2" ||
-        $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
+  test -e "${1-}" -o -z "${RAM_TMPDIR-}" || set -- "$RAM_TMPDIR"
+  test -e "${1-}" -o -z "${TMPDIR-}" || set -- "$TMPDIR"
+  test -n "${1-}" && {
+    test -n "${TMPDIR-}" || export TMPDIR=$1
+  }
+  test -d "$1" || {
+    $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
+  }
+  sys_tmp="$1"
+}
 
-  test -d $2/$1 || mkdir -p $2/$1
-  test -n "$2" -a -d "$2" || $sys_lib_log error sys "Not a dir: '$2'" "" 1
+# setup-tmpd [ SUBDIR [ (RAM_)TMPDIR ]]
+# Get (create) fresh subdir in TMPDIR or fail.
+setup_tmpd () # Unique-Name
+{
+  test $# -le 2 || return 98
+  test -n "${2-}" || set -- "${1-}" "$sys_tmp"
+  test -d "$2" ||
+    $sys_lib_log error sys "Need existing tmpdir, got: '$2'" "" 1
+  test -n "${1-}" || set -- "$base-$SH_SID" "${2-}"
+  test ! -e "$2/$1" ||
+    $sys_lib_log error sys "Unique tmpdir sub exists: '$2'" "" 1
+  mkdir -p $2/$1
   echo "$2/$1"
 }
 
@@ -171,27 +181,25 @@ setup_tmpd()
 # setup-tmp [ext [uuid [(RAM_)TMPDIR]]]
 setup_tmpf() # [Ext [UUID [TMPDIR]]]
 {
-  test $# -le 3 || return
-  while test $# -lt 3 ; do set -- "$@" "" ; done
-
-  test -n "$1" || set -- .out "$2" "$3"
-  test -n "$2" || set -- $1 $(get_uuid) "$3"
+  test $# -le 3 || return 98
+  test -n "${1-}" || set -- .out "${2-}" "${3-}"
+  test -n "${2-}" || set -- ${1-} $(get_uuid) "${3-}"
   test -n "$1" -a -n "$2" || $sys_lib_log error sys "empty arg(s)" "" 1
 
-  test -n "$3" || set -- "$1" "$2" "$(setup_tmpd)"
+  test -n "${3-}" || set -- "$1" "$2" "$sys_tmp"
   test -n "$3" -a -d "$3" || $sys_lib_log error sys "Not a dir: '$3'" "" 1
 
   test -n "$(dirname $3/$2$1)" -a "$(dirname $3/$2$1)" \
     || mkdir -p "$(dirname $3/$2$1)"
-  echo $3/$2$1
+  echo "$3/$2$1"
 }
 
 # sys-prompt PROMPT [VAR=choice_confirm]
 sys_prompt()
 {
-  test -n "$1" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
-  test -n "$2" || set -- "$1" choice_confirm
-  test -z "$3" || $sys_lib_log error sys "surplus-args '$3'" "" 1
+  test -n "${1-}" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
+  test -n "${2-}" || set -- "$1" choice_confirm
+  test -z "${3-}" || $sys_lib_log error sys "surplus-args '$3'" "" 1
   echo $1
   read -n 1 $2
 }
@@ -207,7 +215,7 @@ sys_confirm()
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
 {
-  test $# -ge 1 -a -n "$1" -o -n "${2-}" || return
+  test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return
   test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
@@ -235,8 +243,9 @@ add_env_path() # Prepend-Value Append-Value
 # Add an entry to colon-separated paths, ie. PATH, CLASSPATH alike lookup paths
 add_env_path_lookup() # Var-Name Prepend-Value Append-Value
 {
+  test $# -ge 2 -a $# -le 3 || return
   local val="$(eval echo "\$$1")"
-  test -e "$2" -o -e "$3" || {
+  test -e "$2" -o -e "${3-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
   }
@@ -268,45 +277,59 @@ remove_env_path_lookup()
 }
 
 # List individual entries/paths in lookup path env-var (ie. PATH or CLASSPATH)
-lookup_path_list() # VAR-NAME
+lookup_path_list () # VAR-NAME
 {
-  test -n "$1" || error "lookup-path varname expected" 1
+  test $# -eq 1 -a -n "${1-}" || error "lookup-path varname expected" 1
   eval echo \"\$$1\" | tr ':' '\n'
 }
 
 # Translate Lookup path element and given/local name to filesystempath,
 # or return err-stat.
-lookup_exists() # DIR NAME
+lookup_exists () # DIR NAME
 {
+  test $# -eq 2 || return 98
   test -e "$1/$2" && echo "$1/$2"
 }
 
 # lookup-path List existing local paths, or fail if second arg is not listed
 # lookup-test: command to test equality with, default test_exists
 # lookup-first: boolean setting to stop after first success
-lookup_path() # VAR-NAME LOCAL-PATH
+lookup_path () # VAR-NAME LOCAL-PATH
 {
-  test $# -eq 2 || return
-  test -n "${lookup_test-}" || lookup_test="lookup_exists"
-  func_exists $lookup_test || {
+  test $# -eq 2 || return 98
+  test -n "${lookup_test-}" || local lookup_test="lookup_exists"
+  func_exists "$lookup_test" || {
     $LOG error "" "No lookup-test handler" "$lookup_test"
     return 1
   }
 
-  lookup_path_list $1 | { while read _PATH
+  local path ; for path in $( lookup_path_list $1 )
     do
-      eval $lookup_test \""$_PATH"\" \""$2"\" && {
-        trueish "${lookup_first-}" && break || continue
+      eval $lookup_test \""$path"\" \""$2"\" && {
+        test ${lookup_first:-1} -eq 1 && break || continue
       } || continue
     done
-    cat - >/dev/null # Flush remainder of lookup-path-list
-  }
+}
+
+lookup_paths () # Var-Name Local-Paths...
+{
+  test $# -ge 2 || return 98
+  test -n "${lookup_test-}" || local lookup_test="lookup_exists"
+  local varname=$1 base path ; shift ; for base in $( lookup_path_list $varname )
+    do
+      for path in $@
+      do
+        eval $lookup_test \""$base"\" \""$path"\" && {
+          test ${lookup_first:-1} -eq 1 && break || continue
+        } || continue
+      done
+    done
 }
 
 # Test if local path/name is overruled. Lists paths for hidden LOCAL instances.
 lookup_path_shadows() # VAR-NAME LOCAL
 {
-  test $# -eq 2 || return
+  test $# -eq 2 || return 98
   local r=
   tmpf=$(setup_tmpf .lookup-shadows)
   lookup_first=false lookup_path "$@" >$tmpf
@@ -320,6 +343,19 @@ lookup_path_shadows() # VAR-NAME LOCAL
     }
   rm $tmpf
   return $r
+}
+
+cwd_lookup_path () # [ Local-Paths... ]
+{
+  local cwd=$PWD sub
+  until test $cwd = /
+  do
+    test $# -gt 0 && {
+      for sub in $@; do test -e "$cwd/$sub" || continue; echo "$cwd/$sub"; done
+    } ||
+      echo "$cwd"
+    cwd="$(dirname "$cwd")"
+  done | tr '\n' ':' | head -c -1
 }
 
 init_user_env()
@@ -366,7 +402,7 @@ std_utf8_en()
 
 update_env()
 {
-  test -n "$PYVENV" || {
+  test -n "${PYVENV-}" || {
     PYVENV=$(htd ispyvenv) || PYVENV=0
     export PYVENV
   }
@@ -551,7 +587,7 @@ exec_arg_lines()
 # Execute arguments, or return on first failure, empty args, or no cmdlines
 exec_arg() # CMDLINE [ -- CMDLINE ]...
 {
-  test -n "$*" || return 2
+  test $# -gt 0 || return 98
   local execs=$(setup_tmpf .execs) execnr=0
   exec_arg_lines "$@" | while read -r execline
     do

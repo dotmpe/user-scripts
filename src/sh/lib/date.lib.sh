@@ -13,6 +13,9 @@ date_lib_load()
   export _4MIN=240
   export _5MIN=300
   export _10MIN=600
+  export _15MIN=900
+  export _20MIN=1200
+  export _30MIN=1800
   export _45MIN=2700
 
   export _1HOUR=3600
@@ -25,6 +28,9 @@ date_lib_load()
   # Note: what are the proper lengths for month and year? It does not matter that
   # much if below is only used for fmtdate-relative.
   export _1MONTH=$(( 4 * $_1WEEK ))
+  export _3MONTH=$(( 3 * 4 * $_1WEEK ))
+  export _6MONTH=$(( 6 * 4 * $_1WEEK ))
+  export _9MONTH=$(( 9 * 4 * $_1WEEK ))
   export _1YEAR=$(( 365 * $_1DAY ))
 
   datefmt_suffix=
@@ -35,7 +41,7 @@ date_lib_init()
 {
   test "${date_lib_init-}" = "0" || {
 
-    test -n "$gdate" || case "$uname" in
+    test -n "${gdate-}" || case "$uname" in
       darwin ) gdate="gdate" ;;
       linux ) gdate="date" ;;
       * ) $LOG error "" uname "$uname" 1 ;;
@@ -72,10 +78,10 @@ newer_than() # FILE SECONDS
 # older-than FILE SECONDS, filemtime must be less-than Now - SECONDS
 older_than()
 {
-  test -n "$1" || error "older-than expected path" 1
+  test -n "${1-}" || error "older-than expected path" 1
   test -e "$1" || error "older-than expected existing path" 1
-  test -n "$2" || error "older-than expected delta seconds argument" 1
-  test -z "$3" || error "older-than surplus arguments" 1
+  test -n "${2-}" || error "older-than expected delta seconds argument" 1
+  test -z "${3-}" || error "older-than surplus arguments" 1
   fnmatch "@*" "$2" || set -- "$1" "-$2"
   test $(date_epochsec "$2") -gt $(filemtime "$1")
   #test $(( $(date +%s) - $2 )) -gt $(filemtime "$1")
@@ -111,20 +117,20 @@ date_epochsec()
 
 date_fmt() # Date-Ref Str-Time-Fmt
 {
+  test $# -eq 2 || return 98
   test -z "$1" && {
-    tags="-d today"
+    tags="today"
   } || {
     # NOTE patching for GNU date
-    _inner_() { printf -- '-d ' ; echo "$1" | bsd_gsed_pre ;}
-    test -e "$1" && { tags="-d @$(filemtime "$1")"; } ||
-      tags=$( p= s= act=_inner_ foreach_do $1 )
+    test -e "$1" && tags="@$(filemtime "$1")" ||
+        tags=$( echo "$1" | bsd_date_tag )
   }
-  $gdate $date_flags $tags +"$2"
+  $gdate ${date_flags:-} -d "$tags" +"$2"
 }
 
 date_()
 {
-  test -n "$1" && {
+  test -n "${1-}" && {
     test -e "$1" && set -- -r "$1" "$2" || set -- -d "$1" "$2"
   }
   $gdate "$@"
@@ -151,13 +157,17 @@ date_newest() # ( FILE | DTSTR | @TS ) ( FILE | DTSTR | @TS )
 fmtdate_relative() # [ Previous-Timestamp | ""] [Delta] [suffix=" ago"]
 {
   test $# -le 3 || return
-  while test $# -lt 3 ; do set -- "$@" "" ; done
-  test -n "$1" || return
+  test -n "${1-}" && {
     # Calculate delta based on now
-  test -n "$2" || set -- "$1" "$(( $(date +%s) - $1 ))" "$3"
+    test -n "${2-}" || set -- "$1" "$(( $(date +%s) - $1 ))" "${3-}"
+  } || {
+    # FIXME:
+    test -n "$2" || return
+    test -n "$2" || set -- "$(( $(date +%s) - $2 ))" "$2" "${3-}"
+  }
     # Set default suffix
-  test -n "$3" -o -z "$datefmt_suffix" || set -- "$1" "$2" "$datefmt_suffix"
-  test -n "$3" || set -- "$1" "$2" " ago"
+  test -n "${3-}" -o -z "${datefmt_suffix-}" || set -- "$1" "$2" "$datefmt_suffix"
+  test $# -eq 3 || set -- "$1" "$2" " ago"
 
   if test $2 -gt $_1YEAR
   then
@@ -238,7 +248,7 @@ fmtdate_relative() # [ Previous-Timestamp | ""] [Delta] [suffix=" ago"]
 # Get stat datetime format, given file or datetime-string. Prepend @ for timestamps.
 timestamp2touch() # [ FILE | DTSTR ]
 {
-  test -n "$1" || set -- "@$(date_ts)"
+  test -n "${1-}" || set -- "@$(date_ts)"
   test -e "$1" && {
     $gdate -r "$1" +"%y%m%d%H%M.%S"
   } || {
@@ -249,13 +259,13 @@ timestamp2touch() # [ FILE | DTSTR ]
 # Copy mtime from file or set to DATESTR or @TIMESTAMP
 touch_ts() # ( DATESTR | TIMESTAMP | FILE ) FILE
 {
-  test -n "$2" || set -- "$1" "$1"
+  test -n "${2-}" || set -- "$1" "$1"
   touch -t "$(timestamp2touch "$1")" "$2"
 }
 
 date_iso() # Ts [date|hours|minutes|seconds|ns]
 {
-  test -n "$2" || set -- "$1" date
+  test -n "${2-}" || set -- "${1-}" date
   test -n "$1" && {
     $gdate -d @$1 --iso-8601=$2 || return $?
   } || {
@@ -266,14 +276,12 @@ date_iso() # Ts [date|hours|minutes|seconds|ns]
 # Print fractional seconds since Unix epoch
 epoch_microtime() # [Date-Ref=now]
 {
-  set -- "$1" "+%s.%N"
-  date_ "$@"
+  date_ "${1-}" "+%s.%N"
 }
 
 date_microtime()
 {
-  set -- "$1" +"%Y-%m-%d %H:%M:%S.%N"
-  date_ "$@"
+  date_ "${1-}" +"%Y-%m-%d %H:%M:%S.%N"
 }
 
 sec_nomicro()

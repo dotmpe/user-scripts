@@ -1,7 +1,6 @@
 #!/bin/sh
 
-
-# OS: files, paths
+## OS - files, paths
 
 os_lib_load()
 {
@@ -92,14 +91,14 @@ basedir()
 
 dotname() # Path [Ext-to-Strip]
 {
-  echo $(dirname -- "$1")/.$(basename -- "$1" "$2")
+  echo $(dirname -- "$1")/.$(basename -- "$1" "${2-}")
 }
 
 # [exts=] basenames [ .EXTS ] PATH...
 # Get basename(s) for all given exts of each path. The first argument is handled
 # dynamically. Unless exts env is provided, if first argument is not an existing
 # and starts with a period '.' it is used as the value for exts.
-basenames()
+basenames () # [exts=] ~ [ .EXTS ] PATH...
 {
   test -n "${exts-}" || {
     fnmatch ".*" "$1" || return
@@ -150,7 +149,7 @@ fileisext() # Name Exts..
 filename_baseid()
 {
   basename="$(filestripext "$1")"
-  mkid "$basename" '' '_-'
+  mkid "$basename" '' '_'
 }
 
 # Use `file` to get mediatype aka. MIME-type
@@ -231,6 +230,15 @@ filemtime() # File
   done
 }
 
+file_update_age ()
+{
+  fmtdate_relative $(filectime $1) "" ""
+}
+
+file_modification_age ()
+{
+  fmtdate_relative $(filemtime $1) "" ""
+}
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the
 # standard input is cat instead or in-place respectively. Strips empty lines.
@@ -243,15 +251,14 @@ filemtime() # File
 # indicators for data availble at stdin.
 foreach()
 {
-  local foreach_stdin= # tracks stdin is read [1] and been read and closed [0]
   {
     test -n "$*" && {
       while test $# -gt 0
       do
         test "$1" = "-" && {
-          foreach_stdin=1
+          # XXX: echo foreach_stdin=1
           cat -
-          foreach_stdin=0
+          # XXX: echo foreach_stdin=0
         } || {
           printf -- '%s\n' "$1"
         }
@@ -267,15 +274,26 @@ foreach()
 # unwrapped loop-var is _S.
 foreach_do()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" ; done
+}
+foreach_eval()
+{
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
+  foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
 }
 
 # Extend rows by mapping each value line using act, add result tab-separated
 # to line. See foreach-do for other details.
 foreach_addcol()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$S" "$($act "$S")" ; done
 }
@@ -283,7 +301,9 @@ foreach_addcol()
 # See -addcol and -do.
 foreach_inscol()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
 }
@@ -291,7 +311,8 @@ foreach_inscol()
 
 ignore_sigpipe()
 {
-  test $0 -eq 141 || return $0 # For bash: 128+signal where signal=SIGPIPE=13
+  local r=$?
+  test $r -eq 141 || return $r # For bash: 128+signal where signal=SIGPIPE=13
 }
 
 
@@ -299,7 +320,7 @@ ignore_sigpipe()
 # remove again. Listing most-recent modified file name/path first.
 sort_mtimes()
 {
-  p= s= act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
+  act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
 }
 
 
@@ -349,13 +370,13 @@ normalize_relative()
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
 read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
-  test $# -gt 0 -a $# -le 2 || return 98
-  test -n "$1" -a -e "$1" || return 1
+  test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
+  test -n "${1-}" || set -- "-" "$2"
   test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
   test -z "${cat_f-}" && {
     grep -Ev "$2" "$1" || return 1
   } || {
-    cat $cat_f "$1" | grep -Ev "$2" || return 1
+    cat $cat_f "$1" | grep -Ev "$2"
   }
 }
 # Sh-Copy: HT:tools/u-s/parts/sh-read.inc.sh
@@ -402,13 +423,16 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
   test -n "$1" && {
     test -n "$2" && { # Start - End: tail + head
       tail -n "+$1" "$3" | head -n $(( $2 - $1 + 1 ))
+      return $?
     } || { # Start - ... : tail
       tail -n "+$1" "$3"
+      return $?
     }
 
   } || {
     test -n "$2" && { # ... - End : head
       head -n "$2" "$3"
+      return $?
     } || { # Otherwise cat
       cat "$3"
     }
@@ -432,7 +456,7 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
   read_lines_while_inner()
   {
     local r=0
-    lines_slice "$3" "$4" "$1" | {
+    lines_slice "${3-}" "${4-}" "$1" | {
         lines_while "$2" || r=$? ; echo "$r $line_number"; }
   }
   stat="$(read_lines_while_inner "$@")"
@@ -478,7 +502,7 @@ count_lines()
 }
 
 # Wrap wc but correct files with or w.o. trailing posix line-end
-line_count()
+line_count () # FILE
 {
   test -s "${1-}" || return 42
   test $(filesize "$1") -gt 0 || return 43
@@ -492,7 +516,7 @@ line_count()
 }
 
 # Count words
-count_words()
+count_words () # [FILE | -]...
 {
   test "${1:-"-"}" = "-" && {
     wc -w | awk '{print $1}'
@@ -507,7 +531,7 @@ count_words()
 }
 
 # Count every character
-count_chars()
+count_chars () # [FILE | -]...
 {
   test "${1:-"-"}" = "-" && {
     wc -w | awk '{print $1}'
@@ -522,7 +546,7 @@ count_chars()
 }
 
 # Count occurence of character each line
-count_char() # Char
+count_char () # CHAR
 {
   local ch="$1" ; shift
   awk -F$ch '{print NF-1}' |

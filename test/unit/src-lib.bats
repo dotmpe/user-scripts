@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load init
+load ../init
 base=src.lib
 
 setup()
