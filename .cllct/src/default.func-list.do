@@ -12,7 +12,6 @@ case "$lib_id" in
 # Transform target-name (lib_id) to original file-paths
 # Should really have just one path for shell-lib components
 paths="$(grep '^'"$lib_id"'\>	' "sh-libs.list" | sed 's/^[^\t]*\t//g')" &&
-
 test -n "$paths" || {
   $LOG warn "$1" "No paths for '$lib_id'"
   exit 0
@@ -27,20 +26,26 @@ test ! -e "$1" -o -s "$1" || rm "$1"
 
 # Pass filename to build routine
 (
-  U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
+  U_S=$REDO_BASE
+  CWD=$REDO_BASE
+  . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
   init_sh_libs="$init_sh_libs match src sys std package functions build-htd" &&
-  util_mode=boot \
-    . $REDO_BASE/tools/sh/init.sh
+  util_mode=boot . $REDO_BASE/tools/sh/init.sh
 
   scriptname="do:$REDO_PWD:$1" && {
     test -n "$lib_id" -a -n "$paths" || {
       error "'$lib_id' <$paths>" 1 ;
     } ; } &&
   cd "$REDO_BASE" &&
-  build_init && build_lib_func_list $paths >"$REDO_BASE/$REDO_PWD/$3"
+  build_init && for path in $paths
+  do
+    build_lib_func_list $paths '\ \#.*\ sh:no-stat' 
+  done >"$REDO_BASE/$REDO_PWD/$3"
+  build_chatty && {
+    cd "$REDO_PWD"
+    echo "Listed $(wc -l "$3"|awk '{print $1}') shell functions from '$lib_id' lib"  >&2
+  } || true
 )
-
-echo "Listed $(wc -l "$3"|awk '{print $1}') shell functions from '$lib_id' lib"  >&2
 redo-stamp <"$3"
 test ! -e "$3" -o -s "$3" || rm "$3"

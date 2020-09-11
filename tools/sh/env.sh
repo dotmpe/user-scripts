@@ -12,10 +12,11 @@ test "${env_strict_-}" = "0" || {
   . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
 
 # FIXME: generate local static env
-. $HOME/bin/.env.sh
+true "${BIN:="$HOME/bin"}"
+test ! -e $BIN/.env.sh || . $BIN/.env.sh
 
 : "${SUITE:="Sh"}"
-: "${build_tab:="build.txt"}"
+: "${build_tab:="$CWD/build.txt"}"
 : "${APP_LBL:="User-Scripts"}" # No-Sync
 : "${APP_ID:="user_scripts"}" # No-Sync
 : "${APP_LBL_BREV:="U-S"}" # No-Sync
@@ -29,9 +30,9 @@ test -n "${sh_util_:-}" || {
   . "$sh_tools/util.sh"
 }
 
+: "${LOG:="print_err"}"
+
 sh_include \
-  env-init-log \
-  env-0-1-lib-sys \
   print-color remove-dupes unique-paths \
   env-0-src
 

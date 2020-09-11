@@ -1,30 +1,77 @@
 #!/usr/bin/env bash
 
+## CI suite in container
+
+# Run entire CI suite or specific command in container from fresh checkout.
+# 
+# - should work on existing checkout
+# - should refresh worktree from remote
+# - should allow alternate remote
+
 set -euo pipefail
 
 : "${dckr_user:="treebox"}"
-: "${repo_id:="origin"}"
-: "${repo_rev:="feature/docker-ci"}" # No-Sync
+
+: "${repo_rev:="$(git rev-parse --abbrev-ref HEAD)"}"
 : "${repo_slug:="dotmpe/user-scripts"}" # No-Sync
+
+test ${srv_scm:=0} -eq 1 && {
+  # XXX: using specific user-conf setup to determine local GIT remote repo
+  : "${vol_id_label:="$(basename "$(realpath /srv/scm-git-local)"|cut -c9-)"}"
+  : "${repo_url:="/srv/scm-git-$vol_id_label/$repo_slug"}"
+  : "${vol_id:="$(echo $vol_id_label|cut -d'-' -f1,2 --output-delimiter=-)"}"
+  : "${repo_id:="$vol_id-bare"}"
+} || {
+  : "${repo_url:="https://github.com/$repo_slug"}"
+  : "${repo_id:="origin"}"
+}
 
 w=/src/github.com/${repo_slug}
 u=${dckr_user}
-c=u-s-dckr
+c=${docker_name:-"u-s-dckr"}
 
+
+# Create checkout if needed
 docker exec -u $u -ti ${c} \
-  sh -c "test -e '$w' || { mkdir -p $(dirname $w) && git clone http://github.com/$repo_slug $w; } "
+  sh -c "test -e '$w' || { mkdir -p $(dirname $w) && git clone --origin $repo_id $repo_url $w; } "
 
-: "${repo_id:="24-2-bare"}"
-: "${repo_url:="/srv/scm-git-24-2-notus-brix/dotmpe/x-ci.git"}"
+# Ensure remote is configured correctly so we fetch and track correct branch
+docker exec -w $w -u $u -ti ${c}  \
+    sh -c "{ git config remote.$repo_id.url >/dev/null;} && {
+        test '$repo_url' = \"\$(git config remote.$repo_id.url)\" || { r=\$?
+          echo Remote '$repo_id' misconfigured >&2;
+          exit \$r;
+        }
+      } || {
+        git remote add $repo_id $repo_url;
+        git fetch $repo_id;
+      }
+      
+      git fetch $repo_id;
 
-docker exec -w $w -u $u -ti ${c} git describe
-test "$repo_id" = "origin" || {
-  docker exec -w $w -u $u -ti ${c}  \
-    sh -c "git config remote.$repo_id.url || { git remote add $repo_id $repo_url && git fetch --all $repo_id; }"
-}
+      # Create local branch for rev
+      git show-ref -q --verify refs/heads/$repo_rev || {
+          git checkout -b $repo_rev -t $repo_id/$repo_rev;
+      }
 
-docker exec -w $w -u $u -ti ${c} git reset --hard ${repo_id}/${repo_rev}
+      # We want to reset to given repo-id, so change branch tracking if needed
+      test \"\$(git rev-parse --abbrev-ref $repo_rev@{upstream})\" = $repo_id/$repo_rev ||
+          git branch $repo_rev --set-upstream-to $repo_id/$repo_rev
+      "
 
-docker exec -w $w -u $u -ti ${c} bash -c '. ./sh-ci'
+# Reset worktree state and show version. Using reset will discard local changes
+# and index, so that we can use force-push and temporary, rewritten commits
+# during CI testing.
+docker exec -w $w -u $u -ti ${c} sh -c "
+    git reset --hard ${repo_id}/${repo_rev} &&
+    git describe
+  "
+    # git checkout -f $repo_id &&
+
+# Start command
+test $# -gt 0 -a -n "${1-}" || set -- '. ./sh-ci'
+echo "sh-treebox-ci: Starting '$*' in $c..." >&2
+docker exec -w $w -u $u -ti ${c} bash -c "$@"
+
 
 # Id: u-s/0.0 sh-treebox-ci

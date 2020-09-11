@@ -20,6 +20,11 @@ echo "Travis Branch: ${TRAVIS_BRANCH:-}"
 echo "Travis Commit: ${TRAVIS_COMMIT:-}"
 echo "Travis Commit Range: ${TRAVIS_COMMIT_RANGE:-}"
 echo
+echo "Session ID: $SESSION_ID"
+echo "Build ID: $BUILD_ID"
+echo "Job NR: $JOB_NR"
+echo "Job ID: $JOB_ID"
+echo
 echo "User-Scripts: ${U_S:-}"
 echo "Script-Path: ${SCRIPTPATH:-}"
 echo "Script-Name: ${scriptname:-}"
@@ -34,11 +39,7 @@ echo "Vnd-Gh-Src: $VND_GH_SRC"
 echo "Scm-Vnd: $SCM_VND"
 echo "Keep-Going: '${keep_going:-}'"
 echo "Lib-Loaded: '${lib_loaded:-}'"
-#echo "User-Scripts version: $( cd $U_S && git describe --always )" # No-Sync
-echo "User-Scripts version: $( cd $HOME/build/dotmpe/user-scripts && git describe --always )"
-echo
-ci_announce 'Listing u-s SCRIPTPATH'
-./bin/u-s libs-path
+echo "User-Scripts version: $( cd $U_S && git describe --always )" # No-Sync
 echo
 ci_announce 'Listing user checkouts'
 ./bin/u-s user-repos

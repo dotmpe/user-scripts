@@ -7,6 +7,7 @@ set -euo pipefail
 true "${package_build_tool:="redo"}"
 true "${init_sh_libs:="os sys str log shell script $package_build_tool build"}"
 true "${DEBUG:=${REDO_DEBUG-${DEBUG-}}}"
+true "${verbosity:=${v:-3}}"
 
 . ${CWD:="$PWD"}/tools/ci/env.sh
 

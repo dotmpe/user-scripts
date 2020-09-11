@@ -32,7 +32,7 @@ do
 
   echo ""
   echo "Depends on:"
-  deps=($(sort -u .cllct/src/functions/$lib_id-lib/*.func-deps))
+  deps=($(shopt -s nullglob && sort -u .cllct/src/functions/$lib_id-lib/*.func-deps))
   bins=()
   funcs=()
   for d in ${deps[@]}

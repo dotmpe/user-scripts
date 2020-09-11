@@ -8,6 +8,8 @@ case "$lib_id" in
     "*.func-deps" ) exit 22 ;; # refuse to build non lib
     * ) ;; esac
 
+redo-ifchange "$REDO_BASE/.cllct/src/default.func-deps.do"
+
 redo-ifchange "sh-libs.list"
   
 # Transform target-name (lib_id) to original file-paths
@@ -20,22 +22,29 @@ mkdir -p "$(dirname "$1")"
 redo-ifchange functions/$lib_id-lib.func-list $REDO_BASE/$path
 
 test ! -e "$1" -o -s "$1" || rm "$1"
-(
-  U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
+U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
-  init_sh_libs="$init_sh_libs build-htd match src package std os-htd function functions" \
-  U_S=$REDO_BASE . $REDO_BASE/tools/sh/init.sh
+init_sh_libs="$init_sh_libs build-htd match src package std os-htd function functions" \
+U_S=$REDO_BASE . $REDO_BASE/tools/sh/init.sh
 
-  scriptname="do:$REDO_PWD:$1" && {
-    test -n "$lib_id" -a -n "$funcname" -a -n "$path" || {
-      error "'$lib_id:$funcname' <$path>" 1
-    } ; } &&
-  mkdir -p "functions/$lib_id-lib/" &&
-  cd "$REDO_BASE" &&
-  build_lib_func_deps_list "$funcname" "$path" >"$REDO_PWD/$3" \
-    2>"$REDO_PWD/$1.stderr"
-)
+scriptname="do:$REDO_PWD:$1" && {
+  test -n "$lib_id" -a -n "$funcname" -a -n "$path" || {
+    error "'$lib_id:$funcname' <$path>" 1
+  } ; } &&
+mkdir -p "functions/$lib_id-lib/" &&
+cd "$REDO_BASE" &&
+build_lib_func_deps_list "$funcname" "$path" >"$REDO_PWD/$3" \
+  2>"$REDO_PWD/$1.stderr"
+
+cd "$REDO_BASE/$REDO_PWD"
 # FIXME: lots of OSHC errors in scripts, track in stderr for now
 test ! -e "$1.stderr" -o -s "$1.stderr" || rm "$1.stderr"
+test ! -e "$1.stderr" || {
+  build_chatty && {
+    build_chatty 4 && cat "$1.stderr"
+    $LOG "warn" "" "Errors during processing" "$1.stderr"
+  }
+}
+
 redo-stamp <"$3"
 test ! -e "$3" -o -s "$3" || rm "$3"

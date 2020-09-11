@@ -6,7 +6,7 @@
 
 
 test -n "$verbosity" || {
-  test -z "$v" || verbosity="$v"
+  case "${v-}" in [0-9] ) verbosity="$v";; esac
 }
 test -n "$verbosity" || {
   test -n "$DEBUG" && verbosity=7 || verbosity=6

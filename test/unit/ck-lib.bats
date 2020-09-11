@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 base=ck.lib
-load init
+load ../init
 
 setup()
 {

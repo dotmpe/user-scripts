@@ -8,7 +8,7 @@ u_s_man() #
   return 1
 }
 
-build_manual () # Section Topic
+build_manual_page () # Md-Manual-Doc
 {
   pandoc -s -f markdown+definition_lists+pandoc_title_block -t man  "$@"
 }
@@ -29,7 +29,7 @@ build_manual_src_parts () # Section Topic
           build-keep-going || return
         }
       done
-      build_manual src/$fmt/man/$src*.$fmt
+      build_manual_page src/$fmt/man/$src*.$fmt
     done
   }
 }
@@ -37,17 +37,17 @@ build_manual_src_parts () # Section Topic
 build_manuals ()
 {
   local section topic
-  read_nix_style_file $U_S_MAN | while read _ section topic _
-  do
-    build-ifchange src/man/man$section/$topic.$section
-  done
+
+  build-ifchange $( read_nix_style_file $U_S_MAN | while read _ section topic _
+		do echo "src/man/man$section/$topic.$section"; done | tr '\n' ' ')
   true "${sh_libs_list:="$REDO_BASE/.cllct/src/sh-libs.list"}"
-  sort -u "$sh_libs_list" | while read lib_id src
-  do
-    sh_lib_base="$REDO_BASE/.cllct/src/functions/$lib_id-lib"
-    sh_lib_list="$sh_lib_base.func-list"
-    build-ifchange $REDO_BASE/src/man/man7/User-Script:$lib_id.7
-  done
+
+  build-ifchange $( sort -u "$sh_libs_list" | while read lib_id src
+		do
+			sh_lib_base="$REDO_BASE/.cllct/src/functions/$lib_id-lib"
+			sh_lib_list="$sh_lib_base.func-list"
+			echo "$REDO_BASE/src/man/man7/User-Script:$lib_id.7"
+		done | tr '\n' ' ' )
 }
 
 # XXX: topic should be parts of files, not file names? Like commands. #MJfc

@@ -1,8 +1,8 @@
 #!/bin/sh
 
-build_lib_load ()
+build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  lib_assert $package_build_tool
+  lib_require match $package_build_tool
   local var=${package_build_tool}_commands cmd
   for name in ${!var}
   do
@@ -21,85 +21,106 @@ EOM
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
 }
 
-build_tests()
+build_component_exists () # Target
 {
-  local test_fmt=$1 report_fmt=$2; shift 2
-
-  for x in "$@"
+  test -n "${1-}" || return 98
+  read_nix_style_file .meta/stat/index/components.list | {
+    while read name type target_spec source_specs
     do
-      echo "$(dirname $x)/$(basename -- "$x" .$test_fmt).$report_fmt"
+      test "$name" = "$1" && return
+      fnmatch "$target_spec" "$1" && return
+      continue
     done
-}
-
-build_test()
-{
-  true
-}
-
-build()
-{
-  test -n "${package_build_tool-}" || return 1
-  $package_build_tool "$@"
-}
-
-# XXX: Map to namespace to avoid overlap with builtin names
-req_subcmd() # Alt-Prefix [Arg]
-{
-  test $# -gt 0 -a $# -lt 3 || return
-  local dflt= altpref="$1" subcmd="$2"
-
-  prefid="$(printf -- "$altpref" | tr -sc 'A-Za-z0-9_' '_')"
-
-  type "$subcmd" 2>/dev/null >&2 && {
-    eval ${prefid}subcmd=$subcmd
-    return
+    return 1
   }
-  test -n "$altpref" || return
+}
 
-  subcmd="$altpref$subcmd"
-  type "$subcmd" 2>/dev/null >&2 && {
-    eval ${prefid}subcmd=$subcmd
-    return
-  }
+build_fetch_component () # Path
+{
+  read_nix_style_file .meta/stat/index/components.list |
+    while read target_name type target_spec source_specs
+  do
+    case "$type" in
 
-  $LOG error "ci:env" "No subcmd for '$2'"
+      alias | function ) ;;
+
+      simpleglob )
+          fnmatch "$target_spec" "$1" && {
+            echo "$type $target_spec $source_specs"
+            return
+          }
+        ;;
+
+      * ) $LOG error "" "Unknown target type '$type'" "$target_name $1" 1 ;;
+    esac
+  done
   return 1
 }
 
-main_() # [Base] [Cmd-Args...]
+build_component () # Target Basename Temp
 {
-  local main_ret= base="$1" ; shift 1
-  test -n "$base" || base="$(basename "$0" .sh)"
-
-  test $# -gt 0 || set -- default
-  req_subcmd "$base-" "$1" || usage-fail "$base: $*"
-
-  shift 1
-  eval \$${prefid}subcmd "$@" || main_ret=$?
-  unset ${prefid}subcmd prefid
-
-  return $main_ret
+  build_components "$1" "" "$@"
 }
 
-main_test_() # Test-Cat [Cmd-Args...]
+build_components () # Target-Name Type Build-Args...
 {
-  export _ENV package_build_tool
-
-  local main_test_ret= testcat="$1" ; shift 1
-  test -n "$testcat" || testcat=$(basename "$0" .sh)
-
-  test $# -gt 0 || set -- all
-  req_subcmd "$testcat-" "$1" ||
-	$LOG error "" "test: $testcat: $*" "" 1
-
-  shift 1
-  eval \$${prefid}subcmd \"\$@\" || main_test_ret=$?
-  unset ${prefid}subcmd prefid
-
-  test -z "$main_test_ret" && print_green "" "OK" || {
-    print_red "" "Not OK"
-    return $main_test_ret
+  local name="$1" name_p type="${2:-"[^ ]*"}" ; shift 2
+  fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
+  grep '^'"$name_p"' '"$type"'\($\| \)' .meta/stat/index/components.list | {
+    read name type rest
+    set -o noglob; set -- $name $rest -- "$@"; set +o noglob
+    build_component_$type "$@"
   }
+}
+
+# Simpleglob: defer to target paths obtained by expanding source-spec
+build_component_simpleglob () # NAME TARGET_SPEC SOURCE_SPECS
+{
+  local src name glob=$(echo "$3" | sed 's/%/*/')
+  for src in $glob
+  do
+    name="$(glob_spec_var "$glob" "$src")"
+    build-ifchange $(echo "$2" | sed 's/\*/'"$name"'/')
+  done
+}
+
+# Return first globbed part, given glob pattern and expanded path
+glob_spec_var () # Pattern Path
+{
+  set -- "$@" $(match_grep "$1" | sed 's/\*/\(\.\*\\)/')
+  echo "$2" | sed 's/'"$3"'/\1/g'
+}
+
+# Function target: invoke function with build-args
+build_component_function () # Name [Function] Libs... -- Build-Arg
+{
+  local libs name=$1 func="$2"
+  shift 2
+  test "${func:-"-"}" != "-" ||
+    func="build_$(mkvid "$name" && printf -- "$vid")"
+  while test $# -gt 0 -a "${1-}" != "--"
+  do libs="${libs:-}${libs+" "}$1"; shift
+  done; shift
+
+  test -z "${libs-}" || { lib_require $libs || return; }
+  $func "$@"
+}
+
+# Alias target: defer to other targets
+build_component_alias () # Name Targets... -- Build-Arg
+{
+  local aliases ; shift
+  while test $# -gt 0 -a "${1-}" != "--"
+  do aliases="${aliases:-}${aliases+" "}$1"; shift
+  done; shift
+
+  build-always && build-ifchange $aliases
+}
+
+build ()
+{
+  test -n "${package_build_tool-}" || return 1
+  $package_build_tool "$@"
 }
 
 list_src_files () # Generator Newer-Than Magic-Regex [Extensions-or-Globs...]
@@ -153,14 +174,19 @@ list_executables () # _ [Newer-Than]
   list_src_files find_executables "${2-}" ""
 }
 
+find_executables ()
+{
+  find . -executable -type f | cut -c3-
+}
+
 list_scripts () # [Generator] [Newer-Than]
 {
   list_src_files "${1-}" "${2-}" '^\#\!'
 }
 
-find_executables ()
+build_chatty () # Level
 {
-  find . -executable -type f | cut -c3-
+  test ${quiet:-$(test $verbosity -lt ${1:-3} && printf 1 || printf 0)} -eq 0
 }
 
 #

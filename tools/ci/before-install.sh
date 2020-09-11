@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-# CI suite stage 1. See .travis.yml
+# CI suite stage 1.
 
+SCRIPTPATH="$PWD/src/sh/lib:$PWD/commands:$PWD/contexts"
 ci_env_= . "./tools/ci/env.sh"
-
 echo "Sourcing $SUITE env (I) <$CWD, $ci_tools>" >&2
 
+# Save times of first env.sh source, because it re-evaluate after stage install
 ci_stages="$ci_stages sh_env_1 ci_env_1"
 ci_env_1_ts=$ci_env_ts
 sh_env_1_ts=$sh_env_ts
@@ -17,8 +18,10 @@ export_stage before-install before_install && announce_stage
 
 $LOG note "" "Sourcing init parts" "$(suite_from_table "$build_tab" Parts $SUITE 1 | tr '\n' ' ')"
 suite_source "$build_tab" $SUITE 1
-test $SKIP_CI -eq 0 || exit 0
+test $SKIP_CI -eq 0 || {
+    $LOG "warn" "" "Abort requested by SKIP-CI"
+    exit 0
+}
 
 stage_id=before_install close_stage
-set +euo pipefail
 # Id: /0.0 tools/ci/before-install.sh

@@ -1,0 +1,5 @@
+- - sh-baseline:
+- - sh-ci: Bare script to run CI suite
+- - sh-ci.tab: Matrix for sh-ci
+- - sh-main:
+# --

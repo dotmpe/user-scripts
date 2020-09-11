@@ -14,17 +14,17 @@ oil_docker_init()
   lib_assert docker-sh
   docker_name=$OIL_CONTAINER
   docker_image=$OIL_IMAGE
-  docker_sh_c_init()
+  docker_sh_c_init() # sh:no-stat
   {
     ${dckr_pref}docker exec --user root $OIL_CONTAINER \
       sh -c 'echo treebox:treeobx | chpasswd' &&
     oil bash -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal'
   }
-  oil()
+  oil() # sh:no-stat
   {
     ${dckr_pref}docker exec -i -w "$OIL_PATH" "$OIL_CONTAINER" "$@"
   }
-  oshc()
+  oshc() # sh:no-stat
   {
     note "OSHC: '$*'"
     oil "./bin/oshc" "$@"

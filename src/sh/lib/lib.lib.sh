@@ -62,6 +62,7 @@ lib_exists() # Dir Name
 # Echo every occurence of *.lib.sh on SCRIPTPATH
 lib_path() # Local-Name Path-Var-Name
 {
+  test $# -le 2 || return 98
   test -n "${2-}" || set -- "$1" SCRIPTPATH
   lookup_test=${lookup_test:-"lib_exists"} \
   lookup_first=${lookup_first:-0} \
@@ -82,8 +83,9 @@ lib_paths()
 # List matching names existing on path.
 lib_glob () # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
 {
+  test $# -le 3 || return 98
   shopt -s nullglob
-  lib_glob_names() # Dir Pattern
+  lib_glob_names() # Dir Pattern                                    sh:no-stat
   {
     echo "$1/"$2".lib.sh"
   }
@@ -104,16 +106,18 @@ lib_glob () # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
 # List all paths or names for libs (see lib-glob for formats)
 lib_list() # [Path-Var-Name] [Format]
 {
-  lib_glob "*" "${1-"SCRIPTPATH"}" "${2-"names-list"}"
+  test $# -le 2 || return 98
+  lib_glob "*" "${1:-"SCRIPTPATH"}" "${2:-"names-list"}"
 }
 
 # Find libs by content regex, list paths in format (see lib-glob for formats)
 lib_grep() # grep_f=-Hni ~ Regex [Name-Glob [Path-Var-Name]]
 {
-  test $# -gt 0 -a -n "$1" || return
-  lib_glob "${2-"*"}" ${3-"SCRIPTPATH"} "paths-list" | {
+  test $# -gt 0 -a -n "${1-}" || return 98
+  lib_glob "${2:-"*"}" ${3:-"SCRIPTPATH"} "paths-list" | {
     test -n "${grep_f-}" || local grep_f=-Hni
-    act="grep $grep_f '$1'" foreach_eval
+    ( set +euo pipefail
+      act="grep $grep_f '$1'" foreach_eval || true )
   }
 }
 
@@ -205,7 +209,7 @@ lib_load() # Libs...
 lib_assert() # Libs...
 {
   local log_key=$scriptname/$$:u-s:lib:assert
-  test $# -gt 0 || return
+  test $# -gt 0 || return 98
   while test $# -gt 0
   do
     mkvid "$1"
@@ -301,7 +305,7 @@ lib_loaded_cleanup () # [Sort-Opts]
 # Load given libs and keep loading libs in LIB-REQ until empty
 lib_require() # Libs...
 {
-  test $# -gt 0 || return
+  test $# -gt 0 || return 98
   test -z "${__load_lib-}" || {
     LIB_REQ="${LIB_REQ:-}$* "
     return

@@ -18,9 +18,7 @@ dckr_load()
   test -n "$LOG" -a -x "$LOG" && dckr_log=$LOG || dckr_log=print_err
 
   dckr_lib_load && # NOTE: Because this is not loaded as a real lib. +U_s
-  lib_load docker-sh docker-sh-htd &&
-  lib_init docker-sh docker-sh-htd &&
-  lib_assert docker-sh docker-sh-htd
+  lib_require docker-sh-htd && lib_init docker-sh-htd
 }
 
 # List running container names
@@ -34,38 +32,72 @@ dckr_list() #
 dckr_init() #
 {
   test $# -eq 0 || return
-  docker_sh_c_init()
+  docker_sh_c_init() # sh:no-stat
   {
-    ${dckr_pref}docker exec -u root "$1" \
-      sh -c 'echo treebox:treeobx | chpasswd && \
-          usermod -a -G docker treebox && \
-          echo "treebox    ALL=NOPASSWD:$(which docker) *" >>/etc/sudoers.d/treebox' || return
-
-    ${dckr_pref}docker exec -w /src/github.com/dotmpe/oil "$1" \
+    ${dckr_pref-}docker exec -u root "$1" sh -c '
+      usermod -a -G docker treebox;
+      apt-get update -q && apt-get install -qqy pass
+    ' || return
+    ${dckr_pref-}docker exec -w /src/github.com/dotmpe "$1" \
+      sh -c 'git clone https://github.com/dotmpe/oil' || return
+    ${dckr_pref-}docker exec -w /src/github.com/dotmpe/oil "$1" \
       sh -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal' || return
 
-    # Accept Oil-shell install error
+    # Accept redo-shell install error
     local e=
-    ${dckr_pref}docker exec -ti -u root -w /src/github.com/apenwarr/redo "$1" \
-      sh -c 'git clean -dfx && ./redo install' || e=$?
-    test "$e" = "126" || return
+    ${dckr_pref-}docker exec "$1" \
+      sh -c '
+mkdir -p /src/github.com/apenwarr
+cd /src/github.com/apenwarr
+
+git clone https://github.com/apenwarr/redo
+
+cd redo && git show-ref && git rev-parse && git rev-parse --abbrev-ref HEAD
+git status
+git checkout redo-0.42c
+ls -la redo || true
+git ls-files
+
+      ' || return
+
+    #${dckr_pref-}docker exec -u root "$1" \
+    #  sh -c 'echo treebox:treeobx | chpasswd && \
+    #      usermod -a -G docker treebox && \
+    #      echo "treebox    ALL=NOPASSWD:$(which docker) *" >>/etc/sudoers.d/treebox' || return
   }
-  dckr_load && docker_sh_c require
+  dckr_load && docker_sh_c require &&
+
+  ${dckr_pref-}docker exec -ti -u root -w /src/github.com/apenwarr/redo \
+    "$docker_name" \
+      sh -c '
+
+git clean -dfx
+DESTDIR= PREFIX=/usr/local ./do -j10 install
+
+  ' || return
 }
 
 # Remove U_s container instance
+dckr_deinit()
+{
+  test $# -eq 0 || return 98
+  dckr_load && docker_sh_c delete "$docker_name" &&
+  $dckr_log note u-s:dckr "Removed container"
+}
+
 dckr_reset() #
 {
-  test $# -eq 0 || return
+  test $# -eq 0 || return 98
   dckr_load &&
-    docker_sh_c delete "$docker_name" &&
-  test -n "$dckr_log" || return 103
-  $dckr_log note u-s:dckr "Removed container"
+  docker_sh_c_exists $docker_name && {
+    dckr_deinit || return
+  }
+  dckr_init
 }
 
 dckr_req() #
 {
-  test $# -eq 0 || return
+  test $# -eq 0 || return 98
   dckr_load && {
     # Return if container is running, else initialize one
     docker inspect --format '{{ .Id }}' "$docker_name" >/dev/null || return
@@ -76,7 +108,7 @@ dckr_req() #
 dckr_exec() # [Cmd...]
 {
   dckr_load || return
-  ${dckr_pref}docker exec -ti -u treebox -w "$U_S_PATH" "$docker_name" "$@"
+  ${dckr_pref-}docker exec -ti -u treebox -w "$U_S_PATH" "$docker_name" "$@"
 }
 
 # Interactive login shell executed in U-s container (see dckr-exec)
@@ -162,6 +194,13 @@ dckr_retest_suite()
   dckr_reset
   dckr_init
   dckr_test_suite
+}
+
+dckr_refresh_images() # Images
+{
+  for img in $@
+  do ${dckr_pref-}docker pull $img >/dev/null || return
+  done
 }
 
 #

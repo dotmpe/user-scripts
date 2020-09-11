@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-test -z "${sh_util_:-}" && sh_util_=1 || return 98 # Recursion
-
-# XXX: enable for CI? only
-info() { exit 123; }
+test -z "${sh_util_:-}" && sh_util_=1 || return 198 # Recursion
 
 
 assert_nonzero()

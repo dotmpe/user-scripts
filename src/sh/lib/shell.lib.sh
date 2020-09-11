@@ -123,7 +123,7 @@ sh_env_init()
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
     $log info shell.lib "Choosing bash sh-env-init"
-    sh_env()
+    sh_env() # sh:no-stat
     {
       {
         set | grep '^[_A-Za-z][A-Za-z0-9_]*=.*$'
@@ -132,20 +132,20 @@ sh_env_init()
     }
   } || {
     $log info shell.lib "Choosing non-bash sh-env-init"
-    sh_env()
+    sh_env() # sh:no-stat
     {
       set
     }
   }
-  sh_isset()
+  sh_isset() # sh:no-stat
   {
     sh_env | grep -qi '^'$1=
   }
-  sh_isenv() # XXX: Exported vars? @Base
+  sh_isenv() # XXX: Exported vars? @Base # sh:no-stat
   {
     env | grep -q "^$1="
   }
-  sh_genv() # Grep for var names
+  sh_genv() # Grep for var names # sh:no-stat
   {
     sh_env | grep "$1"
   }

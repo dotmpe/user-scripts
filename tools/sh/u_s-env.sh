@@ -20,6 +20,7 @@ test -z "${INIT_DEBUG:=}" || set +x
 #else dev-local
 #test -n "$U_S" || U_S="$(pwd -P)"
 
+true "${verbosity:=${v:-3}}"
 : "${CWD:="$PWD"}"
 : "${sh_tools:="$CWD/tools/sh"}"
 . "$sh_tools/env.sh" || return

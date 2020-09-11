@@ -2,13 +2,6 @@
 
 # This is for sourcing into a standalone or other env boot/init script (ie. CI)
 
-# NOTE: /bin/sh =/= Sh b/c BASH_ENV... sigh. Oh well, *that* works. Now this:
-case "$-" in
-  *u* ) # XXX: test -n "$BASHOPTS" || ... $BASH_ENV
-      set +o nounset
-    ;;
-esac
-
 # U_S=<...> . <sh_tools>/init.sh
 
 # It requires a path to the basedir of the project to boot with. Containing:
@@ -51,6 +44,7 @@ test -z "${DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
 } ||
   $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1
 
+test -n "${LOG-}" || LOG=$INIT_LOG
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
@@ -59,7 +53,6 @@ test "${init_sh_libs-}" = "0" || {
     init_sh_libs=sys\ os\ str\ script\ log\ shell
 
   $INIT_LOG "info" "$scriptname:sh:init" "Loading" "$init_sh_libs"
-  test -n "$LOG" || LOG=$INIT_LOG
 
   type sh_include >/dev/null 2>&1 || . "$U_S/tools/sh/parts/include.sh"
 

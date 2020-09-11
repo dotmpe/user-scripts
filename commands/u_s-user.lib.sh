@@ -10,6 +10,7 @@ user_repos() # [match-repo] [match-group-or-team] [github.com] [Vnd-Src-Prefix]
   test $# -gt 2 || set -- "$1" "$2" "$VND_SRC_PREFIX"
 
   print_err "info" "u-s:user-repos" "Listing user-checkouts" "$*"
+  shopt -s nullglob
   for user_repo in $3/$1/$2
   do
     test -d "$user_repo" || {
@@ -33,6 +34,7 @@ user_repos() # [match-repo] [match-group-or-team] [github.com] [Vnd-Src-Prefix]
         done
     }
   done
+  shopt -u nullglob
 }
 
 #

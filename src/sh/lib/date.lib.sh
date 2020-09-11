@@ -273,15 +273,16 @@ date_iso() # Ts [date|hours|minutes|seconds|ns]
   }
 }
 
-# Print fractional seconds since Unix epoch
+# Print fractional seconds since Unix epoch, like a java timestamp with period.
+#
 epoch_microtime() # [Date-Ref=now]
 {
-  date_ "${1-}" "+%s.%N"
+  date_ "${1-"now"}" +"%s.%N"
 }
 
 date_microtime()
 {
-  date_ "${1-}" +"%Y-%m-%d %H:%M:%S.%N"
+  date_ "${1-"now"}" +"%Y-%m-%d %H:%M:%S.%N"
 }
 
 sec_nomicro()
@@ -290,3 +291,5 @@ sec_nomicro()
       echo "$1" | cut -d'.' -f1
   } || echo "$1"
 }
+
+#

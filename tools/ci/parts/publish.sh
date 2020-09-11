@@ -7,13 +7,21 @@ ci_stages="$ci_stages publish"
 
 ci_announce "Starting ci:publish"
 
-lib_load git vc
-# XXX: os-htd git-htd vc-htd
-test -e /srv/scm-git-local || {
-  sudo mkdir -vp /srv/scm-git-local/ || true
-  sudo chown travis /srv/scm-git-local || true
-}
+#echo "\
+#--------------------------------------------------------------------------- env"
+#env
+#echo "\
+#------------------------------------------------------------------------- local"
+#set | grep '^[a-z0-9_]*='
+#echo "\
+#-------------------------------------------------------------------------------"
 
+#lib_load git vc
+## XXX: os-htd git-htd vc-htd
+#test -e /srv/scm-git-local || {
+#  sudo mkdir -vp /srv/scm-git-local/ || true
+#  sudo chown travis /srv/scm-git-local || true
+#}
 #set -- "dotmpe/script-mpe"
 #git_scm_find "$1" || {
 #  git_scm_get "$SCM_VND" "$1" || return
@@ -23,6 +31,7 @@ sh_include "report-times"
 
 test_pass= test_cnt=
 echo 'assertions:'
+shopt -s nullglob
 for x in $B/reports/*/*.tap
 do
   suite=$(basename "$(dirname "$x")")
@@ -34,16 +43,24 @@ do
   test_pass=$(( $test_pass + $pass ))
   test_cnt=$(( $test_cnt + $total ))
 done
+shopt -u nullglob
 
 stage_cnt=$(echo $ci_stages | wc -w | awk '{print $1}')
 
-echo "# timer-start job-nr branch commit runtime stages pass-/total-steps pass-/total-reports #v0"
-echo "$TRAVIS_TIMER_START_TIME $TRAVIS_JOB_NUMBER $TRAVIS_BRANCH $TRAVIS_COMMIT $RUNTIME $stage_cnt $pass_cnt/$step_cnt $test_pass/$test_cnt # $GIT_COMMIT_LINE" | tee -a $results_log
+echo TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}
 
+
+echo "# job-nr build-status branch commit runtime stages pass-/total-steps pass-/total-reports #v0" | {
+  test -e "$results_log" && cat || tee "$results_log"
+}
+
+ci_announce 'Adding results log-line'
+echo "$JOB_NR $BUILD_STATUS $TRAVIS_BRANCH $TRAVIS_COMMIT $RUNTIME $stage_cnt $pass_cnt/$step_cnt ${test_pass:-0}/${test_cnt:-0} # $GIT_COMMIT_LINE" >>"$results_log"
 ci_announce 'Last three results:'
 tail -n 3 "$results_log" || true
 
-mv /tmp/docker-config.json $HOME/.docker/config.json
+lib_reload u_s-ledge u_s-dckr
+test -z "${TRAVIS-}" || mv -v /tmp/docker-config.json $HOME/.docker/config.json
 ledge_pushlogs
 
 sh_include build-info

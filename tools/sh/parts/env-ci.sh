@@ -3,26 +3,30 @@
 : "${ci_stages:=}"
 : "${stages_done:=}"
 
-: "${BRANCH_NAME:="$(git rev-parse --abbrev-ref HEAD)"}"
+: "${BRANCH_NAME:="${TRAVIS_BRANCH-}"}"
+: "${BRANCH_NAME:="$(git rev-parse --abbrev-ref HEAD)"}" # NOTE: may report HEAD in detached state
 
-travis_ci_timer_ts=
-test -n "${TRAVIS_TIMER_START_TIME:-}" &&
-  travis_ci_timer_ts=$(echo "$TRAVIS_TIMER_START_TIME"|sed 's/\([0-9]\{9\}\)$/.\1/') ||
-    : "${TRAVIS_TIMER_START_TIME:=$($gdate +%s%N)}"
+test -n "${TRAVIS_TIMER_START_TIME:-}" ||
+  : "${TRAVIS_TIMER_START_TIME:=$($gdate +%s%N)}"
 
+travis_ci_timer_ts=$(echo "$TRAVIS_TIMER_START_TIME"|sed 's/\([0-9]\{9\}\)$/.\1/')
+
+true "${SESSION_ID:="$(uuidgen)"}"
 : "${TRAVIS_BRANCH:=$BRANCH_NAME}"
-: "${TRAVIS_JOB_ID:=-1}"
-: "${TRAVIS_JOB_NUMBER:=-1}"
-: "${TRAVIS_BUILD_ID:=}"
+: "${TRAVIS_JOB_ID:=}"
+: "${TRAVIS_JOB_NUMBER:=}"
+: "${TRAVIS_BUILD_ID:=$SESSION_ID}"
 : "${GIT_COMMIT:="$(git rev-parse HEAD)"}"
-: "${TRAVIS_COMMIT_RANGE:=}"
+: "${TRAVIS_COMMIT:="$GIT_COMMIT"}"
+: "${TRAVIS_COMMIT_RANGE:="$COMMIT_RANGE"}"
 : "${BUILD:=".build"}" ; B=$BUILD
+: "${JOB_NR:=$TRAVIS_JOB_NUMBER}"
+: "${JOB_ID:=$TRAVIS_JOB_ID}"
+BUILD_ID=${TRAVIS_BUILD_ID:-$SESSION_ID}
 
 : "${SHIPPABLE:=}"
 
-: "${dckr_pref:=}"
 : "${USER:="`whoami`"}"
-test  "$USER" = "treebox" && : "${dckr_pref:="sudo "}"
 
 : "${U_S:="$HOME/.basher/cellar/packages/dotmpe/user-scripts"}"
 : "${u_s_version:="feature/docker-ci"}"

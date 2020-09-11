@@ -1,0 +1,22 @@
+# Target-Name Target-Type Target-Value
+install function
+# TODO: install-deps check
+init alias install check
+build alias check src-sh manual
+check alias lint
+current alias .meta/cache/ledges.list
+.cllct/src/sh-stats function build_sh_stats u_s-stats
+
+# Baseline describes third-party components, dependencies, host.hk
+# For host/env prerequisites and checks see init and init-checks targets.
+# lint
+bats-baseline simpleglob .build/tests/baseline-*.tap test/baseline/%.bats
+bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
+# TODO: benchmarks
+# TODO: manual
+manual alias manuals
+manuals function - u_s-man 
+pack function
+
+# manual-user-lib simpleglob src/man/man7/User-Script:*.7
+# Id:

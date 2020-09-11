@@ -5,6 +5,8 @@
 # Convert indices to contexts.
 # build context.list from context-local.list
 
+# TODO: update .meta/stat/index/context from cache (incl. sh-files, s-libs files)
+
 context_local=$(dirname "$1")/$(basename "$1" .list)-local.list
 redo-ifchange \
   .meta/cache/sh-files.list \

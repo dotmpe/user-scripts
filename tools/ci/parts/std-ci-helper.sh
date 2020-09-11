@@ -7,18 +7,18 @@ export_stage()
   test -n "${2:-}" || set -- "$1" "$1"
 
   export stage=$1 stage_id=$2 ${2}_ts="$($gdate +%s.%N)"
-  ci_stages="$ci_stages $stage_id"
+  ci_stages="${ci_stages-}${ci_stages+" "}$stage_id"
 }
 
 announce_time()
 {
-  test -n "$travis_ci_timer_ts" && {
+  test -n "${travis_ci_timer_ts-}" && {
 
     deltamicro="$(echo "$1 - $travis_ci_timer_ts" | bc )"
-    print_yellow "$scriptname:$stage" "$deltamicro sec: $2"
+    print_yellow "$scriptname:$stage" "${deltamicro}s: $2"
   } || {
 
-    print_yellow "$scriptname:$stage" "??? sec: $2"
+    print_yellow "$scriptname:$stage" "???s: $2"
   }
 }
 
@@ -31,7 +31,7 @@ announce_stage()
   test -n "$2" || set -- "$1" "$1"
 
   local ts="$(eval echo \$${2}_ts)"
-  announce_time "$ts" "Starting stage..."
+  announce_time "$ts" "Starting stage... <$stage>"
 }
 
 close_stage()
@@ -66,7 +66,7 @@ ci_abort()
 
 ci_cleanup()
 {
-  local exit=$? ; test $exit -gt 0 || return 0 ; sync
+  local exit=$? ; test ${exit:-0} -gt 0 || return 0 ; sync
   echo '------ ci-cleanup: Exited: '$exit  >&2
   # NOTE: BASH_LINENO is no use at travis, 'secure'
   echo "At $BASH_COMMAND:$LINENO"
@@ -117,7 +117,9 @@ c-run()
 {
   test $# -ge 1 -a -n "${1:-}" || return 98
   : "${c_lbl:="Step"}"
-  test $verbosity -le 4 || print_yellow "" "Running $c_lbl $c_run '$1'..."
+  #: "${c_run:="$(basename "$SCRIPT_SHELL")-c"}"
+  : "${c_run:="$SCRIPT_SHELL -c"}"
+  print_yellow "" "Running $c_lbl $c_run '$1'..."
 
   {
     $c_run "$@" | {

@@ -39,55 +39,6 @@ edit() # [Files...]
   $EDITOR "$@"
 }
 
-# Grep all libs on SCRIPTPATH for expression
-libs_grep() # Grep
-{
-  test $# -eq 1 || return
-  local grep="$(libs_paths)"
-  grep "$@" $grep
-}
-
-libs_path() #
-{
-  echo "$SCRIPTPATH" | tr ':' '\n'
-}
-
-# List full path names for sh-lib files on SCRIPTPATH
-libs_paths() # [Glob]
-{
-  test $# -eq 1 || set -- '*'
-  echo "$SCRIPTPATH" | tr ':' '\n' | while read scriptpath
-  do
-    test -e "$scriptpath/$1.lib.sh" -o \
-      "$scriptpath/*.lib.sh" != "$(echo $scriptpath/*.lib.sh|head -1)" ||
-        continue
-    echo $scriptpath/$1.lib.sh; done
-}
-
-# List only the names of sh-libs on SCRIPTPATH
-libs_list() # [Glob]
-{
-  test $# -lt 2 || return
-  test $# -eq 1 || set -- '*'
-  echo "$SCRIPTPATH" | tr ':' '\n' | while read scriptpath
-  do
-    test -e "$scriptpath/$1.lib.sh" -o \
-      "$scriptpath/*.lib.sh" != "$(echo $scriptpath/*.lib.sh|head -1)" ||
-        continue
-
-    # NOTE: no spaces on SCRIPTPATH
-    len="${#scriptpath}"
-    echo $scriptpath/$1.lib.sh | tr ' ' '\n' |
-        sed 's/^.\{'$len'\}.\(.*\)\.lib\.sh$/\1/'
-  done
-}
-
-# Listing matching lib names (see libs-list)
-libs() # [Glob]
-{
-  libs_list "$@"
-}
-
 update() # [Repo-Release] [Repo-Id] [Repo-URL]
 {
   test $# -le 3 || return 99
@@ -116,6 +67,43 @@ run_test()
   ./sh-main dckr retest-suite
 }
 
+lastbuilds() #
+{
+  ledge_lastbuilds "$@"
+}
+
+lastbuild() #
+{
+  lastbuilds 1
+}
+
+listtags()
+{
+  set -- web docker-hub ; lib_load "$@" && lib_init "$@"
+
+  docker_hub_tags dotmpe/ledge
+}
+
+pullall()
+{
+  test $# -gt 0 || set -- $(listtags)
+  ${dckr_pref-}docker pull busybox >/dev/null
+  dckr_refresh_images $( for tag in $@; do echo "dotmpe/ledge:$tag"; done)
+}
+
+listfiles()
+{
+  test $# -gt 0 || set -- $(listtags)
+  ledge_listsd "$@"
+}
+
+listlogs()
+{
+  test $# -gt 0 || set -- $(listtags)
+  ledge_listlogs "$@"
+}
+
+
 # List raw func names as commands. TODO: indent spec maybe shortdescr nicely
 commands() #
 {
@@ -127,10 +115,6 @@ commands() #
 print_help()
 {
   echo "Main commands: "
-  echo "  libs - see libs-list"
-  echo "  libs-grep <regex> - list matches for regex in sh-lib files"
-  echo "  libs-list [glob] - list matching sh-lib names found on SCRIPTPATH"
-  echo "  libs-paths [glob] - list full paths to lib files (with matching names)"
   echo
   echo "  update [version] - fetch and hard-reset to latest version"
   echo "  reinstall"
@@ -141,9 +125,21 @@ print_help()
   echo "  dckr-shell CMD - Execute login shell at U-S dir"
   echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
   echo
+  echo "  lastbuild - "
+  echo "  listtags - show project-branch-name tags for all ledges"
+  echo "  pullall - fetch every ledge at docker hub"
+  echo "  listfiles - "
+  echo "  listlogs - "
+  echo "  ledge-pull - merge local logs for current project/branch from ledge"
+  echo "  ledge-exists - test by pulling ledge for project/branch"
+  echo "  ledge-tovolume - Create named volume from ledge data"
+  echo "  ledge-localclean - Remove u-s container and ledge volume"
+  echo "  ledge-* - See Script.mpe:build#logging docs"
+  echo
   echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
   echo
   echo "Use 'commands' for a full list; or 'topics' to index other manuals."
+echo verbosity:$verbosity >&2
 }
 print_usage()
 {
@@ -196,7 +192,7 @@ main() # [SUBCMD [ARGS...]]
     mkvid "$cmdid-$2" || return
     func_exists "$vid" && {
       print_err "info" "" "Found group-cmd" "$subcmd:$2"
-      subcmd=$subcmd:$2 cmdgrp=$cmdid cmdid=$vid 
+      subcmd=$subcmd:$2 cmdgrp=$cmdid cmdid=$vid
       shift
     }
   }
@@ -212,8 +208,8 @@ case "$0" in "-*" ) * ;; */u-s )
   set -o errexit # Ash, Bash
   set -o nounset # Ash, Bash
   set -o pipefail # Bash-only
-  #set -o posix
-  
+  # XXX: set -o posix
+
   : "${U_S:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
   : "${CWD:="$U_S"}"
   : "${sh_tools:="$CWD/tools/sh"}"
@@ -225,6 +221,8 @@ case "$0" in "-*" ) * ;; */u-s )
       print_err "error" "" "Loading parts" "$? $x" $?
   done
   unset x
+  u_s_ledge_lib_load
 
+  set -euo pipefail
   main "$@"
 ;; esac

@@ -16,7 +16,7 @@ test -n "${LOG-}" -a -x "${LOG-}" -o \
   LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tools/sh/log.sh
 # Sh-Sync: tools/sh/parts/env-init-log.sh
 
-test -n "$sh_src_base" || sh_src_base=/src/sh/lib
+test -n "${sh_src_base-}" || sh_src_base=/src/sh/lib
 
 test -n "${1-}" && scriptpath=$1 || scriptpath=$(pwd -P)
 test -n "${scriptname-}" || scriptname="$(basename -- "$0")" # No-Sync
@@ -52,7 +52,7 @@ test -z "${DEBUG-}" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 test -n "${3-}" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script\ log
 
 test "$init_sh_libs" = "0" || {
-  lib_load $init_sh_libs && lib_init
+  lib_load $init_sh_libs && lib_init || $status $?
 
   test -n "${2-}" && init_sh_boot="$2" || init_sh_boot=null # FIXME: stderr-console-logger
   script_init "$init_sh_boot" || $status $?

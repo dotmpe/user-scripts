@@ -5,42 +5,23 @@ set -euo pipefail
 # Static analysis for Sh libs
 
 # detect and track shell scripts
-build-ifchange .meta/cache/sh-files.list || {
-    build-keep-going || return
-  }
 
-# sh-libs is a subset of sh-files, 
-build-ifchange .meta/cache/sh-libs.list || {
-    build-keep-going || return
-  }
+build-ifchange \
+  .meta/cache/sh-files.list \
+  .meta/cache/sh-libs.list \
+  .cllct/src/sh-libs.list \
+  .meta/cache/context.list
 
-# TODO: update .meta/stat/index/context from cache (incl. above files)
-build-ifchange .meta/cache/context.list || {
-    build-keep-going || return
-  }
-
-
-build-ifchange .cllct/src/sh-libs.list || {
-    build-keep-going || return
-  }
-
-cut -d"	" -f1 .cllct/src/sh-libs.list | while read libid
-do
-    build-ifchange .cllct/src/functions/$libid-lib.func-list || {
-      build-keep-going || return
-    }
-    while read func
+build-ifchange \
+  $( cut -d"	" -f1 .cllct/src/sh-libs.list | while read libid
     do
-      build-ifchange .cllct/src/functions/$libid-lib/$func.func-deps || {
-        build-keep-going || return
-      }
-    done <.cllct/src/functions/$libid-lib.func-list
-done
+        echo .cllct/src/functions/$libid-lib.func-list
 
-build-ifchange .cllct/src/commands.list .cllct/src/sh-stats || {
-    build-keep-going || return
-  }
-{ echo "Updated Sh stats"
-  cat .cllct/src/sh-stats
-} >&2
+        while read func
+        do
+          echo .cllct/src/functions/$libid-lib/$func.func-deps
+        done <.cllct/src/functions/$libid-lib.func-list
+    done) \
+  .cllct/src/commands.list .cllct/src/sh-stats
+
 #

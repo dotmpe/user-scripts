@@ -152,6 +152,33 @@ filename_baseid()
   mkid "$basename" '' '_'
 }
 
+# Add number to file, provide extension to split basename before adding suffix
+number_file() # [action=mv] Name [Ext]
+{
+  local dir=$(dirname "$1") cnt=1 base=$(basename "$1" ${2-})
+
+  while test -e "$dir/$base-$cnt$2"
+  do
+    cnt=$(( $cnt + 1 ))
+  done
+  dest=$dir/$base-$cnt$2
+
+  test -n "${action-}" || local action="mv"
+  $action -v "$1" "$dest" || return $?
+}
+
+# make numbered copy, see number-file
+backup_file() # [action=mv] Name [Ext]
+{
+  action="cp" number_file "$@"
+}
+
+# rename to numbered file, see number-file
+rotate_file() # [action=mv] Name [Ext]
+{
+  action="mv" number_file "$@"
+}
+
 # Use `file` to get mediatype aka. MIME-type
 filemtype() # File..
 {
@@ -453,7 +480,7 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
   test -n "${2-}" -a $# -le 4 || return
   local stat=''
 
-  read_lines_while_inner()
+  read_lines_while_inner() # sh:no-stat
   {
     local r=0
     lines_slice "${3-}" "${4-}" "$1" | {

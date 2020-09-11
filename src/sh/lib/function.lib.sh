@@ -5,7 +5,7 @@
 function_linenumber() # Func-Name File-Path
 {
   test -n "${1-}" -a -e "${2-}" || error "function-linenumber FUNC FILE" 1
-  file_where_grep "^$1()\(\ {\)\?\(\ \#.*\)\?\(.* }\)\?$" "$2" || return
+  file_where_grep "^\s*\(function\s\s*\)\?$1\s*()\(\ {\)\?\(\ \#.*\)\?\(.* }\)\?$" "$2" || return
   test -n "$line_number" || {
     error "No line-nr for '$1' in '$2'"
     return 1
@@ -27,7 +27,7 @@ function_linerange() # Func-Name Script-File
 }
 
 
-insert_function() # Func-Name Script-File Func-Code
+insert_function() # Func-Name Script-File Func-Code sh:no-stat: heredoc
 {
   test -n "${1-}" -a -e "${2-}" -a -n "${3-}" || error "insert-function FUNC FILE FCODE" 1
   file_insert_at $2 "$(cat <<HERE
