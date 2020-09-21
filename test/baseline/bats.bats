@@ -20,9 +20,9 @@ setup()
   test -z "${lines}"
 }
 
-@test "$base: assert lib" {
+@test "$base: assert lib (ztombol bats-assert)" {
 
-  load assert
+  load assert || stdfail "No assert lib"
 
   run true
   assert_success

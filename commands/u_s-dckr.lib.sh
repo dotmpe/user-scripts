@@ -38,6 +38,15 @@ dckr_init() #
       usermod -a -G docker treebox;
       apt-get update -q && apt-get install -qqy pass
     ' || return
+
+    ${dckr_pref-}docker exec -w /src/github.com/dotmpe "$1" \
+      sh -c 'mkdir /src/github.com/ztombol &&
+        cd /src/github.com/ztombol &&
+        git clone https://github.com/ztombol/bats-support &&
+        git clone https://github.com/ztombol/bats-assert &&
+        git clone https://github.com/ztombol/bats-file
+    ' || return
+
     ${dckr_pref-}docker exec -w /src/github.com/dotmpe "$1" \
       sh -c 'git clone https://github.com/dotmpe/oil' || return
     ${dckr_pref-}docker exec -w /src/github.com/dotmpe/oil "$1" \
