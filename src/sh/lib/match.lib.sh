@@ -1,9 +1,20 @@
 #!/bin/sh
 
+## RegEx strings
+
 match_lib_init()
 {
-  test -n "$INIT_LOG" || return 102
-  $INIT_LOG info "" "Loaded match.lib" "$0"
+  test "${match_lib_init-}" = "0" || {
+    test -n "${INIT_LOG-}" || return 109
+    test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    case "$uname" in
+        darwin ) gsed=gsed; ggrep=ggrep;;
+        linux ) gsed=sed; ggrep=grep ;;
+        * ) $LOG "error" "" "GNU toolkit required" "$uname" 100
+    esac
+
+    $INIT_LOG info "" "Loaded match.lib" "$0"
+  }
 }
 
 
@@ -26,3 +37,4 @@ match_grep_pattern_test()
   }
 }
 
+#

@@ -1,17 +1,18 @@
 #!/bin/sh
 
-# Initial tools to help boot env for project/script
+# Initial tools to help boot env for a project (tooling) or other set of scripts
 
 script_lib_load()
 {
-  test -n "$LOG" || return 102
-  test -n "$sh_util_base" || sh_util_base=/tools/sh
-  test -n "$script_util" || script_util=$(pwd -P)$sh_util_base
+  test -n "${sh_tools-}" || sh_tools=$(pwd -P)/tools/sh
 }
 
 script_lib_init()
 {
-  test -n "$LOG" -a -x "$LOG" && script_log=$LOG || script_log=$PWD/tools/sh/log.sh
+  test "${script_lib_init-}" = "0" && return
+  test -n "$LOG" || return 102
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && script_log="$LOG" || script_log="$INIT_LOG"
 }
 
 script_lib_init_()
@@ -30,29 +31,23 @@ scripts_init()
   done
 }
 
-script_init()
+# helper for final step in init.sh: boot after lib load & init.
+# TODO: add more sh-include-path options, consolidate with other tooling
+script_init() # ( SCR-PATH | BOOT-NAME )
 {
   test -n "$script_log" || script_lib_init_
   test -f "$1" && {
 
     $script_log info "script" "Bootstrapping from '$1'"
-    . "$1"
+    . "$1" || return
+
   } || {
-    test -e "$script_util/$1" && {
 
-      $script_log info "script" "Bootstrapping script-util '$1'"
-      . "$script_util/$1" || return
+    sh_include_path=$U_S/tools/sh/boot sh_include "$1" || {
 
-    } || {
-      test -e "$script_util/boot/$1.sh" && {
-
-        $script_log info "script" "Bootstrapping '$1'"
-        . "$script_util/boot/$1.sh" || return
-
-      } || {
-
-        $script_log error "script" "Cannnot find script-init to boot '$1' at <$script_util>" "" 103 || return
-      }
+      unset sh_include_path
+      $script_log error "script" "failed boot '$1' at <$sh_tools>" "" 107 || return
     }
+    unset sh_include_path
   }
 }

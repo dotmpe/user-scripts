@@ -1,21 +1,24 @@
 #!/bin/sh
 
-# src: deal with lines of (shell script) formatted source-code
+## Edit or extract source lines
 
+# Deal with lines of (shell script) formatted source-code and other file-based
+# content.
 
 src_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
+  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 src_lib_init()
 {
-  lib_assert log
+  test "${src_lib_init-}" = "0" || {
+    lib_assert log match || return
 
-  local log=; req_init_log
-  $log info "" "Loaded src.lib" "$0"
+    local log=; req_init_log
+    $log info "" "Loaded src.lib" "$0"
+  }
 }
-
 
 
 # Insert into file using `ed`. Accepts literal content as argument.
@@ -25,7 +28,6 @@ file_insert_at_spc=" ( FILE:LINE | ( FILE LINE ) ) INSERT "
 file_insert_at()
 {
   test -x "$(which ed)" || error "'ed' required" 1
-
   test -n "$*" || error "arguments required" 1
 
   local file_name= line_number=
@@ -39,7 +41,7 @@ file_insert_at()
   }
 
   test -e "$file_name" || error "no file $file_name" 1
-  test -n "$1" || error "content expected" 1
+  test -n "${1-}" || error "content expected" 1
   echo "$1" | grep -q '^\.$' && {
     error "Illegal ed-command in input stream"
     return 1
@@ -67,7 +69,7 @@ file_replace_at() # ( FILE:LINE | ( FILE LINE ) ) INSERT
 file_replace_at_ed() # ( FILE:LINE | ( FILE LINE ) ) INSERT
 {
   test -n "$*" || error "arguments required" 1
-  test -z "$4" || error "too many arguments" 1
+  test -z "${4-}" || error "too many arguments" 1
 
   local file_name= line_number=
 
@@ -81,8 +83,8 @@ file_replace_at_ed() # ( FILE:LINE | ( FILE LINE ) ) INSERT
   }
 
   test -e "$file_name" || error "no file: $file_name" 1
+  test -n "${1-}" || error "nothing to insert" 1
   test -n "$line_number" || error "no line_number: $file_name: '$1'" 1
-  test -n "$1" || error "nothing to insert" 1
 
   note "Removing line $file_name:$line_number"
   echo "${line_number}d
@@ -122,7 +124,7 @@ file_replace_at_sed()
 # Quietly get the first grep match' into where-line and parse out line number
 file_where_grep() # 1:where-grep 2:file-path
 {
-  test -n "$1" || {
+  test -n "${1-}" || {
     error "where-grep arg required"
     return 1
   }
@@ -138,9 +140,10 @@ file_where_grep() # 1:where-grep 2:file-path
 # Like file-where-grep but grep starting at and after start-line if given.
 file_where_grep_tail() # 1:where-grep 2:file-path [3:start-line]
 {
-  test -n "$1" || error "where-grep arg required" 1
-  test -e "$2" || error "file expected '$1'" 1
-  test -n "$3" && {
+  test -n "${1-}" || error "where-grep arg required" 1
+  test -e "${2-}" || error "file expected '$1'" 1
+  test $# -le 3 || return
+  test -n "${3-}" && {
     # Grep starting at line offset
     test -e "$2" || error "Cannot buffer on pipe" 1
     where_line=$(tail -n +$3 "$2" | grep -n "$1" | head -n 1 )
@@ -183,7 +186,7 @@ grep_to_last() # 1:Grep 2:File-Path 3:Line
 # Truncate whole, trailing or middle lines of file.
 file_truncate_lines() # 1:file [2:start_line=0 [3:end_line=]]
 {
-  test -f "$1" || error "file-truncate-lines FILE '$1'" 1
+  test -f "${1-}" || error "file-truncate-lines FILE '$1'" 1
   test -n "$2" && {
     cp $1 $1.tmp
     test -n "$3" && {
@@ -225,7 +228,7 @@ get_lines()
 # grep regexes to determine the span to copy.
 copy_where() # Where Span Src-File
 {
-  test -n "$1" -a -f "$3" || error "copy-where Where/Line Where/Span Src-File" 1
+  test -n "${1-}" -a -f "${3-}" || error "copy-where Where/Line Where/Span Src-File" 1
   case "$1" in [0-9]|[0-9]*[0-9] ) start_line=$1 ;; * )
       file_where_grep "$1" "$3" || return $?
       start_line=$line_number
@@ -246,7 +249,7 @@ copy_where() # Where Span Src-File
 # Like cut-function, but a generic version like copy-where is for copy-function.
 cut_where() # Where Span Src-File
 {
-  test -n "$1" -a -f "$3" || error "cut-where Where/Line Where/Span Src-File" 1
+  test -n "${1-}" -a -f "${3-}" || error "cut-where Where/Line Where/Span Src-File" 1
   # Get start/span/end line numbers and remove
   copy_where "$@"
   file_truncate_lines "$3" "$(( $start_line - 1 ))" "$(( $end_line - 1 ))"
@@ -271,16 +274,16 @@ grep_all_before() # File Line Grep
 # find '<func>()' line and see if its preceeded by a comment. Return comment text.
 func_comment()
 {
-  test -n "$1" || error "function name expected" 1
-  test -n "$2" -a -e "$2" || error "file expected: '$2'" 1
-  test -z "$3" || error "surplus arguments: '$3'" 1
+  test -n "${1-}" || error "function name expected" 1
+  test -n "${2-}" -a -e "${2-}" || error "file expected: '$2'" 1
+  test -z "${3-}" || error "surplus arguments: '$3'" 1
 
   # find function line number, or return 1 ending function for no comment
   grep_line="$(grep -n "^\s*$1()" "$2" | cut -d ':' -f 1)"
   case "$grep_line" in [0-9]* ) ;; * ) return 1 ;; esac
 
   lines=$(echo "$grep_line" | count_words)
-  test $lines -gt 1 && {
+  test ${lines-0} -gt 1 && {
     error "Multiple lines for function '$1'"
     return 1
   }
@@ -289,7 +292,7 @@ func_comment()
   grep_to_first '^\s*#' "$2" "$(( $grep_line - 1 ))"
 
   # return and reformat comment lines
-  source_lines "$2" $first_line $grep_line | sed -E 's/^\s*#\ ?//'
+  source_lines "$2" ${first_line-0} $grep_line | sed -E 's/^\s*#\ ?//'
 }
 
 grep_head_comment_line()
@@ -314,8 +317,8 @@ read_head_comment()
   # Read rest, if still commented.
   read_lines_while "$1" 'echo "$line" | grep -qE "^\s*#(\ .*)?$"' $first_line || return
 
-  width_lines=$line_number
-  last_line=$(( $first_line + $width_lines - 1 ))
+  span_lines=$line_number
+  last_line=$(( $first_line + $span_lines - 1 ))
   lines_slice $first_line $last_line "$1" | $gsed 's/^\s*#\ \?//'
 }
 
@@ -323,14 +326,14 @@ read_head_comment()
 # backup-header-comment file [suffix-or-abs-path]
 backup_header_comment() # Src-File [.header]
 {
-  test -n "$2" || set -- "$1" ".header"
+  test -f "${1-}" || return
+  test -n "${2-}" || set -- "$1" ".header"
   fnmatch "/*" "$2" \
     && backup_file="$2" \
     || backup_file="$1$2"
   # find last line of header, add output to backup
   read_head_comment "$1" >"$backup_file" || return $?
 }
-
 
 # Return span of lines from Src, starting output at Start-Line and ending
 # Span-Lines later, or at before End-Line.
@@ -344,8 +347,8 @@ backup_header_comment() # Src-File [.header]
 source_lines() # Src Start-Line End-Line [Span-Lines]
 {
   test -f "$1" || return
-  test -n "$2" && start_line=$2 || start_line=0
-  test -n "$Span_Lines" || Span_Lines=$4
+  test -n "${2-}" && start_line=$2 || start_line=0
+  test -n "${Span_Lines-}" || Span_Lines=${4-}
   test -n "$Span_Lines" || {
     end_line=$3
     test -n "$end_line" || end_line=$(count_lines "$1")
@@ -366,12 +369,12 @@ source_line() # Src Start-Line
 # of the sourced file.
 expand_source_line() # Src-File Line
 {
-  test -f "$1" || error "expand_source_line file '$1'" 1
-  test -n "$2" || error "expand_source_line line" 1
+  test -f "${1-}" || error "expand_source_line file '$1'" 1
+  test -n "${2-}" || error "expand_source_line line" 1
   local srcfile="$(source_lines "$1" "$2" "" 1 | awk '{print $2}')"
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile" || return
-  trueish "$keep_source" || rm $srcfile
+  trueish "${keep_source-0}" || rm $srcfile
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 
@@ -381,7 +384,7 @@ expand_srcline()
 {
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile"
-  trueish "$keep_source" || rm $srcfile
+  trueish "${keep_source-0}" || rm $srcfile
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 
@@ -389,6 +392,7 @@ expand_srcline()
 # Strip sentinel line and insert external file
 expand_line() # Src-File Line Include-File
 {
+  test $# -eq 3 || return
   file_truncate_lines "$1" "$(( $2 - 1 ))" "$2" &&
   file_insert_at $1:$(( $2 - 1 )) "$(cat "$3")"
 }

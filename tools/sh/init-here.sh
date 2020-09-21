@@ -5,39 +5,63 @@
 # env keys instead this evaluates $@ after taking args. And it is still able to
 # use $0 to get this scripts pathname and $PWD to add other dir.
 
-# <script_util>/init-here.sh [SCRIPTPATH] [boot-script] [boot-libs] "$@"
+# <sh_tools>/init-here.sh [SCRIPTPATH] [boot-script] [boot-libs] "$@"
 
-test -n "$sh_src_base" || sh_src_base=/src/sh/lib
-test -n "$sh_util_base" || sh_util_base=/tools/sh
+test -n "${CWD-}" || CWD="$PWD"
 
-scriptpath="$(dirname "$(dirname "$(dirname "$0")" )" )$sh_src_base"
-script_util="$(dirname "$(dirname "$(dirname "$0")" )" )$sh_util_base"
+# provisionary logger setup
+test -n "${LOG-}" && LOG_ENV=1 || LOG_ENV=
+test -n "${LOG-}" -a -x "${LOG-}" -o \
+  "$(type -t "${LOG-}" 2>/dev/null )" = "function" &&
+  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tools/sh/log.sh
+# Sh-Sync: tools/sh/parts/env-init-log.sh
 
-test -n "$1" && {
-  SCRIPTPATH=$1:$scriptpath
-} || {
-  SCRIPTPATH=$(pwd -P):$scriptpath
+test -n "${sh_src_base-}" || sh_src_base=/src/sh/lib
+
+test -n "${1-}" && scriptpath=$1 || scriptpath=$(pwd -P)
+test -n "${scriptname-}" || scriptname="$(basename -- "$0")" # No-Sync
+
+case "$0" in -* ) ;; * ) # No-Sync
+  U_S="$(dirname "$(dirname "$(dirname "$0")" )" )" # No-Sync
+;; esac # No-Sync
+test -n "${U_S-}" -a -d "${U_S-}" || . $PWD$sh_util_base/parts/env-0-u_s.sh
+test -n "${U_S-}" -a -d "${U_S-}" || return
+
+test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
+type sh_include >/dev/null 2>&1 || {
+  . "$sh_tools/parts/include.sh" || return
 }
 
-# Cannot load/init without some provisionary logger setup
-test -n "$LOG" || export LOG=$script_util/log.sh
-test -s "$LOG" -a -x "$LOG" || { echo LOG=$LOG >&2 ; exit 102; }
+#test -n "$1" && {
+#  SCRIPTPATH=$1:$scriptpath
+#} || {
+#  SCRIPTPATH=$(pwd -P):$scriptpath
+#}
 
-
-# Now include module loader with `lib_load` by hand
-__load_mode=ext . $scriptpath/lib.lib.sh
-lib_lib_load && lib_lib_loaded=1 || exit $?
+# Now include module with `lib_load`
+test -z "${DEBUG-}" || echo . $U_S$sh_src_base/lib.lib.sh >&2
+{
+  . $U_S$sh_src_base/lib.lib.sh || return
+  lib_lib_load && lib_lib_loaded=0 || return
+  lib_lib_init
+} ||
+  $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1
 
 # And conclude with logger setup but possibly do other script-util bootstraps.
 
-test -n "$3" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script
-lib_load $init_sh_libs
+test -n "${3-}" && init_sh_libs="$3" || init_sh_libs=sys\ os\ str\ script\ log
 
-test -n "$2" && init_sh_boot="$2" || init_sh_boot=stderr-console-logger
-script_init "$init_sh_boot"
+test "$init_sh_libs" = "0" || {
+  lib_load $init_sh_libs && lib_init || $status $?
+
+  test -n "${2-}" && init_sh_boot="$2" || init_sh_boot=null # FIXME: stderr-console-logger
+  script_init "$init_sh_boot" || $status $?
+}
+
+# XXX: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
 
 shift 3
 
 eval "$@"
 
-# Id: script-mpe/0.0.4-dev tools/sh/init-here.sh
+# Id: user-script/ tools/sh/init-here.sh

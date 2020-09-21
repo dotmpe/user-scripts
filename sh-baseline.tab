@@ -1,105 +1,128 @@
-# varspec                                              cmdspec                #
+# varspec                                      cmdspec                        #
 
-# XXX: cleanup
-#unset LOG SCRIPTPATH scriptpath scriptname base LOG verbosity INIT_LOG CWD
+# Variable- and command specs for baseline suite. +U_s
+# Usage:
+#   ./sh-main spec Tab Cmd-Glob
 
-CWD=$PWD                                               . ./tools/ci/util.sh
 
-/CWD                                                   . ./tools/sh/parts/env-0.sh
-CWD=$PWD/tools/sh/log.sh
-CWD=
+# varspec                                      cmdspec                        #
 
-/LOG
+true                                           test -n "$scriptname"
+true                                           test -z "$scriptpath"
+true                                           test -n "$SCRIPTPATH"
+true                                           test -n "$LOG"
+true                                           test -z "$INIT_LOG"
+
+set -u
+ /SCRIPTPATH                                   test -z "${SCRIPTPATH:-}"
+
+#export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
+true                                           . ./tools/sh/env.sh
+true                                           . ./tools/ci/env.sh
+
+#export U_S; echo U-s:$U_S                      . ./tools/sh/util.sh
+sh_tools=tools/sh ci_tools=tools/ci            . ./tools/sh/util.sh
+export sh_tools=tools/sh ci_tools=tools/ci
+  . ./tools/sh/util.sh                         . ./tools/ci/util.sh
+
+set -euo pipefail
+
+ . ./tools/sh/env.sh                           echo 1.1. $SCRIPTPATH
+ /SCRIPTPATH
+  . ./tools/sh/env.sh                          echo 1.2. $SCRIPTPATH
+
+ . ./tools/ci/env.sh                           echo 2.1. $SCRIPTPATH
+ /SCRIPTPATH
+  . ./tools/ci/env.sh                          echo 2.2. $SCRIPTPATH
+
+ #verbosity=4; CWD=$PWD;
+ export sh_tools=tools/sh ci_tools=tools/ci
+  . ./tools/sh/util.sh
+   . ./tools/sh/parts/env-dev.sh
+    sh_include env-log
+     sh_include remove-dupes unique-paths
+      sh_include env-scriptpath-deps lib-load
+        sh_include env-info                    true 3.1.
+
+true                                           ./sh-main lines sh-baseline.tab >/dev/null
+
+set -euo pipefail
+  DOCKER_NS=dotmpe                             . ./tools/sh/parts/env-docker-hub.sh
+  true                                         . ./tools/sh/parts/env-dev.sh
+  true                                         . ./tools/sh/parts/env-0.sh
+  true                                         . ./tools/sh/parts/env-0-src.sh
+  true                                         . ./tools/sh/parts/env-std.sh
+  true                                         . ./tools/sh/parts/env-test.sh
+  true                                         . ./tools/sh/parts/env-test-bats.sh
+
+# Test some other parts from sh-main           sh-main: treebox
+SUITE=Main keep_going=1 stage=
+ . ./tools/sh/env.sh
+  sh_include env-scriptpath-deps lib-load
+   . "./commands/u_s-dckr.lib.sh"              docker_image=$sh_treebox_img dckr_load
+
+# varspec                                      cmdspec                        #
+#true                                           ./sh-main run-parts build.txt Sh 0
+#true                                           ./sh-main run-parts build.txt U-S 0
+#true                                           ./sh-main run-parts build.txt Main 0
+#true                                           ./sh-main run-parts build.txt Main 0 1
+#true                                           ./sh-main run-parts build.txt Test 0
+# XXX: LOG=$PWD/tools/sh/log.sh                       ./tools/git-hooks/pre-commit.sh
+#true                                           ./sh-main run-parts build.txt CI 0 1 2 3 4
+
+# varspec                                      cmdspec                        #
+
+# TODO: wrap in bats cases
+v=4
+  true                                         ./bin/u-s help >/dev/null
+  true                                         ./bin/u-s libs >/dev/null
+  true                                         ./bin/u-s libs-paths >/dev/null
+  true                                         ./bin/u-s commands >/dev/null
+  true                                         ./bin/u-s topics >/dev/null
+
+# TODO docker-sh-htd.lib
+#true                                           ./bin/u-s dckr-cmd . ./sh-treebox-us-req
+#true                                           ./bin/u-s dckr update-ext feature/docker-ci 24-2-bare
+#dckr_pref="sudo "                              ./bin/u-s dckr-cmd verbosity=7 DEBUG=1 ./bin/u-s version
+#v=4
+#  dckr_pref="sudo "                            ./bin/u-s dckr-cmd verbosity=0 ./bin/u-s version
+#dckr_pref="sudo "                              ./bin/u-s dckr help
+#true                                           ./bin/u-s dckr-reset
+
+
+# varspec                                      cmdspec                        #
+
+set -euo pipefail
+ CWD=$PWD;
+  . tools/sh/env.sh                            . ./tools/sh/init.sh
+
+# ./bin/u-s update
+#   f_lib_load= util_mode= default_lib=         . ./tools/sh/init-wrapper.sh
+#    SCRIPTPATH=
+
+
+# varspec                                      cmdspec                        #
+
 LOG=$PWD/tools/sh/log.sh
-LOG=
+  true                                         bats test/baseline/bats.bats
+  set -euo pipefail
+   v=4 . tools/sh/env.sh
+    . tools/ci/util.sh
+        true                                   ci_test test/baseline/bats.bats
+        true                                   ci_test_negative test/baseline/bats-negative.bats
+        true                                   ci_test test/unit/std-stack.bats
+        true                                   ci_test test/baseline/1-shell.bats
+        true                                   ci_test test/baseline/2-bash.bats
+        v=5                                    ci_test test/baseline/3-project.bats
+        true                                   ci_test test/baseline/4-mainlibs.bats
+        true                                   ci_test test/baseline/git.bats
+        true                                   ci_test test/baseline/realpath.bats
+#        true                                   ci_test test/baseline/redo.bats
 
-/SCRIPTPATH
-SCRIPTPATH=$PWD
-SCRIPTPATH=
-
-# varspec                                              cmdspec                #
-/CWD                                                   CWD= . ./tools/sh/env.sh
-
-# varspec                                              cmdspec                #
-set +o nounset                                         . ./tools/sh/init.sh
-#BASHOPTS=-                                             . ./tools/sh/init.sh
-# init_sh_libs= init_sh_boot=
-#  __load_lib=
-#   . ./tools/sh/parts/env-dev.sh
-#    . ./tools/sh/parts/env-test.sh
-#     . ./tools/sh/parts/env-test-bats.sh
-#      . ./tools/sh/parts/env-src.sh
-#       . ./tools/sh/parts/env-0.sh
-#        . ./tools/sh/parts/env-std.sh
-
-# varspec                                              cmdspec                #
-#/CWD
-#/CWD                                                  . ./tools/sh/init.sh
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-# CWD=$PWD/tools/sh/log.sh
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#CWD=
-#  /LOG
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=$PWD/tools/sh/log.sh
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#  LOG=
-#   /SCRIPTPATH
-#   SCRIPTPATH=$PWD
-#   SCRIPTPATH=
-#/LOG
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
-#LOG=$PWD/tools/sh/log.sh
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
-#LOG=
-#  /SCRIPTPATH
-#  SCRIPTPATH=$PWD
-#  SCRIPTPATH=
-
-#v=4                                     bats test/baseline/1-shell.bats
-#v=4                                     bats test/baseline/2-bash.bats
-#v=5                                     bats test/baseline/3-project.bats
-#v=4                                     bats test/baseline/4-mainlibs.bats
-#v=1                                     bats test/baseline/bats.bats
-##/CWD                                  . ./tools/ci/env.sh
-#v=4                                     bats test/baseline/git.bats
-#v=4                                     bats test/baseline/realpath.bats
-#v=4                                     bats test/baseline/redo.bats
-
-#  bats test/baseline/1-shell.bats || return
-#  bats test/baseline/2-bash.bats || return
-#  bats test/baseline/3-project.bats || return
-#  bats test/baseline/4-mainlibs.bats || return
+# FIXME: special syntax for bats; severly misbehaving, killing off the wrong process?
+#v=4                                            ; ( bats test/baseline/*.bats )
 
 
-# vim:ft=bash:
+# varspec                                      cmdspec                        #
+
+# vim:ft=bash:nowrap:cc=47,79:

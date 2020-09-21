@@ -1,7 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# CI suite stage 5.
 
 export_stage before-cache before_cache && announce_stage
-. "./tools/ci/parts/before-cache.sh"
+
+test -z "${TRAVIS-}" ||
+  sh_include travis-before-cache
 
 close_stage
-. "$ci_util/deinit.sh"
+#

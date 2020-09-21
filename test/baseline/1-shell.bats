@@ -1,31 +1,36 @@
 #!/usr/bin/env bats
 
+load ../init
 base='baseline-1:shell'
 
 
-@test "$base: LOG (normal mode, no debug, verbosity < 7)" {
+@test "$base: LOG (harnassed)" {
 
-  run $LOG "info" "" "Tester de test" "" 0
-  test $status -eq 0 && test -z "${lines[*]}"
+  load ../helper/stdtest
+  load ../helper/extra
 
-  test -z "$DEBUG"
+  export DEBUG= verbosity=5
 
-  test -z "$verbosity" || {
-    test $verbosity -lt 7
-  }
+  run $LOG "info" "" "Test" "" 0
+  test $status -eq 0
+  test -z "${lines[*]}"
 
-  #skip FIXME
+  run $LOG "info" "" "Test 2" "" 4
+  test $status -eq 4
+  test -z "${lines[*]}"
 
-  # Again, no harnass.
-  # XXX: $LOG "info" "" "Tester de test" "" 0
+  run $LOG "note" "" "Test 3" "" 0
+  test $status -eq 0
+  test -n "${lines[*]}"
+  fnmatch "*Test 3*" "${lines[*]}" || stdfail "Expected LOG output"
 }
 
 @test "$base: another simple shell baseline check for logging sys" {
 
-  #load extra
-  load stdtest
+  load_init_bats
+  load ../helper/stdtest
 
-  skip "FIXME: logger testing"
+  skip "FIXME: logger testing, test @Matrix"
 
   #_r() { LOG=logger_stderr BASH_ENV=tools/sh/env.sh \
   #  $SHELL -c 'echo $LOG'; }; run _r
@@ -54,6 +59,4 @@ base='baseline-1:shell'
       done
     done
   done
-
-  stdfail "FIXME: @Matrix"
 }

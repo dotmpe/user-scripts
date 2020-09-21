@@ -4,8 +4,9 @@
 
 sh_ansi_tpl_lib_load()
 {
-  test -n "$COLORIZE" || COLORIZE=1
-  test -n "$CS" || CS=dark
+  test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${COLORIZE-}" || COLORIZE=1
+  test -n "${CS-}" || CS=dark
   #force_color_prompt=yes
 
   if test "$COLORIZE" = "1"
@@ -30,6 +31,7 @@ sh_ansi_tpl_lib_load()
     GREEN=
     BLUE=
     NORMAL=
+    BWHITE=
     SEP=
   fi
   PSEP="$BWHITE:$NORMAL"
@@ -44,12 +46,10 @@ sh_ansi_tpl_lib_load()
   then
 
     alias tree='tree -C'
-    case "$(uname)" in
-      Darwin )
-          alias ls='ls -G'
+    case "$uname" in
+      darwin ) alias ls='ls -G'
         ;;
-      Linux )
-          alias ls='ls --color=auto'
+      linux ) alias ls='ls --color=auto'
           #alias dir='dir --color=auto'
           #alias vdir='vdir --color=auto'
         ;;

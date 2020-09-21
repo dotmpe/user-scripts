@@ -1,6 +1,8 @@
 BASH := $(shell which bash)
 export SHELL=$(BASH)
 export BASH_ENV=tools/ci/env.sh
+CWD := $(shell pwd)
+export CWD
 
 MAKEFLAGS += --no-builtin-rules
 #MAKEFLAGS += --no-builtin-variables
@@ -23,9 +25,6 @@ build-%::
 init:: build-init check base
 check:: build-check
 base:: build-baselines
-lint:: ; @./test/lint.sh all
-units:: ; @./test/unit.sh all
-specs:: ; @./test/spec.sh all
 build:: build-check
 test:: build-test
 clean:: build-clean

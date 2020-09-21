@@ -7,22 +7,18 @@ util_lib_load()
 
 util_lib_init()
 {
-  test -n "$LOG" || return 102
+  test -n "${LOG-}" || return 102
 }
 
 
 
 # Main
 
-case "$0" in
+case "$0" in "-"* ) ;; * )
 
-  "-"*|"" ) ;;
-  "" ) ;; "-"* ) ;;
-  * )
+  set -e
 
-set -e
-
-  test -n "$scriptname" || scriptname="$(basename "$0" .sh)"
+  test -n "$scriptname" || scriptname="$(basename -- "$0" .sh)"
   test -n "$verbosity" || verbosity=5
   test -z "$__load_lib" && lib_util_act="$1" || lib_util_act="load-ext"
   case "$lib_util_act" in
@@ -48,4 +44,4 @@ set -e
 ;; esac
 
 # Id: user-conf/0.0.1-dev script/util.lib.sh
-# From: script-mpe/0.0.4-dev util.sh
+# Sync: BIN:tools/sh/init-wrapper.sh

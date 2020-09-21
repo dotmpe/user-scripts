@@ -1,20 +1,43 @@
-#!/bin/ash
+#!/usr/bin/env bash
+
+# XXX: test -n "$U_S" -a -d "$U_S" || source ./tools/sh/parts/env-0-u_s.sh
+export U_S="${U_S:="$CWD"}" # No-Sync
 
 : "${hostname:="`hostname -s`"}"
-: "${SCRIPTPATH:=""}"
 
 : "${sh_src_base:="/src/sh/lib"}"
 : "${sh_util_base:="/tools/sh"}"
+: "${ci_util_base:="/tools/ci"}"
 
-: "${U_S:="$CWD"}"
-: "${scriptpath:="$U_S$sh_src_base"}"
+: "${userscript:="$U_S"}"
 
-test -n "${script_env:-}" || {
-  test -e "$PWD$sh_util_base/user-env.sh" &&
-    script_env=$PWD$sh_util_base/user-env.sh ||
-    script_env=$U_S$sh_util_base/user-env.sh
+# Define now, Set/use later
+: "${SCRIPTPATH:=""}"
+: "${default_lib:=""}"
+: "${init_sh_libs:=""}"
+: "${LIB_SRC:=""}"
+
+: "${CWD:="$PWD"}"
+: "${sh_tools:="$CWD$sh_util_base"}"
+: "${ci_tools:="$CWD$ci_util_base"}"
+
+type sh_include >/dev/null 2>&1 || {
+  . "$U_S/tools/sh/parts/include.sh" || return
 }
 
-# Locate ztombol helpers and other stuff from github
-: "${VND_GH_SRC:="/srv/src-local/github.com"}"
-: "${VND_SRC_PREFIX:="$VND_GH_SRC"}"
+# XXX . "$sh_tools/parts/env-init-log.sh"
+sh_include env-0-src env-std env-ucache || return
+
+# XXX: remove from env; TODO: disable undefined check during init.sh,
+# or when dealing with other dynamic env..
+
+sh_include env-0-1-lib-sys env-0-2-lib-os env-0-3-lib-str env-0-4-lib-script ||
+  return
+
+sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc ||
+  return
+
+sh_include exec || return
+
+: "${TMPDIR:=/tmp}"
+: "${RAM_TMPDIR:=}"

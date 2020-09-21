@@ -18,9 +18,9 @@ error()
 
 trueish()
 {
-  test -n "$1" || return 1
+  test $# -eq 1 -a -n "${1:-}" || return
   case "$1" in
-    on|true|yes|1)
+    [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1 )
       return 0;;
     * )
       return 1;;
@@ -52,7 +52,7 @@ realdir_()
 # Combined dirname/basename, to remove/replace .ext but retain entire path
 pathname()
 {
-  echo "$(dirname "$1")/$(basename "$1" "$2")$3"
+  echo "$(dirname "$1")/$(basename -- "$1" "$2")$3"
 }
 
 # Cumulative dirname, return the root directory of the path

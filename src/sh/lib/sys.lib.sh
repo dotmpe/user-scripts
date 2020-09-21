@@ -4,40 +4,38 @@
 
 sys_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
-  test -n "$hostname" || hostname="$(hostname -s | tr 'A-Z' 'a-z')"
+  test -n "${LOG-}" || return 102
+  test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${hostname-}" || hostname="$(hostname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${HOST-}" || HOST=$hostname
 }
 
 sys_lib_init()
 {
-  test -n "$LOG" && sys_lib_log="$LOG" || sys_lib_log="$INIT_LOG"
-  test -n "$sys_lib_log" || return 102
+  test "${sys_lib_init-}" = "0" || {
+    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+      && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
+    test -n "$sys_lib_log" || return 108
 
-# XXX: cleanup
-if [ -z "$(which realpath)" ]
-then # not perfect?
-realpath() {
-  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#.}"
+    sys_tmp_init &&
+    $sys_lib_log debug "" "Initialized sys.lib" "$0"
+  }
 }
-fi
-  $sys_lib_log info "" "Loaded sys.lib" "$0"
-}
-
 
 # Sh var-based increment
 incr() # VAR [AMOUNT=1]
 {
-  local incr_amount
-  test -n "$2" && incr_amount=$2 || incr_amount=1
+  local v incr_amount
+  test -n "${2-}" && incr_amount=$2 || incr_amount=1
   v=$(eval echo \$$1)
   eval $1=$(( $v + $incr_amount ))
 }
 
 getidx()
 {
-  test -n "$1" || error getidx-array 1
-  test -n "$2" || error getidx-index 1
-  test -z "$3" || error getidx-surplus 1
+  test -n "${1-}" || error getidx-array 1
+  test -n "${2-}" || error getidx-index 1
+  test -z "${3-}" || error getidx-surplus 1
   local idx=$2
   set -- $1
   eval echo \$$idx
@@ -46,23 +44,24 @@ getidx()
 # Error unless non-empty and true-ish value
 trueish() # Str
 {
-  test -n "$1" || return 1
+  test $# -eq 1 -a -n "${1-}" || return
   case "$1" in [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1) return 0;;
     * ) return 1;;
   esac
 }
+# Id: sh-trueish
 
 # No error on empty, or not trueish match
 not_trueish()
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   trueish "$1" && return 1 || return 0
 }
 
 # Error unless non-empty and falseish
 falseish()
 {
-  test -n "$1" || return 1
+  test $# -eq 1 -a -n "${1-}" || return 1
   case "$1" in
     [Oo]ff|[Ff]alse|[Nn]|[Nn]o|0)
       return 0;;
@@ -74,13 +73,13 @@ falseish()
 # No error on empty, or not-falseish match
 not_falseish() # Str
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   falseish "$1" && return 1 || return 0
 }
 
 cmd_exists()
 {
-  test -n "$1" || return
+  test -n "${1-}" || return
 
   set -- "$1" "$(which "$1")" || return
 
@@ -96,18 +95,20 @@ func_exists()
 
 try_exec_func()
 {
-  test -n "$1" || return 97
+  test -n "${1-}" || return 97
+  test -n "$sys_lib_log" || return 108
   $sys_lib_log debug "sys" "try-exec-func '$1'"
-  func_exists $1 || return $?
+  func_exists "$1" || return
   local func=$1
   shift 1
-  $func "$@" || return $?
+  $func "$@" || return
 }
 
-# TODO: redesign
+# TODO: redesign @Dsgn
 try_var()
 {
-  local value="$(eval echo "\$$1")"
+  local value=
+  eval "value=\"\$$1\"" >/dev/null 2>/dev/null
   test -n "$value" || return 1
   echo $value
 }
@@ -117,28 +118,61 @@ try_value()
 {
   local value=
   test $# -gt 1 && {
-    value="$(eval echo "\"\$$(echo_local "$@")\"")"
+    value="$(eval echo "\"\${$(echo_local "$@")-}\"" || return )"
   } || {
-    value="$(echo $(eval echo "\$$1"))"
+    value="$(eval echo \"\${${1-}-}\" || return )"
   }
   test -n "$value" || return 1
   echo "$value"
 }
 
-# setup-tmp [(RAM_)TMPDIR]
-setup_tmpd()
+# require vars to be initialized, regardless of value
+req_vars()
 {
-  test -n "$1" || set -- "$base-$(get_uuid)" "$2"
-  test -n "$RAM_TMPDIR" || {
+  for varname in "$@"
+  do
+    #sh_isset "$varname" || { error "Missing req-var '$varname' ($SHELL_NAME)"; return 1; }
+    sh_isset "$varname" || {
+      $LOG error "" "Missing req-var '$varname' ($SHELL_NAME)"
+      return 1
+    }
+  done
+}
+
+# Check for RAM-fs or regular temporary directory, or set to given
+# directory which must also exist. Normally, TMPDIR will be set on Unix and
+# POSIX systems. If it does not exist then TMPDIR will be set to whatever
+# is given here or whichever exists of /dev/shm/tmp or $RAM_TMPDIR. But the
+# directory will not be created.
+sys_tmp_init () # DIR
+{
+  test -n "${RAM_TMPDIR-}" || {
+        # Set to Linux ramfs path
         test -w "/dev/shm" && RAM_TMPDIR=/dev/shm/tmp
       }
-  test -n "$2" -o -z "$RAM_TMPDIR" || set -- "$1" "$RAM_TMPDIR"
-  test -n "$2" -o -z "$TMPDIR" || set -- "$1" "$TMPDIR"
-  test -n "$2" ||
-        $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
+  test -e "${1-}" -o -z "${RAM_TMPDIR-}" || set -- "$RAM_TMPDIR"
+  test -e "${1-}" -o -z "${TMPDIR-}" || set -- "$TMPDIR"
+  test -n "${1-}" && {
+    test -n "${TMPDIR-}" || export TMPDIR=$1
+  }
+  test -d "$1" || {
+    $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
+  }
+  sys_tmp="$1"
+}
 
-  test -d $2/$1 || mkdir -p $2/$1
-  test -n "$2" -a -d "$2" || $sys_lib_log error sys "Not a dir: '$2'" "" 1
+# setup-tmpd [ SUBDIR [ (RAM_)TMPDIR ]]
+# Get (create) fresh subdir in TMPDIR or fail.
+setup_tmpd () # Unique-Name
+{
+  test $# -le 2 || return 98
+  test -n "${2-}" || set -- "${1-}" "$sys_tmp"
+  test -d "$2" ||
+    $sys_lib_log error sys "Need existing tmpdir, got: '$2'" "" 1
+  test -n "${1-}" || set -- "$base-$SH_SID" "${2-}"
+  test ! -e "$2/$1" ||
+    $sys_lib_log error sys "Unique tmpdir sub exists: '$2'" "" 1
+  mkdir -p $2/$1
   echo "$2/$1"
 }
 
@@ -147,25 +181,25 @@ setup_tmpd()
 # setup-tmp [ext [uuid [(RAM_)TMPDIR]]]
 setup_tmpf() # [Ext [UUID [TMPDIR]]]
 {
-  test -n "$1" || set -- .out "$2" "$3"
-  test -n "$2" || set -- $1 $(get_uuid) "$3"
+  test $# -le 3 || return 98
+  test -n "${1-}" || set -- .out "${2-}" "${3-}"
+  test -n "${2-}" || set -- ${1-} $(get_uuid) "${3-}"
   test -n "$1" -a -n "$2" || $sys_lib_log error sys "empty arg(s)" "" 1
-  test -z "$4" || $sys_lib_log error sys "surplus arg(s) '$3'" "" 1
 
-  test -n "$3" || set -- "$1" "$2" "$(setup_tmpd)"
+  test -n "${3-}" || set -- "$1" "$2" "$sys_tmp"
   test -n "$3" -a -d "$3" || $sys_lib_log error sys "Not a dir: '$3'" "" 1
 
   test -n "$(dirname $3/$2$1)" -a "$(dirname $3/$2$1)" \
     || mkdir -p "$(dirname $3/$2$1)"
-  echo $3/$2$1
+  echo "$3/$2$1"
 }
 
 # sys-prompt PROMPT [VAR=choice_confirm]
 sys_prompt()
 {
-  test -n "$1" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
-  test -n "$2" || set -- "$1" choice_confirm
-  test -z "$3" || $sys_lib_log error sys "surplus-args '$3'" "" 1
+  test -n "${1-}" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
+  test -n "${2-}" || set -- "$1" choice_confirm
+  test -z "${3-}" || $sys_lib_log error sys "surplus-args '$3'" "" 1
   echo $1
   read -n 1 $2
 }
@@ -181,7 +215,8 @@ sys_confirm()
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
 {
-  test -e "$1" -o -e "$2" || {
+  test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return
+  test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
   }
@@ -199,7 +234,7 @@ add_env_path() # Prepend-Value Append-Value
     }
   }
   # XXX: to export or not to launchctl
-  #test "$uname" != "Darwin" || {
+  #test "$uname" != "darwin" || {
   #  launchctl setenv "$1" "$(eval echo "\$$1")" ||
   #    echo "Darwin setenv '$1' failed ($?)" >&2
   #}
@@ -208,8 +243,9 @@ add_env_path() # Prepend-Value Append-Value
 # Add an entry to colon-separated paths, ie. PATH, CLASSPATH alike lookup paths
 add_env_path_lookup() # Var-Name Prepend-Value Append-Value
 {
+  test $# -ge 2 -a $# -le 3 || return
   local val="$(eval echo "\$$1")"
-  test -e "$2" -o -e "$3" || {
+  test -e "$2" -o -e "${3-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
   }
@@ -240,10 +276,92 @@ remove_env_path_lookup()
   export $1="$newval"
 }
 
+# List individual entries/paths in lookup path env-var (ie. PATH or CLASSPATH)
+lookup_path_list () # VAR-NAME
+{
+  test $# -eq 1 -a -n "${1-}" || error "lookup-path varname expected" 1
+  eval echo \"\$$1\" | tr ':' '\n'
+}
+
+# Translate Lookup path element and given/local name to filesystempath,
+# or return err-stat.
+lookup_exists () # DIR NAME
+{
+  test $# -eq 2 || return 98
+  test -e "$1/$2" && echo "$1/$2"
+}
+
+# lookup-path List existing local paths, or fail if second arg is not listed
+# lookup-test: command to test equality with, default test_exists
+# lookup-first: boolean setting to stop after first success
+lookup_path () # VAR-NAME LOCAL-PATH
+{
+  test $# -eq 2 || return 98
+  test -n "${lookup_test-}" || local lookup_test="lookup_exists"
+  func_exists "$lookup_test" || {
+    $LOG error "" "No lookup-test handler" "$lookup_test"
+    return 1
+  }
+
+  local path ; for path in $( lookup_path_list $1 )
+    do
+      eval $lookup_test \""$path"\" \""$2"\" && {
+        test ${lookup_first:-1} -eq 1 && break || continue
+      } || continue
+    done
+}
+
+lookup_paths () # Var-Name Local-Paths...
+{
+  test $# -ge 2 || return 98
+  test -n "${lookup_test-}" || local lookup_test="lookup_exists"
+  local varname=$1 base path ; shift ; for base in $( lookup_path_list $varname )
+    do
+      for path in $@
+      do
+        eval $lookup_test \""$base"\" \""$path"\" && {
+          test ${lookup_first:-1} -eq 1 && break || continue
+        } || continue
+      done
+    done
+}
+
+# Test if local path/name is overruled. Lists paths for hidden LOCAL instances.
+lookup_path_shadows() # VAR-NAME LOCAL
+{
+  test $# -eq 2 || return 98
+  local r=
+  tmpf=$(setup_tmpf .lookup-shadows)
+  lookup_first=false lookup_path "$@" >$tmpf
+  lines=$( count_lines $tmpf )
+  test "$lines" = "0" && { r=2
+    } || { r=0
+      test "$lines" = "1" || { r=1
+          cat $tmpf
+          #tail +2 "$tmpf"
+      }
+    }
+  rm $tmpf
+  return $r
+}
+
+cwd_lookup_path () # [ Local-Paths... ]
+{
+  local cwd=$PWD sub
+  until test $cwd = /
+  do
+    test $# -gt 0 && {
+      for sub in $@; do test -e "$cwd/$sub" || continue; echo "$cwd/$sub"; done
+    } ||
+      echo "$cwd"
+    cwd="$(dirname "$cwd")"
+  done | tr '\n' ':' | head -c -1
+}
+
 init_user_env()
 {
   local key= value=
-  for key in UCONFDIR HTDIR DCKR_VOL TMPDIR
+  for key in UCONF HTDIR DCKR_VOL TMPDIR
   do
     value=$(eval echo \$$key)
     default=$(eval echo \$DEFAULT_$key)
@@ -258,11 +376,11 @@ init_user_env()
 
 init_uconfdir_path()
 {
-  # Add path dirs in $UCONFDIR to $PATH
+  # Add path dirs in $UCONF to $PATH
   local name
-  for name in $uname Generic
+  for name in $uname $(uname -s) Generic
   do
-    local user_PATH=$UCONFDIR/path/$name
+    local user_PATH=$UCONF/path/$name
     if test -d "$user_PATH"
     then
       add_env_path $user_PATH
@@ -284,7 +402,7 @@ std_utf8_en()
 
 update_env()
 {
-  test -n "$PYVENV" || {
+  test -n "${PYVENV-}" || {
     PYVENV=$(htd ispyvenv) || PYVENV=0
     export PYVENV
   }
@@ -342,33 +460,39 @@ my_env_git_bash_prompt()
 # http://code-and-hacks.peculier.com/bash/setting-terminal-title-in-gnu-screen/
 settitle()
 {
-	if [ -n "$STY" ] ; then         # We are in a screen session
-		printf "\033k%s\033\\" "$@"
-		screen -X eval "at \\# title $@" "shelltitle \"$@\""
-	else
-		printf "\033]0;%s\007" "$@"
-	fi
+  if [ -n "$STY" ] ; then         # We are in a screen session
+    printf "\033k%s\033\\" "$@"
+    screen -X eval "at \\# title $@" "shelltitle \"$@\""
+  else
+    printf "\033]0;%s\007" "$@"
+  fi
 }
 
-# Return 1 if env was provided, or 0 if default was set
-default_env() # VAR-NAME DEFAULT-VALUE
+# Return non-zero if default was set, or present value does not match default
+default_env() # VAR-NAME DEFAULT-VALUE [Level]
 {
-  test -n "$1" -a $# -eq 2 || error "default-env requires two args ($*)" 1
-  local vid= sid= id=
-  trueish "$title" && upper= || {
-    test -n "$upper" || upper=1
+  test -n "${1-}" -a $# -eq 2 || error "default-env requires two args ($*)" 1
+  local vid= cid= id= v= c=0
+  trueish "${title-}" && upper= || {
+    test -n "${upper-}" || upper=1
   }
   mkvid "$1"
-  mksid "$1"
+  mkcid "$1"
   unset upper
-  test -n "$(eval echo \$$vid)" || {
-    debug "No $sid env ($vid), using '$2'"
-    eval $vid="$2"
+  v="$(eval echo \$$vid 2>/dev/null )"
+  test -n "${3-}" || set -- "$1" "$2" "debug"
+  test -n "$v" && {
+    test "$v" = "${2-}" || c=$?
+      test $c -eq 0 &&
+        $3 "Default $cid env ($vid)" ||
+        $3 "Custom $cid env ($vid): '${2-}'"
+    return $c
+  } || {
+    $3 "No $cid env ($vid), using default '${2-}'"
+    eval $vid="${2-}"
     return 0
   }
-  return 1
 }
-
 
 rnd_passwd()
 {
@@ -463,7 +587,7 @@ exec_arg_lines()
 # Execute arguments, or return on first failure, empty args, or no cmdlines
 exec_arg() # CMDLINE [ -- CMDLINE ]...
 {
-  test -n "$*" || return 2
+  test $# -gt 0 || return 98
   local execs=$(setup_tmpf .execs) execnr=0
   exec_arg_lines "$@" | while read -r execline
     do
@@ -477,3 +601,5 @@ exec_arg() # CMDLINE [ -- CMDLINE ]...
   $sys_lib_log info sys "Exec-arg: executed $execnr lines"
   test $execnr -gt 0 || return 1
 }
+
+# Sync: BIN:

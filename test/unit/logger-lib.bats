@@ -12,14 +12,14 @@ setup()
 @test "$base: logger-log TYPE TRGTS DESCR SRCS RET" {
 
   run logger_log
-  { test_ok_nonempty 1
+  { test_nok_empty && test $status -eq 98
   } || stdfail
 }
 
 @test "$base: logger-stderr TYPE TRGTS DESCR SRCS RET" {
 
   run logger_stderr
-  { test_ok_nonempty 1
+  { test_nok_empty && test $status -eq 98
   } || stdfail
 }
 
@@ -39,7 +39,7 @@ setup()
 @test "$base: stderr-demo" {
 
   run stderr_demo
-  test_ok_nonempty || stfail
+  test_ok_nonempty || stdfail
 }
 
 @test "$base: logger-demo" {

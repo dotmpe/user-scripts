@@ -5,7 +5,8 @@ base="baseline-2:bash"
 
 setup()
 {
-  init && load assert
+  #init && load assert
+  load ../helper/assert
 }
 
 
@@ -84,6 +85,9 @@ setup()
 
 
 @test "$base: aliases are recognized (Bash)" {
+  
+  . ./tools/sh/init.sh
+  load ../helper/stdtest
   lib_load shell
   shell_lib_init
 

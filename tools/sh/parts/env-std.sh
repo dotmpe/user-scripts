@@ -1,6 +1,9 @@
-#!/bin/ash
+#!/usr/bin/env bash
 
-: "${LOG:="$PWD/tools/sh/log.sh"}"
+: "${LOG:="$CWD/tools/sh/log.sh"}"
 : "${CS:="dark"}"
-export LOG CS
+: "${DEBUG:=}"
+test -z "${DEBUG-}" || shopt -s extdebug
+: "${verbosity:=}"
+test -z "${v-}" || verbosity=$v
 #

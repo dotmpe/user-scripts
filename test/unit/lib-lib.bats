@@ -4,9 +4,11 @@ base=lib.lib
 load ../init
 
 
+
 @test "${base}: lib_load A/B" {
 
   init 0
+  load stdtest
 
   run lib_load sys
   { test_ok_empty
@@ -19,7 +21,10 @@ load ../init
 
 @test "${base}: lib_load sys" {
 
+  test -z "$sys_lib_loaded"
   init 0
+  test -z "$sys_lib_loaded"
+  load stdtest
 
   { test -z "$sys_lib_loaded"
   } || stdfail 1.

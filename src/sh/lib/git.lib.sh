@@ -2,26 +2,32 @@
 
 git_lib_load()
 {
-  test -n "$SRC_DIR" || SRC_DIR=/src
-  test -n "$SCM_VND" || SCM_VND=github.com
-  test -n "$VND_GH_SRC" || VND_GH_SRC=$SRC_DIR/$SCM_VND
-  test -n "$GIT_SCM_SRV" || GIT_SCM_SRV=/srv/scm-git-local
-  test -n "$PROJECT_DIR" || {
+  true "${SRC_DIR:="/src"}"
+  true "${SCM_VND:="github.com"}"
+  true "${VND_GH_SRC:="$SRC_DIR/$SCM_VND"}"
+  true "${GIT_SCM_SRV:="/srv/scm-git-local"}"
+  test -n "${PROJECT_DIR:-}" || {
     test -e "/srv/project-local" &&
       PROJECT_DIR=/srv/project-local || PROJECT_DIR=$HOME/project
+  }
+  test -n "${PROJECTS:-}" || {
+    PROJECTS="$(for path in $PROJECT_DIR $HOME/project /srv/project-local /src/*.*/ /src/local/
+      do
+          echo ":$path"
+      done | remove_dupes | tr -d '\n' | tail -c +2 )"
   }
 }
 
 git_lib_init()
 {
-  test -d "$SRC_DIR" &&
-  test -d "$VND_GH_SRC" &&
-  test -d "$GIT_SCM_SRV" &&
-  test -d "$PROJECT_DIR"
+  test -d "${SRC_DIR:-}" &&
+  test -d "${VND_GH_SRC:-}" &&
+  test -d "${GIT_SCM_SRV:-}" &&
+  test -d "${PROJECT_DIR:-}"
 }
 
 # Use find to list repos on $PROJECTS path
-git_list() # PROJECTS ~
+git_list() # Find repos [PROJECTS] ~
 {
   for path in $(echo "$PROJECTS" | tr ':' '\n' | realpaths | remove_dupes )
   do
@@ -39,7 +45,7 @@ git_scm_find() # <user>/<repo>
       git_scm_list "*$1.git"
     }
   } | tee "$git_scm_find_out"
-  test $(count_lines "$git_scm_find_out") -gt 0
+  test -s "$git_scm_find_out"
 }
 
 git_scm_get() # VENDOR <user>/<repo>
@@ -76,11 +82,52 @@ git_src_get() # <user>/<repo>
     )
   }
 
-  name="$(basename "$1")"
+  name="$(basename -- "$1")"
   test -e "$PROJECT_DIR/$name" && {
     echo "$1: $PROJECT_DIR/$name -> $(readlink "$PROJECT_DIR/$name")"
   } || {
     test -h "$PROJECT_DIR/$name" && rm -v "$PROJECT_DIR/$name"
     ln -vs "$VND_GH_SRC/$1" "$PROJECT_DIR/$name"
   }
+}
+
+git_commit_date() # <Commit-ish>
+{
+  git show -s --format=%cI "$1"
+}
+
+git_author_date() # <Commit-ish>
+{
+  git show -s --format=%aI "$1"
+}
+
+# Select first and last date from found commit/author dates for path
+git_commit_range_file() # <Path>
+{
+  local f=
+  true "${choice_follow:=1}"
+  trueish "$choice_follow" && f=--follow
+
+  # NOTE: echo hash, iso-date and timestamp per date, sort on latter
+  {
+    git log --format='%H %cI %ct
+%H %aI %at' $f --diff-filter=A -- "$@" || return
+    git log --format='%H %cI %ct
+%H %aI %at' $f -n 1 --diff-filter=M -- "$@"
+    return $?
+  } | sort -k3 -u | awk 'NR==1; END{print}'
+}
+
+# Echo two lines; the date the file was added (or renamed if choice_follow=0)
+# and the last date of update
+git_dates() # ~ <Path>
+{
+  { git_commit_range_file "$@" || return
+  } | cut -d' ' -f2
+}
+
+# List renames for commit-range
+git_renames() # ~ <Commit-or-Range>
+{
+  git diff --name-status --diff-filter=R -C "$1"
 }

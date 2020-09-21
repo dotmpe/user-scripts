@@ -4,13 +4,14 @@
 
 logger_lib_load()
 {
-  test -n "$logger_log_hooks" || logger_log_hooks=stderr
+  test -n "${logger_log_hooks-}" || logger_log_hooks=stderr
 
-  test -n "$logger_exit_threshold" || logger_exit_threshold=4
+  test -n "${logger_exit_threshold-}" || logger_exit_threshold=3 # Error and above
 
-  test -n "$logger_log_threshold" || logger_log_threshold=9 # Everything
+  test -n "${logger_log_threshold-}" || logger_log_threshold=9 # Everything
+
+  test -n "${status-}" || status=exit
 }
-
 
 # Wrapper function for logger handler(s). Output and/or relay behaviour is by
 # actual handler, multiple may be handled the messeage in sequence.
@@ -19,6 +20,13 @@ logger_lib_load()
 # logger handler.
 logger_log() # level target-ids description source-ids status-code
 {
+  test $# -gt 1 || return 98
+  test $# -eq 2 && set -- "$@" "" "" "" || {
+    test $# -eq 3 && set -- "$@" "" "" || {
+      test $# -eq 4 && set -- "$@" ""
+    }
+  }
+
   { test -z "$1" || {
       test $1 -le $logger_log_threshold
     }
@@ -37,9 +45,9 @@ logger_log() # level target-ids description source-ids status-code
     }
   }
 
-  test -n "$5" && exit $5
+  test -n "$5" && $status $5
   test -z "$1" || {
-    test $1 -gt $logger_exit_threshold || exit -$1
+    test $1 -gt $logger_exit_threshold || $status -$1
   }
 }
 
@@ -95,10 +103,12 @@ logger_strfmt() # line-type target-ids description source-ids
 
   test -n "$3" && {
 
-    eval printf -- \"$tpl\\n\" \""$1"\" \""$2"\" \""$3"\"
+    eval "printf -- \"$tpl %s\\n\" \"$1\" \"$2\" \"$3\""
+    return $?
   } || {
 
-    eval printf -- \"$tpl\\n\" \""$1"\" \""$2"\"
+    eval "printf -- \"$tpl\\n\" \"$1\" \"$2\""
+    return $?
   }
   true
 }
@@ -108,25 +118,33 @@ logger_strfmt() # line-type target-ids description source-ids
 # is too low; exit with given status.
 logger_stderr() # syslog-level target-ids description source-ids status-code
 {
+  test $# -gt 1 || return 98
+  test $# -eq 2 && set -- "$@" "" "" "" || {
+    test $# -eq 3 && set -- "$@" "" "" || {
+      test $# -eq 4 && set -- "$@" ""
+    }
+  }
+
   test -n "$1" || set -- "$stderr_log_level" "$2" "$3" "$4" "$5"
   fnmatch "[0-9]" "$1" || set -- "$(log_level_num "$1")" "$2" "$3" "$4" "$5"
 
-  test -n "$stderr_log_channel" || stderr_log_channel=$scriptname
+  test -n "${stderr_log_channel-}" || stderr_log_channel=$scriptname
   test -n "$2" || set -- "$1" "$stderr_log_channel" "$3" "$4" "$5"
 
-  { test -z "$1" || {
-      test $1 -le $logger_log_threshold
-    }
+  { test -z "$1" || test $1 -le $logger_log_threshold
   } && {
 
     logger_hook=stderr logger_strfmt "$@" >&2
   }
 
-  test -n "$5" && exit $5
+  test -n "$5" && $status $5
   test -z "$1" || {
-    test $1 -gt $logger_exit_threshold || exit -$1
+    test $1 -gt $logger_exit_threshold || $status -$1
   }
 }
+
+logger_stderr_num() { log_level_num "$@"; }
+logger_stderr_level() { log_level_name "$@"; }
 
 
 # Return level number as string for use with line-type or logger level, channel
@@ -140,6 +158,14 @@ log_level_name() # Level-Num
       5 ) echo note ;;
       6 ) echo info ;;
       7 ) echo debug ;;
+
+      5.1 ) echo ok ;;
+      4.2 ) echo fail ;;
+      3.3 ) echo err ;;
+      6.4 ) echo skip ;;
+      2.5 ) echo bail ;;
+      7.6 ) echo diag ;;
+
       * ) return 1 ;;
   esac
 }
@@ -148,12 +174,28 @@ log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
-      crit  ) echo 2 ;;
-      error ) echo 3 ;;
-      warn  ) echo 4 ;;
-      note  ) echo 5 ;;
-      info  ) echo 6 ;;
-      debug ) echo 7 ;;
+      crit  | bail ) echo 2 ;;
+      error | err ) echo 3 ;;
+      warn  | fail ) echo 4 ;;
+      note  | notice | ok ) echo 5 ;;
+      info  | skip | TODO ) echo 6 ;;
+      debug | diag ) echo 7 ;;
+
+      * ) return 1 ;;
+  esac
+}
+
+log_facility_name()
+{
+  case "$1" in
+
+      * ) return 1 ;;
+  esac
+}
+log_facility_num()
+{
+  case "$1" in
+
       * ) return 1 ;;
   esac
 }
@@ -162,11 +204,15 @@ log_level_num() # Level-Name
 # Go over levels 1-7 and demo logger-log
 logger_demo()
 {
-  for level in $(seq 7 1)
+  local level level_name msg
+  for level in $(seq 7)
   do
-    #logger_stderr 5 logger:demo "$level"
-    logger_log "$level" "logger:demo" "$(log_level_name $level) demo line"
-    #logger_stderr "$level" "logger:demo" "$(log_level_name $level) demo line"
+    level_name="$(log_level_name $level)"
+    $LOG header2 "" "logger:demo line" "$level:$level_name"
+    msg="$level_name ($level) demo line"
+    logger_exit_threshold=0 logger_log "$level" "logger:demo" "$msg"
+    logger_exit_threshold=0 logger_stderr "$level" "logger:demo" "$msg"
+    $level_name "$msg"
   done
 }
 

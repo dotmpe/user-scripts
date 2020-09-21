@@ -1,5 +1,6 @@
 #!/bin/sh
 
+## GNU/Make
 
 # TODO: list targets, first explicit then have go/try at implicit stuff, maybe.
 # TODO: ignore vars for now, maybe also have a go at that
@@ -11,8 +12,8 @@
 
 make_lib_load()
 {
-  test -n "$ggrep" || ggrep=ggrep
-  test -n "$make_op_fd" || make_op_fd=4
+  test -n "${ggrep-}" || ggrep=ggrep
+  test -n "${make_op_fd-}" || make_op_fd=4
 
   # Special (GNU) Makefile vars
   make_special_v="$(echo MAKEFILE_LIST .DEFAULT_GOAL MAKE_RESTARTS \
@@ -106,7 +107,7 @@ htd_make_files()
 #  directly).
 make_op() # [make_op_fd=4] ~ [Makefile] [echo|recipe]
 {
-  test -n "$2" || set -- "$1" "echo"
+  test -n "${2-}" || set -- "${1-}" "echo"
   local strf="$(eval echo \"\$make_graft_${2}_op\")"
   local outf=$(setup_tmpf .out)
   eval "exec $make_op_fd>$outf"
@@ -143,7 +144,7 @@ htd_make_list_vars() # Makefile
 # "Expand" make variable or macro from given Makefile. See make-op.
 htd_make_expand() # Var-Name [Makefile]
 {
-  test -n "$1" || error "var-name expected" 1
+  test -n "${1-}" || error "var-name expected" 98
   echo "$1" | make_op "$2"
 }
 
@@ -151,8 +152,8 @@ htd_make_expand() # Var-Name [Makefile]
 # Instead of a foreach invoking make Nth time, extract the vars in one expression
 htd_make_expand_all() # [Makefile] [Vars...]
 {
-  local mkf="$1" ; shift
-  test -n "$1" || set -- "\$($make_list_vars)"
+  local mkf="${1-}" ; shift
+  test -n "${1-}" || set -- "\$($make_list_vars)"
   printf "$make_expand_vars" "$*" | make_op "$mkf" recipe
 }
 

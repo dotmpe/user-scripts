@@ -4,14 +4,14 @@
 
 lib_util_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
-  case "$uname" in Darwin ) default_lib="$default_lib darwin" ;; esac
+	test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  case "$uname" in darwin ) default_lib="$default_lib Darwin" ;; esac
 
-  test -n "$lib_util_env_d_default" ||
-      lib_util_env_d_default=init-log\ ucache\ scriptpath
-  test -n "$script_util" || {
-      test -n "$scriptpath" || return 106
-      script_util=$scriptpath/tools/sh
+  test -n "${lib_util_env_d_default-}" ||
+      lib_util_env_d_default=init-log\ ucache\ scriptpath-deps
+  test -n "${sh_tools-}" || {
+      test -n "${scriptpath-}" || return 106
+      sh_tools=$scriptpath/tools/sh
   }
 }
 
@@ -23,12 +23,12 @@ lib_util_init()
   # need delayed eval/macro; see env-d.lib. And local tools/{ci,sh}/env.sh
   # setup
 
-  test -n "$script_util" || return 103 # NOTE: sanity
+  test -n "$sh_tools" || return 103 # NOTE: sanity
 
   # FIXME: instead going with hardcoded sequence for env-d like for lib.
   for env_d in $lib_util_env_d_default
   do
-    . $script_util/parts/env-$env_d.sh
+    . $sh_tools/parts/env-$env_d.sh
   done
   $INIT_LOG "info" "" "Env initialized from parts" "$lib_util_env_d_default"
 

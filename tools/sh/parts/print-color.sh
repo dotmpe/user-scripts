@@ -10,20 +10,23 @@ c_yellow="$(tput setaf 3)"
 c_bold="$(tput bold)"
 c_default="$(tput setaf 7)"
 
-print_red()
+print_red() # Key Msg
 {
+  test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_red" "$c_default" "$1" "$c_red" "$c_default" "$2" "$c_normal"
 }
 
-print_yellow()
+print_yellow() # Key Msg
 {
+  test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_yellow" "$c_default" "$1" "$c_yellow" "$c_default" "$2" "$c_normal"
 }
 
-print_green()
+print_green() # Key Msg
 {
+  test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_green" "$c_default" "$1" "$c_green" "$c_default" "$2" "$c_normal"
 }

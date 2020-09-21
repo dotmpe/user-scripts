@@ -49,13 +49,6 @@ type stdfail >/dev/null 2>&1 || {
   }
 }
 
-type pass >/dev/null 2>&1 || {
-  pass() # a noop() variant..
-  {
-    return 0
-  }
-}
-
 type test_ok_empty >/dev/null 2>&1 || {
   test_ok_empty()
   {

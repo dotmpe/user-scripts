@@ -1,11 +1,14 @@
 #!/bin/sh
 
-# Logger: arg-to-colored ansi line output
+# Logger - arg-to-colored ansi line output
 # Usage:
 #   log.sh [Line-Type] [Header] [Msg] [Ctx] [Exit]
 
 
-test -z "$verbosity" && {
+test -n "$verbosity" || {
+  case "${v-}" in [0-9] ) verbosity="$v";; esac
+}
+test -n "$verbosity" || {
   test -n "$DEBUG" && verbosity=7 || verbosity=6
 }
 
@@ -21,6 +24,14 @@ log_level_name() # Level-Num
       5 ) echo note ;;
       6 ) echo info ;;
       7 ) echo debug ;;
+
+      5.1 ) echo ok ;;
+      4.2 ) echo fail ;;
+      3.3 ) echo err ;;
+      6.4 ) echo skip ;;
+      2.5 ) echo bail ;;
+      7.6 ) echo diag ;;
+
       * ) return 1 ;;
   esac
 }
@@ -29,28 +40,51 @@ log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
-      crit  ) echo 2 ;;
-      error ) echo 3 ;;
-      warn* ) echo 4 ;;
-      note|notice  ) echo 5 ;;
-      info  ) echo 6 ;;
-      debug ) echo 7 ;;
+      crit  | bail ) echo 2 ;;
+      error | err ) echo 3 ;;
+      warn  | fail ) echo 4 ;;
+      note  | notice | ok ) echo 5 ;;
+      info  | skip | TODO ) echo 6 ;;
+      debug | diag ) echo 7 ;;
+
       * ) return 1 ;;
   esac
+}
+
+# set log-key to best guess
+log_src_id_key_var()
+{
+  test -n "${log_key-}" || {
+    test -n "${stderr_log_channel-}" && {
+      log_key="$stderr_log_channel"
+    } || {
+      test -n "${base-}" -a -z "$scriptname" || {
+        log_key="\$CTX_PID:\$scriptname/\$scriptpid"
+      }
+      test -n "$log_key" || {
+        test -n "${scriptext-}" || scriptext=.sh
+        log_key="\$base\$scriptext"
+      }
+      test -n "$log_key" || echo "Cannot get log-src-id key" 1>&2;
+    }
+  }
+}
+
+log_src_id()
+{
+  eval echo \"$log_key\"
 }
 
 
 __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
 {
-  test -n "$2" || {
-    set -- "$1" "$scriptname" "$3" "$4" "$5"
-    # XXX: prolly want shell-lib-load base macro instead
-    test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
+  test -n "${2-}" || {
+    test -n "${log_key:-}" || log_src_id_key_var
+    test -n "$2" || set -- "$1" "$(log_src_id)" "$3" "$4" "$5"
     test -n "$2" || set -- "$1" "$0" "$3" "$4" "$5"
   }
-
   lvl=$(log_level_num "$1")
-  test -z "$lvl" || {
+  test -z "$lvl" -o -z "$verbosity" || {
     test $verbosity -ge $lvl || {
       test -n "$5" && exit $5 || {
         return 0
@@ -59,8 +93,9 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
   }
 
   indent=""
+  linetype=$(echo $1 | tr '[:upper:]' '[:lower:]')
 
-  case "$1" in
+  case "$linetype" in
 
     emerg|crit| error|warn|warning )
         prefix="[$2] $1:"
@@ -100,6 +135,7 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
     printf "%s%s %s\n" "$indent" "$prefix" "$3" >&2
   }
 
+  unset lvl linetype prefix indent suffix
   test -z "$5" || exit $5
 }
 

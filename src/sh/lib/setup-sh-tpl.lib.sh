@@ -72,7 +72,7 @@ setup_file_from_sh_tpl() # Index-Nr Base-Var-Id
 # Get tpl var-name prefix including one trialing '_'
 setup_sh_tpl_basevar()
 {
-  basename "$1" .sh | tr -c 'A-Za-z0-9_' '_' | tr -s '_' '_'
+  basename -- "$1" .sh | tr -c 'A-Za-z0-9_' '_' | tr -s '_' '_'
 }
 
 # Main shell-template-file template handler, setup entire Tpl in Dir.

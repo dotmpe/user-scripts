@@ -1,59 +1,30 @@
-#!/bin/ash
+#!/usr/bin/env bash
 
-: "${INIT_LOG:="$PWD/tools/sh/log.sh"}"
-
-
-# Env pre-checks
-
-test -z "${BASH_ENV:-}" || {
-  $INIT_LOG "warn" "" "Bash-Env specified" "$BASH_ENV"
-  test -f "$BASH_ENV" || $INIT_LOG "warn" "" "No such Bash-Env script" "$BASH_ENV"
-}
-
-test -z "${CWD:-}" || {
-  test "$CWD" = "$PWD" || {
-    $INIT_LOG "error" "" "CWD =/= PWD" "$CWD"
-    CWD=
-  }
-}
+# Env without any pre-requisites.
 
 
-# Start env
+: "${LOG:="$CWD/tools/sh/log.sh"}"
 
+: "${verbosity:=4}"
+: "${SCRIPTPATH:=}"
 : "${CWD:="$PWD"}"
 : "${DEBUG:=}"
 : "${OUT:="echo"}"
+: "${PS1:=}"
+: "${BASHOPTS:=}" || true
+: "${BASH_ENV:=}"
+: "${shopts:="$-"}"
+: "${SCRIPT_SHELL:="$SHELL"}"
 : "${TAB_C:="	"}"
+TAB_C="	"
 #: "${TAB_C:="`printf '\t'`"}"
 #: "${NL_C:="`printf '\r\n'`"}"
 
+test -n "${DEBUG:-}" && : "${keep_going:=false}" || : "${keep_going:=true}"
 
-export scriptname=${scriptname:-"`basename "$0"`"}
-export uname=${uname:-"`uname -s`"}
+: "${USER:="$(whoami)"}"
 
+: "${NS_NAME:="dotmpe"}"
+: "${DOCKER_NS:="$NS_NAME"}"
+: "${scriptname:="`basename -- "$0"`"}"
 
-# Set GNU 'aliases' to try to build on Darwin/BSD
-
-case "$uname" in
-  Darwin )
-      export gdate=${gdate:-"gdate"}
-      export ggrep=${ggrep:-"ggrep"}
-      export gsed=${gsed:-"gsed"}
-      export gawk=${gawk:-"gawk"}
-      export gstat=${gstat:-"gstat"}
-      export guniq=${guniq:-"guniq"}
-    ;;
-  Linux )
-      export gdate=${gdate:-"date"}
-      export ggrep=${ggrep:-"grep"}
-      export gsed=${gsed:-"sed"}
-      export gawk=${gawk:-"awk"}
-      export gstat=${gstat:-"stat"}
-      export guniq=${guniq:-"uniq"}
-    ;;
-esac
-
-
-: "${script_util:="$CWD/tools/sh"}"
-: "${ci_util:="$CWD/tools/ci"}"
-export script_util ci_util

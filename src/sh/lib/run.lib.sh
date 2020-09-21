@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# FIXME: run.lib.sh is currently ./run.d experiment in dckr
+
 __box_run_args() # Script-Cmd {Script-Args...]
 {
   __box_find_script

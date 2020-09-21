@@ -4,32 +4,33 @@
 # Set env for str.lib.sh
 str_lib_load()
 {
-  test -n "$LOG" && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
-  test -n "$str_lib_log" || return 102
+  test "${str_lib_init-}" = "0" || {
+    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+      && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
+    test -n "$str_lib_log" || return 108
 
-  test -n "$uname" || uname="$(uname -s)"
+    case "$uname" in
+        darwin ) expr=bash-substr ;;
+        linux ) expr=sh-substr ;;
+        * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
+    esac
 
-  case "$uname" in
-      Darwin ) expr=bash-substr ;;
-      Linux ) expr=sh-substr ;;
-      * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
-  esac
+    test -n "${ext_groupglob-}" || {
+      test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
+            && ext_groupglob=1 \
+            || ext_groupglob=0
+      # FIXME: part of [vc.bash:ps1] so need to fix/disable verbosity
+      #debug "Initialized ext_groupglob=$ext_groupglob"
+    }
 
-  test -n "$ext_groupglob" || {
-    test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
-          && ext_groupglob=1 \
-          || ext_groupglob=0
-    # FIXME: part of [vc.bash:ps1] so need to fix/disable verbosity
-    #debug "Initialized ext_groupglob=$ext_groupglob"
-  }
+    test -n "${ext_sh_sub-}" || ext_sh_sub=0
 
-  test -n "$ext_sh_sub" || ext_sh_sub=0
-
+    # XXX:
   #      echo "${1/$2/$3}" ... =
   #        && ext_sh_sub=1 \
   #        || ext_sh_sub=0
   #  #debug "Initialized ext_sh_sub=$ext_sh_sub"
-  #}
+  }
 }
 
 str_lib_init()
@@ -39,20 +40,43 @@ str_lib_init()
 
 
 # ID for simple strings without special characters
-mkid()
+mkid() # Str Extra-Chars Substitute-Char
 {
-  id=$(printf -- "$1" | tr -sc 'A-Za-z0-9\/:_-' '-' )
+  local s="${2-}" c="${3-}"
+  # Use empty c if given explicitly, else default
+  test $# -gt 2 || c='\.\\\/:_'
+  test -n "$s" || s=-
+  test -n "${upper-}" && {
+    trueish "${upper-}" && {
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'a-z' 'A-Z')
+    } || {
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'A-Z' 'a-z')
+    }
+  } || {
+    id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" )
+  }
 }
 
 # to filter strings to variable id name
-mkvid()
+mkvid() # STR
 {
+  test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
+  trueish "${upper-}" && {
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
+    return
+  }
+  falseish "${upper-}" && {
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
+    return
+  }
   vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
   # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
 }
+
+# Simpler than mksid but no case-change
 mkcid()
 {
-  cid=$(echo "$1" | sed 's/\([^a-z0-9-]\|\-\)/-/g')
+  cid=$(echo "$1" | sed 's/\([^A-Za-z0-9-]\|\-\)/-/g')
 }
 
 # x-platform regex match since Bash/BSD test wont chooche on older osx
@@ -110,4 +134,16 @@ join_lines() # [Src] [Delim]
 		for (i in a)
 			print i "'"$2"'" a[i]
 	}' "$1"
+}
+
+expr_substr()
+{
+  test -n "$expr" || error "expr init req" 1
+  case "$expr" in
+      sh-substr )
+          expr substr "$1" "$2" "$3" ;;
+      bash-substr )
+          bash -c 'MYVAR=_"'"$1"'"; printf -- "${MYVAR:'$2':'$3'}"' ;;
+      * ) error "unable to substr $expr" 1
+  esac
 }

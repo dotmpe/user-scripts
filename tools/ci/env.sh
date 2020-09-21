@@ -1,126 +1,46 @@
-#!/bin/ash
-ci_env_=$_
+#!/usr/bin/env bash
 
 # Boilerplate env for CI scripts
 
-. "./tools/ci/util.sh"
+test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 
+# FIXME: generate local static env
+true "${BIN:="$HOME/bin"}"
+test ! -e $BIN/.env.sh || . $BIN/.env.sh
 
-# XXX: Map to namespace to avoid overlap with builtin names
-req_subcmd() # Alt-Prefix [Arg]
-{
-  test $# -gt 0 -a $# -lt 3 || return
-  local dflt= altpref="$1" subcmd="$2"
+: "${CWD:="$PWD"}"
+: "${sh_tools:="$CWD/tools/sh"}"
+: "${LOG:="$sh_tools/log.sh"}"
+test "${env_strict_-}" = "0" || {
+  . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
+. "$sh_tools/parts/debug-exit.sh"
+. "$sh_tools/parts/env-0-1-lib-sys.sh"
+: "${ci_tools:="$CWD/tools/ci"}"
 
-  prefid="$(printf -- "$altpref" | tr -sc 'A-Za-z0-9_' '_')"
-
-  type "$subcmd" 2>/dev/null >&2 && {
-    eval ${prefid}subcmd=$subcmd
-    return
-  }
-  test -n "$altpref" || return
-
-  subcmd="$altpref$subcmd"
-  type "$subcmd" 2>/dev/null >&2 && {
-    eval ${prefid}subcmd=$subcmd
-    return
-  }
-
-  $LOG error "ci:env" "No subcmd for '$2'"
-  return 1
-}
-
-req_usage_fail()
-{
-  type "usage-fail" 2>/dev/null >&2 || {
-    $LOG "error" "" "Expected usage-fail in $0" "" 3
-    return 3
-  }
-}
-
-main_() # [Base] [Cmd-Args...]
-{
-  export TEST_ENV package_build_tool
-
-  local main_ret= base="$1" ; shift 1
-  test -n "$base" || base="$(basename "$0" .sh)"
-
-  test $# -gt 0 || set -- default
-  req_usage_fail || return
-  req_subcmd "$base-" "$1" || usage-fail "$base: $*"
-
-  shift 1
-  eval \$${prefid}subcmd "$@" || main_ret=$?
-  unset ${prefid}subcmd prefid
-
-  return $main_ret
-}
-
-main_test_() # Test-Cat [Cmd-Args...]
-{
-  export TEST_ENV package_build_tool
-
-  local main_test_ret= testcat="$1" ; shift 1
-  test -n "$testcat" || testcat=$(basename "$0" .sh)
-
-  test $# -gt 0 || set -- all
-  req_usage_fail || return
-  req_subcmd "$testcat-" "$1" || usage-fail "test: $testcat: $*"
-
-  shift 1
-  eval \$${prefid}subcmd \"\$@\" || main_test_ret=$?
-  unset ${prefid}subcmd prefid
-
-  test -z "$main_test_ret" && print_green "" "OK" || {
-    print_red "" "Not OK"
-    return $main_test_ret
-  }
-}
-
-
-test -x "$(which gdate)" && export gdate=gdate || export gdate=date
-
-
-ci_phases="$ci_phases ci_env"
 ci_env_ts=$($gdate +"%s.%N")
+ci_stages="${ci_stages:-} ci_env"
 
-case "$TRAVIS_COMMIT_MESSAGE" in
+: "${SUITE:="CI"}"
+: "${U_S:="$CWD"}" # No-Sync
+: "${keep_going:=1}" # No-Sync
 
-  *"[clear cache]"* | *"[cache clear]"* )
+sh_env_ts=$($gdate +"%s.%N")
+ci_stages="$ci_stages sh_env"
 
-        test -e .htd/travis.json && {
+. "${CWD}/tools/sh/env.sh"
 
-          rm -rf  $(jq -r '.cache.directories[]' .htd/travis.json)
+sh_env_end_ts=$($gdate +"%s.%N")
 
-        } || {
-          rm -rf \
-               ./node_modules \
-               ./vendor \
-               $HOME/.local \
-               $HOME/.basher \
-               $HOME/.cache/pip \
-               $HOME/virtualenv \
-               $HOME/.npm \
-               $HOME/.composer \
-               $HOME/.rvm/ \
-               $HOME/.statusdir/ \
-               $HOME/build/apenwarr \
-               $HOME/build/ztombol \
-               $HOME/build/bvberkum/user-scripts \
-               $HOME/build/bvberkum/user-conf \
-               $HOME/build/bvberkum/docopt-mpe \
-               $HOME/build/bvberkum/git-versioning \
-               $HOME/build/bvberkum/bats-core || true
-        }
-    ;;
-esac
+test -n "${ci_util_:-}" || {
 
+  . "$ci_tools/util.sh"
+}
 
-. "${USER_ENV:="tools/sh/env.sh"}"
+$INIT_LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
+ci_env_end_ts=$($gdate +"%s.%N")
 
-# FIXME: make
-: "${package_build_tool:="redo"}"
-: "${TEST_ENV:="$ci_util/env.sh"}"
+$INIT_LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
+test ${verbosity:-${v:-3}} -lt 4 ||
+  print_yellow "ci:env:${SUITE}" "Starting: $0 ${_ENV-} #$#:'$*'" >&2
 
-
-print_yellow "ci:env" "Starting: $0 '$ci_env_' '$*'" >&2
+# From: Script.mpe/0.0.4-dev tools/ci/env.sh

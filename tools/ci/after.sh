@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# CI suite stage 7.
+
 export_stage after && announce_stage
 
-echo 'Travis test-result: '"$TRAVIS_TEST_RESULT"
+#sh_include publish
 
-. "./tools/ci/parts/publish.sh"
-
-close_stage
-. "$ci_util/deinit.sh"
+stage_id=after close_stage
+# Id: tools/ci/after.sh

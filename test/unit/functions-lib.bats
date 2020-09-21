@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load init
 base=functions.lib
+load ../init
 
 setup()
 {

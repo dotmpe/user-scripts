@@ -5,20 +5,20 @@ shell_lib_load()
   lib_assert os sys str || return
 
   # Dir to record env-keys snapshots:SD-Shell-Dir
-  test -n "$SD_SHELL_DIR" || SD_SHELL_DIR="$HOME/.statusdir/shell"
+  test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="$HOME/.statusdir/shell"
 
   # Set defaults for required vars
   #test -n "$ENV_NAME" || ENV_NAME=development
 
-  test -n "$MPE_ENV_NAME" || MPE_ENV_NAME=dev
-  test -n "$CS" || CS=dark
-
-  test -n "$base" || base=$(test -e "$0" && basename "$0" .sh || printf -- "$0")
-
-  test -n "$SH_SID" || SH_SID=$(get_uuid)
+  test -n "${MPE_ENV_NAME-}" || MPE_ENV_NAME=dev
+  test -n "${CS-}" || CS=dark
+  test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
+  test -n "${SH_SID-}" || SH_SID=$(get_uuid)
 
   # Shell Name (no path/ext)
-  SHELL_NAME="$(basename "$SHELL")"
+  SHELL_NAME="$(basename -- "$SHELL")"
+
+  declare -g -A shell_cached
 }
 
 # Init env by testing for key vars, set <SHELL>_SH=[01] based on name,
@@ -39,6 +39,8 @@ shell_lib_init()
 {
   lib_assert log || return
 
+  test -n "${SH_SID-}" || SH_SID=$(get_uuid) || return
+
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
   test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
@@ -48,13 +50,16 @@ shell_lib_init()
   test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
 
   local log=; req_init_log || return
-  $log debug "" "Running final shell.lib init"
+  local log_key=$scriptname/$$:u-s:shell:lib:init
+
+  log_key=$log_key $log debug "" "Running final shell.lib init"
 
   shell_check && sh_init_mode && sh_env_init &&
-  $log info "" "Loaded shell.lib" "$0"
+  log_key=$log_key $log info "" "Loaded shell.lib" "$0"
 }
 
-shell_lib_log() { test -n "$LOG"&&log="$LOG"||log="$init_log";req_log; }
+shell_lib_log() { test -n "${LOG-}"&&log="$LOG"||log="$INIT_LOG";req_log; }
+#shell_lib_log() { req_init_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
 shell_check()
@@ -118,28 +123,31 @@ sh_env_init()
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
     $log info shell.lib "Choosing bash sh-env-init"
-    sh_env()
+    sh_env() # sh:no-stat
     {
-      set | grep '^[a-zA-Z_][0-9a-zA-Z_]*=.*$'
+      {
+        set | grep '^[_A-Za-z][A-Za-z0-9_]*=.*$'
+        env
+      } | sort -u
     }
   } || {
     $log info shell.lib "Choosing non-bash sh-env-init"
-    sh_env()
+    sh_env() # sh:no-stat
     {
       set
     }
   }
-  sh_isset()
+  sh_isset() # sh:no-stat
   {
-    sh_env | grep -q "^$1="
+    sh_env | grep -qi '^'$1=
   }
-  sh_isenv() # XXX: Exported vars? @Base
+  sh_isenv() # XXX: Exported vars? @Base # sh:no-stat
   {
     env | grep -q "^$1="
   }
-  sh_genv() # Grep for var names
+  sh_genv() # Grep for var names # sh:no-stat
   {
-    sh_env | grep "^$1="
+    sh_env | grep "$1"
   }
 }
 
@@ -190,15 +198,15 @@ sh_aliasinfo() # ALIAS
 }
 
 
-# Tell what given CMD name is, like `type`
-sh_execinfo() # CMD...
+# Tell what given CMD name is, like `type` but as a short lower-case abbrev
+sh_execinfo() # run execinfo-inner for each arg ~ CMD...
 {
   local i= ; test $# -gt 1 && i=":\$1"
   s= p= act=sh_execinfo_ foreach_do "$@"
 }
 
 # Inner foreach-do routine for sh-execinfo
-sh_execinfo_() # CMD
+sh_execinfo_() # echo shell symbol type code ~ CMD
 {
   sh_is_type_na "$1" && {
 
@@ -213,7 +221,7 @@ sh_execinfo_() # CMD
   true
 }
 
-sh_deps()
+sh_deps() # Fetch script callees by Oil-shell compiler ~
 {
   oshc deps
 }
@@ -256,3 +264,12 @@ record_env_diff_keys()
   $log info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }
+
+shell_cached () # Cmd Args...
+{
+  local vid; mkvid "$*"
+  test "${shell_cached["$vid"]+isset}" || shell_cached["$vid"]="$("$@")"
+  echo "${shell_cached["$vid"]}"
+}
+
+#

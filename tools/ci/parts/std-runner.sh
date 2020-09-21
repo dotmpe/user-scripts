@@ -20,13 +20,13 @@ sh_spec_outline()
   back()
   {
     test -z "$indent_d" && last_indent=0 ||
-      last_indent="$(printf -- "$indent_d" | cut -f 1 -d' ')"
+      last_indent="$(printf %s "$indent_d" | cut -f 1 -d' ')"
   }
 
   pop()
   {
     test "$c" = "1" && indent_d= ||
-      indent_d="$(printf -- "$indent_d" | cut -f 2- -d' ')"
+      indent_d="$(printf %s "$indent_d" | cut -f 2- -d' ')"
     c=$(( $c - 1 ))
     back
   }
@@ -76,6 +76,7 @@ sh_spec_outline()
 
     } || {
 
+# XXX: cleanup sh-spec-outline
       #test $indent -lt $last_indent && {
       $OUT "$last_line"
       $OUT "# end $last_indent"
@@ -108,7 +109,11 @@ sh_spec_outline()
 
 sh_spec_outline_vspec()
 {
-  fnmatch "*=*" "$1" && var_d="$var_d $1" || spec_d="$spec_d; $1"
+  { fnmatch "*;*" "$1"; }||{
+      fnmatch "*=*" "$1"&&{ var_d="$var_d $1"; return; }
+  }
+
+  fnmatch "*;" "$spec_d"&&{ spec_d="$spec_d $1"; }||{ spec_d="$spec_d; $1"; }
 }
 
 fnmatch() { case "$2" in $1 ) return ;; * ) return 1 ;; esac; }
@@ -117,7 +122,7 @@ fnmatch() { case "$2" in $1 ) return ;; * ) return 1 ;; esac; }
 sh_spec_parse_indent() # SPEC
 {
   test $# -eq 1 || return
-  local indent_="$( printf -- "${1}" | sed 's/^\([ ]*\).*$/\1/' )"
+  local indent_="$( printf %s "$1" | sed 's/^\([ ]*\).*$/\1/' )"
   test -n "$indent_" && indent="${#indent_}" || indent=0
 }
 
@@ -126,7 +131,7 @@ sh_spec_parse_indent() # SPEC
 # to relay unparsed lines as is to out.
 sh_spec_table() # [varspec-width] [pass-through]
 {
-  test $# -gt 0 || set -- 39
+  test $# -eq 1 || return
 
   local done= ln=0 ind_d= ind_lvl=0 \
     new_cmdspec= new_varspec= \
@@ -137,13 +142,16 @@ sh_spec_table() # [varspec-width] [pass-through]
   sh_new_stack ind
   sh_new_stack varspec
 
+  #TAB_C="`printf '\t'`"
+  TAB_C="	"
+
   # Insert tab-character at x position (awk)
-  awk -vFS="" -vOFS="" '{$'"$1"'=$'"$1"'"\t"}1' |
+  awk -vFS="" -vOFS="" '{$'$1='$'$1'"\t"}1' |
 
   # Read lines
   until test -n "$done"
   do
-    IFS="$TAB_C" read new_varspec new_cmdspec || done=1
+    IFS=$TAB_C read new_varspec new_cmdspec || done=1
 
     sh_spec_table_inner || return
   done
@@ -181,8 +189,6 @@ sh_spec_table_inner()
   }
 
   test $indent -gt $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "Push" "$indent $last_indent"
 
       ind_push "$indent" && varspec_push "$new_varspec"
 
@@ -190,8 +196,6 @@ sh_spec_table_inner()
   }
 
   test $indent -lt $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "Pop" "$indent $last_indent"
 
       while test "$(ind_pop && echo "$ind")" != "$indent"
       do
@@ -203,8 +207,6 @@ sh_spec_table_inner()
   }
 
   test $indent -eq $last_indent && { {
-      test -z "$DEBUG" ||
-        $LOG "info" "$ln indent" "New" "$indent $last_indent"
 
       test -z "$ind_d" || {
         ind_pop && varspec_pop
@@ -230,19 +232,22 @@ sh_spec_d_out() # Varspec CmdSpec
   test $# -eq 2 || return
   test -n "$2" || set -- "$1" "$cmdspec"
 
-  local varexpr="$( printf -- "$varspec_d" \
+  local varexpr="$( printf %s "$varspec_d" \
     | tr '\t' '\n' \
-    | grep -v '^[A-Za-z_][A-Za-z0-9_]*=' \
+    | $ggrep -v '^[A-Za-z_][A-Za-z0-9_]*=[^;]*$' \
     | while read varspec
     do \
       fnmatch "/*" "$varspec" \
       && printf "unset $(echo "$varspec" | cut -c2-); " \
-      || printf -- "$varspec; "; \
+      || {
+        case "$varspec" in *";" ) printf %s "$varspec ";;
+          * ) printf %s "$varspec; " ;; esac; \
+      }; \
     done )"\
 
-  local lvar="$( printf -- "$varspec_d" \
+  local lvar="$( printf %s "$varspec_d" \
     | tr '\t' '\n' \
-    | grep '^[A-Za-z_][A-Za-z0-9_]*=' \
+    | $ggrep '^[A-Za-z_][A-Za-z0-9_]*=[^;]*$' \
     | tr '\n' ' ' )"
 
   $OUT "$varexpr$lvar$2"
@@ -251,17 +256,32 @@ sh_spec_d_out() # Varspec CmdSpec
 # Defer to line-parser based on file-name extension.
 sh_spec() # File-Path
 {
-  test $# -gt 0 || return
+  test $# -gt 0 -a $# -le 2 || return
   test -f "$1" || return
-  local specfile="$1"
+  print_yellow "sh-spec" "Starting '$*'" >&2
+  local specfile=$1
   shift 1
 
+  test -n "${1:-}" || {
+    local header="`head -n 1 "$specfile"`"
+    test "`echo $header`" = "# varspec cmdspec #" || {
+      $LOG "error" "" "No width and cannot read header" "$specfile '$header'" 1
+      return 1
+    }
+
+    local width_="`printf %s "$header"| sed 's/cmdspec.*//'`"
+    test -n "$width_" || $LOG "error" "" "Unable to determine width" "" 1
+    set -- ${#width_}
+  }
+
   fnmatch "*.list" "$specfile" && {
-    grep -Ev '^\s*(#.*|\s*)$' "$specfile" | sh_spec_outline "$@"
+    sh_read "$specfile" | sh_spec_outline "$@"
     return $?
 
   } || {
-    grep -Ev '^\s*(#.*|\s*)$' "$specfile" | sh_spec_table "$@"
 
+    sh_read "$specfile" | sh_spec_table "$@"
   }
 }
+
+# Id:

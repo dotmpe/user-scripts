@@ -3,7 +3,7 @@
 
 composure_lib_load()
 {
-  test -n "$COMPOSURE" || COMPOSURE=$HOME/.local/composure
+  test -n "${COMPOSURE-}" || COMPOSURE=$HOME/.local/composure
 }
 
 composure_lib_init()
@@ -16,7 +16,7 @@ composure_check_name_scripts()
 {
   for inc in $COMPOSURE/*.inc
   do
-    fnmatch "$(basename "$inc" .inc)[ (]*" "$(head -1 $inc)" ||
+    fnmatch "$(basename -- "$inc" .inc)[ (]*" "$(grep -m 1 '^.*()' $inc)" ||
       error "Name mismatch on $inc: $(head -n 1 $inc)" 1
   done
 }

@@ -1,19 +1,21 @@
 #!/bin/sh
 
-
-# OS: files, paths
+## OS - files, paths
 
 os_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
-  test -n "$os" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  test -n "${os-}" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 os_lib_init()
 {
-  test -n "$LOG" && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
-  test -n "$os_lib_log" || return 102
-  $os_lib_log info "" "Loaded os.lib" "$0"
+  test "${os_lib_init-}" = "0" || {
+    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+      && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
+    test -n "$os_lib_log" || return 108
+    $os_lib_log debug "" "Initialized os.lib" "$0"
+  }
 }
 
 
@@ -42,7 +44,7 @@ pathname() # PATH EXT...
   shift 1
   for ext in $@
   do
-    name="$(basename "$name" "$ext")"
+    name="$(basename -- "$name" "$ext")"
   done
   test -n "$dirname" -a "$dirname" != "." && {
     printf -- "$dirname/$name\\n"
@@ -56,8 +58,8 @@ pathname() # PATH EXT...
 # Simple iterator over pathname
 pathnames() # exts=... [ - | PATHS ]
 {
-  test -n "$exts" || exit 40
-  test -n "$*" -a "$1" != "-" && {
+  test -n "${exts-}" || exit 40
+  test "${1--}" != "-" && {
     for path in "$@"
     do
       pathname "$path" $exts
@@ -89,32 +91,26 @@ basedir()
 
 dotname() # Path [Ext-to-Strip]
 {
-  echo $(dirname "$1")/.$(basename "$1" "$2")
-}
-
-short()
-{
-  test -n "$1" || set -- "$(pwd)"
-  # XXX maybe replace python script. Only replaces home
-  $scriptpath/short-pwd.py -1 "$1"
+  echo $(dirname -- "$1")/.$(basename -- "$1" "${2-}")
 }
 
 # [exts=] basenames [ .EXTS ] PATH...
 # Get basename(s) for all given exts of each path. The first argument is handled
 # dynamically. Unless exts env is provided, if first argument is not an existing
 # and starts with a period '.' it is used as the value for exts.
-basenames()
+basenames () # [exts=] ~ [ .EXTS ] PATH...
 {
-  test -n "$exts" || {
-    test -e "$1" || fnmatch ".*" "$1" && { exts="$1"; shift; }
+  test -n "${exts-}" || {
+    fnmatch ".*" "$1" || return
+    exts="$1"; shift
   }
-  while test -n "$1"
+  while test $# -gt 0
   do
     name="$1"
     shift
     for ext in $exts
     do
-      name="$(basename "$name" "$ext")"
+      name="$(basename -- "$name" "$ext")"
     done
     echo "$name"
   done
@@ -123,9 +119,10 @@ basenames()
 # for each argument echo filename-extension suffix (last non-dot name element)
 filenamext() # Name..
 {
-  while test -n "$1"; do
-    basename "$1"
-  shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
+  test $# -gt 0 || return
+  while test $# -gt 0; do
+    basename -- "$1"
+    shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
 }
 
 # Return basename for one file, using filenamext to extract extension.
@@ -134,7 +131,7 @@ filenamext() # Name..
 filestripext() # Name
 {
   ext="$(filenamext "$1")"
-  basename "$1" ".$ext"
+  basename -- "$1" ".$ext"
 }
 
 # Check wether name has extension, return 0 or 1
@@ -152,7 +149,34 @@ fileisext() # Name Exts..
 filename_baseid()
 {
   basename="$(filestripext "$1")"
-  mkid "$basename" '' '_-'
+  mkid "$basename" '' '_'
+}
+
+# Add number to file, provide extension to split basename before adding suffix
+number_file() # [action=mv] Name [Ext]
+{
+  local dir=$(dirname "$1") cnt=1 base=$(basename "$1" ${2-})
+
+  while test -e "$dir/$base-$cnt$2"
+  do
+    cnt=$(( $cnt + 1 ))
+  done
+  dest=$dir/$base-$cnt$2
+
+  test -n "${action-}" || local action="mv"
+  $action -v "$1" "$dest" || return $?
+}
+
+# make numbered copy, see number-file
+backup_file() # [action=mv] Name [Ext]
+{
+  action="cp" number_file "$@"
+}
+
+# rename to numbered file, see number-file
+rotate_file() # [action=mv] Name [Ext]
+{
+  action="mv" number_file "$@"
 }
 
 # Use `file` to get mediatype aka. MIME-type
@@ -160,10 +184,10 @@ filemtype() # File..
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    Darwin )
+    darwin )
         file -${flags}I "$1" || return 1
       ;;
-    Linux )
+    linux )
         file -${flags}i "$1" || return 1
       ;;
     * ) error "filemtype: $uname?" 1 ;;
@@ -175,7 +199,7 @@ fileformat()
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    Darwin | Linux )
+    darwin | linux )
         file -${flags} "$1" || return 1
       ;;
     * ) error "fileformat: $uname?" 1 ;;
@@ -188,10 +212,10 @@ filesize() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%z' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filesize: $1?" "" 1 ;;
@@ -205,10 +229,10 @@ filectime() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%c' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filectime: $1?" "" 1 ;;
@@ -222,10 +246,10 @@ filemtime() # File
   while test $# -gt 0
   do
     case "$uname" in
-      Darwin )
+      darwin )
           stat -L -f '%m' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%Y' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filemtime: $1?" "" 1 ;;
@@ -233,6 +257,15 @@ filemtime() # File
   done
 }
 
+file_update_age ()
+{
+  fmtdate_relative $(filectime $1) "" ""
+}
+
+file_modification_age ()
+{
+  fmtdate_relative $(filemtime $1) "" ""
+}
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the
 # standard input is cat instead or in-place respectively. Strips empty lines.
@@ -245,15 +278,14 @@ filemtime() # File
 # indicators for data availble at stdin.
 foreach()
 {
-  local foreach_stdin= # tracks stdin is read [1] and been read and closed [0]
   {
     test -n "$*" && {
       while test $# -gt 0
       do
         test "$1" = "-" && {
-          foreach_stdin=1
+          # XXX: echo foreach_stdin=1
           cat -
-          foreach_stdin=0
+          # XXX: echo foreach_stdin=0
         } || {
           printf -- '%s\n' "$1"
         }
@@ -269,15 +301,26 @@ foreach()
 # unwrapped loop-var is _S.
 foreach_do()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" ; done
+}
+foreach_eval()
+{
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
+  foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
 }
 
 # Extend rows by mapping each value line using act, add result tab-separated
 # to line. See foreach-do for other details.
 foreach_addcol()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$S" "$($act "$S")" ; done
 }
@@ -285,9 +328,18 @@ foreach_addcol()
 # See -addcol and -do.
 foreach_inscol()
 {
-  test -n "$act" || act="echo"
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
+}
+
+
+ignore_sigpipe()
+{
+  local r=$?
+  test $r -eq 141 || return $r # For bash: 128+signal where signal=SIGPIPE=13
 }
 
 
@@ -295,7 +347,7 @@ foreach_inscol()
 # remove again. Listing most-recent modified file name/path first.
 sort_mtimes()
 {
-  p= s= act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
+  act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
 }
 
 
@@ -303,7 +355,7 @@ normalize_relative()
 {
   OIFS=$IFS
   IFS='/'
-  local NORMALIZED
+  local NORMALIZED=
 
   for I in $1
   do
@@ -332,7 +384,7 @@ normalize_relative()
           ;;
       esac
     } || NORMALIZED=.
-  trueish "$strip_trail" && echo "$NORMALIZED" || case "$1" in
+  trueish "${strip_trail-}" && echo "$NORMALIZED" || case "$1" in
     */ ) echo "$NORMALIZED/"
       ;;
     * ) echo "$NORMALIZED"
@@ -345,11 +397,16 @@ normalize_relative()
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
 read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
-  test -n "$1" || return 1
-  test -n "$2" || set -- "$1" '^\s*(#.*|\s*)$'
-  test -z "$3" || $os_lib_log error "os" "read-nix-style-file: surplus arguments '$2'" "" 1
-  cat $cat_f "$1" | grep -Ev "$2" || return 1
+  test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
+  test -n "${1-}" || set -- "-" "$2"
+  test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
+  test -z "${cat_f-}" && {
+    grep -Ev "$2" "$1" || return 1
+  } || {
+    cat $cat_f "$1" | grep -Ev "$2"
+  }
 }
+# Sh-Copy: HT:tools/u-s/parts/sh-read.inc.sh
 
 grep_nix_lines()
 {
@@ -365,7 +422,7 @@ enum_nix_style_file()
 # Test for file or return before read
 read_if_exists()
 {
-  test -n "$1" || return 1
+  test -n "${1-}" || return 1
   read_nix_style_file "$@" 2>/dev/null || return 1
 }
 
@@ -374,7 +431,7 @@ read_if_exists()
 # is broken.
 lines_while() # CMD
 {
-  test -n "$1" || return
+  test $# -gt 0 || return
 
   line_number=0
   while read -r line
@@ -388,18 +445,21 @@ lines_while() # CMD
 # Offset content from input/file to line-based window.
 lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 {
-  test -n "$3" || error "File-Path expected" 1
+  test -n "${3-}" || error "File-Path expected" 1
   test "$3" = "-" && set -- "$1" "$2"
   test -n "$1" && {
     test -n "$2" && { # Start - End: tail + head
       tail -n "+$1" "$3" | head -n $(( $2 - $1 + 1 ))
+      return $?
     } || { # Start - ... : tail
       tail -n "+$1" "$3"
+      return $?
     }
 
   } || {
     test -n "$2" && { # ... - End : head
       head -n "$2" "$3"
+      return $?
     } || { # Otherwise cat
       cat "$3"
     }
@@ -415,15 +475,15 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 #
 read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
 {
-  test -n "$1" || error "Argument expected (1)" 1
+  test -n "${1-}" || error "Argument expected (1)" 1
   test -f "$1" || error "Not a filename argument: '$1'" 1
-  test -n "$2" -a -z "$5" || return
+  test -n "${2-}" -a $# -le 4 || return
   local stat=''
 
-  read_lines_while_inner()
+  read_lines_while_inner() # sh:no-stat
   {
     local r=0
-    lines_slice "$3" "$4" "$1" | {
+    lines_slice "${3-}" "${4-}" "$1" | {
         lines_while "$2" || r=$? ; echo "$r $line_number"; }
   }
   stat="$(read_lines_while_inner "$@")"
@@ -443,7 +503,7 @@ go_to_dir_with()
   while true
   do
     test -e "$1" && break
-    go_to_before=$(basename "$(pwd)")/$go_to_before
+    go_to_before=$(basename -- "$(pwd)")/$go_to_before
     test "$(pwd)" = "/" && break
     cd ..
   done
@@ -456,10 +516,11 @@ go_to_dir_with()
 # Count lines with wc (no EOF termination correction)
 count_lines()
 {
-  test -z "$1" -o "$1" = "-" && {
+  test "${1-"-"}" = "-" && {
     wc -l | awk '{print $1}'
+    return
   } || {
-    while test -n "$1"
+    while test $# -gt 0
     do
       wc -l $1 | awk '{print $1}'
       shift
@@ -468,9 +529,9 @@ count_lines()
 }
 
 # Wrap wc but correct files with or w.o. trailing posix line-end
-line_count()
+line_count () # FILE
 {
-  test -s "$1" || return 42
+  test -s "${1-}" || return 42
   test $(filesize "$1") -gt 0 || return 43
   lc="$(echo $(od -An -tc -j $(( $(filesize $1) - 1 )) $1))"
   case "$lc" in "\n" ) ;;
@@ -482,12 +543,13 @@ line_count()
 }
 
 # Count words
-count_words()
+count_words () # [FILE | -]...
 {
-  test -z "$1" -o "$1" = "-" && {
+  test "${1:-"-"}" = "-" && {
     wc -w | awk '{print $1}'
+    return
   } || {
-    while test -n "$1"
+    while test $# -gt 0
     do
       wc -w $1 | awk '{print $1}'
       shift
@@ -496,21 +558,22 @@ count_words()
 }
 
 # Count every character
-count_chars()
+count_chars () # [FILE | -]...
 {
-  test -n "$1" && {
-    while test -n "$1"
+  test "${1:-"-"}" = "-" && {
+    wc -w | awk '{print $1}'
+    return
+  } || {
+    while test $# -gt 0
     do
       wc -c $1 | awk '{print $1}'
       shift
     done
-  } || {
-    wc -w | awk '{print $1}'
   }
 }
 
 # Count occurence of character each line
-count_char() # Char
+count_char () # CHAR
 {
   local ch="$1" ; shift
   awk -F$ch '{print NF-1}' |
@@ -521,8 +584,8 @@ count_char() # Char
 # Count tab-separated columns on first line. One line for each file.
 count_cols()
 {
-  test -n "$1" && {
-    while test -n "$1"
+  test $# -gt 0 && {
+    while test $# -gt 0
     do
       { printf '\t'; head -n 1 "$1"; } | count_char '\t'
       shift

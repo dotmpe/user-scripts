@@ -5,7 +5,8 @@ load ../init
 
 setup()
 {
-  init &&
+  init && load stdtest &&
+  . ./tools/sh/util.sh &&
   OUT=echo . "./tools/ci/parts/std-runner.sh" &&
   . "./tools/ci/parts/std-stack.sh"
 }

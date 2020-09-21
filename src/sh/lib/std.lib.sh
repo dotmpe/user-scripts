@@ -5,16 +5,18 @@
 
 std_lib_load()
 {
-  test -n "$uname" || uname="$(uname -s)"
+  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
 }
 
 std_lib_init()
 {
-  test -n "$INIT_LOG" || return 102
-  test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
-  test -x "$(which file)" || error "file util required for stdio-type" 1
-  test -n "$LOG" && std_lib_log="$LOG" || std_lib_log="$INIT_LOG"
-  $INIT_LOG info "" "Loaded std.lib" "$0"
+  test "${std_lib_init-}" = "0" || {
+    test -n "${INIT_LOG-}" || return 109
+    test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
+    test -x "$(which file)" || error "file util required for stdio-type" 1
+    test -n "${LOG-}" && std_lib_log="$LOG" || std_lib_log="$INIT_LOG"
+    $INIT_LOG debug "" "Initialized std.lib" "$0"
+  }
 }
 
 std_lib_check()
@@ -22,13 +24,22 @@ std_lib_check()
   std_iotype_check
 }
 
+# XXX: use as part of std suite?
+  # stdio_0_type= stdio_1_type= stdio_2_type=
+  # std.lib.sh
+  #{
+  #    stdio_type 0 $$ &&
+  #    stdio_type 1 $$ &&
+  #    stdio_type 2 $$
+  #} || return
 
+# Check for Linux, MacOS or Cygwin.
 std_iotype_check()
 {
   case "$uname" in
 
-    Linux | CYGWIN_NT-* ) ;;
-    Darwin ) ;;
+    linux | cygwin_nt-* ) ;;
+    darwin ) ;;
 
     * ) error "No stdio-type for $uname" ;;
   esac
@@ -44,7 +55,7 @@ std_iotype_check()
 
 get_stdio_type() # IO-Num PId
 {
-  test -z "$2" || {
+  test -z "${2-}" || {
     test $$ -eq $2 || return
   }
   eval echo \$stdio_${1}_type
@@ -56,8 +67,8 @@ stdio_type()
   test -n "$1" && io=$1 || io=1
   case "$uname" in
 
-    Linux | CYGWIN_NT-* )
-        test -n "$2" && pid=$2 || pid=$$
+    linux | cygwin_nt-* )
+        test -n "${2-}" && pid=$2 || pid=$$
         test -e /proc/$pid/fd/${io} || error "No $uname FD $io"
         if readlink /proc/$pid/fd/$io | grep -q "^pipe:"; then
           eval stdio_${io}_type=p
@@ -68,7 +79,7 @@ stdio_type()
         fi
       ;;
 
-    Darwin )
+    darwin )
 
         test -e /dev/fd/${io} || error "No $uname FD $io"
         if file /dev/fd/$io | grep -q 'named.pipe'; then
@@ -84,19 +95,27 @@ stdio_type()
   esac
 }
 
-var_log_key()
+# Was var_log_key()
+log_src_id_var()
 {
-  test -n "$log_key" || {
-    test -n "$log" && {
-      log_key="$log"
+  test -n "${log_key-}" || {
+    test -n "${stderr_log_channel-}" && {
+      log_key="$stderr_log_channel"
     } || {
-      test -n "$base" || base=$scriptname
+      test -n "${base-}" || {
+        base="\$\$/\$scriptname"
+      }
       test -n "$base" && {
-        test -n "$scriptext" || scriptext=.sh
-        log_key=$base$scriptext
+        test -n "${scriptext-}" || scriptext=.sh
+        log_key=\$base\$scriptext
       } || echo "Cannot get var-log-key" 1>&2;
     }
   }
+}
+
+log_src_id()
+{
+  eval echo \"$log_key\"
 }
 
 log_bw()
@@ -118,13 +137,15 @@ log_256()
 # 1:str 2:exit
 _log()
 {
+  # XXX: cleanup unused _log
+  exit 213
   test -n "$1" || exit 201
   test -n "$stdout_type" || stdout_type="$stdio_1_type"
   test -n "$stdout_type" || stdout_type=t
 
   local key=
   test -n "$SHELL" \
-    && key="$scriptname.$(basename "$SHELL")" \
+    && key="$scriptname.$(basename -- "$SHELL")" \
     || key="$scriptname.(sh)"
 
   case $stdout_type in
@@ -153,9 +174,8 @@ _log()
 # stdio helper functions
 log()
 {
-  var_log_key
-  printf -- "[$log_key] $1\n"
-  unset log_key
+  test -n "${log_key:-}" || log_src_id_var
+  printf -- "[$(log_src_id)] $1\n"
 }
 
 err()
@@ -163,7 +183,7 @@ err()
   warn "err() is deprecated, see stderr()"
   # TODO: turn this on and fix tests warn "err() is deprecated, see stderr()"
   log "$1" 1>&2
-  test -z "$2" || exit $2
+  test -z "${2-}" || exit $2
 }
 
 _stderr()
@@ -176,64 +196,65 @@ _stderr()
 # FIXME: move all highlighting elsewhere / or transform/strip for specific log-TERM
 stderr() # level msg exit
 {
-  test -z "$4" || {
+  test $# -le 3 || {
     echo "Surplus arguments '$4'" >&2
     exit 200
   }
 
-  fnmatch "*%*" "$2" && set -- "$1" "$(echo "$2" | sed 's/%/%%/g')" "$3"
+  fnmatch "*%*" "$2" && set -- "$1" "$(echo "$2" | sed 's/%/%%/g')" "${3-}"
   # XXX seems ie grep strips colors anyway?
-  test -n "$stdout_type" || stdout_type=$stdio_2_type
+  test -n "${stdout_type-}" || stdout_type=${stdio_2_type-t}
   case "$(echo $1 | tr 'A-Z' 'a-z')" in
 
     crit*)
-        bb=${ylw}; bk=$default
+        bb=${yellow-}; bk=${default-}
         test "$CS" = "light" \
           && crit_label_c="\033[38;5;226;48;5;249m" \
-          || crit_label_c="${ylw}"
-        log "${bld}${crit_label_c}$1${norm}${blackb}: ${bdefault}$2${norm}" 1>&2 ;;
+          || crit_label_c="${yellow-}"
+        log "${bld-}${crit_label_c}$1${norm-}${blackb-}: ${bdefault-}$2${norm-}" 1>&2 ;;
     err*)
-        bb=${red}; bk=$grey
-        log "${bld}${red}$1${blackb}: ${norm}${bdefault}$2${norm}" 1>&2 ;;
+        bb=${red-}; bk=${grey-}
+        log "${bld-}${red-}$1${blackb-}: ${norm-}${bdefault-}$2${norm-}" 1>&2 ;;
     warn*|fail*)
-        bb=${dylw}; bk=$grey
+        bb=${darkyellow-}; bk=${grey-}
         test "$CS" = "light" \
             && warning_label_c="\033[38;5;255;48;5;220m"\
-            || warning_label_c="${dylw}";
-        log "${bld}${warning_label_c}$1${norm}${grey}${bld}: ${default}$2${norm}" 1>&2 ;; notice )
-        bb=${prpl}; bk=$grey
-        log "${grey}${default}$2${norm}" 1>&2 ;;
+            || warning_label_c="${darkyellow-}";
+        log "${bld-}${warning_label_c}$1${norm-}${grey-}${bld-}: ${default-}$2${norm-}" 1>&2 ;;
+   notice )
+        bb=${purple-}; bk=${grey-}
+        log "${grey-}${default-}$2${norm-}" 1>&2 ;;
     info )
-        bb=${blue}; bk=$grey
-        log "${grey}$2${norm}" 1>&2 ;;
+        bb=${blue-}; bk=${grey-}
+        log "${grey-}$2${norm-}" 1>&2 ;;
     ok|pass* )
-        bb=${grn}; bk=$grey
-        log "${default}$2${norm}" 1>&2 ;;
+        bb=${grn-}; bk=${grey-}
+        log "${default-}$2${norm-}" 1>&2 ;;
     * )
-        bb=${drgrey} ; bk=$dgrey
-        log "${grey}$2${norm}" 1>&2 ;;
+        bb=${drgrey-} ; bk=${grey-}
+        log "${grey-}$2${norm-}" 1>&2 ;;
 
   esac
-  test -z "$4" || {
-    exit $4
+  test -z "${3-}" || {
+    exit $3
   }
 }
 
 
 # std-v <level>
 # if verbosity is defined, return non-zero if <level> is below verbosity treshold
-std_v()
+std_v() # Log-Level
 {
-  test -z "$verbosity" && return || {
-    test $verbosity -ge $1 && return || return 1
+  test -z "${verbosity:-${v:-}}" && return || {
+    test ${verbosity:-${v:-}} -ge $1 && return || return 1
   }
 }
 
 std_exit()
 {
-  test -n "$1" || return 0
+  test -n "${1-}" || return 0
   case "$1" in [0-9] ) ;;
-    * ) $script_util/log.sh "error" "" "std-ext '$1'" "" 1
+    * ) $sh_tools/log.sh "error" "" "std-ext '$1'" "" 1
       return $?
       ;;
   esac
@@ -243,42 +264,42 @@ std_exit()
 emerg()
 {
   local log=; req_init_log
-  std_v 1 || std_exit $2 || return 0
-  stderr "Emerg" "$1" $2
+  std_v 1 && stderr "Emerg" "$1" ${2-}
+  std_exit ${2-}
 }
 crit()
 {
   local log=; req_init_log
-  std_v 2 || std_exit $2 || return 0
-  stderr "Crit" "$1" $2
+  std_v 2 && stderr "Crit" "$1" ${2-}
+  std_exit ${2-}
 }
 error()
 {
   local log=; req_init_log
-  std_v 3 || std_exit $2 || return 0
-  stderr "Error" "$1" $2
+  std_v 3 && stderr "Error" "$1" ${2-}
+  std_exit ${2-}
 }
 warn()
 {
   local log=; req_init_log
-  std_v 4 || std_exit $2 || return 0
-  stderr "Warning" "$1" $2
+  std_v 4 && stderr "Warning" "$1" ${2-}
+  std_exit ${2-}
 }
 note()
 {
   local log=; req_init_log
-  std_v 5 || std_exit $2 || return 0
-  stderr "Notice" "$1" $2
+  std_v 5 && stderr "Notice" "$1" ${2-}
+  std_exit ${2-}
 }
 std_info()
 {
   local log=; req_init_log
-  std_v 6 || std_exit $2 || return 0
-  stderr "Info" "$1" $2
+  std_v 6 && stderr "Info" "$1" ${2-}
+  std_exit ${2-}
 }
 debug()
 {
   local log=; req_init_log
-  std_v 7 || std_exit $2 || return 0
-  stderr "Debug" "$1" $2
+  std_v 7 && stderr "Debug" "$1" ${2-}
+  std_exit ${2-}
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Helpers for BATS project test env.
 
@@ -14,6 +14,14 @@ log_level_name() # Level-Num
       5 ) echo note ;;
       6 ) echo info ;;
       7 ) echo debug ;;
+
+      5.1 ) echo ok ;;
+      4.2 ) echo fail ;;
+      3.3 ) echo err ;;
+      6.4 ) echo skip ;;
+      2.5 ) echo bail ;;
+      7.6 ) echo diag ;;
+
       * ) return 1 ;;
   esac
 }
@@ -22,12 +30,13 @@ log_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
-      crit  ) echo 2 ;;
-      error ) echo 3 ;;
-      warn* ) echo 4 ;;
-      note|notice  ) echo 5 ;;
-      info  ) echo 6 ;;
-      debug ) echo 7 ;;
+      crit  | bail ) echo 2 ;;
+      error | err ) echo 3 ;;
+      warn  | fail ) echo 4 ;;
+      note  | notice | ok ) echo 5 ;;
+      info  | skip | TODO ) echo 6 ;;
+      debug | diag ) echo 7 ;;
+
       * ) return 1 ;;
   esac
 }
@@ -44,46 +53,56 @@ assert_equal()
 
 diag() { echo "$@"; }
 
+
 # Simple init-log shell function that behaves well in unintialzed env,
 # but does not add (vars) to env.
 err_() # [type] [cat] [msg] [tags] [status]
 {
-  test -z "$verbosity" -a -z "$DEBUG" && return
-  test -n "$2" || set -- "$1" "$base" "$3" "$4" "$5"
+  test $# -gt 0 || return
+  test $# -gt 1 || set -- "$@" "" "" "" ""
+  test -z "${verbosity:-}" -a -z "${DEBUG:-}" && return
+  test -n "$2" || set -- "$1" "$base" "$3" "${4:-}" "${5:-}"
   test -z "$verbosity" -a -n "$DEBUG" || {
 
-    case "$1" in [0-9]* ) true ;; * ) false ;; esac &&
-      lvl=$(log_level_name "$1") ||
+    case "$1" in [0-9]* ) true ;; * ) false ;; esac && {
+      lvl=$(log_level_name "$1")
+    } || {
       lvl=$(log_level_num "$1")
+    }
 
-    test $verbosity -ge $lvl || {
-      test -n "$5" && exit $5 || {
+    test $verbosity -ge ${lvl:-0} || {
+      test -n "${5:-}" && exit $5 || {
         return 0
       }
     }
   }
 
-  printf -- "%s\n" "[$2] $1: $3 <$4> ($5)" >&2
-  test -z "$5" || exit $5 # NOTE: also exit on '0'
+  printf -- "%s\n" "[$2] $1: $3 <$4> (${5:-})" >&2
+  test -z "${5:-}" || exit $5 # NOTE: also exit on '0'
 }
-# print-stderr-log
 
 # Set env and other per-specfile init
 test_env_load()
 {
-  test -n "$script_util" || return 103 # NOTE: sanity
+  test -n "$sh_tools" || return 103 # NOTE: sanity
+  test -n "$DEBUG" || DEBUG=
   test -n "$INIT_LOG" || INIT_LOG=err_
 
-  # FIXME: hardcoded sequence for env-d like for lib. Using lib-util-env-d-default
-  for env_d in 0 log ucache scriptpath dev test
+  SCRIPTPATH=
+  # XXX: need to adjust if build.txt column order changes
+  # Get env init ('0' prefixed) Test suite steps from build.txt
+  for env_d in $( grep -vE '^\s*(#.*|\s*)$' build.txt|awk '{print $6" "$1}'|grep '^0'|sort -u|cut -f2 -d' ')
   do
-     $INIT_LOG "debug" "" "Loading env-part" "$env_d"
-    . $script_util/parts/env-$env_d.sh ||
+    $INIT_LOG "debug" "" "Loading env-part" "$env_d"
+    part=$ci_tools/parts/$env_d.sh
+    test -e "$part" || part=$sh_tools/parts/$env_d.sh
+    . "$part" ||
         $INIT_LOG "warn" "" "Failed env-part"  "$? $env_d"
   done
+  unset part env_d
 
   test -n "$base" || return 12 # NOTE: sanity
-  test -n "$INIT_LOG" || return 102 # NOTE: sanity
+  test -n "$INIT_LOG" || return 109 # NOTE: sanity
   $INIT_LOG "info" "" "Env initialized from parts"
 }
 
@@ -98,48 +117,56 @@ test_env_init()
   test -x $PWD/$base && {
     bin=$base
   } || {
-    test -x "$(which $base)" && bin=$(which $base) || lib=$(basename $base .lib)
+    test -x "$(which $base)" && bin=$(which $base) || lib=$(basename -- "$base" .lib)
   }
 }
 
 
 # Bootstrap test-env for Bats ~ 1:Init 2:Load-Libs 3:Boot-Std 4:Boot-Script
-init() # ( 0 | 1 1 1 1 )
+init() # ( 0 | 1 [~ [~ [~]]] )
 {
   test -z "$lib_loaded" || return 105
-  test -n "$script_util" || script_util=$(pwd -P)/tools/sh
-  test -d "$script_util" || return 103 # NOTE: sanity
+
+  test -n "$CWD" || CWD=$(pwd -P)
+  test -n "$sh_tools" || sh_tools=$CWD/tools/sh
+  script_util=$sh_tools
+  test -n "$ci_tools" || ci_tools=$CWD/tools/ci
+  test -d "$sh_tools" || return 103 # NOTE: sanity
   test_env_load || return
   test_env_init || return
 
-  # Get lib-load, and optional libs/boot script/helper
+  # Get lib-load, and optional libs/boot script/helperj
+  while test $# -lt 4 ; do set -- "$@" "" ; done
+  test -n "$1" || set -- "1" "$2" "$3" "$4"
+  test -n "$2" || set -- "$1" "$1" "$3" "$4"
+  test -n "$3" || set -- "$1" "$2" "$2" "$4"
+  test -n "$4" || set -- "$1" "$2" "$3" "$3"
 
-  test $# -gt 0 || set -- 1
+  init_sh_libs="$2"
+  init_sh_boot="$3"
+
   test "$1" = "0" || {
 
-    test -n "$2" || set -- "$1" "$1" "$3" "$4"
-    test -n "$3" || set -- "$1" "$2" "$2" "$4"
-    test -n "$4" || set -- "$1" "$2" "$3" "$3"
-
-    init_sh_libs="$2"
-    init_sh_boot="$3"
-
     test "$2" != "1" -o \( -n "$3" -a "$3" != "0" \) || init_sh_boot="null"
+
     test "$init_sh_boot" = "1" && {
       test "$3" = "0" || init_sh_boot='std test'
       test "$4" = "0" || init_sh_boot=$init_sh_boot' script'
     }
 
+    true
   }
 
   load_init_bats
+
+  load() { load_override "$@"; }
 
 # FIXME: deal with sub-envs wanting to know about lib-envs exported by parent
 # ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
 # and dealing only with current env, testing lib-load and tools, user-scripts.
   LIB_SRC=
-  . $script_util/init.sh || return
-
+  #. $U_S/tools/sh/init.sh
+  . $sh_tools/init.sh
 }
 
 
@@ -186,8 +213,8 @@ bats_autosetup_common_includes()
   test ! -d $BASHER_PACKAGES ||
     BATS_LIB_PATH_DEFAULTS="$BATS_LIB_PATH_DEFAULTS $BASHER_PACKAGES"
 
-  test -e /src/ &&
-    : "${VND_SRC_PREFIX:="/src"}" ||
+  test -e /src/local &&
+    : "${VND_SRC_PREFIX:="/src/local"}" ||
     : "${VND_SRC_PREFIX:="$HOME/build"}"
 
   : "${VENDORS:="google.com github.com bitbucket.org"}"
@@ -229,14 +256,14 @@ bats_dynamic_include_path()
 
 load_init_bats()
 {
-  test -n "$BATS_LIB_PATH" || bats_dynamic_include_path
+  test -n "${BATS_LIB_PATH:-}" || bats_dynamic_include_path
 
-  test -n "$BATS_LIB_EXTS" || BATS_LIB_EXTS=.bash\ .sh
-  test -n "$BATS_VAR_EXTS" || BATS_VAR_EXTS=.txt\ .tab
-  test -n "$BATS_LIB_DEFAULT" || BATS_LIB_DEFAULT=load
+  : "${BATS_LIB_EXTS:=".bash .sh"}"
+  : "${BATS_VAR_EXTS:=".txt .tab"}"
+  : ${BATS_LIB_DEFAULT:=load}
 }
 
-load() # ( PATH | NAME )
+load_override() # ( PATH | NAME )
 {
   test $# -gt 0 || return 1
   : "${lookup_exts:=${BATS_LIB_EXTS}}"
