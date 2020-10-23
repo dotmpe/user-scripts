@@ -9,7 +9,6 @@
 lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index
 
 #build_sd_cache "$(basename $1)" "$hostname-$APP_ID_BREV" "$(basename "$3")"
-test ! -e "$1" -o -s "$1" || rm "$1"
 #test ! -e "$1.bup" || {
 #  cat "$1.bup" >"$3"
 #  exit
@@ -22,4 +21,5 @@ generator=list_lib_sh_files \
 echo "Listed $(wc -l "$3"|awk '{print $1}') shell libraries"  >&2
 #build_sd_commit "$(basename $3)" "$hostname-$APP_ID_BREV" "$(basename "$1")"
 build-stamp <$3
+test ! -e "$1" -o -s "$1" || rm "$1"
 #

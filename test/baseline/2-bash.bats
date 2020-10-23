@@ -5,14 +5,11 @@ base="baseline-2:bash"
 
 setup()
 {
-  #init && load assert
-  load ../helper/assert
+  init && load assert
 }
 
 
 @test "$base: std globbing" {
-  #shopt | grep extglob | grep 'off' \
-  #  || fail "Extglob sh option is turned on by default"
 
   tmpd && test -d "$tmpd"
   cd $tmpd

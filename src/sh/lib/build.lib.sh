@@ -19,12 +19,16 @@ EOM
   test -n "${sh_file_exts-}" || sh_file_exts=".sh .bash"
   # Not sure what shells to restrict to, so setting it very liberal
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
+
+  test -n "${components_txt-}" || components_txt=${COMPONENTS_TXT:-"components.txt"}
+  test -n "${build_txt-}" || build_txt="${BUILD_TXT:-"build.txt"}"
+  test -n "${dependencies_txt-}" || dependencies_txt="${DEPENDENCIES_TXT:-"dependencies.txt"}"
 }
 
 build_component_exists () # Target
 {
   test -n "${1-}" || return 98
-  read_nix_style_file .meta/stat/index/components.list | {
+  read_nix_style_file "$components_txt" | {
     while read name type target_spec source_specs
     do
       test "$name" = "$1" && return
@@ -37,7 +41,7 @@ build_component_exists () # Target
 
 build_fetch_component () # Path
 {
-  read_nix_style_file .meta/stat/index/components.list |
+  read_nix_style_file "$components_txt" |
     while read target_name type target_spec source_specs
   do
     case "$type" in
@@ -66,7 +70,7 @@ build_components () # Target-Name Type Build-Args...
 {
   local name="$1" name_p type="${2:-"[^ ]*"}" ; shift 2
   fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
-  grep '^'"$name_p"' '"$type"'\($\| \)' .meta/stat/index/components.list | {
+  grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt" | {
     read name type rest
     set -o noglob; set -- $name $rest -- "$@"; set +o noglob
     build_component_$type "$@"
@@ -76,19 +80,26 @@ build_components () # Target-Name Type Build-Args...
 # Simpleglob: defer to target paths obtained by expanding source-spec
 build_component_simpleglob () # NAME TARGET_SPEC SOURCE_SPECS
 {
-  local src name glob=$(echo "$3" | sed 's/%/*/')
-  for src in $glob
-  do
-    name="$(glob_spec_var "$glob" "$src")"
-    build-ifchange $(echo "$2" | sed 's/\*/'"$name"'/')
-  done
+  local src match glob=$(echo "$3" | sed 's/%/*/')
+  build-ifchange $( for src in $glob
+    do
+      match="$(glob_spec_var "$glob" "$src")"
+      echo "$2" | sed 's/\*/'"$match"'/'
+    done )
 }
 
-# Return first globbed part, given glob pattern and expanded path
+# Return first globbed part, given glob pattern and expanded path.
+# Returned part is everything matched from first to last wildcard glob,
+# so this works on globstar and to a degree with multiple wildcards.
 glob_spec_var () # Pattern Path
 {
-  set -- "$@" $(match_grep "$1" | sed 's/\*/\(\.\*\\)/')
+  set -- "$@" "$(glob_spec_grep "$1")"
   echo "$2" | sed 's/'"$3"'/\1/g'
+}
+
+glob_spec_grep ()
+{
+  match_grep "$1" | sed 's/\*\(.*\*\)\?/\(\.\*\\)/'
 }
 
 # Function target: invoke function with build-args
@@ -109,12 +120,42 @@ build_component_function () # Name [Function] Libs... -- Build-Arg
 # Alias target: defer to other targets
 build_component_alias () # Name Targets... -- Build-Arg
 {
-  local aliases ; shift
+  local aliases= ; shift
   while test $# -gt 0 -a "${1-}" != "--"
   do aliases="${aliases:-}${aliases+" "}$1"; shift
   done; shift
 
   build-always && build-ifchange $aliases
+}
+
+# Symlinks: create each dest, linking to srcs
+build_component_symlinks () # NAME SRC-GLOB DEST-FMT -- Build-Arg
+{
+  local src match dest grep="$(glob_spec_grep "$2")" f
+  test ${quiet:-0} -eq 1 || f=-v
+  shopt -s nullglob
+  for src in $2
+  do
+    match="$(echo "$src" | sed 's/'"$grep"'/\1/g' )"
+    case "$3" in
+      *'%*'* ) dest=$(echo "$3" | sed 's#%*#'"$match"'#') ;;
+      *'%_'* ) mkvid "$match"; dest=$(echo "$3" | sed 's/%_/'"$vid"'/') ;;
+      *'%-'* ) mksid "$match"; dest=$(echo "$3" | sed 's/%-/'"$sid"'/') ;;
+      * ) return 98 ;;
+    esac
+    dest="$(eval echo $dest)"
+    test ! -e "$dest" -o -h "$dest" || {
+      $LOG "" "File exists and is not a symlink" "$dest"; return 1
+    }
+    test -h "$dest" && {
+      test "$src" = "$(readlink "$dest")" || rm ${f-} "$dest" >&2
+    }
+    test -h "$dest" || {
+      test -d "$(dirname "$dest")" || mkdir ${f-} "$(dirname "$dest")" >&2
+      ln ${f:-"-"}s "$src" "$dest" >&2
+    }
+  done
+  shopt -u nullglob
 }
 
 build ()

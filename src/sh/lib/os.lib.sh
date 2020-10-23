@@ -316,17 +316,18 @@ foreach_eval()
 
 # Extend rows by mapping each value line using act, add result tab-separated
 # to line. See foreach-do for other details.
-foreach_addcol()
+foreach_addcol () #
 {
   test -n "${p-}" || local p= # Prefix string
   test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
+  test "${act-unset}" != unset || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$S" "$($act "$S")" ; done
 }
+# Var: F:foreach-addcol.bash
 
 # See -addcol and -do.
-foreach_inscol()
+foreach_inscol ()
 {
   test -n "${p-}" || local p= # Prefix string
   test -n "${s-}" || local s= # Suffix string
@@ -334,7 +335,6 @@ foreach_inscol()
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
 }
-
 
 ignore_sigpipe()
 {
@@ -398,10 +398,10 @@ normalize_relative()
 read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
 {
   test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
-  test -n "${1-}" || set -- "-" "$2"
+  test -n "${1-}" || set -- "-" "${2-}"
   test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
   test -z "${cat_f-}" && {
-    grep -Ev "$2" "$1" || return 1
+    grep -Ev "$2" "$1" || return $?
   } || {
     cat $cat_f "$1" | grep -Ev "$2"
   }

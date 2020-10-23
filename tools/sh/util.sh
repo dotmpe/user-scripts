@@ -14,6 +14,5 @@ sh_include \
   unique-paths hd-offsets suite-from-table suite-source suite-run \
   env-0-1-lib-sys print-color
 #  remove-dupes unique-paths
-#  env-0-src
 
 # Id: U-S:

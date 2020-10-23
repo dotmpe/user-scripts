@@ -26,10 +26,7 @@ and  [libv0:lib_load](/doc/src/lib#v0:lib_load) docs.
 Set and export SCRIPTPATH for a script environment with ``init.sh``:
 ```
 scriptpath=$PWD . ./tools/sh/init.sh
-lib_load <my_lib>
-```
-or set from master/for dev:
-```
+lib_load <my_lib> # or set from master/for dev:
 test -e ./tools/sh/init.sh ||
   curl -sSO https://github.com/user-tools/user-scripts/blob/master/tools/sh/init-gh.sh | sh -
 scriptpath=$PWD . ./tools/sh/init.sh
@@ -39,13 +36,13 @@ A predefined set of modules is loaded.
 ```sh
 U_S=/src/github.com/dotmpe/user-script
 
-# Load into current shell
+ # Load into current shell
 scriptpath=$U_S/src/sh/lib . $U_S/tools/init.sh
 
-# Or with init-here helper command (ie. local script file)
+ # Or with init-here helper command (ie. local script file)
 $scriptpath/tools/sh/init-here.sh $PWD/lib:$U_s/src/sh/lib "lib_load <my_lib> && ..."
 
-# Or with here-doc
+ # Or with here-doc
 $scriptpath/tools/sh/init-here.sh $ "$(cat <<EOM
 
   lib_load <my_lib>
@@ -79,19 +76,15 @@ Version: 0.0
 #### Install (for dev & test only)
 
 ```sh
-redo init
-# or
-make init
-# or
+redo init # or
+make init # or
 ./.build.sh init
 ```
 
 #### Testing
 
 ```sh
-redo test
-# or
-make test
-# or
+redo test # or
+make test # or
 ./.build.sh test
 ```

@@ -202,7 +202,9 @@ main() # [SUBCMD [ARGS...]]
   $cmdid "$@"
 }
 
-case "$0" in "-*" ) * ;; */u-s )
+case "$0" in
+  "-*" ) * ;; # No-op/err-state when sourced into login session
+  */u-s ) # Run command in U-s tool env
 
   set -e # Sh, same as?:
   set -o errexit # Ash, Bash
@@ -225,4 +227,5 @@ case "$0" in "-*" ) * ;; */u-s )
 
   set -euo pipefail
   main "$@"
-;; esac
+
+;; esac # No match for non-login session, or when included in other tools

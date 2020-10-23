@@ -9,7 +9,7 @@ setup()
 }
 
 
-@test "$base: vanilla shell" {
+@test "$base: vanilla shell; 'run' sets '\$status' and '\$lines'" {
 
   run true
   test ${status} -eq 0

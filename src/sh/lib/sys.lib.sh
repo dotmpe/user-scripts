@@ -285,10 +285,19 @@ lookup_path_list () # VAR-NAME
 
 # Translate Lookup path element and given/local name to filesystempath,
 # or return err-stat.
-lookup_exists () # DIR NAME
+lookup_exists () # NAME DIRS...
 {
-  test $# -eq 2 || return 98
-  test -e "$1/$2" && echo "$1/$2"
+  local name="$1" r=1
+  shift
+  while test $# -gt 0
+  do
+    test -e "$1/$name" && {
+      echo "$1/$name"
+      test ${lookup_first:-1} -eq 1 && return || r=0
+    }
+    shift
+  done
+  return $r
 }
 
 # lookup-path List existing local paths, or fail if second arg is not listed
@@ -305,7 +314,7 @@ lookup_path () # VAR-NAME LOCAL-PATH
 
   local path ; for path in $( lookup_path_list $1 )
     do
-      eval $lookup_test \""$path"\" \""$2"\" && {
+      eval $lookup_test \""$2"\" \""$path"\" && {
         test ${lookup_first:-1} -eq 1 && break || continue
       } || continue
     done
@@ -319,7 +328,7 @@ lookup_paths () # Var-Name Local-Paths...
     do
       for path in $@
       do
-        eval $lookup_test \""$base"\" \""$path"\" && {
+        eval $lookup_test \""$path"\" \""$base"\" && {
           test ${lookup_first:-1} -eq 1 && break || continue
         } || continue
       done

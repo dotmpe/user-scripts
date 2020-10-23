@@ -2,9 +2,10 @@
 
 index_update () # Cmds... -- Select Id-Col Sort-Key Target Temp
 {
+echo "index_update $#:$*" >&2
   local  cmds=
   while test "$1" != '--'
-  do cmds="$cmds$1 "; shift
+  do cmds="${cmds-}${cmds+" "}$1"; shift
   done; shift
   local select="$1" id_col="$2" sort_key="$3" index="$4" cache="$5" ; shift 5
   test -n "$select" || select=index_update_select
@@ -12,7 +13,6 @@ index_update () # Cmds... -- Select Id-Col Sort-Key Target Temp
   test -e "$index" && new_index=0 || new_index=1
   set -- $cmds "$@"
   local build_sub=$1; mkvid "$1"; shift; local build_sub_cmd="$vid"; unset vid
-  test ${DEBUG:-0} -eq 0 || echo "build_sub $build_sub_cmd ($#) $*" >&2
   { $build_sub_cmd "$@" || return
   } > "$cache"
 
@@ -35,9 +35,10 @@ index_merge () # Index Cache
   rm $2.tmp*
 }
 
-# Return index entries excluding those updated in index
+# Return index entries excluding those updated in cache (the new index)
 index_update_select () # Id-Col Index Cache
 {
+echo "index_update_select $#:$*" >&2
   local ids=/tmp/cache-ids.tmp
   cut -d' ' -f$1 $3 | while read -r src
   do echo "^[0-9 \.@+-]* $(match_grep "$src")\\($\\| \\)"
@@ -49,6 +50,7 @@ index_update_select () # Id-Col Index Cache
 # Actions: init | update-index | update-index-deleted | update-newer
 files_index () # [Action] Index
 {
+echo "files_index $#:$*" >&2
   # FIXME: there is no need to take sort-key argument, order is hardcoded below
   local mtime action="$1" sort_key="4d" index="$2"
   shift 2
@@ -62,7 +64,7 @@ files_index () # [Action] Index
 
   test -n "${generator:-}" || local generator=list_sh_files
   local sort=$( printf -- "-k %s\n" ${sort_key//,/ } )
-  files_index_fetch "$action" "$index" "$generator" |
+  files_index_fetch "$action" "$index" "$generator" "$@" |
     while read -r dtime mtime ctime src rest
     do
       test ${dtime:-'-'} = - && {
@@ -76,20 +78,25 @@ files_index () # [Action] Index
 
 files_index_fetch () # Action Index Generator
 {
-  case $1 in
-    init ) $3 ;;
-    update-newer ) $3 "" "$2" ;;
-  esac | while read -r src
-    do echo "- @$(stat -c '%Y' "$src") - $src"
-  done
+  local action=$1 index=$2 generator=$3 ; shift 3
+
+  # Use generator to find all or newer files
+  test "$action" = "update-index" || {
+    case $action in
+      init ) $generator "" "" "$@" ;;
+      update-newer ) $generator "" "$index" "$@" ;;
+    esac | while read -r src
+      do echo "- @$(stat -c '%Y' "$src") - $src"
+    done
+  }
 
   # To update deletions, we'll need to check every src from index
-  case "$1" in update-index | update-index-deleted )
+  case "$action" in update-index | update-index-deleted )
     while read dtime mtime ctime src rest
     do
       test -e "$src" && {
         # Only for full update-index go and check mtime
-        case "$1" in update-index-deleted ) continue ;; * ) ;; esac
+        case "$action" in update-index-deleted ) continue ;; * ) ;; esac
       } || {
         test ${dtime:-'-'} != - || {
           $LOG error "" deleted "$src"
@@ -104,7 +111,7 @@ files_index_fetch () # Action Index Generator
         $LOG error "" "mtime mismatch '$src'" "$mtime <> $cur_mtime"
         echo "$dtime $cur_mtime $ctime $src $rest"
       }
-    done <"$2"
+    done <"$index"
     return $?
   ;; esac
 }

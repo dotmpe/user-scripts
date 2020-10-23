@@ -24,7 +24,6 @@ base='baseline:3:project'
   ./bin/u-s help
 }
 
-
 @test "$base: tools/sh/log" {
 
   # FIXME: test/init:init

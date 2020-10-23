@@ -24,7 +24,7 @@ setup_sh_tpl_name_index() # Name-Value Base-Var-Id
   local i=1 name= type=
   while true
   do
-    name="$(eval echo \"\$${2}_${i}__name\")"
+    name="$(eval echo \"\${${2}_${i}__name-}\")"
     test -n "$name" -o -n "$type" || break
     test -z "$name" || {
         { test "$1" = "$name" || fnmatch "$1" "$name"; } &&
@@ -40,14 +40,14 @@ setup_sh_tpl_item() # Index-Nr Base-Var-Id
   test -n "$1" || error "setup-sh-tpl: item arg:1 '$*'" 1
   test -n "$2" || error "setup-sh-tpl: item arg:2 '$*'" 2
 
-  name="$(eval echo \"\$${2}_${1}__name\")"
-  type="$(eval echo \"\$${2}_${1}__type\")"
+  name="$(eval echo \"\${${2}_${1}__name-}\")"
+  type="$(eval echo \"\${${2}_${1}__type-}\")"
   test -n "$name" -o -n "$type" || return 1
 
   test -n "$type" || type=file
   setup_${type}_from_sh_tpl "$@"
 
-  mtime="$(eval echo \"\$${2}_${1}__mtime\")"
+  mtime="$(eval echo \"\${${2}_${1}__mtime-}\")"
   test -z "$mtime" || {
     note "Modified '$mtime' '$name'"
     touch_ts "@$mtime" "$name"
@@ -60,12 +60,12 @@ setup_file_from_sh_tpl() # Index-Nr Base-Var-Id
   test -n "$1" || error "setup-file-from-sh-tpl arg:1 '$*'" 1
   test -n "$2" || error "setup-file-from-sh-tpl arg:2 '$*'" 2
 
-  test -n "$name" || name="$(eval echo \"\$${2}_${1}__name\")"
+  test -n "${name-}" || { name="$(eval echo \"\$${2}_${1}__name\")" || return; }
 
   note "Setup file '$name'..."
   test -d "$(dirname "$name")" || mkdir -p "$(dirname "$name")"
 
-  contents="$(eval echo \"\$${2}_${1}__contents\")"
+  contents="$(eval echo \"\$${2}_${1}__contents\")" || return
   echo "$contents" >"$name"
 }
 

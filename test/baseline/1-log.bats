@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 load ../init
-base='baseline-1:shell'
+base='baseline-1:log'
 
 
 @test "$base: LOG (harnassed)" {

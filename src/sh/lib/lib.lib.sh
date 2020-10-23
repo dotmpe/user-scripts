@@ -54,9 +54,19 @@ lib_loaded()
 }
 
 # Echoes if path exists. See sys.lib.sh lookup-exists
-lib_exists() # Dir Name
+lib_exists() # Name Dirs...
 {
-  test -e "$1/$2.lib.sh" && echo "$1/$2.lib.sh"
+  local name="$1" r=1
+  shift
+  while test $# -gt 0
+  do
+    test -e "$1/$name.lib.sh" && {
+      echo "$1/$name.lib.sh"
+      test ${lookup_first:-1} -eq 1 && return || r=0
+    }
+    shift
+  done
+  return $r
 }
 
 # Echo every occurence of *.lib.sh on SCRIPTPATH
@@ -87,7 +97,7 @@ lib_glob () # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
   shopt -s nullglob
   lib_glob_names() # Dir Pattern                                    sh:no-stat
   {
-    echo "$1/"$2".lib.sh"
+    echo "$2/"$1".lib.sh"
   }
   test -n "${1-}" || set -- "*" "${2-}" "${3-"paths"}"
   test -n "${2-}" || set -- "$1" "SCRIPTPATH" "${3-"paths"}"
@@ -152,7 +162,7 @@ lib_load() # Libs...
         # have been loaded yet keep it written out using plain shell.
         f_lib_path="$( echo "$SCRIPTPATH" | tr ':' '\n' | while read _PATH
           do
-            $lookup_test "$_PATH" "$1" && {
+            $lookup_test "$1" "$_PATH" && {
               test ${lookup_first:-0} -eq 0 && break || continue
             } || continue
           done)"

@@ -15,11 +15,11 @@ log_level_name() # Level-Num
       6 ) echo info ;;
       7 ) echo debug ;;
 
-      5.1 ) echo ok ;;
-      4.2 ) echo fail ;;
-      3.3 ) echo err ;;
-      6.4 ) echo skip ;;
       2.5 ) echo bail ;;
+      3.3 ) echo err ;;
+      4.2 ) echo fail ;;
+      5.1 ) echo ok ;;
+      6.4 ) echo skip ;;
       7.6 ) echo diag ;;
 
       * ) return 1 ;;
@@ -132,34 +132,36 @@ init() # ( 0 | 1 [~ [~ [~]]] )
   script_util=$sh_tools
   test -n "$ci_tools" || ci_tools=$CWD/tools/ci
   test -d "$sh_tools" || return 103 # NOTE: sanity
-  test_env_load || return
-  test_env_init || return
 
-  # Get lib-load, and optional libs/boot script/helperj
+  # Get lib-load, and optional libs/boot script/helper
   while test $# -lt 4 ; do set -- "$@" "" ; done
   test -n "$1" || set -- "1" "$2" "$3" "$4"
   test -n "$2" || set -- "$1" "$1" "$3" "$4"
   test -n "$3" || set -- "$1" "$2" "$2" "$4"
   test -n "$4" || set -- "$1" "$2" "$3" "$3"
 
+  # Set scriptname, bin and base vars for testsuite
+  test_env_init || return
+
+  # Setup new Bats load() helper and include path
+  load_init_bats
+  load() { load_override "$@"; }
+
+  test "$1" = "0" && return
+
+  # Load tools/*/parts bits
+  test_env_load || return
+
+  # Set variables for init.sh script
   init_sh_libs="$2"
   init_sh_boot="$3"
 
-  test "$1" = "0" || {
+  test "$2" != "1" -o \( -n "$3" -a "$3" != "0" \) || init_sh_boot="null"
 
-    test "$2" != "1" -o \( -n "$3" -a "$3" != "0" \) || init_sh_boot="null"
-
-    test "$init_sh_boot" = "1" && {
-      test "$3" = "0" || init_sh_boot='std test'
-      test "$4" = "0" || init_sh_boot=$init_sh_boot' script'
-    }
-
-    true
+  test "$init_sh_boot" = "1" && {
+    test "$3" = "0" || init_sh_boot='std test'
+    test "$4" = "0" || init_sh_boot=$init_sh_boot' script'
   }
-
-  load_init_bats
-
-  load() { load_override "$@"; }
 
 # FIXME: deal with sub-envs wanting to know about lib-envs exported by parent
 # ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
@@ -173,7 +175,7 @@ init() # ( 0 | 1 [~ [~ [~]]] )
 # Non-bats bootstrap to initialize access to test-helper libs with 'load'
 load_init() # [ 0 ]
 {
-  test "$1" = "0" || {
+  test "${1-}" = "0" || {
     test_env_init || return
   }
 
