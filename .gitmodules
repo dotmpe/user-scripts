@@ -1,3 +1,7 @@
 [submodule "doc"]
 	path = doc
-	url = http://github.com/dotmpe/user-scripts.wiki.git
+	url = https://github.com/dotmpe/user-scripts.wiki.git
+[submodule "gherkin-assert"]
+	path = lib/gherkin-assert
+	url = https://github.com/dotmpe/gherkin-assert.git
+	branch = master

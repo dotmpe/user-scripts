@@ -39,26 +39,26 @@ date_lib_load()
 
 date_lib_init()
 {
-  test "${date_lib_init-}" = "0" || {
+  test "${date_lib_init-}" = "0" && return
 
-    test -n "${gdate-}" || case "$uname" in
-      darwin ) gdate="gdate" ;;
-      linux ) gdate="date" ;;
-      * ) $LOG error "" uname "$uname" 1 ;;
-    esac
+  test -n "${gdate-}" || case "${uname:="$(uname -s | tr 'A-Z' 'a-z')"}" in
+    darwin ) gdate="gdate" ;;
+    linux ) gdate="date" ;;
+    * ) $LOG error "" uname "$uname" 1 ; return 1 ;;
+  esac
 
-    TZ_OFF_1=$($gdate -d '1 Jan' +%z)
-    TZ_OFF_7=$($gdate -d '1 Jul' +%z)
-    TZ_OFF_NOW=$($gdate +%z)
+  TZ_OFF_1=$($gdate -d '1 Jan' +%z)
+  TZ_OFF_7=$($gdate -d '1 Jul' +%z)
+  TZ_OFF_NOW=$($gdate +%z)
 
-    test \( $TZ_OFF_NOW -gt $TZ_OFF_1 -a $TZ_OFF_NOW -gt $TZ_OFF_7 \) &&
-      IS_DST=1 || IS_DST=0
+  test \( $TZ_OFF_NOW -gt $TZ_OFF_1 -a $TZ_OFF_NOW -gt $TZ_OFF_7 \) &&
+    IS_DST=1 || IS_DST=0
 
-    export gdate
+  export gdate
 
-    local log=; req_init_log || return
-    $log info "" "Loaded date.lib" "$0"
-  }
+  local log=; req_init_log || return
+  $log info "" "Loaded date.lib" "$0"
+
 }
 
 

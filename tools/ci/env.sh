@@ -36,6 +36,8 @@ test -n "${ci_util_:-}" || {
   . "$ci_tools/util.sh"
 }
 
+: ${INIT_LOG:="$CWD/tools/sh/log.sh"}
+
 $INIT_LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
 ci_env_end_ts=$($gdate +"%s.%N")
 

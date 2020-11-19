@@ -9,3 +9,8 @@ SCRIPTPATH="$SCRIPTPATH:$(dirname "${BASH_SOURCE[0]}")/commands"
 SCRIPTPATH="$SCRIPTPATH:$(dirname "${BASH_SOURCE[0]}")/contexts"
 
 test -n "${U_S:-}" || U_S="$(dirname "${BASH_SOURCE[0]}")"
+
+# XXX: ctx-init
+# test -z "${CTX_P:-}" ||  {
+#   . ${U_S}/contexts/exports.sh
+# }

@@ -1,7 +1,8 @@
 # Target-Name Target-Type Target-Value
+configure function
 install function
 # TODO: install-deps check
-init alias install check
+init alias configure install check
 build alias check src-sh manual
 check alias lint
 current alias .meta/cache/ledges.list

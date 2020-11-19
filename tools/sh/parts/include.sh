@@ -54,7 +54,7 @@ sh_include () # Source first existing ~ Parts...
 
   test -n "${sh_include_path:-}" || {
     local sh_include_path
-    sh_include_path="$( sh_include_path_dirs ${sh_include_path_basedirs:-} )"
+    sh_include_path="$( sh_include_path_dirs ${sh_include_path_basedirs:-} | tr '\n' ' ')"
   }
 
   local sh_include_partid sh_include_base

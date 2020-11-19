@@ -5,9 +5,9 @@ load ../init
 
 setup()
 {
-  init &&
-  load assert &&
-  lib_load setup-sh-tpl
+  init 1 0 &&
+  lib_load log std setup-sh-tpl &&
+  load stdtest extra assert
 }
 
 

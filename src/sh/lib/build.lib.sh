@@ -2,7 +2,7 @@
 
 build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  lib_require match $package_build_tool
+  lib_require date match $package_build_tool
   local var=${package_build_tool}_commands cmd
   for name in ${!var}
   do

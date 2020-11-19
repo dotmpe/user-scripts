@@ -78,7 +78,6 @@ ci_cleanup()
 
 ci_env() # Var
 {
-  : ${INIT_LOG:="$CWD/tools/sh/log.sh"}
   $INIT_LOG "header2" "${2:-}$1" "$(eval echo \"\$$1\")"
 }
 

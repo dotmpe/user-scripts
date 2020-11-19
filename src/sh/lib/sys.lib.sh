@@ -559,11 +559,7 @@ capture_var() # CMD [RET-VAR=ret_var] [OUT-VAR=out_var] [ARGS...]
   # Execute, store return value at path and capture stdout in tmp var.
   local failed=$(setup_tmpf .capture-failed)
 
-  test -n "$pref" && {
-      local tmp="$(${pref} $cmd_name || echo $?>$failed)"
-    } || {
-      local tmp="$($cmd_name "$@" || echo $?>$failed)"
-    }
+  local tmp="$(${pref-} $cmd_name || echo $?>$failed)"
 
   $sys_lib_log note sys "Captured: $_out_var_: $tmp"
 
