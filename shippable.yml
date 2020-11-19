@@ -1,0 +1,15 @@
+language: none
+
+git:
+  submodules: true
+
+build:
+  pre_ci_boot:
+    image_name: dotmpe/testbox
+    image_tag: latest # 0.0.4-bionic
+    pull: true
+
+  ci:
+    -  export TERM=xterm; ./sh-ci;
+
+# Id: U-S:shippable.yml

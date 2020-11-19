@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-$INIT_LOG "info" "sh:usr-env" "Finished. Libs:" "'${lib_loaded-unset}'"
+$INIT_LOG "info" "sh:usr-env" "Finished. Libs:" "'${lib_loaded:-nil}'"
 test -z "${DEBUG:-}" || {
   $INIT_LOG "header2" "Script-Path:" "`echo "$SCRIPTPATH"|tr ':' '\t'`"
   $INIT_LOG "header2" "Command/Shell:" "'$0'"

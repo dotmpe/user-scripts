@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+ctx_if @PythonEnv@Build || return 0
+
 test -n "${ci_parts_pyvenv:-}" || {
   ci_parts_pyvenv=0
 
@@ -21,3 +23,5 @@ test -n "${ci_parts_pyvenv:-}" || {
 
   ci_parts_pyvenv=1
 }
+
+#

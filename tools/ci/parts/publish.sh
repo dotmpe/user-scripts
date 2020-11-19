@@ -30,7 +30,7 @@ ci_announce "Starting ci:publish"
 sh_include "report-times"
 
 test_pass= test_cnt=
-echo 'assertions:'
+echo 'assertions (suite, basename, passed/total):'
 shopt -s nullglob
 for x in $B/reports/*/*.tap
 do
@@ -49,6 +49,7 @@ stage_cnt=$(echo $ci_stages | wc -w | awk '{print $1}')
 
 echo TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}
 
+ctx_if @Docker@Build || return 0
 
 echo "# job-nr build-status branch commit runtime stages pass-/total-steps pass-/total-reports #v0" | {
   test -e "$results_log" && cat || tee "$results_log"

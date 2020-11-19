@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
+ctx_if @Docker@Build || return 0
+
 ci_announce 'Initializing for build-stats and statusdir-cache'
 
 ci_announce "Logging into docker hub '$DOCKER_USERNAME'"
 # NOTE: use stdin to prevent user re-prompt; but cancel build on failure
 echo "$DOCKER_PASSWORD" | \
   ${dckr_pref-}docker login --username $DOCKER_USERNAME --password-stdin || exit $?
-
-mkdir -p ~/.statusdir/{log,tree,index}
 
 sh_include env-docker-cache
 lib_require u_s-dckr u_s-ledge

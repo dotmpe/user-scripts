@@ -77,8 +77,8 @@ sh_include () # Source first existing ~ Parts...
         sh_include_path= \
         . "$sh_include_base/$sh_include_partid.sh" || {
           $LOG error "" "at sh_include $sh_include_partid" "$?" $?
+        }
       }
-    }
   done
 }
 
