@@ -9,6 +9,7 @@ setup()
 }
 
 @test "$base: demo" {
+  load stdtest
 
   run stderr_demo
   test_ok_nonempty || stdfail 1.

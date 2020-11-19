@@ -139,7 +139,6 @@ print_help()
   echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
   echo
   echo "Use 'commands' for a full list; or 'topics' to index other manuals."
-echo verbosity:$verbosity >&2
 }
 print_usage()
 {

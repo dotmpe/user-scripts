@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 shell_lib_load()
 {
@@ -16,7 +16,9 @@ shell_lib_load()
   test -n "${SH_SID-}" || SH_SID=$(get_uuid)
 
   # Shell Name (no path/ext)
-  SHELL_NAME="$(basename -- "$SHELL")"
+  test -h $SHELL &&
+    SHELL_NAME=$(basename -- "$(readlink -- "$SHELL")") ||
+    SHELL_NAME="$(basename -- "$SHELL")"
 
   declare -g -A shell_cached
 }
@@ -62,13 +64,19 @@ shell_lib_log() { test -n "${LOG-}"&&log="$LOG"||log="$INIT_LOG";req_log; }
 #shell_lib_log() { req_init_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
-shell_check()
+shell_check () #
 {
   type typeset 2>&1 >/dev/null && {
-    test 1 -eq $KORN_SHELL -o 1 -eq $Z_SHELL -o 1 -eq $BA_SHELL || {
+    test 1 -eq $KORN_SHELL \
+      -o 1 -eq $Z_SHELL \
+      -o 1 -eq $D_A_SHELL \
+      -o 1 -eq $BA_SHELL || {
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
-      echo "Found typeset cmd, expected Bash or Z-Sh ($SHELL_NAME)" >&2
+      echo "Found typeset cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
+      ls -la $(which $SHELL_NAME)
+      type typeset
+      echo SHELL:$SHELL
       return 1
     }
   } || true

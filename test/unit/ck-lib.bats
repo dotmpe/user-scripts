@@ -41,7 +41,7 @@ load assert
   test_nok_nonempty || stdfail A.
 
   run ck_md5 "$testf1"
-  { test_ok_nonempty 1 && test_lines "02cf30c01309f4f5fee566ebad97397c347aebab"
+  { test_ok_nonempty 1 && test_lines "bc560e7ed07331f5b581440004fa6697"
   } || stdfail B.
 
   run ck_md5 "$testf2"
@@ -59,7 +59,7 @@ load assert
   test_nok_nonempty || stdfail A.
 
   run ck_sha1 "$testf1"
-  { test_ok_nonempty 1 && test_lines "02cf30c01309f4f5fee566ebad97397c347aebab"
+  { test_ok_nonempty 1 && test_lines "1d2aeed85d18b4a055604c360f92c5ddff0d69a5"
   } || stdfail B.
 
   run ck_sha1 "$testf2"
@@ -77,7 +77,7 @@ load assert
   test_nok_nonempty || stdfail A.
 
   run ck_sha2 "$testf1"
-  { test_ok_nonempty 1 && test_lines "02cf30c01309f4f5fee566ebad97397c347aebab"
+  { test_ok_nonempty 1 && test_lines "284aafc38b2c718b4bb9db15133d79b951a027aa6333b126d7ea92d4ca61a726"
   } || stdfail B.
 
   run ck_sha2 "$testf2"

@@ -4,7 +4,7 @@
 # from UserScript import Build
 # from UserScript.Build
 
-. $U_S/contexts/ctx-ctx.lib.sh &&
+. ${U_S:-$CWD}/contexts/ctx-ctx.lib.sh &&
 ctx_lib_load
 
 # Id: U-S:

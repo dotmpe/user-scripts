@@ -46,8 +46,10 @@ check-all                   -   -   31  -    31
 
 # 4. Script: build/test
 # FIXME: script & build, actual project lib testing
-run-baseline                -   -   420 -    420
-# run-test                    -   -   430 -    -
+. ./sh-main                 -   -   420 -    420
+run-baseline                -   -   421 -    421
+run-test                    -   -   430 -    430
+# run                         -   -   425 -    425
 
 # Smoke test everything again with make..
 # - make test/baseline/realpath.tap

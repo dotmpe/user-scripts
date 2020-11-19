@@ -9,7 +9,7 @@ base=boilerplate
 setup()
 {
   init &&
-  load assert &&
+  load stdtest extra assert &&
   lib_load setup-sh-tpl date &&
   tmpd &&
   diag "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)"

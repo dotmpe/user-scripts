@@ -9,8 +9,8 @@ setup()
   unset REDO_STARTDIR REDO_UNLOCKED REDO REDO_DEPTH REDO_RUNID \
         REDO_TARGET REDO_BASE REDO_LOCKS REDO_PWD REDO_NO_OOB &&
   init &&
-  load assert &&
-  lib_load setup-sh-tpl date &&
+  load assert extra stdtest &&
+  lib_load std log setup-sh-tpl date &&
   tmpd &&
   diag "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)"
 }

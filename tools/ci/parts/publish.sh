@@ -29,6 +29,18 @@ ci_announce "Starting ci:publish"
 
 sh_include "report-times"
 
+stage_cnt=$(echo $ci_stages | wc -w | awk '{print $1}')
+
+echo TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}
+
+test "${CIRCLECI:-}" != "true" || mkdir -p ~/project/reports/junit
+test "${SHIPPABLE:-}" != "true" || mkdir -p shippable/testresults
+
+publish_tap ()
+{
+  tap-xunit --package "User-Scripts.$1"
+}
+
 test_pass= test_cnt=
 echo 'assertions (suite, basename, passed/total):'
 shopt -s nullglob
@@ -36,6 +48,14 @@ for x in $B/reports/*/*.tap
 do
   suite=$(basename "$(dirname "$x")")
   bn=$(basename "$x" .tap )
+  test "${CIRCLECI:-}" != "true" || {
+    mkdir -p ~/project/reports/$suite
+    publish_tap "$bn:$suite" < "$x" > ~/project/reports/$suite/$bn.xml
+  }
+  test "${SHIPPABLE:-}" != "true" || {
+    publish_tap "$bn:$suite" < "$x" > shippable/testresults/$suite-$bn.xml
+  }
+
   pass=$( grep -i '^OK' $x | wc -l ) || true
   fail=$( grep -i '^NOT OK' $x | wc -l ) || true
   total=$(( $pass + $fail )) || true
@@ -45,11 +65,9 @@ do
 done
 shopt -u nullglob
 
-stage_cnt=$(echo $ci_stages | wc -w | awk '{print $1}')
-
-echo TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}
-
-ctx_if @Docker@Build || return 0
+ctx_if @Docker@Build || {
+  return 0
+}
 
 echo "# job-nr build-status branch commit runtime stages pass-/total-steps pass-/total-reports #v0" | {
   test -e "$results_log" && cat || tee "$results_log"

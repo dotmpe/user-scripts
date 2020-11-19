@@ -5,9 +5,9 @@ load ../init
 
 setup()
 {
-  init && load assert && tmpd && diag \
+  init && load assert extra stdtest && tmpd && diag \
     "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)" &&
-  lib_load setup-sh-tpl
+  lib_load std setup-sh-tpl
 }
 
 teardown()
@@ -55,7 +55,7 @@ teardown()
 
   # Test entire templae
   run setup_sh_tpl "test/var/build-lib/setup-sh-tpl-1.sh" setup_sh_tpl_ "$tmpd"
-  test_ok_nonempty || stdfail 2.
+  test_ok_empty || stdfail 2.
   assert_file_exist "$tmpd/File Name"
   assert_file_exist "$tmpd/Other Path/File Name"
 

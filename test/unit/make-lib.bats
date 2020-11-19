@@ -13,7 +13,7 @@ setup()
 {
   export verbosity=4 &&
   export logger_log_threshold=4 &&
-  init && lib_load make
+  init && lib_load std make && load stdtest
 }
 
 @test "${base}: make-dump-nobi $testf1" {

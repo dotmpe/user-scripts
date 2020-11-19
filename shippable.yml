@@ -10,6 +10,8 @@ build:
     pull: true
 
   ci:
-    -  export TERM=xterm; ./sh-ci;
+    -  sudo apt-get update && sudo apt-get install -y npm
+    -  npm -g install tap-xunit
+    -  export TERM=screen; ./sh-ci
 
 # Id: U-S:shippable.yml

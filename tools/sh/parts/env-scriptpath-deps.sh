@@ -16,7 +16,8 @@ test -n "${SH_EXT-}" || {
   test -n "${REAL_SHELL-}" ||
     REAL_SHELL=$(ps --pid $$ --format cmd --no-headers | cut -d' ' -f1)
   fnmatch "-*" "$REAL_SHELL" &&
-    SH_EXT="${REAL_SHELL:1}" || SH_EXT=$(basename -- "$REAL_SHELL")
+    SH_EXT="${REAL_SHELL:1}" || SH_EXT="$(basename -- "$REAL_SHELL")"
+  test "$SH_EXT" = "sh" || SH_EXT="$SH_EXT sh"
 }
 
 trueish "${ENV_DEV-}" && {
@@ -60,7 +61,7 @@ do
   trueish "${ENV_DEV-}" && {
     test -d "$PROJECT_DIR/$(basename "$supportlib")" && {
       script_package_include "$PROJECT_DIR/$(basename "$supportlib")" && continue
-      $INIT_LOG "error" "" "Error including script-package at" "$PROJECT_DIR/$(basename "$supportlib")" 31
+      $INIT_LOG "error" "" "Error including script-package at" "$PROJECT_DIR/$(basename "$supportlib")" 31 || return
       continue
     }
   }
@@ -73,7 +74,7 @@ do
       continue
 
     script_package_include "$vnd_base/$supportlib" && break
-    $INIT_LOG "error" "" "Error including script-package at" "$vnd_base/$supportlib" 32
+    $INIT_LOG "error" "" "Error including script-package at" "$vnd_base/$supportlib" 32 || return
     break
   done
 
@@ -81,7 +82,7 @@ do
 done
 
 script_package_include $CWD ||
-  $INIT_LOG "error" "" "Error including script-package at" "$CWD" 30
+  $INIT_LOG "error" "" "Error including script-package at" "$CWD" 30 || return
 
 test -z "${SCRIPTPATH:-}" &&
     $INIT_LOG "error" "" "No SCRIPTPATH found" ||

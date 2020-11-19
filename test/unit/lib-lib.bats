@@ -7,7 +7,7 @@ load ../init
 
 @test "${base}: lib_load A/B" {
 
-  init 0
+  init 1 0
   load stdtest
 
   run lib_load sys
@@ -22,7 +22,7 @@ load ../init
 @test "${base}: lib_load sys" {
 
   test -z "$sys_lib_loaded"
-  init 0
+  init 1 0
   test -z "$sys_lib_loaded"
   load stdtest
 

@@ -16,6 +16,8 @@ setup()
 
 @test "$base: lib loads" {
 
+  load stdtest
+
   run test -n "$SHELL_NAME"
   test_ok_empty || stdfail "1: Sh-Name: $SHELL_NAME"
 
@@ -25,16 +27,17 @@ setup()
 
 
 @test "$base: shell-init (calls shell-check, shell-test-sh and sh-env-init)" {
+  load stdtest
 
-# run in proper test-harnass first, then look at function/local-env
-  run shell_lib_init
+  _r() { v=4 shell_lib_init; }
+  run _r
   test_ok_empty || stdfail 1.
 
-  _r() { shell_lib_init && test -n "$BA_SHELL" -a -n "$IS_BASH_SH"; }
+  _r() { v=4 shell_lib_init && test -n "$BA_SHELL" -a -n "$IS_BASH_SH"; }
   run _r
   test_ok_empty || stdfail 2.a.
 
-  _r() { shell_lib_init && test -n "$HEIR_SH" -a -n "$IS_HEIR_SH"; }
+  _r() { v=4 shell_lib_init && test -n "$HEIR_SH" -a -n "$IS_HEIR_SH"; }
   run _r
   test_ok_empty || stdfail 2.b.
 }
@@ -91,6 +94,7 @@ setup()
 
 
 @test "$base: sh-is-type-a (Bash can expand aliases in scripts)" {
+  load stdtest
   shell_lib_init
 
   _r() {
@@ -107,6 +111,7 @@ setup()
 
 
 @test "$base: sh-aliasinfo tells the aliased cmd-line (Bash)" {
+  load stdtest
 
   shell_lib_init
   shopt -s expand_aliases
@@ -129,6 +134,7 @@ setup()
 
 
 @test "$base: sh-execinfo tells the CMD type (Bash)" {
+  load stdtest
 
   shell_lib_init
 
@@ -162,6 +168,7 @@ setup()
 
 
 @test "$base: sh-env is defined after sh-env-init and includes local 'env' util" {
+  load stdtest
   shell_lib_init
 
   run sh_env
@@ -171,7 +178,7 @@ setup()
 
 
 @test "$base: sh-isset detects local var name" {
-  load assert
+  load stdtest assert
   shell_lib_init
 
   # Normal env in two different test harnasses:

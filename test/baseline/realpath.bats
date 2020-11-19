@@ -5,7 +5,7 @@ base='baseline:realpath'
 
 setup()
 {
-  init
+  init && load stdtest
 }
 
 

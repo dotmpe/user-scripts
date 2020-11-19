@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init "" 0 && lib_load sys &&
+  init 1 0 && lib_load sys &&
   main_inc=$SHT_PWD/../var/sh-src-main-mytest-funcs.sh
 }
 
@@ -144,6 +144,7 @@ setup()
 
 @test "$base: try-exec-func on existing function" {
 
+  lib_load std && lib_init sys
   load stdtest extra
   . $main_inc
 
@@ -151,14 +152,12 @@ setup()
 
   run try_exec_func mytest_function
   test "$USER" = "travis" && skip "FIXME log"
-  { test $status -eq 0 && fnmatch "mytest" "${lines[*]}"
-  } || stdfail
-
+  test_ok_nonempty "mytest" || stdfail
 }
 
 @test "$base: try-exec-func on non-existing function" {
 
+  lib_load std && lib_init sys
   run try_exec_func no_such_function
   test $status -eq 1
-
 }

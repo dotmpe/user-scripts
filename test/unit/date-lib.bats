@@ -6,6 +6,7 @@ load ../init
 setup()
 {
   init && lib_load date &&
+  load extra stdtest &&
   tmpd && cd $tmpd
 }
 

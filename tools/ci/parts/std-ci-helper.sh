@@ -116,13 +116,13 @@ c-run()
 {
   test $# -ge 1 -a -n "${1:-}" || return 98
   : "${c_lbl:="Step"}"
-  #: "${c_run:="$(basename "$SCRIPT_SHELL")-c"}"
   : "${c_run:="$SCRIPT_SHELL -c"}"
   print_yellow "" "Running $c_lbl $c_run '$1'..."
 
   {
     $c_run "$@" | {
       # NOTE: output stderr at lvl >= 3, stdout at 4 and above
+    # FIXME: this does not get stderr!
       test ${verbosity:-4} -ge 3 && {
         test ${verbosity:-4} -ge 4 && {
           cat

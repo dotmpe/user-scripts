@@ -23,6 +23,7 @@ test -z "${INIT_DEBUG:=}" || set +x
 : "${SUITE:="U-S"}"
 true "${verbosity:=${v:-3}}"
 : "${CWD:="$PWD"}"
+: "${LOG:="$U_S/tools/sh/log.sh"}"
 : "${sh_tools:="$CWD/tools/sh"}"
 . "$sh_tools/env.sh" || return
 

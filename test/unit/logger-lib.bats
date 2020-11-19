@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init && lib_load logger-std
+  init && lib_load logger-std && load stdtest
 }
 
 
@@ -48,7 +48,7 @@ setup()
   logger_log_threshold=7
 
   run logger_demo
-  { test_ok_nonempty 7 && test_lines \
+  { test_ok_nonempty 28 && test_lines \
       "*Emergency*:*" \
       "*Critical*:*"
   } || stdfail 1.

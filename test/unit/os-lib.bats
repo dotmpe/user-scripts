@@ -5,7 +5,7 @@ load ../init
 
 setup()
 {
-  init 0 && load stdtest extra &&
+  init 1 0 && load stdtest extra &&
   lib_load sys os &&
 
   # var/table-1.tab: File with 5 comment lines, 3 rows, 1 empty and 1 blank (ws)

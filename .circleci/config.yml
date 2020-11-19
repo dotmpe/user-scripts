@@ -7,7 +7,8 @@ jobs:
       - image: cimg/base:2020.01
     steps:
 
-    - run: sudo apt-get update && sudo apt-get install -y bc uuid-runtime moreutils curl renameutils virtualenv
+    - run: sudo apt-get update && sudo apt-get install -y bc uuid-runtime moreutils curl renameutils virtualenv npm
+    - run: sudo npm install -g tap-xunit
 
     - checkout
     - run:
@@ -29,10 +30,14 @@ jobs:
               VND_SRC_PREFIX=$HOME/build \
               U_S=$PWD \
               ENV_DEV=1 \
+              SCRIPT_SHELL=bash \
               CS=dark \
               CTX_PID=$$ \
               CTX_P= \
               ;
             ./sh-ci
+
+    - store_test_results:
+        path: reports
 
 # Id: U-S:circleci/config.yml

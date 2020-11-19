@@ -20,7 +20,7 @@ setup()
 
   # Input should be 12 lines, and output is
   # 3 matrices of 3 values should be 12 lines (plus report line)
-  { test_ok_nonempty 13 && test_lines \
+  { test_ok_nonempty 14 && test_lines \
 \
 "unset LOG; . ./tools/sh/env.sh" \
 "LOG=\$PWD/tools/sh/log.sh . ./tools/sh/env.sh" \
@@ -117,7 +117,7 @@ setup()
 
   run sh_spec "test/var/spec-outline/test-2.txt"
 
-  { test_ok_nonempty 6 && test_lines \
+  { test_ok_nonempty 7 && test_lines \
 \
 "spec1= spec2=0.A 2.out-1" \
 "spec1=1 spec2=1.B.1 4.out-2" \
@@ -138,7 +138,7 @@ setup()
 
   # Input should be 17 lines, and output is
   # one matrix of 3 times 3 values ie. 27 lines (plus report line)
-  { test_ok_nonempty 10 && test_lines \
+  { test_ok_nonempty 11 && test_lines \
 "unset CWD; unset LOG; unset SCRIPTPATH; . ./tools/sh/env.sh" \
 "unset CWD; unset LOG; SCRIPTPATH=\$PWD . ./tools/sh/env.sh" \
 "unset CWD; unset LOG; SCRIPTPATH= . ./tools/sh/env.sh" \

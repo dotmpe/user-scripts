@@ -18,7 +18,7 @@ set -u
 
 #export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
 true                                           . ./tools/sh/env.sh
-true                                           . ./tools/ci/env.sh
+#true                                           . ./tools/ci/env.sh
 
 #export U_S; echo U-s:$U_S                      . ./tools/sh/util.sh
 sh_tools=tools/sh ci_tools=tools/ci            . ./tools/sh/util.sh
@@ -35,14 +35,14 @@ set -euo pipefail
  /SCRIPTPATH
   . ./tools/ci/env.sh                          echo 2.2. $SCRIPTPATH
 
- #verbosity=4; CWD=$PWD;
  export sh_tools=tools/sh ci_tools=tools/ci
-  . ./tools/sh/util.sh
+  CWD=$PWD . ./tools/sh/util.sh
    . ./tools/sh/parts/env-dev.sh
-    sh_include env-log
-     sh_include remove-dupes unique-paths
-      sh_include env-scriptpath-deps lib-load
-        sh_include env-info                    true 3.1.
+     sh_include env-log
+      sh_include remove-dupes unique-paths
+       sh_include env-scriptpath-deps
+        sh_include lib-load
+         sh_include env-info                   true 3.1.
 
 true                                           ./sh-main lines sh-baseline.tab >/dev/null
 
@@ -53,13 +53,14 @@ set -euo pipefail
   true                                         . ./tools/sh/parts/env-0-src.sh
   true                                         . ./tools/sh/parts/env-std.sh
   true                                         . ./tools/sh/parts/env-test.sh
-  true                                         . ./tools/sh/parts/env-test-bats.sh
+  CWD=$PWD                                     . ./tools/sh/parts/env-test-bats.sh
 
 # Test some other parts from sh-main           sh-main: treebox
-SUITE=Main keep_going=1 stage=
- . ./tools/sh/env.sh
-  sh_include env-scriptpath-deps lib-load
-   . "./commands/u_s-dckr.lib.sh"              docker_image=$sh_treebox_img dckr_load
+# XXX: requires docker-sh-htd
+#SUITE=Main keep_going=1 stage=
+# . ./tools/sh/env.sh
+#  sh_include env-scriptpath-deps lib-load
+#   . "./commands/u_s-dckr.lib.sh"              docker_image=dotmpe/sandbox:dev dckr_load
 
 # varspec                                      cmdspec                        #
 #true                                           ./sh-main run-parts build.txt Sh 0
@@ -75,8 +76,8 @@ SUITE=Main keep_going=1 stage=
 # TODO: wrap in bats cases
 v=4
   true                                         ./bin/u-s help >/dev/null
-  true                                         ./bin/u-s libs >/dev/null
-  true                                         ./bin/u-s libs-paths >/dev/null
+  true                                         ./bin/u-s lib-loaded >/dev/null
+  true                                         ./bin/u-s lib-paths >/dev/null
   true                                         ./bin/u-s commands >/dev/null
   true                                         ./bin/u-s topics >/dev/null
 
@@ -104,18 +105,17 @@ set -euo pipefail
 # varspec                                      cmdspec                        #
 
 LOG=$PWD/tools/sh/log.sh
-  true                                         bats test/baseline/bats.bats
+  true                                         bats test/baseline/3-bats.bats
   set -euo pipefail
    v=4 . tools/sh/env.sh
     . tools/ci/util.sh
-        true                                   ci_test test/baseline/bats.bats
-        true                                   ci_test_negative test/baseline/bats-negative.bats
+        true                                   ci_test test/baseline/1-log.bats
         true                                   ci_test test/unit/std-stack.bats
-        true                                   ci_test test/baseline/1-shell.bats
         true                                   ci_test test/baseline/2-bash.bats
-        v=5                                    ci_test test/baseline/3-project.bats
+        v=5                                    ci_test test/baseline/3-bats.bats
+        true                                   ci_test_negative test/baseline/3-bats-negative.bats
         true                                   ci_test test/baseline/4-mainlibs.bats
-        true                                   ci_test test/baseline/git.bats
+        true                                   ci_test test/baseline/4.1-scm-git.bats
         true                                   ci_test test/baseline/realpath.bats
 #        true                                   ci_test test/baseline/redo.bats
 

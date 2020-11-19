@@ -167,7 +167,7 @@ run-ci()
 case "$(basename -- "$0" .sh)" in
   -bash ) ;;
 
-  sh-* ) test -z "${sh_main:-}" || return 0 ; sh_main=1
+  sh-main ) test -z "${sh_main:-}" || return 0 ; sh_main=1
 
       # Get minimal env using Main suite.
       : "${SUITE:="Main"}"

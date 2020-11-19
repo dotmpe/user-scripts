@@ -17,6 +17,7 @@ ck_git() # File [Check]
 {
   test -n "${abbrev-}" || local abbrev=7
   cksum="$(git hash-object "$1")" || return
+  test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || { # length should be 40
       test $abbrev -gt 0 || return
@@ -32,7 +33,8 @@ ck_git() # File [Check]
 ck_md5 () # File [Check]
 {
   test -n "${abbrev-}" || local abbrev=7
-  cksum="$(md5sum "$1" | cut -f1 -d' ')" || return
+  cksum="$(md5sum "$1" | cut -f1 -d' ')"
+  test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
@@ -48,7 +50,8 @@ ck_md5 () # File [Check]
 ck_sha1 () # File [Check]
 {
   test -n "${abbrev-}" || local abbrev=7
-  cksum="$(sha1sum "$1" | cut -f1 -d' ')" || return
+  cksum="$(sha1sum "$1" | cut -f1 -d' ')"
+  test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
@@ -64,7 +67,8 @@ ck_sha1 () # File [Check]
 ck_sha2 () # File [Check]
 {
   test -n "${abbrev-}" || local abbrev=7
-  cksum="$(sha256sum "$1" | cut -f1 -d' ')" || return
+  cksum="$(sha256sum "$1" | cut -f1 -d' ')"
+  test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
@@ -78,7 +82,8 @@ ck_sha2 () # File [Check]
 ck_sha2_alt () # File [Check]
 {
   test -n "${abbrev-}" || local abbrev=7
-  cksum="$(shasum -a 256 "$1" | cut -f1 -d' ')" || return
+  cksum="$(shasum -a 256 "$1" | cut -f1 -d' ')"
+  test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {
       test $abbrev -gt 0 || return
@@ -89,3 +94,5 @@ ck_sha2_alt () # File [Check]
     test "$2" = "$cksum" || return
   } || echo "$cksum"
 }
+
+# Id: U-S:

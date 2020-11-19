@@ -5,12 +5,13 @@ base='baseline:git'
 
 setup()
 {
-   true #init && . $BATS_CWD/tools/sh/init.sh && load assert
+   init 1 0 && load stdtest
 }
 
 
 @test "$base: git describe" {
 
-  skip '`git describe` fails in checkout with no tags'
-  # TODO '`git describe` fails in checkout with no tags'
+  #skip '`git describe` fails in checkout with no tags'
+  run git describe --always
+  test_ok_nonempty || stdfail
 }

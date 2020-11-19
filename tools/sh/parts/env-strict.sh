@@ -12,10 +12,16 @@ case "$SHELL" in
         ;;
 
     */bin/sh )
-            set -e
         ;;
 
-    * ) $LOG error "" "Unknown shell" "$SHELL"
+    */bin/dash )
+            set -euo pipefail
+        ;;
+
+    "" ) $LOG error "" "No shell" "$SHELL:${SHELL_NAME-}"
+        ;;
+
+    * ) $LOG error "" "Unknown shell" "$SHELL:${SHELL_NAME-}"
         ;;
 esac
 
