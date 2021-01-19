@@ -395,7 +395,7 @@ normalize_relative()
 
 # Read file filtering octothorp comments, like this one, and empty lines
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
-read_nix_style_file() # [cat_f=] ~ File [Grep-Filter]
+read_nix_style_file () # [cat_f=] ~ File [Grep-Filter]
 {
   test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
   test -n "${1-}" || set -- "-" "${2-}"
@@ -429,17 +429,23 @@ read_if_exists()
 # Read $line as long as CMD evaluates, and increment $line_number.
 # CMD can be silent or verbose in anyway, but when it fails the read-loop
 # is broken.
-lines_while() # CMD
+lines_while () # CMD
 {
   test $# -gt 0 || return
 
   line_number=0
-  while read -r line
+  while read ${read_f-"-r"} line
   do
-    eval $1 || break
+    eval $@ || break
     line_number=$(( $line_number + 1 ))
   done
   test $line_number -gt 0 || return
+}
+
+# Little wrapper to use lines-while to read line-continuations to lines
+lines () #
+{
+  read_f= lines_while echo "\$line"
 }
 
 # Offset content from input/file to line-based window.
@@ -642,4 +648,11 @@ zipfiles()
       #truncate_lines "$file" "$rows"
     done
   } | ziplists $rows
+}
+
+# Sort into lookup table (with Awk) to remove duplicate lines.
+# Removes duplicate lines (unlike uniq -u) without sorting.
+remove_dupes () # ~
+{
+  awk '!a[$0]++' "$@"
 }

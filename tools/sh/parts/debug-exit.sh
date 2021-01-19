@@ -11,9 +11,8 @@ sh_debug_exit()
       echo "At $BASH_COMMAND:$LINENO"
       echo "In 0:$0 base:${base-} scriptname:${scriptname-}"
     } >&2
-    test "${SUITE-}" = CI || return $exit
-    #test "$USER" = "travis" || return $exit
-    sleep 5 # Allow for buffers to clear?
+    test "${SUITE-}" = "CI" || return $exit
+    #sleep 5 # Allow for buffers to clear? [Travis]
   }
   return $exit
 }

@@ -32,9 +32,7 @@ test -n "${sh_util_:-}" || {
 
 : "${LOG:="print_err"}"
 
-sh_include \
-  print-color remove-dupes unique-paths \
-  env-0-src
+sh_include print-color remove-dupes unique-paths
 
 : "${build_txt:="build.txt"}"
 

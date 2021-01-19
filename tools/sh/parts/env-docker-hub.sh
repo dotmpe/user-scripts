@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
+$LOG crit "" Starting...
+
 ctx_if @Docker@Build || return 0
+# log_name env-docker-hub
 
 test ! -e ~/.local/etc/tokens.d/docker-hub-$DOCKER_NS.sh || {
 
