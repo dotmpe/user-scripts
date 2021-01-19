@@ -62,13 +62,14 @@ set -euo pipefail
 #  sh_include env-scriptpath-deps lib-load
 #   . "./commands/u_s-dckr.lib.sh"              docker_image=dotmpe/sandbox:dev dckr_load
 
+true                                           ./.githooks/pre-commit/070-filenames.sh
+true                                           ./.githooks/pre-commit/080-whitespace.sh
 # varspec                                      cmdspec                        #
 #true                                           ./sh-main run-parts build.txt Sh 0
 #true                                           ./sh-main run-parts build.txt U-S 0
 #true                                           ./sh-main run-parts build.txt Main 0
 #true                                           ./sh-main run-parts build.txt Main 0 1
 #true                                           ./sh-main run-parts build.txt Test 0
-# XXX: LOG=$PWD/tools/sh/log.sh                       ./tools/git-hooks/pre-commit.sh
 #true                                           ./sh-main run-parts build.txt CI 0 1 2 3 4
 
 # varspec                                      cmdspec                        #

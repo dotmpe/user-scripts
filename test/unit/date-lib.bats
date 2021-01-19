@@ -25,7 +25,7 @@ teardown()
     fnmatch "$year$month$day[0-9][0-9][0-9][0-9].[0-9][0-9]" "${lines[0]}"
   } || stdfail 1.
 
-  
+
   export TZ=UTC
   ts=7001010000.01
   run timestamp2touch "1970-01-01T00:00:01Z"

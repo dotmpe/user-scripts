@@ -12,7 +12,7 @@
        Given `opts` key `debug_output_exc` 'on'
        Given `opts` key `debug_stderr_exc` 'on'
       #Given `opts` key `debug_command` 'off'
-        
+
         # Set env for user command or other user-exec
        Given `vars` key `VAR` 'value'
 
@@ -35,4 +35,3 @@
         Then  tests `echo foo 5.4.1` ok
         Then  test `echo foo 5.4.2` ok
     #   #   #   #
-

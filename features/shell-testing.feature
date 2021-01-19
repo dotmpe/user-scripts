@@ -19,4 +19,3 @@ Feature: can use Gherking syntax to describe shell scripts
       /tmp/setup-tpl-sh-feature-testdir-a
 
       """
-

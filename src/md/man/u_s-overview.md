@@ -3,7 +3,7 @@
 Main user-guide manual for `User-Scripts` [U-s] or [Us] installations.
 
 - The definite project documentation starts with the [README] which may not be
-  included in the installation, 
+  included in the installation,
 
 TODO: rename to provide for user script as well? Use for dev/install now.
 TODO: Run bin/user-box. Alias as `box`. See also +User-config/u-c helper.

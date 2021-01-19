@@ -119,7 +119,7 @@ setup()
   alias bar='foo bar'
 
   _r() { sh_execinfo "$@"; }
-  
+
   run _r foo
   { test_ok_nonempty 1 && test_lines 'a:baz $EDITOR xxx "$@"'
   } || stdfail "alias foo"
@@ -157,7 +157,7 @@ setup()
 
 # Wraps sh-aliasinfo correctly
 
-  alias foo='bar xyz' 
+  alias foo='bar xyz'
   shopt -s expand_aliases
   run sh_execinfo foo
   { test_ok_nonempty 1 && test_lines "a:bar xyz" ;} || stdfail "alias foo"

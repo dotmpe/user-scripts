@@ -21,7 +21,8 @@ echo "Travis Commit: ${TRAVIS_COMMIT:-}"
 echo "Travis Commit Range: ${TRAVIS_COMMIT_RANGE:-}"
 echo
 test -n "${BUILD_ID:-}" && {
-  echo "Session ID: $SESSION_ID" # Set on CI start, not before
+  # Need env-ci
+  echo "Session ID: $SESSION_ID"
   echo "Build ID: $BUILD_ID"
   echo "Job NR: $JOB_NR"
   echo "Job ID: $JOB_ID"

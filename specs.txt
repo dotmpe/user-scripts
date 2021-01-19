@@ -33,15 +33,15 @@
 
 
 2018-12-03 @Git baseline:
-  1. TODO: see merge-history-per-function. Show how a tracked file 
-    two branches same file 
+  1. TODO: see merge-history-per-function. Show how a tracked file
+    two branches same file
 
                               var=foo
 
     test -n "$var" || var=foo           : "${var:=foo}"
 
 
-    
+
 2018-12-03 Script authors should be able to deal with a clean language.
 
   - Avoid variables-as-commands.
@@ -49,11 +49,10 @@
     If a command or function name in an invocation is replaced with a variable
     reference because its value is dynamic it can be wrapped by a function. Which
     is nicer to type and read.
-   
+
     If there are namespace reasons (ie. collisions) either
 
     - change the load scope, ie. isolate shells
     - change the loaded scope, ie. use dynamic but predetermined namespace
     - redesign func/exec names
     - transpile
-

@@ -13,7 +13,7 @@ setup()
 
   tmpd && test -d "$tmpd"
   cd $tmpd
- 
+
   assert_equal "$(echo foo.*)" "foo.*"
   touch foo.bar
   assert_equal "$(echo foo.*)" "foo.bar"
@@ -82,7 +82,7 @@ setup()
 
 
 @test "$base: aliases are recognized (Bash)" {
-  
+
   . ./tools/sh/init.sh
   load ../helper/stdtest
   lib_load shell

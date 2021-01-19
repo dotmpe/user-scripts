@@ -64,4 +64,3 @@ basedir()
     test "$1" != "/" || break
   done
 }
-

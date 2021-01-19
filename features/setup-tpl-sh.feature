@@ -42,4 +42,3 @@ Feature: Setup Template (sh); test fixtures for shell with YAML format
     """
 
     Then clean temp. dir 'setup-tpl-sh-feature-testdir-b'
-

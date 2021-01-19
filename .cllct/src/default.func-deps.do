@@ -11,7 +11,7 @@ case "$lib_id" in
 redo-ifchange "$REDO_BASE/.cllct/src/default.func-deps.do"
 
 redo-ifchange "sh-libs.list"
-  
+
 # Transform target-name (lib_id) to original file-paths
 # Should really have just one path for shell-lib components
 path="$(grep '^'"$lib_id"'\>	' "sh-libs.list" | sed 's/^[^\t]*\t//g')"

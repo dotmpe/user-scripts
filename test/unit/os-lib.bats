@@ -103,7 +103,7 @@ setup()
     assert_equal "$line_number" "0"
     assert_equal "$r" "1"
   }
-  
+
   # Use existing pipeline to capture line-number
   r= ; read_lines_while "$testf2" 'echo "$line" | grep -q "^not-in-file$"' || r=$?
 

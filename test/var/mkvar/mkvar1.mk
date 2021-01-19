@@ -33,7 +33,7 @@ TPL4b ++= INSERT_~ # LEFT ADD MACRO
 # 5. Shell expression with make macro: '!'
 #
 # Command output (or error?)
-TPL_5 != CMDOUT 
+TPL_5 != CMDOUT
 
 
 # 6. File paths with make macro
@@ -41,7 +41,7 @@ TPL_5 != CMDOUT
 # File path if exists
 # File path if non-zero
 # File contents
-# 
+#
 TPL_6 @
 
 

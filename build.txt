@@ -5,7 +5,7 @@ init-ctx                    009 009 009 009  009
 init-git                    010 011 010 010  010
 init-statusdir              012 012 012 012  012
 debug-exit                  013 013 013 013  -
-env-init-log                -   015 -   -    -  
+env-init-log                -   015 -   -    -
 env-log-reinit              016 016 016 016  016
 std-ci-helper               -   -   020 020  -
 env-ucache                  020 -   020 020  020
@@ -24,7 +24,7 @@ env-scriptpath-deps         060 -   060 -    -
 lib-load                    070 -   070 070  -
 
 # 1. Init:
-env-info                    -   -   10  10   -  
+env-info                    -   -   10  10   -
 check-git                   -   -   10  11   -
 parse-commit                -   -   12  12   102
 db-log-announce             -   -   -   -    -
@@ -36,7 +36,7 @@ restore-cache               -   -   18  -    -
 init-all                    -   -   21  -    21
 init-dependencies           -   -   27  23   -
 unset SCRIPTPATH            -   -   29  -    -
-env-scriptpath-deps         -   -   29  -    -  
+env-scriptpath-deps         -   -   29  -    -
 
 # 3. Check/Before script:
 init-information            -   -   30  30   -

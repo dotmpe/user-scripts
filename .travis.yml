@@ -80,7 +80,7 @@ after_success:
 
 #matrix:
 #  include:
-#    - python: "2.7" # 2.7.14 [2018-12-07] 
+#    - python: "2.7" # 2.7.14 [2018-12-07]
 #
 #    - env: TRAVIS_US_PUBLISH="pre"
 #      if: branch = r0.0

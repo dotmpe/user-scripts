@@ -3,7 +3,7 @@
 ## CI suite in container
 
 # Run entire CI suite or specific command in container from fresh checkout.
-# 
+#
 # - should work on existing checkout
 # - should refresh worktree from remote
 # - should allow alternate remote
@@ -46,7 +46,7 @@ docker exec -w $w -u $u -ti ${c}  \
         git remote add $repo_id $repo_url;
         git fetch $repo_id;
       }
-      
+
       git fetch $repo_id;
 
       # Create local branch for rev

@@ -78,7 +78,7 @@ teardown()
 
   run redo-ifchange my/second.test2
   test_ok_nonempty || stdfail c.1.2.
-  assert_equal "$(cat "my/second.test2")" 'Test2 done: bar' 
+  assert_equal "$(cat "my/second.test2")" 'Test2 done: bar'
 
 
   echo "echo Test3 done" >>"my/default.test2.do"

@@ -19,17 +19,26 @@ c_nr=080
 c_lbl=Whitespace\ check
 _080_stat=
 
-# Compare to-be committed against HEAD or emty for initial commit
-if git rev-parse --verify HEAD >/dev/null 2>&1
+IFS=$'\n';
+# Allow direct executions to check all files, vs. committed files in pre-commit
+if test -n "${GIT_EDITOR:-}"
 then
-  against=HEAD
+  files="$(git diff --cached --name-only)"
+  # Compare to-be committed against HEAD or emty for initial commit
+  if git rev-parse --verify HEAD >/dev/null 2>&1
+  then
+    against=HEAD
+  else
+    # Initial commit: diff against an empty tree object
+    against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+  fi
 else
-  # Initial commit: diff against an empty tree object
-  against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+  files="$(git ls-files)"
+  against=root
 fi
 
 {
-  for file in $(git diff --cached --name-only)
+  for file in $files
   do
     test -e "$file" || continue # Ignore deleted (assuming it is, or renamed)
     step=$(( $step + 1 ))
