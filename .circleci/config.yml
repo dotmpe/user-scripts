@@ -8,7 +8,7 @@ jobs:
     steps:
 
     - run: sudo apt-get update && sudo apt-get install -y bc uuid-runtime moreutils curl renameutils virtualenv npm
-    - run: sudo npm install -g tap-xunit
+    - run: sudo npm install -g git+https://github.com/dotmpe/tap-xunit.git
 
     - checkout
     - run:
@@ -39,6 +39,9 @@ jobs:
 
     - store_artifacts:
         path: user-scripts/.build/reports
+
+    - store_artifacts:
+        path: reports
 
     - store_test_results:
         path: reports
