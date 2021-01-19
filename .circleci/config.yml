@@ -40,9 +40,6 @@ jobs:
     - store_artifacts:
         path: user-scripts/.build/reports
 
-    - store_artifacts:
-        path: reports
-
     - store_test_results:
         path: reports
 
