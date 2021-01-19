@@ -37,6 +37,9 @@ jobs:
               ;
             ./sh-ci
 
+    - store_artifacts:
+        path: user-scripts/.build/reports
+
     - store_test_results:
         path: reports
 
