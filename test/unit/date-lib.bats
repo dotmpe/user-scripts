@@ -26,7 +26,6 @@ teardown()
     fnmatch "$year$month$day[0-9][0-9][0-9][0-9].[0-9][0-9]" "${lines[0]}"
   } || stdfail 1.
 
-
   export TZ=UTC
   ts=7001010000.01
   run timestamp2touch "1970-01-01T00:00:01Z"
@@ -39,7 +38,7 @@ teardown()
   } || stdfail 3.
 
   test "${CIRCLECI:-}" = "true" -o "${SHIPPABLE:-}" = "true" &&
-    skip FIXME: TZ not working as expected on CI
+    skip "FIXME: TZ not working as expected on CI (in docker)"
 
   export TZ=CET
   ts=7001010001.01
@@ -51,6 +50,7 @@ teardown()
   run timestamp2touch "1970-01-01T00:00:01Z"
   { test_ok_nonempty 1 && test "$ts" = "${lines[0]}"
   } || stdfail 5.
+
 }
 
 @test "${base}: touch-ts FILE [ TIMESTAMP | FILE ]" {
@@ -58,10 +58,9 @@ teardown()
   test -z "${TRAVIS_JOB_NUMBER:-}" || skip "FIXME at travis"
 
   test "${CIRCLECI:-}" = "true" -o "${SHIPPABLE:-}" = "true" &&
-    skip FIXME: TZ not working as expected on CI
+    skip "FIXME: TZ not working as expected on CI (in docker)"
 
   export TZ=CET
-
   run touch -t 7001010100.01 foo
   mtime=$(filemtime foo)
   { test_ok_empty &&
@@ -69,14 +68,12 @@ teardown()
     test $mtime -eq 1
   } || stdfail "1. $mtime"
 
-
   run touch_ts @1 foo
   mtime=$(filemtime foo)
   { test_ok_empty &&
     test -e foo &&
     test $mtime -eq 1
   } || stdfail "2. $mtime"
-
 
   run touch_ts "1970-01-01T00:00:01Z" foo
   mtime=$(filemtime foo)

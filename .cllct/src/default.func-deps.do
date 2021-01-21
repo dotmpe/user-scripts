@@ -22,6 +22,7 @@ mkdir -p "$(dirname "$1")"
 redo-ifchange functions/$lib_id-lib.func-list $REDO_BASE/$path
 
 test ! -e "$1" -o -s "$1" || rm "$1"
+
 U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
 init_sh_libs="$init_sh_libs build-htd match src package std os-htd function functions" \
@@ -41,7 +42,7 @@ cd "$REDO_BASE/$REDO_PWD"
 test ! -e "$1.stderr" -o -s "$1.stderr" || rm "$1.stderr"
 test ! -e "$1.stderr" || {
   build_chatty && {
-    build_chatty 4 && cat "$1.stderr"
+    build_chatty 4 && cat "$1.stderr" >&2
     $LOG "warn" "" "Errors during processing" "$1.stderr"
   }
 }

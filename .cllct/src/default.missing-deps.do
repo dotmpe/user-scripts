@@ -9,6 +9,8 @@ case "$docid" in
 redo-ifchange "functions/$docid-lib.func-list"
 while read caller
 do
+  test -n "$caller" || continue
+
   redo-ifchange "functions/$docid-lib/$caller.func-deps"
   test -e "functions/$docid-lib/$caller.func-deps" || continue
   while read callee

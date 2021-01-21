@@ -15,10 +15,13 @@ build-ifchange \
 build-ifchange \
   $( cut -d"	" -f1 .cllct/src/sh-libs.list | while read libid
     do
+        test -n "$libid" || continue
+
         echo .cllct/src/functions/$libid-lib.func-list
 
         while read func
         do
+          test -n "$func" || continue
           echo .cllct/src/functions/$libid-lib/$func.func-deps
         done <.cllct/src/functions/$libid-lib.func-list
     done) \
