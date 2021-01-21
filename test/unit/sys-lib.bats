@@ -113,7 +113,7 @@ setup()
 
   run cmd_exists ""
   test_nok_empty || stdfail "B.1."
-  
+
   lib_load os
 
   run which "$(get_uuid)"

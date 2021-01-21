@@ -2,11 +2,12 @@
 
 base=os.lib
 load ../init
+init 1 0
 
 setup()
 {
-  init 1 0 && load stdtest extra &&
   lib_load sys os &&
+  load stdtest extra &&
 
   # var/table-1.tab: File with 5 comment lines, 3 rows, 1 empty and 1 blank (ws)
   testf1="test/var/os/table-1.tab" &&
@@ -27,21 +28,22 @@ setup()
 
   # Test first two args
   run lines_slice "" "" "$testf1"
-  { test_ok_nonempty 9 # BATS removes empty lines, but not blank lines
+  { test_ok_nonempty 8
+  # BATS removes empty lines, but not all-whitespace lines. But we don't like
+  # those lines in files anyway. So cannot test slice on empty lines.
   } || stdfail 1.1.
   run lines_slice 8 10 "$testf1"
-  { test_ok_nonempty 3 && # lines-slice does not filter comments/blanks
+  { test_ok_nonempty 2 && # lines-slice does not filter comments/blanks
     test_lines \
         '789.1      -XYZ           x y z' \
-        '   ' \
         '# vim:ft=todo.txt:'
 
   } || stdfail 1.2.
   run lines_slice "" 9 "$testf1"
-  { test_ok_nonempty 8 # BATS removes empty, really is 9 here.
+  { test_ok_nonempty 7 # BATS removes empty, really is 9 here.
   } || stdfail 1.3.1.
   run lines_slice 6 "" "$testf1"
-  { test_ok_nonempty 5
+  { test_ok_nonempty 4
   } || stdfail 1.3.2.
 }
 
@@ -50,21 +52,20 @@ setup()
   __test__() { cat "$3" | lines_slice "$@" -; };
   # Test first two args gain for stdin.
   run __test__ "" "" "$testf1"
-  { test_ok_nonempty 9 # BATS removes empty lines, but not blank lines
+  { test_ok_nonempty 8 # BATS removes empty lines
   } || stdfail 1.1.
   run __test__ 8 10 "$testf1"
-  { test_ok_nonempty 3 && # lines-slice does not filter comments/blanks
+  { test_ok_nonempty 2 && # lines-slice does not filter comments/blanks
     test_lines \
         '789.1      -XYZ           x y z' \
-        '   ' \
         '# vim:ft=todo.txt:'
 
   } || stdfail 1.2.
   run __test__ "" 9 "$testf1"
-  { test_ok_nonempty 8 # BATS removes empty, really is 9 here.
+  { test_ok_nonempty 7 # BATS removes empty, really is 9 here.
   } || stdfail 1.3.1.
   run __test__ 6 "" "$testf1"
-  { test_ok_nonempty 5
+  { test_ok_nonempty 4
   } || stdfail 1.3.2.
 }
 
@@ -103,7 +104,7 @@ setup()
     assert_equal "$line_number" "0"
     assert_equal "$r" "1"
   }
-  
+
   # Use existing pipeline to capture line-number
   r= ; read_lines_while "$testf2" 'echo "$line" | grep -q "^not-in-file$"' || r=$?
 

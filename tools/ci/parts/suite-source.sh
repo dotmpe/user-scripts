@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-suite_source() # Tab Col [Prefix]
+suite_source () # Tab Col [Prefix]
 {
   test $# -ge 2 -a -f "${1:-}" -a $# -le 3 || return 98
 

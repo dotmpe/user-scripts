@@ -116,8 +116,8 @@ strip_last_nchars() # Num
 # See https://unix.stackexchange.com/questions/193748/join-lines-of-text-with-repeated-beginning
 join_lines() # [Src] [Delim]
 {
-  test -n "$1" || set -- "-" "$2"
-  test -n "$2" || set -- "$1" " "
+  test -n "${1-}" || set -- "-" "${2-}"
+  test -n "${2-}" || set -- "$1" " "
   test "-" = "$1" -o -e "$1" || error "join-lines: file expected '$1'" 1
 
   # use awk to build array of paths, for basename

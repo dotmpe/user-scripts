@@ -19,4 +19,3 @@ __box_find_script()
   #    There may be prefixes for local paths to be tried too.
   # 2. If global or not found, look for builtin or root-level run.d
 }
-

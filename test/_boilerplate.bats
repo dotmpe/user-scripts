@@ -31,7 +31,7 @@ teardown()
 @test "${base}: function should ..." {
   TODO fix this or that # tasks-ignore
   run function args
-  { test_ok_nonempty 1 && test_lines "args" "..." 
+  { test_ok_nonempty 1 && test_lines "args" "..."
   } || stdfail
 }
 

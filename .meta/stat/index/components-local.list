@@ -16,7 +16,7 @@ bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
 # TODO: manual
 manual alias manuals
-manuals function - u_s-man 
+manuals function - u_s-man
 pack function
 
 # manual-user-lib simpleglob src/man/man7/User-Script:*.7

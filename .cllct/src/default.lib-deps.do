@@ -18,4 +18,4 @@ do
       $LOG warning "$1" "Missing $callee ($docid:$caller)"
     }
   done <"functions/$docid-lib/$caller.func-deps"
-done <"functions/$docid-lib.func-list" | sed 's/-lib.func-list//' | sort -u 
+done <"functions/$docid-lib.func-list" | sed 's/-lib.func-list//' | sort -u

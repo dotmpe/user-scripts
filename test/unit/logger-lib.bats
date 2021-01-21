@@ -28,7 +28,7 @@ setup()
   run log_level_name
   { test_nok_empty
   } || stdfail 1.1.
-  
+
   run log_level_name 1
   { test_ok_nonempty 1 && test_lines "emerg" ;} || stdfail 2.1.
 

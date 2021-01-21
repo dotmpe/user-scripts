@@ -32,8 +32,18 @@ allownonascii=$(git config --bool hooks.allownonascii) || true
 # Redirect output to stderr.
 exec 1>&2
 
-for file in $(git diff --cached --name-only)
+IFS=$'\n';
+# Allow direct executions to check all files, vs. committed files in pre-commit
+if test -n "${GIT_EDITOR:-}"
+then
+  files="$(git diff --cached --name-only)"
+else
+  files="$(git ls-files)"
+fi
+
+for file in $files
 do
+  IFS=$' \t\n'
   test -e "$file" || continue # Ignore deleted (assuming it is, or renamed)
   step=$(( $step + 1 ))
 

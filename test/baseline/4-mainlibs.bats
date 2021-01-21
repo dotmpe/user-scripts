@@ -7,7 +7,7 @@ setup()
 {
 # FIXME: test/init.bash:init interferes with Bats normal and tap output somehow
   case "$BATS_TEST_DESCRIPTION" in
-    
+
     *" test framework: vanilla"* ) ;;
     *" test framework: init 0: "* ) init 0 ;;
     *" test framework: init 1 0: "* ) init 1 0 ;;

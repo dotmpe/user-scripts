@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-ctx_if @Docker@Build || return 0
+ctx_if "@Docker@Build" || return 0
+
+log_name init-docker-cache
+sh_require env-docker-hub
 
 ci_announce 'Initializing for build-stats and statusdir-cache'
 

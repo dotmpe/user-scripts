@@ -1,5 +1,5 @@
 
-# mkvar assignment II - Expansion tests
+## mkvar assignment II - Expansion tests
 
 # Expand to foo foo foo
 VAR1_1a    =    $(VAR1a)
@@ -20,4 +20,3 @@ dump::
 	@echo VAR1_2a=$(VAR1_2a)
 	@echo VAR1b=$(VAR1b)
 	@echo VAR1_2b=$(VAR1_2b)
-

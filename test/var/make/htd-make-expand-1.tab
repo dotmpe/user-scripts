@@ -1,8 +1,8 @@
-test/var/make/test-2-variables-1.mk 
+test/var/make/test-2-variables-1.mk
 " VAR1_1a foo
 " VAR1a foo
 " VAR1_1b foo
-" VAR1_2a 
+" VAR1_2a
 " VAR1b foo
 " VAR1_2b foo
 

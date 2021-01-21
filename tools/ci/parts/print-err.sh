@@ -1,5 +1,5 @@
 # Print log-like to stderr
-print_err()
+print_err ()
 {
   test -n "${LOG:-}" -a -x "${LOG:-}" && {
     $LOG "$@"; return $?;

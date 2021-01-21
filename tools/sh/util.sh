@@ -11,8 +11,6 @@ assert_nonzero()
 
 sh_include \
   str-bool str-id read exec \
-  unique-paths hd-offsets suite-from-table suite-source suite-run \
-  env-0-1-lib-sys print-color
-#  remove-dupes unique-paths
+  unique-paths hd-offsets suite-from-table suite-source suite-run
 
 # Id: U-S:

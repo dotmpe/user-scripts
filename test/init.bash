@@ -88,7 +88,7 @@ test_env_load()
   test -n "$DEBUG" || DEBUG=
   test -n "$INIT_LOG" || INIT_LOG=err_
 
-  SCRIPTPATH=
+  test -n "$RESET_SCRIPTPATH" && SCRIPTPATH=
   # XXX: need to adjust if build.txt column order changes
   # Get env init ('0' prefixed) Test suite steps from build.txt
   for env_d in $( grep -vE '^\s*(#.*|\s*)$' build.txt|awk '{print $6" "$1}'|grep '^0'|sort -u|cut -f2 -d' ')

@@ -40,7 +40,7 @@ test ! -e "$1" -o -s "$1" || rm "$1"
   cd "$REDO_BASE" &&
   build_init && for path in $paths
   do
-    build_lib_func_list $paths '\ \#.*\ sh:no-stat' 
+    build_lib_func_list $paths '\ \#.*\ sh:no-stat'
   done >"$REDO_BASE/$REDO_PWD/$3"
   build_chatty && {
     cd "$REDO_PWD"

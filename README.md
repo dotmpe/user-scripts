@@ -55,13 +55,14 @@ EOM
 
 ### Status
 
-Released `lib_load` and some other routines for testing in the field. 
+Released `lib_load` and some other routines for testing in the field.
 
 - Experimental project setup, moving over libs and porting tests.
   ``lib_load`` works and some libs may.
 - Secondary objectives regard shell/project tooling. See dev docs.
 
-Version: 0.0
+Release: 0.0
+Version: 0.0.2-dev
 
 * [AGPL-3.0](COPYING)
 

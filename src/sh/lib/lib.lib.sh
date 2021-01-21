@@ -54,7 +54,7 @@ lib_loaded()
 }
 
 # Echoes if path exists. See sys.lib.sh lookup-exists
-lib_exists() # Name Dirs...
+lib_exists() # [lookup_first=1] ~ Name Dirs...
 {
   local name="$1" r=1
   shift

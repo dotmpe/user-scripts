@@ -20,11 +20,14 @@ echo "Travis Branch: ${TRAVIS_BRANCH:-}"
 echo "Travis Commit: ${TRAVIS_COMMIT:-}"
 echo "Travis Commit Range: ${TRAVIS_COMMIT_RANGE:-}"
 echo
-echo "Session ID: $SESSION_ID"
-echo "Build ID: $BUILD_ID"
-echo "Job NR: $JOB_NR"
-echo "Job ID: $JOB_ID"
-echo
+test -n "${BUILD_ID:-}" && {
+  # Need env-ci
+  echo "Session ID: $SESSION_ID"
+  echo "Build ID: $BUILD_ID"
+  echo "Job NR: $JOB_NR"
+  echo "Job ID: $JOB_ID"
+  echo
+}
 echo "User-Scripts: ${U_S:-}"
 echo "Script-Path: ${SCRIPTPATH:-}"
 echo "Script-Name: ${scriptname:-}"
@@ -42,7 +45,8 @@ echo "Lib-Loaded: '${lib_loaded:-}'"
 echo "User-Scripts version: $( cd $U_S && git describe --always )" # No-Sync
 echo
 ci_announce 'Listing user checkouts'
-./bin/u-s user-repos
+u-s user-repos
+
 echo
 $INIT_LOG note "" "ci/parts/init Done"
 

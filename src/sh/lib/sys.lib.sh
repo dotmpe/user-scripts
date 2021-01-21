@@ -215,7 +215,7 @@ sys_confirm()
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
 {
-  test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return
+  test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return 64
   test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
@@ -233,17 +233,12 @@ add_env_path() # Prepend-Value Append-Value
       esac
     }
   }
-  # XXX: to export or not to launchctl
-  #test "$uname" != "darwin" || {
-  #  launchctl setenv "$1" "$(eval echo "\$$1")" ||
-  #    echo "Darwin setenv '$1' failed ($?)" >&2
-  #}
 }
 
 # Add an entry to colon-separated paths, ie. PATH, CLASSPATH alike lookup paths
 add_env_path_lookup() # Var-Name Prepend-Value Append-Value
 {
-  test $# -ge 2 -a $# -le 3 || return
+  test $# -ge 2 -a $# -le 3 || return 64
   local val="$(eval echo "\$$1")"
   test -e "$2" -o -e "${3-}" || {
     echo "No such file or directory '$*'" >&2
@@ -305,7 +300,7 @@ lookup_exists () # NAME DIRS...
 # lookup-first: boolean setting to stop after first success
 lookup_path () # VAR-NAME LOCAL-PATH
 {
-  test $# -eq 2 || return 98
+  test $# -eq 2 || return 64
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
   func_exists "$lookup_test" || {
     $LOG error "" "No lookup-test handler" "$lookup_test"
@@ -322,7 +317,7 @@ lookup_path () # VAR-NAME LOCAL-PATH
 
 lookup_paths () # Var-Name Local-Paths...
 {
-  test $# -ge 2 || return 98
+  test $# -ge 2 || return 64
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
   local varname=$1 base path ; shift ; for base in $( lookup_path_list $varname )
     do
@@ -338,7 +333,7 @@ lookup_paths () # Var-Name Local-Paths...
 # Test if local path/name is overruled. Lists paths for hidden LOCAL instances.
 lookup_path_shadows() # VAR-NAME LOCAL
 {
-  test $# -eq 2 || return 98
+  test $# -eq 2 || return 64
   local r=
   tmpf=$(setup_tmpf .lookup-shadows)
   lookup_first=false lookup_path "$@" >$tmpf

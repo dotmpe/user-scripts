@@ -27,4 +27,3 @@ test -n "${DEBUG:-}" && : "${keep_going:=false}" || : "${keep_going:=true}"
 : "${NS_NAME:="dotmpe"}"
 : "${DOCKER_NS:="$NS_NAME"}"
 : "${scriptname:="`basename -- "$0"`"}"
-

@@ -31,10 +31,10 @@ sh_include env-0-src env-std env-ucache || return
 # XXX: remove from env; TODO: disable undefined check during init.sh,
 # or when dealing with other dynamic env..
 
-sh_include env-0-1-lib-sys env-0-2-lib-os env-0-3-lib-str env-0-4-lib-script ||
+sh_include env-0-1-lib-sys ||
   return
 
-sh_include env-0-5-lib-log env-0-6-lib-git env-0-7-lib-vc ||
+sh_include env-0-5-lib-log env-0-6-lib-git ||
   return
 
 sh_include exec || return

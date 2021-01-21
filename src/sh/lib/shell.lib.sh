@@ -273,10 +273,27 @@ record_env_diff_keys()
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }
 
+# Run command once, return cached value for every subsequent invocation.
 shell_cached () # Cmd Args...
 {
   local vid; mkvid "$*"
   test "${shell_cached["$vid"]+isset}" || shell_cached["$vid"]="$("$@")"
+  echo "${shell_cached["$vid"]}"
+}
+
+# Like cache but track time of last execution as well and re-run on invocation
+# if certain time has passed.
+shell_max_age () # Seconds Cmd Args...
+{
+  test $# -gt 1 || return 98
+  local refresh_time=$(( $(date_epochsec) - $1 ))
+  shift 1
+  local vid; mkvid "$*"
+  test "${shell_cached["$vid"]+isset}" -a \
+      ${shell_cache_time["$vid"]:-0} -gt $refresh_time || {
+    shell_cached["$vid"]="$("$@")"
+    shell_cache_time["$vid"]=$(date_epochsec)
+  }
   echo "${shell_cached["$vid"]}"
 }
 

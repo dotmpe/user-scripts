@@ -20,4 +20,4 @@ case "$TRAVIS_TAG" in
     ;;
 esac
 
-# Sync: U-S:
+# Id: U-S:

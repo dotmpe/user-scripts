@@ -31,14 +31,14 @@ teardown()
   assert_file_not_exist "Other Path"
   # NOTE: trailing line is giving problem with shell-str here
   assert_equal "$(cat "File Name")" "$(echo "$setup_sh_tpl__1__contents")"
-  rm "File Name" 
+  rm "File Name"
 
   run setup_sh_tpl_name "File Name" setup_sh_tpl_
   test_ok_empty || stdfail 1.3.1.2
   assert_file_exist "File Name"
   assert_equal "$(cat "File Name")" "$(echo "$setup_sh_tpl__1__contents")"
   assert_file_not_exist "Other Path"
-  rm "File Name" 
+  rm "File Name"
 
   run setup_sh_tpl_name "Other Path/*" setup_sh_tpl_
   test_ok_empty || stdfail 1.3.2

@@ -38,7 +38,7 @@ test "${SHIPPABLE:-}" != "true" || mkdir -p shippable/testresults
 
 publish_tap ()
 {
-  tap-xunit --package "User-Scripts.$1"
+  tap-xunit --oneAssertionPerTestcase --outputToFailure --package "User-Scripts.$1"
 }
 
 test_pass= test_cnt=
