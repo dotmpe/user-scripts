@@ -250,7 +250,7 @@ std_v() # Log-Level
   }
 }
 
-std_exit()
+std_exit () # [exit-at-level]
 {
   test -n "${1-}" || return 0
   case "$1" in [0-9] ) ;;

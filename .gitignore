@@ -16,3 +16,4 @@ src/man/man3u_s/*.3u_s
 src/man/man5/*.5
 src/man/man7/*.7
 src/md/man/u_s-lib-02-funcs.md
+.gutctags

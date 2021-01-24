@@ -50,7 +50,7 @@ setup()
   assert func_exists shell_lib_init
   assert func_exists sh_init_mode
   assert func_exists sh_env_init
-  assert func_exists shell_test_sh
+  assert func_exists shell_detect_sh
   assert func_exists sh_aliasinfo
   assert func_exists sh_execinfo
 

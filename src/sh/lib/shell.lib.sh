@@ -15,7 +15,7 @@ shell_lib_load()
   test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
   test -n "${SH_SID-}" || SH_SID=$(get_uuid)
 
-  # Shell Name (no path/ext)
+  # Shell Name depends on env SHELL
   test -h $SHELL &&
     SHELL_NAME=$(basename -- "$(readlink -- "$SHELL")") ||
     SHELL_NAME="$(basename -- "$SHELL")"
@@ -82,14 +82,14 @@ shell_check () #
   } || true
 }
 
-sh_init_mode()
+sh_init_mode ()
 {
   IS_BASH_SH=0
   IS_DASH_SH=0
   IS_BB_SH=0
   IS_HEIR_SH=0
   test "$SHELL_NAME" != "sh" || {
-    shell_test_sh
+    shell_detect_sh
   }
 
   test $BA_SHELL -eq 1 -o $IS_BASH_SH -eq 1 && IS_BASH=1 || IS_BASH=0
@@ -107,7 +107,7 @@ sh_init_mode()
 
 # Try to detect Shell variant based on specific commands.
 # See <doc/shell-builtins.tab>
-shell_test_sh()
+shell_detect_sh ()
 {
   sh_is_type_bi 'bind' && IS_BASH_SH=1 || {
 
