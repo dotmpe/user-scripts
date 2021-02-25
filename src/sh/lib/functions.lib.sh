@@ -157,7 +157,7 @@ list_sh_calls()
 
 list_sh_calls_foreach()
 {
-  note "List-Sh-Calls-Foreach: '$*'"
+  $LOG note "" "List-Sh-Calls-Foreach" "$*"
   list_sh_calls_foreach_inner() # sh:no-stat
   {
     list_sh_calls "$1" | sort -u | sed 's#^#'"$1"' #'

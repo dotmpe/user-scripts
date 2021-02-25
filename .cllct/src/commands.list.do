@@ -13,7 +13,10 @@ redo-ifchange "$sh_files"
     util_mode=boot . $REDO_BASE/tools/sh/init.sh
 
   scriptname="do:$REDO_PWD:$1"
-  cd "$REDO_BASE" && functions_execs < $sh_files 2>/dev/null \
-      | sort -u >"$REDO_PWD/$3"
+
+  echo sh_files=$sh_files >&2
+  cd "$REDO_BASE" &&
+    grep '^- ' $sh_files | cut -d ' ' -f4 |
+    functions_execs | sort -u >"$REDO_PWD/$3"
 )
 redo-stamp <"$3"

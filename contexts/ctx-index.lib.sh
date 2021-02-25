@@ -2,7 +2,8 @@
 
 index_update () # Cmds... -- Select Id-Col Sort-Key Target Temp
 {
-echo "index_update $#:$*" >&2
+  $LOG info ctx:index "index_update" "$#:$*"
+
   local  cmds=
   while test "$1" != '--'
   do cmds="${cmds-}${cmds+" "}$1"; shift
@@ -38,7 +39,8 @@ index_merge () # Index Cache
 # Return index entries excluding those updated in cache (the new index)
 index_update_select () # Id-Col Index Cache
 {
-echo "index_update_select $#:$*" >&2
+  $LOG info ctx:index "index_update_select" "$#:$*"
+
   local ids=/tmp/cache-ids.tmp
   cut -d' ' -f$1 $3 | while read -r src
   do echo "^[0-9 \.@+-]* $(match_grep "$src")\\($\\| \\)"
@@ -50,7 +52,8 @@ echo "index_update_select $#:$*" >&2
 # Actions: init | update-index | update-index-deleted | update-newer
 files_index () # [Action] Index
 {
-echo "files_index $#:$*" >&2
+  $LOG info ctx:index "files_index" "$#:$*"
+
   # FIXME: there is no need to take sort-key argument, order is hardcoded below
   local mtime action="$1" sort_key="4d" index="$2"
   shift 2

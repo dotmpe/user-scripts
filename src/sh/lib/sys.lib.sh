@@ -298,7 +298,7 @@ lookup_exists () # NAME DIRS...
 # lookup-path List existing local paths, or fail if second arg is not listed
 # lookup-test: command to test equality with, default test_exists
 # lookup-first: boolean setting to stop after first success
-lookup_path () # VAR-NAME LOCAL-PATH
+lookup_path () # ~ VAR-NAME LOCAL-PATH
 {
   test $# -eq 2 || return 64
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
@@ -324,7 +324,7 @@ lookup_paths () # Var-Name Local-Paths...
       for path in $@
       do
         eval $lookup_test \""$path"\" \""$base"\" && {
-          test ${lookup_first:-1} -eq 1 && break || continue
+          test ${lookup_first:-1} -eq 1 && break 2 || continue
         } || continue
       done
     done
@@ -359,7 +359,13 @@ cwd_lookup_path () # [ Local-Paths... ]
     } ||
       echo "$cwd"
     cwd="$(dirname "$cwd")"
-  done | tr '\n' ':' | head -c -1
+  done | {
+    case "${out_fmt:-path}" in
+      path ) tr '\n' ':' | head -c -1 ;;
+      list ) cat ;;
+      * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;
+    esac
+  }
 }
 
 init_user_env()

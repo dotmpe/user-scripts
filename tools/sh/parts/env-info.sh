@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+: "${INIT_LOG:="$LOG"}"
 
 type lib_load >/dev/null 2>&1 &&
   $INIT_LOG "info" "sh:usr-env" "Finished. Libs:" "'${lib_loaded:-nil}'" ||

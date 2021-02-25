@@ -138,16 +138,20 @@ sh_env_init()
         env
       } | sort -u
     }
+    sh_isset() # sh:no-stat
+    {
+      test "${!1:-unset}" != "unset"
+    }
   } || {
     $log info shell.lib "Choosing non-bash sh-env-init"
     sh_env() # sh:no-stat
     {
       set
     }
-  }
-  sh_isset() # sh:no-stat
-  {
-    sh_env | grep -qi '^'$1=
+    sh_isset() # sh:no-stat
+    {
+      sh_env | grep -qi '^'$1=
+    }
   }
   sh_isenv() # XXX: Exported vars? @Base # sh:no-stat
   {
