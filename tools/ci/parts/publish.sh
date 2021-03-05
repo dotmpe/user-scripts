@@ -66,6 +66,7 @@ done
 shopt -u nullglob
 
 ctx_if @Docker@Build || {
+  $LOG "note" "" "Skipped Docker part of publish"
   return 0
 }
 

@@ -23,6 +23,7 @@ env:
     - announce=1
     - VND_SRC_PREFIX=$HOME/build
     - LOG=$PWD/tools/sh/log.sh
+    - CTX=@Docker@Build
 
 # Travis has only options 'hB' on ($-) and the runner does not like unset'
 before_install:
