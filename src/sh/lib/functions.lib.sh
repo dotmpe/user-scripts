@@ -98,7 +98,7 @@ functions_execs() # SRC...
   list_sh_calls_foreach "$@" | sort -u | while read -r script cmd
     do
       which "$cmd" >/dev/null 2>&1 || {
-          $LOG "error" "" "Unable to find exec name" "$cmd"
+          $LOG "error" "" "Unable to find exec name" "$script:$cmd"
           continue
       }
       echo "$(realpath "$(which "$cmd")") $script"

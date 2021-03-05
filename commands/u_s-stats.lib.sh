@@ -13,6 +13,7 @@ u_s_sh_stats ()
   echo "Dependencies: $( sort -u .cllct/src/functions/*/*.func-deps | wc -l | awk '{print $1}' )"
 }
 
+# Redo entry point to generate src statistics file
 build_sh_stats ()
 {
   build-ifchange \

@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 
+## User-Scripts man routines
 # Assemble, convert or access User-Scripts man pages
 
-u_s_man() #
+#u_s_man_lib_load ()
+#{
+# XXX: see tools/sh/env.sh
+  : "${U_S_MAN:="$U_S/src/md/manuals.list"}"
+#}
+
+u_s_man () #
 {
   print_err error "" "This is u-s man. Use help [TOPIC] or topics to access local manual sources."
   return 1
 }
 
-build_manual_page () # Md-Manual-Doc
+# Turn Markdown into man file
+build_manual_page () # ~ Md-Manual-Doc
 {
   pandoc -s -f markdown+definition_lists+pandoc_title_block -t man  "$@"
 }
 
-build_manual_src_parts () # Section Topic
+# Main part of src/man/man*/*.*.do. Read manuals.list config (U_S_MAN) and
+# invoke each sub-target build part.
+build_manual_src_parts () # ~ Section Topic
 {
   local fmt src section=$1 topic=$2
 
@@ -34,7 +44,8 @@ build_manual_src_parts () # Section Topic
   }
 }
 
-build_manuals ()
+# Redo target entry-point
+build_manuals () # [U_S_MAN] [REDO_BASE] ~
 {
   local section topic
 
@@ -51,7 +62,7 @@ build_manuals ()
 }
 
 # XXX: topic should be parts of files, not file names? Like commands. #MJfc
-topics() #
+topics () # [U_S] ~
 {
   test $# -eq 0 || return 99
   local base="$U_S/src/man/"
@@ -66,7 +77,7 @@ topics() #
 }
 
 # TODO: print topic for section properly, sort content into sections. #MJfc
-print_topic()
+print_topic ()
 {
   test $# -ge 1 -a $# -le 2 || return 99
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+## Process all shell functions
 # Created: 2020-08-31
 set -euo pipefail
 
@@ -25,6 +26,7 @@ build-ifchange \
           echo .cllct/src/functions/$libid-lib/$func.func-deps
         done <.cllct/src/functions/$libid-lib.func-list
     done) \
-  .cllct/src/commands.list .cllct/src/sh-stats
+  .cllct/src/sh-stats
+  #.cllct/src/commands.list
 
 #

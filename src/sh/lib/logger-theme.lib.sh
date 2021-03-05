@@ -4,7 +4,7 @@
 
 logger_theme_lib_load()
 {
-  case $TERM in
+  case "${TERM:="dumb"}" in
 
     *256color )
         LOG_TERM=256
@@ -21,13 +21,15 @@ logger_theme_lib_load()
         ncolors=$(tput colors)
       ;;
 
-    dumb | '' )
+    dumb )
         LOG_TERM=bw
+        ncolors=
       ;;
 
     * )
         LOG_TERM=bw
-        # XXX: echo "[std.sh] Other term: '$TERM'" >&2
+        ncolors=
+        echo "[std.sh] Other term: '$TERM'" >&2
       ;;
 
   esac

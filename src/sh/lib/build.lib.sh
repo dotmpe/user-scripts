@@ -32,7 +32,7 @@ build_component_exists () # Target
     while read name type target_spec source_specs
     do
       test "$name" = "$1" && return
-      fnmatch "$target_spec" "$1" && return
+      # XXX: why was this here? #fnmatch "$target_spec" "$1" && return
       continue
     done
     return 1
@@ -63,6 +63,7 @@ build_fetch_component () # Path
 
 build_component () # Target Basename Temp
 {
+  $LOG "note" "" "Building as component" "$*"
   build_components "$1" "" "$@"
 }
 
@@ -72,7 +73,9 @@ build_components () # Target-Name Type Build-Args...
   fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
   grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt" | {
     read name type rest
+    test -n "$name" || error "No such component '$type:$name" 1
     set -o noglob; set -- $name $rest -- "$@"; set +o noglob
+    $LOG "info" "" "Building as '$type' component" "$*"
     build_component_$type "$@"
   }
 }

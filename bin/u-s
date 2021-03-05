@@ -125,16 +125,7 @@ print_help()
   echo "  dckr-shell CMD - Execute login shell at U-S dir"
   echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
   echo
-  echo "  lastbuild - "
-  echo "  listtags - show project-branch-name tags for all ledges"
-  echo "  pullall - fetch every ledge at docker hub"
-  echo "  listfiles - "
-  echo "  listlogs - "
-  echo "  ledge-pull - merge local logs for current project/branch from ledge"
-  echo "  ledge-exists - test by pulling ledge for project/branch"
-  echo "  ledge-tovolume - Create named volume from ledge data"
-  echo "  ledge-localclean - Remove u-s container and ledge volume"
-  echo "  ledge-* - See Script.mpe:build#logging docs"
+  echo "$u_s_ledge__man_1"
   echo
   echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
   echo

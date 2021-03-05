@@ -32,7 +32,6 @@ true "${verbosity:=${v:-3}}"
 } && U_S_TYPE=basher
 
 : "${U_S_TYPE:="dev"}"
-
 u_s_env_init()
 {
   case "$U_S_TYPE" in

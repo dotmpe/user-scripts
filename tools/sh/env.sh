@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Shell env profile script
+## Shell env profile script
 
 test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
 
@@ -32,7 +32,10 @@ test -n "${sh_util_:-}" || {
 
 : "${LOG:="print_err"}"
 
-sh_include print-color remove-dupes unique-paths
+sh_include \
+  env-init-log \
+  env-0-1-lib-sys \
+  print-color remove-dupes unique-paths
 
 : "${build_txt:="build.txt"}"
 

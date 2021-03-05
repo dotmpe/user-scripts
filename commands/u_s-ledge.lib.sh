@@ -4,6 +4,31 @@
 
 # See Script.mpe:build#logging docs
 
+u_s_ledge__man_1='
+  lastbuild - see `lastbuilds 1`
+  lastbuilds [NUM] - see `ledge-lastbuilds`
+
+  listtags - list tags (project+branch-name) for all ledges
+  pullall [TAGS...] - fetch every or given ledge from docker hub
+  listfiles [TAGS...] - call `ledge_listsd` with all tags
+  listlogs [TAGS...] - call `ledge_listlogs` with all tags
+
+  ledge-pull - merge local logs for current project/branch from ledge
+  ledge-exists - test by pulling ledge for project/branch
+  ledge-tovolume - Create named volume from ledge data
+  ledge-localclean - Remove u-s container and ledge volume
+  ledge-showbuilds - List all builds for current project+branch
+  ledge-listlogs
+  ledge-listsd
+  ledge-sumlogs
+  ledge-fetchlogs
+  ledge-refreshlogs
+  ledge-pushlogs - Build new image from ~/.statusdir and publish
+  ledge-lastbuilds
+
+  ledge-* - See Script.mpe:build#logging docs
+'
+
 u_s_ledge_lib_load()
 {
   true "${sd_logdir:="$HOME/.statusdir/log"}"
@@ -252,22 +277,23 @@ ledge_pushlogs()
 
 ledge_buildlog_echo()
 {
+  echo "# Job-Nr Starttime Branch Commit-Range"
   while read -r start_time job_id job_nr branch commit_range build_id
   do
     echo $job_nr $(date --iso=min -d @${start_time:0:10}) $branch $commit_range
-    test -n "${job_nr:-$build_id}" || {
+    test "${job_nr:-${build_id:--}}" != "-" || {
         $LOG warn "" "No Job-Nr/Build-Id job:$job_id branch:$branch"
         continue
     }
 
+    grep -m1 '^#' ~/.statusdir/log/builds-$PROJ_LBL.list
     grep "${job_nr:-$build_id}" ~/.statusdir/log/builds-$PROJ_LBL.list || continue
   done
 }
 
-ledge_lastbuilds() # [NUM=3]
+ledge_lastbuilds () # [PROJ_LBL] ~ [NUM=3]
 {
   local n=${1:-3}
-  grep '^#' ~/.statusdir/log/travis-$PROJ_LBL.list
   read_nix_style_file ~/.statusdir/log/travis-$PROJ_LBL.list |
     tail -n$n |
     ledge_buildlog_echo

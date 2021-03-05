@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+## Build shell lib overview in Pandoc Markdown man format
 # Created: 2020-08-31
 set -euo pipefail
 
@@ -10,6 +11,7 @@ local topic=$(basename "${1:11}" -overview.md) \
 } |
 while read lib_id src
 do
+  # Get source description label
   sd="$(grep -m1 "^## .*" $src | sed 's/^## //')" || true
   true "${sd:="$lib_id library overview"}"
   echo "% ${topic^^}(7) User-Script: $sd | $version"
