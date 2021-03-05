@@ -2,7 +2,7 @@
 
 case "${TERM:-"dumb"}" in
 
-  dumb ) ;;
+  dumb )
       c_normal=
       c_black=
       c_red=
@@ -12,6 +12,7 @@ case "${TERM:-"dumb"}" in
       #c_purple=
       c_bold=
       c_default=
+    ;;
 
   * )
       c_normal="$(tput sgr0)"
