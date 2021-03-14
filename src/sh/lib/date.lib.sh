@@ -72,7 +72,6 @@ newer_than() # FILE SECONDS
 
   fnmatch "@*" "$2" || set -- "$1" "-$2"
   test $(date_epochsec "$2") -lt $(filemtime "$1")
-  #test $(( $(date +%s) - $2 )) -lt $(filemtime "$1")
 }
 
 # older-than FILE SECONDS, filemtime must be less-than Now - SECONDS
@@ -84,7 +83,6 @@ older_than()
   test -z "${3-}" || error "older-than surplus arguments" 1
   fnmatch "@*" "$2" || set -- "$1" "-$2"
   test $(date_epochsec "$2") -gt $(filemtime "$1")
-  #test $(( $(date +%s) - $2 )) -gt $(filemtime "$1")
 }
 
 date_ts()
@@ -92,7 +90,8 @@ date_ts()
   date +%s
 }
 
-date_epochsec()
+# XXX: cleanup Time-Fmt arg
+date_epochsec() # File | -Delta-Seconds | @Timestamp | Time-Fmt
 {
   test -e "$1" && {
       filemtime "$1"

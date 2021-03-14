@@ -92,6 +92,19 @@ fnmatch() # PATTERN STRING
   case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
 }
 
+fnmatch_any () # STRING... -- PATTERNS...
+{
+  local str=; while argv_has_next "$@"; do str="${str:-}${str:+" "}$1"; shift;
+  done; shift
+  while test $# -gt 0
+  do
+    fnmatch "$1" "$str" && return
+    shift
+    continue
+  done
+  return 1
+}
+
 # Insert tab-character at x position (awk)
 awk_insert_char() # Char Line-Chars-Offset
 {

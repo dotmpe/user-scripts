@@ -175,7 +175,7 @@ _log()
 log()
 {
   test -n "${log_key:-}" || log_src_id_var
-  printf -- "[$(log_src_id)] $1\n"
+  printf -- "$bb[$bk$(log_src_id)$bb]${norm-} $1\n"
 }
 
 err()
@@ -229,7 +229,7 @@ stderr() # level msg exit
         log "${grey-}$2${norm-}" 1>&2 ;;
     ok|pass* )
         bb=${grn-}; bk=${grey-}
-        log "${default-}$2${norm-}" 1>&2 ;;
+        log "${bold-}$bb$1${norm-}${default-} $2${norm-}" 1>&2 ;;
     * )
         bb=${drgrey-} ; bk=${grey-}
         log "${grey-}$2${norm-}" 1>&2 ;;
