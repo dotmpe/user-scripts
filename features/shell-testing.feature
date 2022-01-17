@@ -7,7 +7,7 @@ Feature: can use Gherking syntax to describe shell scripts
     Then `stdout` should be ""
     And `stderr` should be ""
 
-  Scenario: setup temporary directory
+  Scenario: setup temporary directory and echo directory
 
     Given temp dir 'setup-tpl-sh-feature-testdir-a'
     When the user runs `printf %s $PWD`
