@@ -32,8 +32,8 @@ trueish "${ENV_DEV-}" && {
 }
 
 test -n "${VND_PATHS-}" || {
-  test -n "${VND_GH_SRC-}" || VND_GH_SRC=/src/github.com
-  test -n "${VND_SRC_PREFIX-}" || VND_SRC_PREFIX=/src/local
+  test -n "${VND_GH_SRC-}" || VND_GH_SRC=/src/vendor/github.com
+  test -n "${VND_SRC_PREFIX-}" || VND_SRC_PREFIX=$VND_GH_SRC
 
   VND_PATHS="$(unique_paths ~/build $VND_GH_SRC $VND_SRC_PREFIX ~/.basher/cellar/packages)"
 }
@@ -81,8 +81,15 @@ do
   true
 done
 
-script_package_include $CWD ||
-  $INIT_LOG "error" "" "Error including script-package at" "$CWD" 30 || return
+{ script_package=0 ; for sh_ext in $SH_EXT; do
+    test -f "$CWD/load.$sh_ext" && script_package=1 || continue
+  done
+  test $script_package -eq 1
+} && {
+
+  script_package_include $CWD ||
+    $INIT_LOG "error" "" "Error including script-package at" "$CWD" 30 || return
+}
 
 test -z "${SCRIPTPATH:-}" &&
     $INIT_LOG "error" "" "No SCRIPTPATH found" ||

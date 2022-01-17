@@ -2,9 +2,13 @@
 
 build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  lib_require date match $package_build_tool
+  lib_require date match $package_build_tool || return
   local var=${package_build_tool}_commands cmd
-  for name in ${!var}
+  test -n "${!var-}" || {
+    $LOG error "" "No build tool commands" "$package_build_tool" 1
+    return
+  }
+  for name in ${!var-}
   do
     cmd="build${name:${#package_build_tool}}"
     eval "$(cat <<EOM
@@ -17,11 +21,21 @@ EOM
   done
 
   test -n "${sh_file_exts-}" || sh_file_exts=".sh .bash"
+
   # Not sure what shells to restrict to, so setting it very liberal
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
 
-  test -n "${components_txt-}" || components_txt=${COMPONENTS_TXT:-"components.txt"}
+  # List of targets for build tool
+  test -n "${components_txt-}" ||
+    components_txt=${COMPONENTS_TXT:-"components.txt"}
+
+  # Toggle or alternate target for build tool to build components-txt
+  test -n "${components_txt_build-}" ||
+    components_txt_build=${COMPONENTS_TXT_BUILD:-"1"}
+
+  # Targets for CI jobs
   test -n "${build_txt-}" || build_txt="${BUILD_TXT:-"build.txt"}"
+
   test -n "${dependencies_txt-}" || dependencies_txt="${DEPENDENCIES_TXT:-"dependencies.txt"}"
 }
 

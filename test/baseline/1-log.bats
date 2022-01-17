@@ -10,6 +10,7 @@ base='baseline-1:log'
   load ../helper/extra
 
   export DEBUG= verbosity=5
+  LOG=tools/sh/log.sh
 
   run $LOG "info" "" "Test" "" 0
   test $status -eq 0
@@ -19,7 +20,7 @@ base='baseline-1:log'
   test $status -eq 4
   test -z "${lines[*]}"
 
-  run $LOG "note" "" "Test 3" "" 0
+  run $LOG "notice" "" "Test 3" "" 0
   test $status -eq 0
   test -n "${lines[*]}"
   fnmatch "*Test 3*" "${lines[*]}" || stdfail "Expected LOG output"

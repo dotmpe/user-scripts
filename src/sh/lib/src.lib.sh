@@ -15,8 +15,8 @@ src_lib_init()
   test "${src_lib_init-}" = "0" || {
     lib_assert log match || return
 
-    local log=; req_init_log
-    $log info "" "Loaded src.lib" "$0"
+    local us_log=; req_init_log
+    $us_log info "" "Loaded src.lib" "$0"
   }
 }
 

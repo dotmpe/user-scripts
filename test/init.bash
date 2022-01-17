@@ -133,6 +133,8 @@ init() # ( 0 | 1 [~ [~ [~]]] )
   test -n "$ci_tools" || ci_tools=$CWD/tools/ci
   test -d "$sh_tools" || return 103 # NOTE: sanity
 
+  . "$CWD/tools/bats/env.sh"
+
   # Get lib-load, and optional libs/boot script/helper
   while test $# -lt 4 ; do set -- "$@" "" ; done
   test -n "$1" || set -- "1" "$2" "$3" "$4"
@@ -180,7 +182,7 @@ load_init() # [ 0 ]
   }
 
   test -n "$TMPDIR" || TMPDIR=/tmp
-  . "./tools/sh/parts/env-test-bats.sh"
+  . "/tools/bats/env.sh"
   load_init_bats
 #  test "$PWD" = "$scriptpath"
 }
@@ -222,9 +224,9 @@ bats_autosetup_common_includes()
   : "${VENDORS:="google.com github.com bitbucket.org"}"
   for vendor in $VENDORS
   do
-    test -e $VND_SRC_PREFIX/$vendor || continue
+    test -e /src/vendor/$vendor || continue
 
-    BATS_LIB_PATH_DEFAULTS="$BATS_LIB_PATH_DEFAULTS $VND_SRC_PREFIX/$vendor"
+    BATS_LIB_PATH_DEFAULTS="$BATS_LIB_PATH_DEFAULTS /src/vendor/$vendor"
   done
 }
 

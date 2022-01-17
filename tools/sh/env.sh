@@ -11,9 +11,6 @@ test ${DEBUG:-0} -ne 0 || DEBUG=
 test "${env_strict_-}" = "0" || {
   . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
 
-# FIXME: generate local static env
-true "${BIN:="$HOME/bin"}"
-test ! -e $BIN/.env.sh || . $BIN/.env.sh
 test ! -e $CWD/.htd/meta.sh || . $CWD/.htd/meta.sh
 
 : "${SUITE:="Sh"}"

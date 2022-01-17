@@ -151,8 +151,13 @@ text_lookup() # SOURCES TARGETS [FUNC_TAB]
 list_sh_calls()
 {
   #$sh_list_calls "$@" || $_failed_ "$*"
-  test -n "$*" || error "list-sh-calls: pathnames expected" 1
-  $HOME/project/oil/bin/oshc deps "$@" --chained-commands="sudo time"
+  test -x $HOME/project/oil/bin/oshc || {
+    $LOG alert ":functions:list-sh-calls" "This build requires Oil OSHC binary" "" 1
+    return
+  }
+  OIL=$HOME/project/oil
+  PYTHONPATH=$OIL:$PYTHONPATH \
+    $OIL/bin/oshc deps "$@" --chained-commands="sudo time"
 }
 
 list_sh_calls_foreach()

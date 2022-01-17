@@ -27,6 +27,6 @@ build-ifchange \
         done <.cllct/src/functions/$libid-lib.func-list
     done) \
   .cllct/src/sh-stats
-  #.cllct/src/commands.list
+  # XXX: cleanup .cllct/src/commands.list
 
 #

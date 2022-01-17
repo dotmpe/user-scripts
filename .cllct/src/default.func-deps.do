@@ -25,8 +25,15 @@ test ! -e "$1" -o -s "$1" || rm "$1"
 
 U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
-init_sh_libs="$init_sh_libs build-htd match src package std os-htd function functions" \
+CWD=$REDO_BASE \
+init_sh_libs="$init_sh_libs match src std function functions" \
 U_S=$REDO_BASE . $REDO_BASE/tools/sh/init.sh
+
+# XXX: cleanup, still depends on ~/bin
+SCRIPTPATH=$SCRIPTPATH:$HOME/bin
+lib_require package os-htd build-htd
+
+r=
 
 scriptname="do:$REDO_PWD:$1" && {
   test -n "$lib_id" -a -n "$funcname" -a -n "$path" || {
@@ -35,7 +42,12 @@ scriptname="do:$REDO_PWD:$1" && {
 mkdir -p "functions/$lib_id-lib/" &&
 cd "$REDO_BASE" &&
 build_lib_func_deps_list "$funcname" "$path" >"$REDO_PWD/$3" \
-  2>"$REDO_PWD/$1.stderr"
+  2>"$REDO_PWD/$1.stderr" || r=$?
+
+test -z "${r-}" || {
+  $LOG error "" "Failed, see" "$1.stderr"
+  exit $r
+}
 
 cd "$REDO_BASE/$REDO_PWD"
 # FIXME: lots of OSHC errors in scripts, track in stderr for now

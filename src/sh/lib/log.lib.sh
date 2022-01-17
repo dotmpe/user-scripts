@@ -2,21 +2,29 @@
 
 ## Log helper module
 
-log_lib_init()
+log_lib_load ()
 {
-  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
-    && init_log="$LOG" || init_log="$INIT_LOG"
-  # XXX: log test -n "$LOG" && init_log="$LOG" || init_log="$INIT_LOG"
+  test -n "${LOG-}" || LOG=${U_S}/tools/sh/log.sh
 }
 
-req_log()
+log_lib_init ()
 {
-  test -n "$log" || exit 111 # NOTE: sanity
+  test -n "${us_log-}" || {
+    test -n "${LOG-}" || return
+    test \( \
+        "$(type -t "$LOG")" = "function" -o \
+        -x "$(which "$LOG")" -o -x "$LOG" \
+      \) || return
+    us_log="$LOG"
+  }
 }
 
-req_init_log()
+req_log ()
 {
-  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
-    && log="$LOG" || log="$init_log"
-  req_log
+  test -n "$us_log" || exit 111 # NOTE: sanity
+}
+
+req_init_log ()
+{
+  log_lib_init && req_log
 }

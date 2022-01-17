@@ -56,8 +56,8 @@ date_lib_init()
 
   export gdate
 
-  local log=; req_init_log || return
-  $log info "" "Loaded date.lib" "$0"
+  local us_log=; req_init_log || return
+  $us_log info "" "Loaded date.lib" "$0"
 
 }
 

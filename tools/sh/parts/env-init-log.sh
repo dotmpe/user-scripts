@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-$HOME/bin/tools/sh/log.sh crit "" "" env-init-log
-
 log_name ()
 {
   test -n "$sh_include_partid" && {

@@ -2,7 +2,7 @@ Feature: Setup Template (sh); test fixtures for shell with YAML format
 
   Background:
 
-    Given `tpl_vars` key 'env' '. ~/bin/.env.sh'
+    Given `tpl_vars` key 'env' '. ~/.local/etc/profile.d/_local.sh'
     Given the current commandpath
 
   Scenario: template to setup two files, one in a subdir, each with space in name

@@ -51,17 +51,14 @@ shell_lib_init()
   test "$SHELL_NAME" = "ash" && A_SHELL=1 || A_SHELL=0
   test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
 
-  local log=; req_init_log || return
+  local us_log=; req_init_log || return
   local log_key=$scriptname/$$:u-s:shell:lib:init
 
-  log_key=$log_key $log debug "" "Running final shell.lib init"
+  log_key=$log_key $us_log debug "" "Running final shell.lib init"
 
   shell_check && sh_init_mode && sh_env_init &&
-  log_key=$log_key $log info "" "Loaded shell.lib" "$0"
+  log_key=$log_key $us_log info "" "Loaded shell.lib" "$0"
 }
-
-shell_lib_log() { test -n "${LOG-}"&&log="$LOG"||log="$INIT_LOG";req_log; }
-#shell_lib_log() { req_init_log; }
 
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
 shell_check () #
@@ -126,11 +123,11 @@ shell_detect_sh ()
 # Define sh-env. to get plain env var name/value list, including local vars
 sh_env_init()
 {
-  local log=; shell_lib_log
+  local us_log=; req_init_log || return
 
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
-    $log info shell.lib "Choosing bash sh-env-init"
+    $us_log info shell.lib "Choosing bash sh-env-init"
     sh_env() # sh:no-stat
     {
       {
@@ -143,7 +140,7 @@ sh_env_init()
       test "${!1:-unset}" != "unset"
     }
   } || {
-    $log info shell.lib "Choosing non-bash sh-env-init"
+    $us_log info shell.lib "Choosing non-bash sh-env-init"
     sh_env() # sh:no-stat
     {
       set
@@ -264,16 +261,16 @@ env_keys()
 
 record_env_diff_keys()
 {
-  local log=; shell_lib_log
+  local us_log=; req_init_log || return
 
   test -n "$1" || set -- "$(ls "$SD_SHELL_DIR" | head -n 1)" "$2"
   test -n "$2" || set -- "$1" "$(ls "$SD_SHELL_DIR" | tail -n 1)"
 
   # FIXME:
   #test -e "$1" -a -e "$2" || stderr "record-env-keys-diff" '' 1
-  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $log error env "record-env-keys-diff" "" 1
+  #test -e "$SD_SHELL_DIR/$1" -a -e "$SD_SHELL_DIR/$2" || $us_log error env "record-env-keys-diff" "" 1
 
-  $log info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
+  $us_log info shell.lib "comm -23 '$SD_SHELL_DIR/$2' '$SD_SHELL_DIR/$1'"
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }
 
