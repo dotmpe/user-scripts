@@ -26,6 +26,7 @@ default_do_main ()
   #}
   #ENV_NAME=redo . ./.meta/package/envs/main.sh || return
 
+  # XXX:
   CWD=$PWD
   . "${_LOCAL:="${UCONF:-"$HOME/.conf"}/etc/profile.d/_local.sh"}" || return
   COMPONENTS_TXT=$CWD/.meta/stat/index/components.list

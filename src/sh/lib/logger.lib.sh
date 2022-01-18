@@ -144,11 +144,11 @@ logger_stderr() # syslog-level target-ids description source-ids status-code
 }
 
 logger_stderr_num() { log_level_num "$@"; }
-logger_stderr_level() { log_level_name "$@"; }
+logger_stderr_level() { logger_level_name "$@"; }
 
 
 # Return level number as string for use with line-type or logger level, channel
-log_level_name() # Level-Num
+logger_level_name() # Level-Num
 {
   case "$1" in
       1 ) echo emerg ;;
@@ -170,7 +170,7 @@ log_level_name() # Level-Num
   esac
 }
 
-log_level_num() # Level-Name
+logger_level_num() # Level-Name
 {
   case "$1" in
       emerg ) echo 1 ;;
@@ -184,22 +184,6 @@ log_level_num() # Level-Name
       * ) return 1 ;;
   esac
 }
-
-log_facility_name()
-{
-  case "$1" in
-
-      * ) return 1 ;;
-  esac
-}
-log_facility_num()
-{
-  case "$1" in
-
-      * ) return 1 ;;
-  esac
-}
-
 
 # Go over levels 1-7 and demo logger-log
 logger_demo()

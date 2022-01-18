@@ -103,7 +103,7 @@ log_src_id_var()
       log_key="$stderr_log_channel"
     } || {
       test -n "${base-}" || {
-        base="\$\$/\$scriptname"
+        base="\$scriptname[\$\$]"
       }
       test -n "$base" && {
         test -n "${scriptext-}" || scriptext=.sh
