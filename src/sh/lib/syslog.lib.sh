@@ -17,7 +17,9 @@ syslog_lib_init () { true; }
 syslog_level_name() # Level-Num
 {
   case "$1" in
-      1 ) echo emerg ;;
+
+      0 ) echo emerg ;;
+      1 ) echo alert ;;
       2 ) echo crit ;;
       3 ) echo err ;;
       4 ) echo warn ;;
@@ -32,7 +34,9 @@ syslog_level_name() # Level-Num
 syslog_level_num() # Level-Name
 {
   case "$1" in
-      emerg )           echo 1 ;;
+
+      emerg )           echo 0 ;;
+      alert )           echo 1 ;;
       crit  )           echo 2 ;;
       err   | error )   echo 3 ;;
       warn  | warning ) echo 4 ;;

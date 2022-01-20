@@ -151,6 +151,9 @@ logger_stderr_level() { logger_level_name "$@"; }
 logger_level_name() # Level-Num
 {
   case "$1" in
+
+      #0 ) echo emerg
+      #1 ) echo alert
       1 ) echo emerg ;;
       2 ) echo crit ;;
       3 ) echo error ;;
