@@ -7,7 +7,7 @@
 
 src_lib_load()
 {
-  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  true
 }
 
 src_lib_init()

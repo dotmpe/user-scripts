@@ -4,7 +4,6 @@
 
 sh_ansi_tpl_lib_load()
 {
-  test -n "${uname-}" || export uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
   test -n "${COLORIZE-}" || COLORIZE=1
   test -n "${CS-}" || CS=dark
   #force_color_prompt=yes
