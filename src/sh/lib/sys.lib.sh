@@ -146,9 +146,18 @@ req_vars()
 # directory will not be created.
 sys_tmp_init () # DIR
 {
+  local tag=:sys.lib:tmp-init
   test -n "${RAM_TMPDIR-}" || {
         # Set to Linux ramfs path
-        test -w "/dev/shm" && RAM_TMPDIR=/dev/shm/tmp
+        test -w "/dev/shm" && {
+          RAM_TMPDIR=/dev/shm/tmp
+          test -d "$RAM_TMPDIR" || mkdir $RAM_TMPDIR
+        } || {
+          test -d "$RAM_TMPDIR" && {
+            $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"
+          } ||
+            $sys_lib_log warn $tag "Cannot prepare RAM-TmpDir" "$RAM_TMPDIR"
+        }
       }
   test -e "${1-}" -o -z "${RAM_TMPDIR-}" || set -- "$RAM_TMPDIR"
   test -e "${1-}" -o -z "${TMPDIR-}" || set -- "$TMPDIR"
@@ -156,7 +165,7 @@ sys_tmp_init () # DIR
     test -n "${TMPDIR-}" || export TMPDIR=$1
   }
   test -d "$1" || {
-    $sys_lib_log warn sys "No RAM tmpdir/No tmpdir settings found" "" 1
+    $sys_lib_log warn $tag "No RAM tmpdir/No tmpdir found" "" 1
   }
   sys_tmp="$1"
 }
