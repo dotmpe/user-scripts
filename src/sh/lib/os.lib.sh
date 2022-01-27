@@ -4,8 +4,7 @@
 
 os_lib_load()
 {
-  test -n "${uname-}" || uname="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  test -n "${os-}" || os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  true
 }
 
 os_lib_init()

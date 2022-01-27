@@ -41,9 +41,9 @@ date_lib_init()
 {
   test "${date_lib_init-}" = "0" && return
 
-  test -n "${gdate-}" || case "${uname:="$(uname -s | tr 'A-Z' 'a-z')"}" in
-    darwin ) gdate="gdate" ;;
-    linux ) gdate="date" ;;
+  test -n "${gdate-}" || case "$uname" in
+    Darwin ) gdate="gdate" ;;
+    Linux ) gdate="date" ;;
     * ) $LOG error "" uname "$uname" 1 ; return 1 ;;
   esac
 
