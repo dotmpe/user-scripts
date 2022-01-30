@@ -1,4 +1,20 @@
-# Spec Outline
+# +U-s Dev Docs
+
+I've completely lost the focus on simultaneously making this a package of shell support libraries with some Docker-base CI setup around/besides it.
+And the need to test+report. For the time being.
+
+As I've already been doing, I'll probably setup +X-CI for that instead for dev.
+Not going to remove *all* `tools/ci` bits now here.
+Just moving all of *Spec Outline* into new dev doc here for until that all this settles, and moving the project back to dev-line and ready to releases with other focus.
+
+Instead have been working at more elementary user-shell support in [+U-c][1].
+
+
+
+
+[1]: https://github.com/dotmpe/user-conf
+
+## Spec Outline
 
 sh / std-runner
 

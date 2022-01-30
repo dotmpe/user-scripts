@@ -75,7 +75,7 @@ newer_than() # FILE SECONDS
 }
 
 # older-than FILE SECONDS, filemtime must be less-than Now - SECONDS
-older_than()
+older_than ()
 {
   test -n "${1-}" || error "older-than expected path" 1
   test -e "$1" || error "older-than expected existing path" 1
@@ -91,8 +91,9 @@ date_ts()
 }
 
 # XXX: cleanup Time-Fmt arg
-date_epochsec() # File | -Delta-Seconds | @Timestamp | Time-Fmt
+date_epochsec () # File | -Delta-Seconds | @Timestamp | Time-Fmt
 {
+  test $# -eq 1 || return 64
   test -e "$1" && {
       filemtime "$1"
       return $?

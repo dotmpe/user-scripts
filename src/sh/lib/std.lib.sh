@@ -38,8 +38,8 @@ std_iotype_check()
 {
   case "$uname" in
 
-    linux | cygwin_nt-* ) ;;
-    darwin ) ;;
+    Linux | CYGWIN_NT-* ) ;;
+    Darwin ) ;;
 
     * ) error "No stdio-type for $uname" ;;
   esac
@@ -67,7 +67,7 @@ stdio_type()
   test -n "$1" && io=$1 || io=1
   case "$uname" in
 
-    linux | cygwin_nt-* )
+    Linux | CYGWIN_NT-* )
         test -n "${2-}" && pid=$2 || pid=$$
         test -e /proc/$pid/fd/${io} || error "No $uname FD $io"
         if readlink /proc/$pid/fd/$io | grep -q "^pipe:"; then
@@ -79,7 +79,7 @@ stdio_type()
         fi
       ;;
 
-    darwin )
+    Darwin )
 
         test -e /dev/fd/${io} || error "No $uname FD $io"
         if file /dev/fd/$io | grep -q 'named.pipe'; then
