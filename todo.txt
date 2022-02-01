@@ -27,4 +27,6 @@ Also come up with scheme to merge in data from statusdir
 
 And commands to list all sorts of entities for local project or user env (from statusdir). Ie. features, specs, tasks.
 
+2022-01-30 TODO: chould clean-up doc-* branches from all repos, all docs go into github wiki markdown documents subrepo
+
 # ----- -- ---- @_

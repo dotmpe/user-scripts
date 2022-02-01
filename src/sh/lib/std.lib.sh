@@ -3,21 +3,37 @@
 # std: logging and dealing with the shell's stdio decriptors
 
 
-std_lib_load()
+std_lib_load ()
 {
-  true
+  # The deeper get within subshells, the more likely stdio is re-routed from
+  # tty. This test should be performed in the scripts main.
+  true "${std_interactive:=std_term 0}"
+
+  # Result of std_interactive test. Defaulted in init.
+  #STD_INTERACTIVE=[01]
+
+  true "${STD_E:=GE SH CE CN IAE ESOOR}"
+  true "${STD_E_SIGNALS:="HUP INT QUIT ILL TRAP ABRT IOT BUS FPE KILL USR1 SEGV\
+ USER2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM\
+ PROF WINCH IO POLL PWR LOST"}"
+
+  $INIT_LOG debug "" "Loaded std-uc.lib" "$0"
 }
 
-std_lib_init()
+std_lib_init ()
 {
-  test "${std_lib_init-}" = "0" || {
-    test -n "${INIT_LOG-}" || return 109
-    test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
-    test -x "$(which file)" || error "file util required for stdio-type" 1
-    test -n "${LOG-}" && std_lib_log="$LOG" || std_lib_log="$INIT_LOG"
-    $INIT_LOG debug "" "Initialized std.lib" "$0"
-  }
+  test -n "${INIT_LOG-}" || return 109
+  test -x "$(which readlink)" || error "readlink util required for stdio-type" 1
+  test -x "$(which file)" || error "file util required for stdio-type" 1
+  test -n "${LOG-}" && std_lib_log="$LOG" || std_lib_log="$INIT_LOG"
+  test -z "${v-}" || verbosity=$v
+
+  true ${STD_INTERACTIVE:=`eval "$std_interactive"; printf $?`}
+
+  std_uc_env_def
+  $INIT_LOG debug "" "Initialized std.lib" "$0"
 }
+
 
 std_lib_check()
 {
@@ -46,6 +62,28 @@ std_iotype_check()
   return 1
 }
 
+
+std_uc_env_def ()
+{
+  local key
+
+  # Set defaults for status codes
+  # XXX: need better variable name convention if integrated with +U-s
+  # Like STD_* for software defined and _STD_ for user-defined or local script
+  # static variables. See also stdlog discussion on more idiomatic flows.
+
+  for key in ${STD_E} ${STD_E_SIGNALS}
+  do
+    vref=UC_DEFAULT_${key^^}
+    declare $vref=false
+    #declare $vref=true
+    #val=${!vref-} || continue
+    #echo "val='$val'" >&2
+  done
+
+  # nr. should not already be used in context.
+  : "${_E_GAE:=177}" # Generic Argument Error.
+}
 
 # TODO: probably also deprecate, see stderr. Maybe other tuil for this func.
 # stdio type detect - return char t(erminal) f(ile) p(ipe; or named-pipe, ie. FIFO)
@@ -93,6 +131,22 @@ stdio_type()
 
     * ) error "No stdio-type for $uname" ;;
   esac
+}
+
+
+# Test if all [given] stdio are at terminal.
+std_term () # ~ [0] [1] [2]...
+{
+  test $# -gt 0 || set -- 0 1 2
+  test -n "$*" || return ${_E_GAE}
+
+  local tty
+  while test $# -gt 0
+  do
+    test -t $1 || tty=false
+    shift
+  done
+  ${tty:-true}
 }
 
 # Was var_log_key()
@@ -303,3 +357,10 @@ debug()
   std_v 7 && stderr "Debug" "$1" ${2-}
   std_exit ${2-}
 }
+
+std_batch_mode ()
+{
+  test ${STD_BATCH_MODE:-0} -eq 1 -o ${STD_INTERACTIVE:-0} -eq 0
+}
+
+#

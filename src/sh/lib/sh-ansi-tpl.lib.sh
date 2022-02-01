@@ -55,7 +55,7 @@ sh_ansi_tpl_lib_init ()
   : ${_b6:=${BG_MAGENTA:=$(tput ${tset}b 6)}}
   : ${_b7:=${BG_WHITE:=$(tput ${tset}b 7)}}
 
-  : ${REVERSE:=}
+  : ${REVERSE:=$(tput rev)}
   : ${BOLD:=$(tput bold)}
   : ${NORMAL:=$(tput sgr0)}
   if [ "$CS" = "dark" ]

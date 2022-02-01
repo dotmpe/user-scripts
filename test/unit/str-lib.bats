@@ -6,21 +6,26 @@ load ../init
 setup()
 {
   init &&
-  load assert extra &&
-  tmpd &&
-  diag "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)"
+  load stdtest assert extra
+  #tmpd &&
+  #diag "$BATS_TEST_NUMBER. Tmp-Dir: $tmpd ($BATS_TEST_DESCRIPTION)"
 }
 
 teardown()
 {
   cd "$BATS_CWD"
   # remove tmpdir for clean tests
-  test -n "$BATS_ERROR_STATUS" || rm -rf "$tmpd"
+  #test -n "$BATS_ERROR_STATUS" || rm -rf "$tmpd"
 }
 
 
 @test "${base}: mkid" {
-  skip TODO
+
+  mkid "1+2/3|4-a^b\\c_f;e:x@y!z~"
+  { test $? -eq 0 &&
+    test -n "$id" &&
+    assert_equal "$id" '1-2/3-4-a-b\c_f-e:x-y-z-'
+  } || stdfail 1
 }
 
 @test "${base}: mkvid" {

@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e -u -o pipefail
+
 #!/bin/sh
 
 # Alternative to init.sh (for project root dir), XXX: setup for new script subenv
@@ -25,11 +28,12 @@ case "$0" in -* ) ;; * ) # No-Sync
   U_S="$(dirname "$(dirname "$(dirname "$0")" )" )" # No-Sync
 ;; esac # No-Sync
 test -n "${U_S-}" -a -d "${U_S-}" || . $PWD$sh_util_base/parts/env-0-u_s.sh
-test -n "${U_S-}" -a -d "${U_S-}" || return
+: ${status:=exit}
+test -n "${U_S-}" -a -d "${U_S-}" || $status $?
 
 test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
 type sh_include >/dev/null 2>&1 || {
-  . "$sh_tools/parts/include.sh" || return
+  . "$sh_tools/parts/include.sh" || $status $?
 }
 
 #test -n "$1" && {
@@ -41,8 +45,8 @@ type sh_include >/dev/null 2>&1 || {
 # Now include module with `lib_load`
 test -z "${DEBUG-}" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 {
-  . $U_S$sh_src_base/lib.lib.sh || return
-  lib_lib_load && lib_lib_loaded=0 || return
+  . $U_S$sh_src_base/lib.lib.sh || $status $?
+  lib_lib_load && lib_lib_loaded=0 || $status $?
   lib_lib_init
 } ||
   $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1
@@ -59,6 +63,8 @@ test "$init_sh_libs" = "0" || {
 }
 
 # XXX: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
+
+test $# -ge 3 || $status 64
 
 shift 3
 

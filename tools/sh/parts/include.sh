@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
 
+# Show path after resolving inlcude part
 sh_include_path()
 {
   sh_include_dry=1 sh_include "$@"
 }
 
+# List all paths with include parts
 sh_include_path_subdirs()
 {
   local lang suite langs suites
@@ -27,7 +29,7 @@ sh_include_path_basedirs ()
   test "$CWD" = "$(cd $U_S && pwd -P)" && echo "$CWD" || echo "$CWD $U_S"
 }
 
-sh_include_path_dirs() # sh_include_path_subdirs ~ Base-Dirs...
+sh_include_path_dirs () # sh_include_path_subdirs ~ Base-Dirs...
 {
   local basedir subdir
 
@@ -77,17 +79,18 @@ sh_include () # Source first existing ~ Parts...
       return 1
     }
 
-    test -n "${sh_include_dry:-}" &&
-      echo "$sh_include_base/$sh_include_partid.sh" || {
-        # DEBUG "\e[30m# START $sh_include_base/$sh_include_partid.sh\e[0m\n" >&2
-        . "$sh_include_base/$sh_include_partid.sh" && {
-          declare -g "${sh_include_part_var}=0"
-        } || {
-          declare -g "${sh_include_part_var}=$?"
-          $LOG error "" "at sh_include $sh_include_partid" "$?"
-        }
-        # DEBUG "\e[30m# STOP $sh_include_base/$sh_include_partid.sh\e[0m\n" >&2
+    test -n "${sh_include_dry:-}" && {
+      echo "$sh_include_base/$sh_include_partid.sh"
+    } || {
+      # DEBUG "\e[30m# START $sh_include_base/$sh_include_partid.sh\e[0m\n" >&2
+      . "$sh_include_base/$sh_include_partid.sh" && {
+        declare -g "${sh_include_part_var}=0"
+      } || {
+        declare -g "${sh_include_part_var}=$?"
+        $LOG error "" "at sh_include $sh_include_partid" "$?"
       }
+      # DEBUG "\e[30m# STOP $sh_include_base/$sh_include_partid.sh\e[0m\n" >&2
+    }
   done
 }
 
@@ -108,6 +111,7 @@ sh_require ()
   done || $stat 1
 }
 
+# XXX: sh-include-run
 sh_run ()
 {
   local vid; mkvid "$1";

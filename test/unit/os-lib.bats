@@ -7,6 +7,7 @@ init 1 0
 setup()
 {
   lib_load sys os &&
+  lib_init os &&
   load stdtest extra &&
 
   # var/table-1.tab: File with 5 comment lines, 3 rows, 1 empty and 1 blank (ws)
@@ -216,6 +217,25 @@ setup()
   run __test__
   { test_ok_nonempty 10 && test_lines "0	10" "1	11" "2	12"
   } || stdfail
+}
+
+@test "$base: filemtime" {
+  load extra
+  tmpd
+
+  touch $tmpd/filemtime
+  run filemtime $tmpd/filemtime
+  { test_ok_nonempty 1 &&
+    test_lines '[0-9]*[0-9]'
+  } || stdfaill 1
+
+  # XXX: cant really test this without date.lib?
+  lib_load date
+  touch_ts @12345678 $tmpd/filemtime
+  run filemtime $tmpd/filemtime
+  { test_ok_nonempty 1 &&
+    test_lines 12345678
+  } || stdfail 2
 }
 
 # Id: user-script/ test/os-lib-spec.bats

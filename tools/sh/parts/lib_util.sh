@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-# Module to setup env for lib_load; based on particular OS setup
+init_lib_log () # ~ NAME
+{
+  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+    && declare -g ${1}_log="$LOG" || declare -g ${1}_log="$INIT_LOG"
+}
 
 lib_util_lib_load()
 {
@@ -54,3 +58,5 @@ lib_util_deinit()
         unset util_mode LOG_ENV INIT_LOG ||
         unset util_mode LOG_ENV INIT_LOG LOG
 }
+
+#

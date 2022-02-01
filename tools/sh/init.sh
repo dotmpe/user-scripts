@@ -35,8 +35,10 @@ test -n "${u_s_lib-}" || u_s_lib="$U_S$sh_src_base"
 test -n "${scriptname-}" || scriptname="`basename -- "$0"`"
 test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
 
+. $U_S/tools/sh/parts/lib_util.sh
+
 # Now include module with `lib_load`
-test -z "${DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
+test -z "${US_DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
 {
   . $u_s_lib/lib.lib.sh || return $?
   lib_lib_load && lib_lib_loaded=0 || return $?

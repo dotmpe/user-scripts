@@ -137,7 +137,7 @@ sh_env_init()
     }
     sh_isset() # sh:no-stat
     {
-      test "${!1:-unset}" != "unset"
+      test "${!1-unset}" != "unset"
     }
   } || {
     $us_log info shell.lib "Choosing non-bash sh-env-init"

@@ -3,7 +3,7 @@
 : ${HOST:="`hostname -s`"}
 : ${uname:="`uname -s`"}
 
-# TODO: remove me
-. ~/.conf/etc/profile.d/gnu.sh
+
+sh_include env-gnu
 
 #

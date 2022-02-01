@@ -141,13 +141,16 @@ setup()
 # Bash has no aliases or special built-ins reported for sh-mode
 
   run sh_execinfo "ls"
-  { test_ok_nonempty 1 && test_lines "bin:/bin/ls" ;} || stdfail "ls"
+  { test_ok_nonempty 1 && {
+    test_lines "bin:/bin/ls" || test_lines "bin:/usr/bin/ls"
+  } } || stdfail "ls"
+
 
   run sh_execinfo "alias"
-  { test_ok_nonempty 1 && test_lines "bi" ;} || stdfail "alias"
+  { test_ok_nonempty 1 && test_lines "bi"; } || stdfail "alias"
 
   run sh_execinfo "true"
-  { test_ok_nonempty 1 && test_lines "bi" ;} || stdfail "true"
+  { test_ok_nonempty 1 && test_lines "bi"; } || stdfail "true"
 
 # Multiple cmds produce per-cmd output
 

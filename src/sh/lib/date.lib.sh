@@ -27,7 +27,8 @@ date_lib_load()
 
   # Note: what are the proper lengths for month and year? It does not matter that
   # much if below is only used for fmtdate-relative.
-  export _1MONTH=$(( 4 * $_1WEEK ))
+  export _1MONTH=$(( 31 * $_1DAY ))
+  export _1MONTH2=$(( 4 * $_1WEEK ))
   export _3MONTH=$(( 3 * 4 * $_1WEEK ))
   export _6MONTH=$(( 6 * 4 * $_1WEEK ))
   export _9MONTH=$(( 9 * 4 * $_1WEEK ))
@@ -251,15 +252,17 @@ timestamp2touch() # [ FILE | DTSTR ]
   test -n "${1-}" || set -- "@$(date_ts)"
   test -e "$1" && {
     $gdate -r "$1" +"%y%m%d%H%M.%S"
+    return
   } || {
     $gdate -d "$1" +"%y%m%d%H%M.%S"
   }
 }
 
-# Copy mtime from file or set to DATESTR or @TIMESTAMP
-touch_ts() # ( DATESTR | TIMESTAMP | FILE ) FILE
+# Copy mtime from file or set to <DATESTR> or @<TIMESTAMP>
+touch_ts () # ~ ( DATESTR | TIMESTAMP | FILE ) FILE
 {
-  test -n "${2-}" || set -- "$1" "$1"
+  test $# -eq 2 -a -n "${1-}" -a -n "${2-}" || return 64
+
   touch -t "$(timestamp2touch "$1")" "$2"
 }
 

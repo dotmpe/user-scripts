@@ -8,20 +8,14 @@
 lib_lib_load()
 {
   test -n "${default_lib-}" || default_lib="os sys str src shell"
-  # XXX testing default_lib="argv match vc"
 }
 
 lib_lib_init()
 {
-  test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
-    && lib_lib_log="$LOG" || lib_lib_log="$INIT_LOG"
-  test -n "$lib_lib_log" || return 108
-
-  log_key=$scriptname/$$:u-s:\$1:lib:init \
-    $lib_lib_log info "" "Loaded lib.lib" "$0"
+  init_lib_log lib_lib  || return
+  $lib_lib_log info ":lib-init" "Loaded lib.lib" "$0"
 }
 
-lib_lib_log() { test -n "$LOG" && log="$LOG" || log="$lib_lib_log"; }
 
 # Check if loaded or list all loaded libs
 lib_loaded_env_ids() # [Check-Libs...]

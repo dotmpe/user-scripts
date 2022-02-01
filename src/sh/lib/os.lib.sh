@@ -4,7 +4,7 @@
 
 os_lib_load()
 {
-  true
+  test -n "${uname-}" || uname="$(uname -s)"
 }
 
 os_lib_init()
@@ -183,10 +183,10 @@ filemtype() # File..
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    darwin )
+    Darwin )
         file -${flags}I "$1" || return 1
       ;;
-    linux )
+    Linux )
         file -${flags}i "$1" || return 1
       ;;
     * ) error "filemtype: $uname?" 1 ;;
@@ -198,7 +198,7 @@ fileformat()
 {
   local flags= ; file_tool_flags
   case "$uname" in
-    darwin | linux )
+    Darwin | Linux )
         file -${flags} "$1" || return 1
       ;;
     * ) error "fileformat: $uname?" 1 ;;
@@ -208,16 +208,17 @@ fileformat()
 # Use `stat` to get size in bytes
 filesize() # File
 {
+  local flags=- ; file_stat_flags
   while test $# -gt 0
   do
     case "$uname" in
-      darwin )
+      Darwin )
           stat -L -f '%z' "$1" || return 1
         ;;
-      linux | cygwin_nt-6.1 )
+      Linux | CYGWIN_NT-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filesize: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
     esac; shift
   done
 }
@@ -228,13 +229,13 @@ filectime() # File
   while test $# -gt 0
   do
     case "$uname" in
-      darwin )
+      Darwin )
           stat -L -f '%c' "$1" || return 1
         ;;
-      linux | cygwin_nt-6.1 )
+      Linux | CYGWIN_NT-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filectime: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filectime: $uname?" "" 1 ;;
     esac; shift
   done
 }
@@ -242,16 +243,19 @@ filectime() # File
 # Use `stat` to get modification time (in epoch seconds)
 filemtime() # File
 {
+  local flags=- ; file_stat_flags
   while test $# -gt 0
   do
     case "$uname" in
-      darwin )
-          stat -L -f '%m' "$1" || return 1
+      Darwin )
+          trueish "${file_names-}" && pat='%N %m' || pat='%m'
+          stat -f "$pat" $flags "$1" || return 1
         ;;
-      linux | cygwin_nt-6.1 )
-          stat -L -c '%Y' "$1" || return 1
+      Linux | CYGWIN_NT-6.1 )
+          trueish "${file_names-}" && pat='%N %Y' || pat='%Y'
+          stat -c "$pat" $flags "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filemtime: $1?" "" 1 ;;
+      * ) $os_lib_log error "os" "filemtime: $uname?" "" 1 ;;
     esac; shift
   done
 }
@@ -264,6 +268,20 @@ file_update_age ()
 file_modification_age ()
 {
   fmtdate_relative $(filemtime $1) "" ""
+}
+
+file_tool_flags()
+{
+  trueish "${file_names-}" && flags= || flags=b
+  falseish "${file_deref-}" || flags=${flags}L
+}
+
+# FIXME: file-deref=0?
+file_stat_flags()
+{
+  test -n "$flags" || flags=-
+  test ${file_deref:-0} -eq 0 || flags=${flags}L
+  test "$flags" != "-" || flags=
 }
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the
