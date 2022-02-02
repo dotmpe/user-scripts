@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+### Find duplicate libs (on SCRIPTPATH)
+
+. ~/.local/etc/profile.d/_local.sh
+
+. "${U_S:="$HOME/project/user-scripts"}/tools/sh/init-include.sh"
+
+push_scriptname sh-shadows
+sh_include env-strict
+
+. $U_S/tools/sh/init.sh
+$LOG notice "" OK
+#lib_init
+
+shopt -s nullglob
+CWD=$PWD
+
+echo $SCRIPTPATH | tr ':' '\n' | while read path
+do
+
+  cd "$path" && ls *.lib.sh | tr ' ' '\n'
+
+# Sort, inverse unique (show repated lines) and only unique lines of those
+done | sort | uniq -D | uniq
+cd "$CWD"
+unset CWD
+
+$LOG notice "" Done
+
+# Sync: U-S: vim:ft=bash:

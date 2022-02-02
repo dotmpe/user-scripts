@@ -7,10 +7,10 @@ test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
 : "${CWD:="$PWD"}"
 : "${sh_tools:="$CWD/tools/sh"}"
 : "${LOG:="$sh_tools/log.sh"}"
-test "${env_strict_-}" = "0" || {
-  . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
-. "$sh_tools/parts/debug-exit.sh"
-. "$sh_tools/parts/env-0-1-lib-sys.sh"
+
+sh_include env-strict debug-exit \
+  env-0-1-lib-sys env-gnu
+
 : "${ci_tools:="$CWD/tools/ci"}"
 
 ci_env_ts=$($gdate +"%s.%N")

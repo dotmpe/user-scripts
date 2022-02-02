@@ -3,7 +3,11 @@
 # CI suite stage 1.
 
 SCRIPTPATH="$PWD/src/sh/lib:$PWD/commands:$PWD/contexts"
+
+. ${PWD}/tools/sh/init-include.sh
+
 ci_env_= . "./tools/ci/env.sh"
+
 echo "Sourcing $SUITE env (I) <$CWD, $ci_tools>" >&2
 
 # Save times of first env.sh source, because it re-evaluate after stage install

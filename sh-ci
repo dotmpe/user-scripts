@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euETo pipefail
 shopt -s extdebug
 scriptname=sh-ci
 

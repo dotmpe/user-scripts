@@ -19,18 +19,18 @@ type diag >/dev/null 2>&1 || {
     #BATS_TEST_DIAGNOSTICS=1
     #echo "$1" >>"$BATS_OUT"
     # XXX: since Bats 1.2.0?
-    echo "# $1" >&3
+    echo "# $1" >>&3
   }
 }
 
 type TODO >/dev/null 2>&1 || { # tasks:no-check
   TODO() # tasks:no-check
   {
-    test -n "$TODO_IS_FAILURE" && {
-      (
-          test -z "$1" &&
-              "TODO ($BATS_TEST_DESCRIPTION)" || echo "TODO: $1"  # tasks:no-check
-      )>> $BATS_OUT
+    test -n "${TODO_IS_FAILURE-}" && {
+      {
+        test -z "$1" &&
+          "TODO ($BATS_TEST_DESCRIPTION)" || echo "TODO: $1"  # tasks:no-check
+      }>> $BATS_OUT
       exit 1
     } || {
       # Treat as skip
@@ -49,6 +49,13 @@ type stdfail >/dev/null 2>&1 || {
     diag "$1: $status, output(${#lines[@]}) was:"
     printf "  %s\n" "${lines[@]}" >>"$BATS_OUT"
     exit 1
+  }
+}
+
+type pass >/dev/null 2>&1 || {
+  pass() # a noop() variant..
+  {
+    return 0
   }
 }
 

@@ -17,5 +17,20 @@ sh_debug_exit()
   return $exit
 }
 
-test ${debug_exit_off:-${quiet-0}} -eq 1 || trap sh_debug_exit EXIT
+test ! -e ${U_C:=/srv/project-local/user-conf-dev} && {
+
+  trap sh_debug_exit EXIT
+
+} || {
+
+  test ${COLORIZE:-0} -eq 0 || {
+    . ${U_C}/script/ansi-uc.lib.sh
+    ansi_uc_lib_load
+    ansi_uc_lib_init
+  }
+  . ${U_C}/script/bash-uc.lib.sh
+
+  trap bash_uc_errexit ERR
+}
+
 # Id: U-S:

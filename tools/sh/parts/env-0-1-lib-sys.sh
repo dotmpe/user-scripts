@@ -3,7 +3,4 @@
 : ${HOST:="`hostname -s`"}
 : ${uname:="`uname -s`"}
 
-
-sh_include env-gnu
-
 #

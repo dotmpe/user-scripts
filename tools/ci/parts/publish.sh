@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Pub/dist
 
 # XXX: export publish_ts=$(epoch_microtime)
@@ -7,25 +8,8 @@ ci_stages="$ci_stages publish"
 
 ci_announce "Starting ci:publish"
 
-#echo "\
-#--------------------------------------------------------------------------- env"
-#env
-#echo "\
-#------------------------------------------------------------------------- local"
-#set | grep '^[a-z0-9_]*='
-#echo "\
-#-------------------------------------------------------------------------------"
-
-#lib_load git vc
-## XXX: os-htd git-htd vc-htd
-#test -e /srv/scm-git-local || {
-#  sudo mkdir -vp /srv/scm-git-local/ || true
-#  sudo chown travis /srv/scm-git-local || true
-#}
-#set -- "dotmpe/script-mpe"
-#git_scm_find "$1" || {
-#  git_scm_get "$SCM_VND" "$1" || return
-#}
+npm install https://github.com/dotmpe/tap-xunit
+tap-xunit() { $PWD/node_modules/.bin/tap-xunit "$@"; }
 
 sh_include "report-times"
 

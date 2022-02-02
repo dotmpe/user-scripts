@@ -8,7 +8,8 @@ case "$SHELL" in
 
             test $sh_mode -eq 1 &&
                 set -eu ||
-                set -euo pipefail
+                set -euETo pipefail
+                #set -euo pipefail
         ;;
 
     */bin/sh )
