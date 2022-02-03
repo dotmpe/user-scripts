@@ -70,7 +70,7 @@ newer_than() # FILE SECONDS
   test -n "${2-}" || error "newer-than expected delta seconds argument" 1
   test -z "${3-}" || error "newer-than surplus arguments" 1
 
-  fnmatch "@*" "$2" || set -- "$1" "-$2"
+  #fnmatch "@*" "$2" || set -- "$1" "-$2"
   test $(date_epochsec "$2") -lt $(filemtime "$1")
 }
 
@@ -81,7 +81,7 @@ older_than ()
   test -e "$1" || error "older-than expected existing path" 1
   test -n "${2-}" || error "older-than expected delta seconds argument" 1
   test -z "${3-}" || error "older-than surplus arguments" 1
-  fnmatch "@*" "$2" || set -- "$1" "-$2"
+  #fnmatch "@*" "$2" || set -- "$1" "-$2"
   test $(date_epochsec "$2") -gt $(filemtime "$1")
 }
 
@@ -275,17 +275,17 @@ date_iso() # Ts [date|hours|minutes|seconds|ns]
 
 # Print fractional seconds since Unix epoch, like a java timestamp with period.
 #
-epoch_microtime() # [Date-Ref=now]
+epoch_microtime () # [Date-Ref=now]
 {
   date_ "${1-"now"}" +"%s.%N"
 }
 
-date_microtime()
+date_microtime ()
 {
   date_ "${1-"now"}" +"%Y-%m-%d %H:%M:%S.%N"
 }
 
-sec_nomicro()
+sec_nomicro ()
 {
   fnmatch "*.*" "$1" && {
       echo "$1" | cut -d'.' -f1

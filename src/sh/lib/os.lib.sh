@@ -341,7 +341,6 @@ ignore_sigpipe()
   test $r -eq 141 || return $r # For bash: 128+signal where signal=SIGPIPE=13
 }
 
-
 # Sort paths by mtime. Uses foreach-addcol to add mtime column, sort on and then
 # remove again. Listing most-recent modified file name/path first.
 sort_mtimes()
