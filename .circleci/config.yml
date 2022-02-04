@@ -10,7 +10,10 @@ jobs:
     - run: sudo apt-get update && sudo apt-get install -y bc uuid-runtime moreutils curl renameutils virtualenv npm
     - run: sudo npm install -g git+https://github.com/dotmpe/tap-xunit.git
 
+    # Invoke CCI helper.
     - checkout
+
+    # Go move checkout to a default build location ~/project/user-scripts
     - run:
         name: Move checkout
         command: |
