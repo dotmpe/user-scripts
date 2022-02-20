@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euETo pipefail
+shopt -s extdebug
 
 redo-ifchange "$REDO_BASE/.git/index" "$REDO_BASE/.git/HEAD"
 

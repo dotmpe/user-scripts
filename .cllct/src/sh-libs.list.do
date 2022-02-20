@@ -4,9 +4,11 @@ set -euo pipefail
 # XXX: redo-ifchange "sh-files.list"
 
 (
-  U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
+  CWD=$REDO_BASE
+  U_S=$REDO_BASE
 
-  CWD=$REDO_BASE \
+  . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
+
   init_sh_libs="$init_sh_libs match src std" \
   util_mode=boot \
     . $REDO_BASE/tools/sh/init.sh

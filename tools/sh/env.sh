@@ -34,13 +34,13 @@ sh_include \
   env-0-1-lib-sys \
   print-color remove-dupes unique-paths
 
-: "${build_txt:="build.txt"}"
+: "${build_txt:="$CWD/build.txt"}"
 
 test -z "${DEBUG:-}" -a -z "${CI:-}" ||
-  print_yellow "${SUITE} Env parts" "$(suite_from_table "${build_txt}" "Parts" "${SUITE}" 0|tr '\n' ' ')" >&2
+  print_yellow "${SUITE} Env parts <$(suite_from_table "${build_txt}" "Parts" "${SUITE}" 0|tr '\n' ' ')>" >&2
 
 suite_source "${build_txt}" "${SUITE}" 0
 
-test -z "${DEBUG:-}" || print_green "" "Finished sh:env ${SUITE} <$0>"
+test -z "${DEBUG:-}" || print_green "" "Finished sh:env ${SUITE} <$0>" >&2
 
 # Id: user-script/ tools/sh/env.sh

@@ -112,28 +112,53 @@ commands() #
   grep -h '^[a-z_][a-z0-9_]*()' "$@" | cut -d'{' -f1
 }
 
+u_s__help__man_1='
+
+  help [CMD-or-TOPIC] - Print this help, or manual section for topic.
+
+  help <sh-function>
+  help <sh-lib>
+
+  help [<section>] <topic>
+
+  docs [<apropos>]
+  doc [<>]
+
+TODO build topics list
+'
 print_help()
 {
-  echo "Main commands: "
-  echo
-  echo "  update [version] - fetch and hard-reset to latest version"
-  echo "  reinstall"
-  echo
-  echo "  dckr [CMD ARG...] - Execue U-S sub-command in container"
-  echo "  dckr-init - Create docker container"
-  echo "  dckr-reset - Delete docker container"
-  echo "  dckr-shell CMD - Execute login shell at U-S dir"
-  echo "  dckr-cmd CMD - Execute inline command with dckr-shell"
-  echo
-  echo "$u_s_ledge__man_1"
-  echo
-  echo "  help [CMD-or-TOPIC] - Print this help, or manual section for topic."
-  echo
-  echo "Use 'commands' for a full list; or 'topics' to index other manuals."
+  cat <<EOM
+TODO: these are the main script commands of u-s.
+For more on getting help, see 'help help' or 'help doc' for topics.
+
+Main commands: 
+
+  update [version] - fetch and hard-reset to latest version
+  reinstall
+
+$u_s__help__man_1
+
+Docker:
+
+  dckr [CMD ARG...] - Execue U-S sub-command in container
+  dckr-init - Create docker container
+  dckr-reset - Delete docker container
+  dckr-shell CMD - Execute login shell at U-S dir
+  dckr-cmd CMD - Execute inline command with dckr-shell
+
+$u_s_ledge__man_1
+
+EOM
+
 }
 print_usage()
 {
-  echo "Usage: u-s [CMD [ARG...]]"
+  cat <<EOM
+Usage: u-s [CMD [ARG...]]
+Use 'commands' for a full list; 
+TODO: or 'topics' to index other manuals.
+EOM
 }
 
 help() # [Section] [Name]
@@ -168,8 +193,10 @@ main() # [SUBCMD [ARGS...]]
   print_err "info" "" "Initializing shell..."
   # Get SCRIPTPATH and bootstrap libs
   init ||
-    print_err "error" "" "During shell init" "$?" 1
-  print_err "ok" "" "Initialized, booting cmd..."
+    $LOG error ":main" "During shell init" "$?" 1
+  $LOG note "" "Initialized, booting cmd..."
+  # TODO: better stderr/logger printer
+  #print_err "ok" "" "Initialized, booting cmd..."
 
   # Call sub-command shell function
   test $# -gt 0 || set -- usage
@@ -200,6 +227,9 @@ case "$0" in
   set -o errexit # Ash, Bash
   set -o nounset # Ash, Bash
   set -o pipefail # Bash-only
+  set -E
+  set -T
+  shopt -s extdebug
   # XXX: set -o posix
 
   : "${U_S:="$(dirname "$(dirname "$(realpath -- "$0")")")"}"
@@ -215,7 +245,7 @@ case "$0" in
   unset x
   u_s_ledge_lib_load
 
-  set -euo pipefail
+  set -euETo pipefail
   main "$@"
 
 ;; esac # No match for non-login session, or when included in other tools

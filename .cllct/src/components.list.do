@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euETo pipefail
+shopt -s extdebug
 
-redo-ifchange "scm-status"
+redo-ifchange "$REDO_BASE/.meta/cache/scm-status"
 (
-  U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
+  U_S=$REDO_BASE
+  CWD=$REDO_BASE
+  . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
   init_sh_libs="$init_sh_libs build-htd" \
-    unit_mode=boot . $REDO_BASE/tools/sh/init.sh
+    unit_mode=boot . $REDO_BASE/tools/sh/init.sh >&2
 
   scriptname="do:$REDO_PWD:$1"
   cd "$REDO_BASE" && build_components_id_path_map >"$REDO_PWD/$3"

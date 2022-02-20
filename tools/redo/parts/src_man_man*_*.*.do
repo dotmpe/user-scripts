@@ -2,7 +2,7 @@
 # Created: 2020-08-31
 set -euo pipefail
 
-build-ifchange $U_S/commands/u_s-man.lib.sh $U_S_MAN $_ENV || return
+build-ifchange $U_S_MAN || return
 lib_require u_s-man || return
 local b=$( echo $1 | cut -d/ -f1,2,3 )
 mkdir -p $b
