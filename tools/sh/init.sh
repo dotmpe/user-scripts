@@ -36,7 +36,6 @@ test -n "${scriptname-}" || scriptname="`basename -- "$0"`"
 test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
 
 # Now include module with `lib_load`
-test -z "${DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
 {
   . $u_s_lib/lib.lib.sh || return $?
   lib_lib_load && lib_lib_loaded=0 || return $?
