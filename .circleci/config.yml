@@ -10,6 +10,7 @@ jobs:
     # Invoke CCI helper.
     - checkout
 
+    # Go move checkout to a default build location ~/project/user-scripts
     - run:
         name: Setup
         command: |

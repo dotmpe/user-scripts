@@ -79,41 +79,45 @@ topics () # [U_S] ~
 # TODO: print topic for section properly, sort content into sections. #MJfc
 print_topic ()
 {
-  test $# -ge 1 -a $# -le 2 || return 99
+  test $# -ge 1 -a $# -le 2 || return 64
 
-  local name= section=
+  local name="$1" section
 
-  test -n "$2" && {
-    name=$2 section=$1
+  test -n "${2:-}" && {
+    section=$1 name=$2
     set -- $U_S/src/man/$1/$2.md
-
   } || {
     for section in 1 2 3 4 5 6 7 8
     do
-      test -e $U_S/src/man/$section/$1.md || continue
       set -- $U_S/src/man/$section/$1.md
-      name=$1
+      test -e $1 || continue
       break
     done
+    test -e "$1" || set -- $U_S/src/man/$name.md
+    test -e "$1" || set -- $name
   }
 
-  test -e "$1" || set -- $U_S/src/man/$name.md
-  test -e "$1" || $LOG error "" "Found no entry" "$1" 1
+  test -e "$1" || {
+    $LOG error "" "Found no entry" "$1" 1
+    print_usage
+    return 1
+  }
 
   #/usr/bin/groff -Tps -mandoc
 
-  test -x "$(which pandoc)" && {
-  case "$uname" in
-
-    darwin ) pandoc -s -f markdown -t man "$@" | groff -T utf8 -man | less
-      ;;
-    linux ) pandoc -s -f markdown -t man "$@"
-      ;;
-    * ) $LOG "error" "" "uname" "$uname"
-      ;;
-  esac
-  } || {
+  test -x "$(which pandoc)" || {
     $LOG "warn" "" "Install pandoc for source-man view"
     cat "$@"
+    return
   }
+  case "$uname" in
+
+    Darwin ) {
+      pandoc -s -f markdown -t man "$@" || return
+    } | groff -T utf8 -man | less ;;
+
+    Linux ) pandoc -s -f markdown -t man "$@" || return ;;
+
+    * ) $LOG "error" "" "Unexpected uname" "$uname" 1 ;;
+  esac
 }

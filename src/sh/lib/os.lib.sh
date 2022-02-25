@@ -119,18 +119,21 @@ basenames () # [exts=] ~ [ .EXTS ] PATH...
 filenamext() # Name..
 {
   test $# -gt 0 || return
-  while test $# -gt 0; do
+  while test $# -gt 0
+  do
     basename -- "$1"
-    shift; done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/'
+    shift
+  done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/' || true
 }
 
 # Return basename for one file, using filenamext to extract extension.
 # See basenames for multiple args, and pathname to preserve (relative) directory
 # elements for name.
-filestripext() # Name
+filestripext () # ~ <Name>
 {
   ext="$(filenamext "$1")"
-  basename -- "$1" ".$ext"
+  test -n "$ext" && set -- "$1" ".$ext"
+  basename -- "$@"
 }
 
 # Check wether name has extension, return 0 or 1
@@ -145,7 +148,7 @@ fileisext() # Name Exts..
   return 1
 }
 
-filename_baseid()
+filename_baseid () # ~ <Path-Name>
 {
   basename="$(filestripext "$1")"
   mkid "$basename" '' '_'

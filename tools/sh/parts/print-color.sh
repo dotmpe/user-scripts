@@ -28,23 +28,26 @@ case "${TERM:-"dumb"}" in
 
 esac
 
-print_red() # Key Msg
+# Print ansi formatted message
+print_red () # ~ <Key> <Msg>
 {
   test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_red" "$c_default" "$1" "$c_red" "$c_default" "$2" "$c_normal"
 }
 
-print_yellow() # Key Msg
+print_yellow () # ~ <Key> <Msg>
 {
   test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_yellow" "$c_default" "$1" "$c_yellow" "$c_default" "$2" "$c_normal"
 }
 
-print_green() # Key Msg
+print_green () # ~ <Key> <Msg>
 {
   test $# -eq 2 || return 98
   test -n "$1" || set -- "$scriptname" "$2"
   printf "%s[%s%s%s] %s%s%s\n" "$c_green" "$c_default" "$1" "$c_green" "$c_default" "$2" "$c_normal"
 }
+
+#

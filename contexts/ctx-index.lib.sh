@@ -111,7 +111,7 @@ files_index_fetch () # Action Index Generator
       # Update mtime
       cur_mtime=@$(stat -c '%Y' "$src")
       test ${mtime:1} -eq ${cur_mtime:1} || {
-        $LOG error "" "mtime mismatch '$src'" "$mtime <> $cur_mtime"
+        $LOG error "" "mtime mismatch '$src'" "$mtime != $cur_mtime"
         echo "$dtime $cur_mtime $ctime $src $rest"
       }
     done <"$index"

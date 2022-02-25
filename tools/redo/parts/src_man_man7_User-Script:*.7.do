@@ -3,8 +3,8 @@
 set -euo pipefail
 
 local topic=$(echo "${1:13}" | cut -d. -f1) section=7
-build-ifchange $U_S/commands/u_s-man.lib.sh $U_S_MAN $_ENV \
-    src/md/man/$topic-overview.md || return
+build-ifchange $U_S_MAN src/md/man/$topic-overview.md || return
+
 lib_require u_s-man || return
 mkdir -p src/man/man7
 { build_manual_page src/md/man/$topic-overview.md >"$3"

@@ -1,4 +1,4 @@
-# Print log-like to stderr
+# TODO: deprecate. Print log-like to stderr
 print_err ()
 {
   test -n "${LOG:-}" -a -x "${LOG:-}" && {

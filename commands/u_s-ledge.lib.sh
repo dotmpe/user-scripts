@@ -133,7 +133,8 @@ ledge_foreach()
       test "${tag:0:${#PROJ_LBL}}" = "$PROJ_LBL" -o \
         ${foreach_allprojects:-0} -eq 1
     } || {
-      print_err "Ignoring other project or non-project tag" "$tag"
+      $LOG "warn" ":ledge-foreach" \
+        "Ignoring other project or non-project tag" "$tag"
       continue # ignore other projects
     }
     ledge_tovolume $tag || return
@@ -174,7 +175,8 @@ ledge_do()
       ;;
 
     logs )
-        print_err "Logs on ledge for ${tag:$(( 1 + ${#PROJ_LBL} ))}" "$PROJ_LBL"
+        $LOG notice ":ledge-do:logs" \
+          "Logs on ledge for ${tag:$(( 1 + ${#PROJ_LBL} ))}" "$PROJ_LBL"
         ${dckr_pref-}docker run -t --rm \
           --volumes-from ledge \
           busybox find /statusdir/log -iname '*.list' -type f |
@@ -183,7 +185,7 @@ ledge_do()
 
     files )
       #${foreach_allprojects:-0} -eq 1
-      #print_err "Files on ledge for ${tag:$(( 1 + ${#PROJ_LBL} ))}" "$PROJ_LBL"
+      #$LOG notices ":ledge-do:files" "Files on ledge for ${tag:$(( 1 + ${#PROJ_LBL} ))}" "$PROJ_LBL"
 
       for file in $( ${dckr_pref-}docker run -t --rm \
           --volumes-from ledge busybox \

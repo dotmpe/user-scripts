@@ -12,7 +12,9 @@ sh_debug_exit()
       echo "In 0:$0 base:${base-} scriptname:${scriptname-}"
     } >&2
     test "${SUITE-}" = "CI" || return $exit
-    #sleep 5 # Allow for buffers to clear? [Travis]
+    # Allow for buffers, terminal connections of CI session to clear?
+    # Had some troubles at [Travis]
+    sleep 5
   }
   return $exit
 }
