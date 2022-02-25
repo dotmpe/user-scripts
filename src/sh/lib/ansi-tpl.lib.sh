@@ -2,7 +2,7 @@
 
 ### Colored and styled prompt, terminal escape codes
 
-sh_ansi_tpl_lib_load ()
+ansi_tpl_lib_load ()
 {
   test -n "${ncolors-}" || ncolors=$(tput colors)
 
@@ -11,40 +11,43 @@ sh_ansi_tpl_lib_load ()
 
   test -n "${CS-}" || CS=dark
 
-  test $COLORIZE -eq 1 || ansi_uc_env_def
+  test $COLORIZE -eq 1 || ansi_tpl_env_def
 }
 
-sh_ansi_tpl_env_def ()
+ansi_tpl_env_def ()
 {
-  declare \
-    _f0= BLACK= _b0= BG_BLACK= \
-    _f0= RED= _b0= BG_RED= \
-    _f0= GREEN= _b0= BG_GREEN= \
-    _f0= YELLOW= _b0= BG_YELLOW= \
-    _f0= BLUE= _b0= BG_BLUE= \
-    _f0= CYAN= _b0= BG_CYAN= \
-    _f0= MAGENTA= _b0= BG_MAGENTA= \
-    _f0= WHITE= _b0= BG_WHITE= \
+  declare -g \
+    _f0= BLACK=   _b0= BG_BLACK= \
+    _f1= RED=     _b1= BG_RED= \
+    _f2= GREEN=   _b2= BG_GREEN= \
+    _f3= YELLOW=  _b3= BG_YELLOW= \
+    _f4= BLUE=    _b4= BG_BLUE= \
+    _f5= CYAN=    _b5= BG_CYAN= \
+    _f6= MAGENTA= _b6= BG_MAGENTA= \
+    _f7= WHITE=   _b7= BG_WHITE= \
     BOLD= REVERSE= NORMAL=
 }
 
-sh_ansi_tpl_lib_init ()
+ansi_tpl_lib_init ()
 {
+  test ${COLORIZE:-1} -eq 1 || {
+    declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def
+    return
+  }
+
   local tset
+  case "$TERM" in xterm | screen ) ;; ( * ) false ;; esac && tset=set ||
+  case "$TERM" in xterm-256color | screen-256color ) ;; ( * ) false ;; esac &&
   case ${ncolors:-0} in
     (   8 ) tset=set ;;
     ( 256 ) tset=seta ;;
-    (   * ) bash_env_exists _f0 || ansi_uc_env_def; return ;;
-  esac
-
-  : ${_f0:=${BLACK:=$(tput ${tset}f 0)}}
-  : ${_f1:=${RED:=$(tput ${tset}f 1)}}
-  : ${_f2:=${GREEN:=$(tput ${tset}f 2)}}
-  : ${_f3:=${YELLOW:=$(tput ${tset}f 3)}}
-  : ${_f4:=${BLUE:=$(tput ${tset}f 4)}}
-  : ${_f5:=${CYAN:=$(tput ${tset}f 5)}}
-  : ${_f6:=${MAGENTA:=$(tput ${tset}f 6)}}
-  : ${_f7:=${WHITE:=$(tput ${tset}f 7)}}
+    (   * ) bash_env_exists _f0 || ansi_tpl_env_def; return ;;
+  esac || {
+    # If no color support found, simply set vars and return zero-status.
+    # Maybe want to fail trying to init ANSI.lib later...
+    #bash_env_exists _f0 || ansi_tpl_env_def; return;
+    declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def; return;
+  }
 
   : ${_b0:=${BG_BLACK:=$(tput ${tset}b 0)}}
   : ${_b1:=${BG_RED:=$(tput ${tset}b 1)}}
@@ -72,7 +75,10 @@ sh_ansi_tpl_lib_init ()
   AOSEP="$SEP<$NORMAL"
   APSEP="$SEP>$NORMAL"
   PAT="$SEP@$NORMAL"
+}
 
+ansi_tpl_aliases ()
+{
   if test "$COLORIZE" = "1"
   then
 
@@ -89,7 +95,10 @@ sh_ansi_tpl_lib_init ()
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
   fi
+}
 
+ansi_tpl_less ()
+{
   ##LESS man page colors
   # Purple section titles and alinea leader IDs
   export LESS_TERMCAP_md=$'\E[01;35m'
@@ -104,3 +113,5 @@ sh_ansi_tpl_lib_init ()
   # Red?
   export LESS_TERMCAP_mb=$'\E[01;31m'
 }
+
+# Id: Us:

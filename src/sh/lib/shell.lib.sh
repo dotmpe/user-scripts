@@ -2,25 +2,21 @@
 
 shell_lib_load()
 {
-  lib_assert os sys str || return
-
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="$HOME/.statusdir/shell"
 
   # Set defaults for required vars
   #test -n "$ENV_NAME" || ENV_NAME=development
 
+  # XXX: env-name, cs, base and sh-id....
   test -n "${MPE_ENV_NAME-}" || MPE_ENV_NAME=dev
   test -n "${CS-}" || CS=dark
   test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
-  test -n "${SH_SID-}" || SH_SID=$(get_uuid)
 
   # Shell Name depends on env SHELL
   test -h $SHELL &&
     SHELL_NAME=$(basename -- "$(readlink -- "$SHELL")") ||
     SHELL_NAME="$(basename -- "$SHELL")"
-
-  declare -g -A shell_cached
 }
 
 # Init env by testing for key vars, set <SHELL>_SH=[01] based on name,
@@ -39,19 +35,13 @@ shell_lib_load()
 # and also <doc/shell-builtins.tab>
 shell_lib_init()
 {
-  lib_assert log || return
+  lib_assert os sys str log || return
 
   test -n "${SH_SID-}" || SH_SID=$(get_uuid) || return
 
-  # Try to figure out what we are.. and how to keep it Bourne Shell compatible
-  test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
-  test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
-  test "$SHELL_NAME" = "ksh" && KORN_SHELL=1 || KORN_SHELL=0
-  test "$SHELL_NAME" = "dash" && D_A_SHELL=1 || D_A_SHELL=0
-  test "$SHELL_NAME" = "ash" && A_SHELL=1 || A_SHELL=0
-  test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
+  shell_init_mode
 
-  local us_log=; req_init_log || return
+  req_init_log us || return
   local log_key=$scriptname/$$:u-s:shell:lib:init
 
   log_key=$log_key $us_log debug "" "Running final shell.lib init"
@@ -70,21 +60,42 @@ shell_check () #
       -o 1 -eq $BA_SHELL || {
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
-      echo "Found typeset cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
-      ls -la $(which $SHELL_NAME)
-      type typeset
-      echo SHELL:$SHELL
+      {
+        echo "Found typeset cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
+        ls -la $(which $SHELL_NAME)
+        type typeset
+        echo SHELL:$SHELL
+        echo END
+      } >&2
       return 1
     }
   } || true
 }
 
+shell_init_mode ()
+{
+  # Try to figure out what we are.. and how to keep it Bourne Shell compatible
+  test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
+  test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
+  test "$SHELL_NAME" = "ksh" && KORN_SHELL=1 || KORN_SHELL=0
+  test "$SHELL_NAME" = "dash" && D_A_SHELL=1 || D_A_SHELL=0
+  test "$SHELL_NAME" = "ash" && A_SHELL=1 || A_SHELL=0
+  test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
+}
+
+# If running in /bin/sh 'mode', still detect which shell we are dealing with.
+# Will set IS_<SHELL>_SH=1 based on the type signature of a select few
+# execnames. See shell-detect-sh.
+# Then will set IS_<SHELL>=1 for bash, dash, ash or Heirloom sh.
+# TODO: broather support if possible. TOTEST on different shells
 sh_init_mode ()
 {
   IS_BASH_SH=0
   IS_DASH_SH=0
   IS_BB_SH=0
   IS_HEIR_SH=0
+
+  # Nothing to test if SHELL_NAME is not given as 'ash'
   test "$SHELL_NAME" != "sh" || {
     shell_detect_sh
   }
@@ -274,28 +285,4 @@ record_env_diff_keys()
   comm -23 "$SD_SHELL_DIR/$2" "$SD_SHELL_DIR/$1"
 }
 
-# Run command once, return cached value for every subsequent invocation.
-shell_cached () # Cmd Args...
-{
-  local vid; mkvid "$*"
-  test "${shell_cached["$vid"]+isset}" || shell_cached["$vid"]="$("$@")"
-  echo "${shell_cached["$vid"]}"
-}
-
-# Like cache but track time of last execution as well and re-run on invocation
-# if certain time has passed.
-shell_max_age () # Seconds Cmd Args...
-{
-  test $# -gt 1 || return 98
-  local refresh_time=$(( $(date_epochsec) - $1 ))
-  shift 1
-  local vid; mkvid "$*"
-  test "${shell_cached["$vid"]+isset}" -a \
-      ${shell_cache_time["$vid"]:-0} -gt $refresh_time || {
-    shell_cached["$vid"]="$("$@")"
-    shell_cache_time["$vid"]=$(date_epochsec)
-  }
-  echo "${shell_cached["$vid"]}"
-}
-
-#
+# Id: U-s

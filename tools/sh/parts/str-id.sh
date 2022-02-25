@@ -8,7 +8,7 @@
 # Allowed non-hyhen/alphanumeric ouput chars is customized with env 'c'
 #
 # mkid STR '-' '\.\\\/:_'
-mkid() # Str Extra-Chars Substitute-Char
+mkid () # ~ Str Extra-Chars Substitute-Char
 {
   #test -n "$1" || error "mkid argument expected" 1
   local s="${2-}" c="${3-}"

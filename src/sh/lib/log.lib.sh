@@ -7,24 +7,34 @@ log_lib_load ()
   test -n "${LOG-}" || LOG=${U_S}/tools/sh/log.sh
 }
 
-log_lib_init ()
+log_lib_init () # ~ [<Name=us>]
 {
-  test -n "${us_log-}" || {
+  test $# -le 1 || return 177
+  test -n "${1:-}" || set -- us
+
+  local lv=${1}_log
+  test -n "${!lv-}" || {
     test -n "${LOG-}" || return
     test \( \
         "$(type -t "$LOG")" = "function" -o \
-        -x "$(which "$LOG")" -o -x "$LOG" \
+        -x "$LOG" -o -x "$(which "$LOG")" \
       \) || return
-    us_log="$LOG"
+
+    #declare -g $lv="$LOG"
+    eval $lv="$LOG"
   }
 }
 
 req_log ()
 {
-  test -n "$us_log" || exit 111 # NOTE: sanity
+  test $# -le 1 || return 177
+  test -n "${1:-}" || set -- us
+
+  local lv=${1}_log
+  test -n "${!lv}" || return 111 # NOTE: sanity
 }
 
 req_init_log ()
 {
-  log_lib_init && req_log
+  log_lib_init "$@" && req_log "$@"
 }
