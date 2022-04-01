@@ -18,13 +18,14 @@ list_functions() # Sh-File
   local file=$1 grep
   test ${list_functions_liberal:-0} -eq 0 &&
     grep="A-Za-z0-9_\/-" || grep="A-Za-z0-9@~+%^,\.:_\/-"
-  eval "echo \"$(try_value list_functions_head)\""
+  # XXX: list-functions head/tail hooks
+  #eval "echo \"$(try_value list_functions_head)\""
   test ${list_functions_scriptname:-0} -eq 1 && {
     grep '^\s*\(function\s\s*\)\?['"$grep"']\+\s*()' $1 | sed "s#^#$1 #"
   } || {
     grep '^\s*\(function\s\s*\)\?['"$grep"']\+\s*()' $1
   }
-  eval "echo \"$(try_value list_functions_tail)\""
+  #eval "echo \"$(try_value list_functions_tail)\""
   return 0
 }
 

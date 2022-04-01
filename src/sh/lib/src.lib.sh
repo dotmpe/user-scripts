@@ -396,3 +396,6 @@ expand_line() # Src-File Line Include-File
   file_truncate_lines "$1" "$(( $2 - 1 ))" "$2" &&
   file_insert_at $1:$(( $2 - 1 )) "$(cat "$3")"
 }
+
+
+# Id: U-S src.lib.sh

@@ -45,7 +45,7 @@ build_lib_func_deps_list "$funcname" "$path" >"$REDO_PWD/$3" \
   2>"$REDO_PWD/$1.stderr" || r=$?
 
 test -z "${r-}" || {
-  $LOG error "" "Failed, see" "$1.stderr"
+  $LOG error "" "Failed ($r), see" "$1.stderr"
   exit $r
 }
 

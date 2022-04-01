@@ -29,7 +29,7 @@ sh_env_end_ts=$($gdate +"%s.%N")
 
 test -n "${ci_util_:-}" || {
 
-  . "$ci_tools/util.sh"
+  . "${ci_tools:="$CWD/tools/ci"}/util.sh"
 }
 
 : ${INIT_LOG:="$CWD/tools/sh/log.sh"}

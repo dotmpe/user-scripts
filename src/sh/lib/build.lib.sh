@@ -3,6 +3,7 @@
 build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
 {
   lib_require date match $package_build_tool || return
+
   local var=${package_build_tool}_commands cmd
   test -n "${!var-}" || {
     $LOG error "" "No build tool commands" "$package_build_tool" 1
@@ -245,6 +246,15 @@ list_scripts () # [Generator] [Newer-Than]
 build_chatty () # Level
 {
   test ${quiet:-$(test $verbosity -lt ${1:-3} && printf 1 || printf 0)} -eq 0
+}
+
+build_copy_changed ()
+{
+  { test -e "$2" && diff -bqr "$1" "$2" >/dev/null
+  } || {
+    cp "$1" "$2"
+    echo "Updated <$2>" >&2
+  }
 }
 
 #
