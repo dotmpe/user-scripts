@@ -15,9 +15,15 @@ true "${DEBUG:=${REDO_DEBUG-${DEBUG-}}}"
 export verbosity="${verbosity:=${v:-3}}"
 export quiet="${quiet:=${q:-0}}"
 
-. "$U_S/tools/sh/parts/include.sh" || return
+type sh_include >/dev/null 2>/dev/null || {
+  . "$U_S/tools/sh/parts/include.sh" || return
+}
 
-. "${CWD:="$PWD"}/tools/ci/env.sh" || return
+test -e "${CWD:="$PWD"}/tools/ci/env.sh" && {
+  . "${CWD:="$PWD"}/tools/ci/env.sh" || return
+} || {
+  . "$U_S/tools/ci/env.sh" || return
+}
 
 $LOG "info" "" "Started redo env" "${CWD}/tools/redo/env.sh"
 # Id: U-s
