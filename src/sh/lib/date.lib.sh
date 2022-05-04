@@ -163,7 +163,7 @@ fmtdate_relative() # [ Previous-Timestamp | ""] [Delta] [suffix=" ago"]
     test -n "${2-}" || set -- "$1" "$(( $(date +%s) - $1 ))" "${3-}"
   } || {
     # FIXME:
-    test -n "$2" || return
+    test -n "${2-}" || return
     test -n "$2" || set -- "$(( $(date +%s) - $2 ))" "$2" "${3-}"
   }
     # Set default suffix
@@ -258,7 +258,7 @@ timestamp2touch() # [ FILE | DTSTR ]
   }
 }
 
-# Copy mtime from file or set to <DATESTR> or @<TIMESTAMP>
+# Copy mtime from file or set to DATESTR or @TIMESTAMP
 touch_ts () # ~ ( DATESTR | TIMESTAMP | FILE ) FILE
 {
   test $# -eq 2 -a -n "${1-}" -a -n "${2-}" || return 64
@@ -276,8 +276,7 @@ date_iso() # Ts [date|hours|minutes|seconds|ns]
   }
 }
 
-# Print fractional seconds since Unix epoch, like a java timestamp with period.
-#
+# Print fractional seconds since Unix epoch
 epoch_microtime () # [Date-Ref=now]
 {
   date_ "${1-"now"}" +"%s.%N"
