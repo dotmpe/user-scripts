@@ -147,18 +147,27 @@ req_vars()
 sys_tmp_init () # DIR
 {
   local tag=:sys.lib:tmp-init
-  test -n "${RAM_TMPDIR-}" || {
-        # Set to Linux ramfs path
-        test -w "/dev/shm" && {
-          RAM_TMPDIR=/dev/shm/tmp
-          test -d "$RAM_TMPDIR" || mkdir $RAM_TMPDIR
-        } || {
-          test -d "$RAM_TMPDIR" && {
-            $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"
-          } ||
-            $sys_lib_log warn $tag "Cannot prepare RAM-TmpDir" "$RAM_TMPDIR"
-        }
-      }
+  test -n "${RAM_TMPDIR:-}" || {
+    # Set to Linux ramfs path
+    test -d "/dev/shm" && {
+      RAM_TMPDIR=/dev/shm/tmp
+    }
+  }
+
+  test -z "${RAM_TMPDIR:-}" || {
+    # XXX: find existing parent dir
+    _RAM_TMPDIR="$(set -- $RAM_TMPDIR; while test ! -e "$1"; do set -- $(dirname "$1"); done; echo "$1")"
+    test -w "$_RAM_TMPDIR" && {
+      test -d "$RAM_TMPDIR" || mkdir $RAM_TMPDIR
+    } || {
+      test -d "$RAM_TMPDIR" && {
+        $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"
+      } ||
+        $sys_lib_log warn $tag "Cannot prepare RAM-TmpDir" "$RAM_TMPDIR"
+    }
+    unset _RAM_TMPDIR
+  }
+
   test -e "${1-}" -o -z "${RAM_TMPDIR-}" || set -- "$RAM_TMPDIR"
   test -e "${1-}" -o -z "${TMPDIR-}" || set -- "$TMPDIR"
   test -n "${1-}" && {
