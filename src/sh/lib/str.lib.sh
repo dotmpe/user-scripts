@@ -48,9 +48,9 @@ mkid() # Str Extra-Chars Substitute-Char
   test -n "$s" || s=-
   test -n "${upper-}" && {
     trueish "${upper-}" && {
-      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'a-z' 'A-Z')
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr '[:lower:]' '[:upper:]')
     } || {
-      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr 'A-Z' 'a-z')
+      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr '[:upper:]' '[:lower:]')
     }
   } || {
     id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" )
@@ -62,11 +62,11 @@ mkvid() # STR
 {
   test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
   trueish "${upper-}" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr '[:lower:]' '[:upper:]')
     return
   }
   falseish "${upper-}" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
+    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr '[:upper:]' '[:lower:]')
     return
   }
   vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')

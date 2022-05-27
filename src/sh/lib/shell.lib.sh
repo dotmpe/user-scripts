@@ -46,7 +46,7 @@ shell_lib_init()
 
   log_key=$log_key $us_log debug "" "Running final shell.lib init"
 
-  shell_check && sh_init_mode && sh_env_init &&
+  shell_check && sh_init_mode && shell_def &&
   log_key=$log_key $us_log info "" "Loaded shell.lib" "$0"
 }
 
@@ -132,7 +132,7 @@ shell_detect_sh ()
 
 
 # Define sh-env. to get plain env var name/value list, including local vars
-sh_env_init()
+shell_def ()
 {
   local us_log=; req_init_log || return
 
