@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Sys: dealing with vars, functions, env.
+## Sys: dealing with vars, functions, env.
 
 sys_lib_load()
 {
@@ -469,31 +469,6 @@ work_env()
     LENV="$LENV,pyvenv"
   }
   printf -- "$LENV"
-}
-
-my_env_git_bash_prompt()
-{
-  LENV="$(work_env)"
-  [[ $1 != 0 ]] && ERRMSG="[$1]" || ERRMSG=
-  case "$TERM" in
-    screen ) TITLE="\033k$(vc.sh screen)\033\\ " ;;
-    ansi ) TITLE="\[\033]0;$(vc.sh screen)\007\]" ;;
-    xterm* ) TITLE="\[\033]0;$(vc.sh screen)\007\]" ;;
-  esac
-  export PS1="$TITLE$RED$ERRMSG$NORMAL\n$MAGENTA\# $NORMAL$AOSEP\u$PAT\h$PSEP$($HOME/bin/vc.sh ps1)$LENV$APSEP\n$ISEP $TSEP\t $CYAN\$ $NORMAL"
-}
-
-
-# Update function for the GNU Screen title
-# http://code-and-hacks.peculier.com/bash/setting-terminal-title-in-gnu-screen/
-settitle()
-{
-  if [ -n "$STY" ] ; then         # We are in a screen session
-    printf "\033k%s\033\\" "$@"
-    screen -X eval "at \\# title $@" "shelltitle \"$@\""
-  else
-    printf "\033]0;%s\007" "$@"
-  fi
 }
 
 # Return non-zero if default was set, or present value does not match default
