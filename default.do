@@ -25,9 +25,6 @@ default_do_main ()
   # XXX:
   CWD=$PWD
   #. "${_LOCAL:="${UCONF:-"$HOME/.conf"}/etc/profile.d/_local.sh"}" || return
-  COMPONENTS_TXT=$CWD/.meta/stat/index/components.list
-  COMPONENTS_TXT_BUILD=$CWD/.meta/cache/components.list
-
   export UC_QUIET=0
   export v=${v:-3}
   export UC_LOG_LEVEL=$v
@@ -38,9 +35,6 @@ default_do_main ()
   ENV_NAME=redo
 
   . "${CWD}/tools/redo/env.sh" || return
-
-  build_main_targets="$COMPONENTS_TXT_BUILD $build_all_targets"
-  build_all_targets="$build_all_targets"
 
   #ENV_NAME=redo . ./.meta/package/envs/main.sh || return
 
@@ -96,22 +90,17 @@ default_do_main ()
           $LOG alert ":build-component" \
             "Cannot build table from table" "$components_txt" 1
 
-        test "$components_txt_build" = "1" && {
-          build-ifchange $components_txt || return
-        } || {
-          test "$components_txt_build" = "0" || {
-            build-ifchange $components_txt_build || return
-          }
-        }
+        build-ifchange $components_txt || return
 
-        test -s "$components_txt" ||
+        test -s "${components_txt-}" || {
           $LOG alert ":build-component:$1" \
-            "Cannot build from table w/o table" "$components_txt" 1
+            "Cannot build from table w/o table" "${components_txt-null}" 1
+          return 1
+        }
 
         build_component_exists "$1" && {
           $LOG "notice" ":exists:$1" "Found component " "$1"
-          lib_require match &&
-          build_component "$@"
+          build_components "$1" "" "$@"
           return $?
         } || true
 

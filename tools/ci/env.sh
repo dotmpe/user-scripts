@@ -2,11 +2,19 @@
 
 # Boilerplate env for CI scripts
 
-test -z "${ci_env_:-}" && ci_env_=1 || exit 98 # Recursion
+test -z "${ci_env_:-}" && ci_env_=1 || return 96 # Recursion
 
 : "${CWD:="$PWD"}"
-: "${sh_tools:="$CWD/tools/sh"}"
+
+test -e "${CWD:="$PWD"}/tools/sh/env.sh" &&
+  : "${sh_tools:="$CWD/tools/sh"}" ||
+  : "${sh_tools:="$U_S/tools/sh"}"
+
 : "${LOG:="$sh_tools/log.sh"}"
+
+type sh_include >/dev/null 2>/dev/null || {
+  . "$U_S/tools/sh/parts/include.sh" || return
+}
 
 sh_include env-strict debug-exit \
   env-0-1-lib-sys env-gnu
@@ -23,7 +31,11 @@ ci_stages="${ci_stages:-} ci_env"
 sh_env_ts=$($gdate +"%s.%N")
 ci_stages="$ci_stages sh_env"
 
-. "${CWD}/tools/sh/env.sh"
+test -e "${CWD:="$PWD"}/tools/sh/env.sh" && {
+  . "${CWD:="$PWD"}/tools/sh/env.sh" || return
+} || {
+  . "$U_S/tools/sh/env.sh" || return
+}
 
 sh_env_end_ts=$($gdate +"%s.%N")
 

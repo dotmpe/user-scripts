@@ -53,6 +53,11 @@ FROM Files JOIN Deps on Files.rowid = Deps.source WHERE Files.is_generated=1;
   }
 }
 
+redo ()
+{
+  command redo ${redo_opts-} "$@"
+}
+
 redo-keep-going()
 {
   local r=$?

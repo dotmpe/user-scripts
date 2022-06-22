@@ -5,7 +5,10 @@
 suite_from_table () # ~ <Table> <Name-Column> <Order-Column> <Order-Prefix>
 {
   test $# -ge 3 -a $# -le 4 || return 98
-  test -f "${1:-}" || $LOG error "" "Expected table" "PWD=$PWD 1=$1" 98
+  test -f "${1:-}" || {
+    $LOG error "" "Expected table" "PWD=$PWD 1=$1"
+    return 98
+  }
 
   local tab="$1" name="$2" order="$3" pref=${4:-}; shift
   local parts_w= offset= end=

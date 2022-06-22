@@ -367,7 +367,7 @@ lookup_path_shadows() # VAR-NAME LOCAL
   return $r
 }
 
-cwd_lookup_path () # [ Local-Paths... ]
+cwd_lookup_path () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking for file(s) or path(s)
 {
   local cwd=$PWD sub
   until test $cwd = /
@@ -379,6 +379,7 @@ cwd_lookup_path () # [ Local-Paths... ]
     cwd="$(dirname "$cwd")"
   done | {
     case "${out_fmt:-path}" in
+      one ) head -n 1 ;;
       path ) tr '\n' ':' | head -c -1 ;;
       list ) cat ;;
       * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;

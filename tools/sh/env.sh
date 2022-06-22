@@ -2,7 +2,7 @@
 
 ## Shell env profile script
 
-test -z "${sh_env_:-}" && sh_env_=1 || return 98 # Recursion
+test -z "${sh_env_:-}" && sh_env_=1 || return 96 # Recursion
 
 test ${DEBUG:-0} -ne 0 || DEBUG=
 : "${CWD:="$PWD"}"
@@ -34,7 +34,9 @@ sh_include \
   env-0-1-lib-sys \
   print-color remove-dupes unique-paths
 
-: "${build_txt:="$CWD/build.txt"}"
+test -e "$CWD/build.txt" &&
+    : "${build_txt:="$CWD/build.txt"}" ||
+    : "${build_txt:="$U_S/build.txt"}"
 
 test -z "${DEBUG:-}" -a -z "${CI:-}" ||
   print_yellow "${SUITE} Env parts <$(suite_from_table "${build_txt}" "Parts" "${SUITE}" 0|tr '\n' ' ')>" >&2

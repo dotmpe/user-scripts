@@ -87,9 +87,9 @@ run-parts() # only show suite ~ Tab Suite Phases...
   local parts= tab="$1" suite="$2" ; shift 2
   test $# -gt 0 || set -- 0
 
-  test -n "$tab" -a -e "$tab" || return 96
+  test -n "$tab" -a -e "$tab" || return 97
   test -n "$suite" || suite="${SUITE:-}"
-  head -n 1 "$tab" | grep -q "\<$suite\>" || return 97
+  head -n 1 "$tab" | grep -q "\<$suite\>" || return 98
 
   local stage c_lbl
 
@@ -110,8 +110,8 @@ show-parts() # Table Suite Prefix
 {
   test $# -ge 2 || return 98
   local parts= tab="$1" suite="$2" ; shift 2
-  test -n "$tab" -a -e "$tab" || return 96
-  head -n 1 "$tab" | grep -q "\<$suite\>" || return 97
+  test -n "$tab" -a -e "$tab" || return 97
+  head -n 1 "$tab" | grep -q "\<$suite\>" || return 98
 
   test $# -gt 0 && for phase in $@
   do
