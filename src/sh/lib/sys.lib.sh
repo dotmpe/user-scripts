@@ -339,7 +339,7 @@ lookup_paths () # Var-Name Local-Paths...
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
   local varname=$1 base path ; shift ; for base in $( lookup_path_list $varname )
     do
-      for path in $@
+      for path in "$@"
       do
         eval $lookup_test \""$path"\" \""$base"\" && {
           test ${lookup_first:-1} -eq 1 && break 2 || continue
