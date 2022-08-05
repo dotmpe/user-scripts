@@ -36,7 +36,7 @@ sh_include_path_dirs () # sh_include_path_subdirs ~ Base-Dirs...
   test $# -gt 0 -a -n "${1:-}" ||
     set -- ${sh_include_path_basedirs:-$(sh_include_path_basedirs)}
 
-  for basedir in $@
+  for basedir in "$@"
   do
     for subdir in ${sh_include_path_subdirs:-$( sh_include_path_subdirs )}
     do
