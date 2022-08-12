@@ -77,7 +77,7 @@ setup()
 
   # Pipeline setup testing lines-while directly
   cat "$testf2" | {
-    r= ; lines_while 'echo "$line" | grep -qE "^\s*#.*$"' || r=$?
+    r= ; lines_count_while_eval 'echo "$line" | grep -qE "^\s*#.*$"' || r=$?
 
   # Should point last line before first content line.
     assert_equal "$r" ""
@@ -99,7 +99,7 @@ setup()
 
   # Pipeline setup testing lines-while directly
   cat "$testf2" | {
-    r= ; lines_while 'echo "$line" | grep -q "^not-in-file$"' || r=$?
+    r= ; lines_count_while_eval 'echo "$line" | grep -q "^not-in-file$"' || r=$?
 
   # Should point to no line, non-zero
     assert_equal "$line_number" "0"
@@ -120,7 +120,7 @@ setup()
 
   # Pipeline setup testing lines-while directly
   cat "$testf2" | {
-    r= ; lines_while 'echo "$line" | grep -q "^.*$"' || r=$?
+    r= ; lines_count_while_eval 'echo "$line" | grep -q "^.*$"' || r=$?
 
   # Should point to last line
     assert_equal "$r" ""

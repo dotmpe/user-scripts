@@ -9,7 +9,7 @@ log_lib_load ()
 
 log_lib_init () # ~ [<Name=us>]
 {
-  test $# -le 1 || return 177
+  test $# -le 1 || return 193
   test -n "${1:-}" || set -- us
 
   local lv=${1}_log
@@ -27,7 +27,7 @@ log_lib_init () # ~ [<Name=us>]
 
 req_log ()
 {
-  test $# -le 1 || return 177
+  test $# -le 1 || return 193
   test -n "${1:-}" || set -- us
 
   local lv=${1}_log

@@ -30,7 +30,7 @@ std_lib_init ()
 
   true ${STD_INTERACTIVE:=`eval "$std_interactive"; printf $?`}
 
-  std_uc_env_def
+  std_uc_env_def &&
   $INIT_LOG debug "" "Initialized std.lib" "$0"
 }
 
@@ -81,8 +81,8 @@ std_uc_env_def ()
     #echo "val='$val'" >&2
   done
 
-  # nr. should not already be used in context.
-  : "${_E_GAE:=177}" # Generic Argument Error.
+  : "${_E_GAE:=193}" # Generic Argument Error. Value error, unspecific.
+  : "${_E_MA:=194}" # Missing arguments. Syntax error. Was 64 in places.
 }
 
 # TODO: probably also deprecate, see stderr. Maybe other tuil for this func.
@@ -185,44 +185,6 @@ log_16()
 log_256()
 {
   printf -- "$1\n"
-}
-
-# Normal log uses log_$TERM
-# 1:str 2:exit
-_log()
-{
-  # XXX: cleanup unused _log
-  exit 213
-  test -n "$1" || exit 201
-  test -n "$stdout_type" || stdout_type="$stdio_1_type"
-  test -n "$stdout_type" || stdout_type=t
-
-  local key=
-  test -n "$SHELL" \
-    && key="$scriptname.$(basename -- "$SHELL")" \
-    || key="$scriptname.(sh)"
-
-  case $stdout_type in
-    t )
-        test -n "$subcmd" && key=${key}${bb}:${bk}${subcmd}
-        if test $LOG_TERM = bw
-        then
-            log_$LOG_TERM "[${key}] $1"
-        else
-            log_$LOG_TERM "${bb}[${bk}${key}${bb}] ${norm}$1"
-        fi
-      ;;
-
-    p|f )
-        test -n "$subcmd" && key=${key}${bb}:${bk}${subcmd}
-        if test $LOG_TERM = bw
-        then
-            log_$LOG_TERM "# [${key}] $1"
-        else
-            log_$LOG_TERM "${bb}# [${bk}${key}${bb}] ${norm}$1"
-        fi
-      ;;
-  esac
 }
 
 # stdio helper functions
@@ -361,6 +323,24 @@ debug()
 std_batch_mode ()
 {
   test ${STD_BATCH_MODE:-0} -eq 1 -o ${STD_INTERACTIVE:-0} -eq 0
+}
+
+std_bash_status ()
+{
+  std_signals | awk ' { print 128+$1" "$2 } '
+}
+
+std_signals ()
+{
+  /bin/sh -c "kill -l" |
+      nl -w 1 -s ' ' -v 0
+  return
+
+  # Identical with bash (only in non-/bin/sh mode)
+  /bin/bash -c "kill -L" | tr -s ' \n\t' ' ' |
+      sed '
+         s/ *\([0-9][0-9]*\)) SIG\([^ ]*\) /\1 \2\n/g
+      '
 }
 
 #

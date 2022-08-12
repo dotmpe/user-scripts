@@ -4,10 +4,12 @@
 
 ansi_tpl_lib_load ()
 {
-  test -n "${ncolors-}" || ncolors=$(tput colors)
+  # Ask terminal about possible colors if we can
+  test "${TERM:-dumb}" = "dumb" &&
+    true "${ncolors:=0}" || true ${ncolors:=$(tput colors)}
 
   # Load term-part to set this to more sensible default
-  test -n "${COLORIZE-}" || COLORIZE=0
+  true "${COLORIZE:=$(test $ncolors -gt 0 && printf 1 || printf 0)}"
 
   test -n "${CS-}" || CS=dark
 
@@ -16,6 +18,7 @@ ansi_tpl_lib_load ()
 
 ansi_tpl_env_def ()
 {
+  # XXX: not in dash
   declare -g \
     _f0= BLACK=   _b0= BG_BLACK= \
     _f1= RED=     _b1= BG_RED= \
@@ -26,11 +29,14 @@ ansi_tpl_env_def ()
     _f6= MAGENTA= _b6= BG_MAGENTA= \
     _f7= WHITE=   _b7= BG_WHITE= \
     BOLD= REVERSE= NORMAL=
+
+  ${INIT_LOG:?} debug ":ansi:tpl" "Defaulted markup to none" "TERM:$TERM ncolors:$ncolors" 7
 }
 
 ansi_tpl_lib_init ()
 {
   test ${COLORIZE:-1} -eq 1 || {
+    # Declare empty if required (if not found yet)
     declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def
     return
   }
@@ -115,3 +121,4 @@ ansi_tpl_less ()
 }
 
 # Id: Us:
+# Derive: U-c:ansi-uc.lib.sh

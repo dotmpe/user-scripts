@@ -73,7 +73,7 @@ ledge_pull()
 
   test ! -e /tmp/builds.log || rm /tmp/builds.log
   test ! -e "$builds_log" || {
-    # XXX: backup_file $builds_log .list
+    # XXX: file_backup $builds_log .list
     cp $builds_log /tmp/builds.log
   }
 
@@ -98,7 +98,7 @@ ledge_pull()
 
   test ! -e /tmp/results.log || rm /tmp/results.log
   test ! -e "$results_log" || {
-    # XXX: backup_file $results_log .list
+    # XXX: file_backup $results_log .list
     cp $results_log /tmp/results.log
   }
 

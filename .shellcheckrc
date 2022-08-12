@@ -1,0 +1,8 @@
+### Shellcheck config
+
+## Disable checks
+
+# 2015: I use shell pipeline segments as boolean expressions all the time.
+disable=SC2015
+
+#

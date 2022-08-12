@@ -18,66 +18,22 @@ os_lib_init()
 }
 
 
-absdir()
+absdir ()
 {
   # NOTE: somehow my Linux pwd makes a symbolic path to root into //bin,
   # using tr to collapse all sequences to one
   ( cd "$1" && pwd -P | tr -s '/' '/' )
 }
 
-dirname_()
+# A simple, useful wrapper for awk prints entire line, one column or other
+# AWK print value if AWK expression evaluates true.
+awk_line_select () # (s) ~ <Awk-If-Expr> [<Out>]
 {
-  while test $1 -gt 0
-    do
-      set -- $(( $1 - 1 ))
-      set -- "$1" "$(dirname "$2")"
-    done
-  echo "$2"
-}
-
-# Combined dirname/basename to remove .ext(s) but return path
-pathname() # PATH EXT...
-{
-  local name="$1" dirname="$(dirname "$1")"
-  fnmatch "./*" "$1" && dirname="$(echo "$dirname" | cut -c3-)"
-  shift 1
-  for ext in $@
-  do
-    name="$(basename -- "$name" "$ext")"
-  done
-  test -n "$dirname" -a "$dirname" != "." && {
-    printf -- "$dirname/$name\\n"
-  } || {
-    printf -- "$name\\n"
-  }
-}
-
-# basepath: see pathname as alt. to basename for ext stripping
-
-# Simple iterator over pathname
-pathnames() # exts=... [ - | PATHS ]
-{
-  test -n "${exts-}" || exit 40
-  test "${1--}" != "-" && {
-    for path in "$@"
-    do
-      pathname "$path" $exts
-    done
-  } || {
-    { cat - | while read -r path
-      do pathname "$path" $exts
-      done
-    }
-  }
-}
-
-realpaths()
-{
-  act=realpath p= s= foreach_do "$@"
+  awk '{ if ( '"${1:?"An expression is required"}"' ) { print '"${2:-"\$0"}"' } }'
 }
 
 # Cumulative dirname, return the root directory of the path
-basedir()
+basedir ()
 {
   # Recursively. FIXME: a string op. may be faster
   while fnmatch "*/*" "$1"
@@ -86,11 +42,6 @@ basedir()
     test "$1" != "/" || break
   done
   echo "$1"
-}
-
-dotname() # Path [Ext-to-Strip]
-{
-  echo $(dirname -- "$1")/.$(basename -- "$1" "${2-}")
 }
 
 # [exts=] basenames [ .EXTS ] PATH...
@@ -115,115 +66,147 @@ basenames () # [exts=] ~ [ .EXTS ] PATH...
   done
 }
 
-# for each argument echo filename-extension suffix (last non-dot name element)
-filenamext() # Name..
+# Count occurence of character each line
+count_char () # CHAR
 {
-  test $# -gt 0 || return
-  while test $# -gt 0
-  do
-    basename -- "$1"
-    shift
-  done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/' || true
+  local ch="$1" ; shift
+  awk -F$ch '{print NF-1}' |
+      # strip -1 "error" for empty line
+      sed 's/^-1$//'
 }
 
-# Return basename for one file, using filenamext to extract extension.
-# See basenames for multiple args, and pathname to preserve (relative) directory
-# elements for name.
-filestripext () # ~ <Name>
+# Count every character
+count_chars () # [FILE | -]...
 {
-  ext="$(filenamext "$1")"
-  test -n "$ext" && set -- "$1" ".$ext"
-  basename -- "$@"
+  test "${1:-"-"}" = "-" && {
+    wc -w | awk '{print $1}'
+    return
+  } || {
+    while test $# -gt 0
+    do
+      wc -c $1 | awk '{print $1}'
+      shift
+    done
+  }
 }
 
-# Check wether name has extension, return 0 or 1
-fileisext() # Name Exts..
+# Count tab-separated columns on first line. One line for each file.
+count_cols ()
 {
-  local f="$1" ext="" ; ext=$(filenamext "$1") || return ; shift
-  test -n "$*" || return
-  test -n "$ext" || return
-  for mext in $@
-  do test ".$ext" = "$mext" && return 0
-  done
-  return 1
+  test $# -gt 0 && {
+    while test $# -gt 0
+    do
+      { printf '\t'; head -n 1 "$1"; } | count_char '\t'
+      shift
+    done
+  } || {
+    { printf '\t'; head -n 1; } | count_char '\t'
+  }
 }
 
-filename_baseid () # ~ <Path-Name>
+# Count lines with wc (no EOF termination correction)
+count_lines ()
 {
-  basename="$(filestripext "$1")"
-  mkid "$basename" '' '_'
+  test "${1-"-"}" = "-" && {
+    wc -l | awk '{print $1}'
+    return
+  } || {
+    while test $# -gt 0
+    do
+      wc -l $1 | awk '{print $1}'
+      shift
+    done
+  }
 }
 
-# Add number to file, provide extension to split basename before adding suffix
-number_file() # [action=mv] Name [Ext]
+# Count words
+count_words () # [FILE | -]...
 {
-  local dir=$(dirname "$1") cnt=1 base=$(basename "$1" ${2-})
+  test "${1:-"-"}" = "-" && {
+    wc -w | awk '{print $1}'
+    return
+  } || {
+    while test $# -gt 0
+    do
+      wc -w $1 | awk '{print $1}'
+      shift
+    done
+  }
+}
 
-  while test -e "$dir/$base-$cnt$2"
-  do
-    cnt=$(( $cnt + 1 ))
-  done
-  dest=$dir/$base-$cnt$2
+dirname_ ()
+{
+  while test $1 -gt 0
+    do
+      set -- $(( $1 - 1 ))
+      set -- "$1" "$(dirname "$2")"
+    done
+  echo "$2"
+}
 
-  test -n "${action-}" || local action="mv"
-  $action -v "$1" "$dest" || return $?
+dotname () # ~ Path [Ext-to-Strip]
+{
+  echo $(dirname -- "$1")/.$(basename -- "$1" "${2-}")
+}
+
+# Number lines from read-nix-style-file by src, filter comments after.
+enum_nix_style_file ()
+{
+  cat_f=-n read_nix_style_file "$@" '^[0-9]*:\s*(#.*|\s*)$' || return
 }
 
 # make numbered copy, see number-file
-backup_file() # [action=mv] Name [Ext]
+file_backup () # ~ <Name> [<.Ext>]
 {
-  action="cp" number_file "$@"
+  test -s "${1:?}" || return
+  action="cp -v" file_number "${@:?}"
+}
+
+file_modification_age ()
+{
+  fmtdate_relative $(filemtime $1) "" ""
+}
+
+# Add number to filename, provide extension to split basename before adding suffix
+file_number () # [action=mv] ~ <Name> [<.Ext>]
+{
+  local dir=$(dirname -- "${1:?}") cnt=1 base=$(basename -- "$1" ${2-}) dest
+
+  while true
+  do
+    dest=$dir/$base-$cnt${2-}
+    test -e "$dest" || break
+    cnt=$(( $cnt + 1 ))
+  done
+
+  local action="${action:-echo}"
+  $action "$1" "$dest"
 }
 
 # rename to numbered file, see number-file
-rotate_file() # [action=mv] Name [Ext]
+file_rotate () # ~ <Name> [<.Ext>]
 {
-  action="mv" number_file "$@"
+  test -s "${1:?}" || return
+  action="mv -v" file_number "${@:?}"
 }
 
-# Use `file` to get mediatype aka. MIME-type
-filemtype() # File..
+# FIXME: file-deref=0?
+file_stat_flags()
 {
-  local flags= ; file_tool_flags
-  case "$uname" in
-    Darwin )
-        file -${flags}I "$1" || return 1
-      ;;
-    Linux )
-        file -${flags}i "$1" || return 1
-      ;;
-    * ) error "filemtype: $uname?" 1 ;;
-  esac
+  test -n "$flags" || flags=-
+  test ${file_deref:-0} -eq 0 || flags=${flags}L
+  test "$flags" != "-" || flags=
 }
 
-# Description of file contents, format
-fileformat()
+file_tool_flags()
 {
-  local flags= ; file_tool_flags
-  case "$uname" in
-    Darwin | Linux )
-        file -${flags} "$1" || return 1
-      ;;
-    * ) error "fileformat: $uname?" 1 ;;
-  esac
+  trueish "${file_names-}" && flags= || flags=b
+  falseish "${file_deref-}" || flags=${flags}L
 }
 
-# Use `stat` to get size in bytes
-filesize() # File
+file_update_age ()
 {
-  local flags=- ; file_stat_flags
-  while test $# -gt 0
-  do
-    case "$uname" in
-      Darwin )
-          stat -L -f '%z' "$1" || return 1
-        ;;
-      Linux | CYGWIN_NT-6.1 )
-          stat -L -c '%s' "$1" || return 1
-        ;;
-      * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
-    esac; shift
-  done
+  fmtdate_relative $(filectime $1) "" ""
 }
 
 # Use `stat` to get inode change time (in epoch seconds)
@@ -241,6 +224,30 @@ filectime() # File
       * ) $os_lib_log error "os" "filectime: $uname?" "" 1 ;;
     esac; shift
   done
+}
+
+# Description of file contents, format
+fileformat ()
+{
+  local flags= ; file_tool_flags
+  case "$uname" in
+    Darwin | Linux )
+        file -${flags} "$1" || return 1
+      ;;
+    * ) error "fileformat: $uname?" 1 ;;
+  esac
+}
+
+# Check wether name has extension, return 0 or 1
+fileisext() # Name Exts..
+{
+  local f="$1" ext="" ; ext=$(filenamext "$1") || return ; shift
+  test -n "$*" || return
+  test -n "$ext" || return
+  for mext in "$@"
+  do test ".$ext" = "$mext" && return 0
+  done
+  return 1
 }
 
 # Use `stat` to get modification time (in epoch seconds)
@@ -263,28 +270,81 @@ filemtime() # File
   done
 }
 
-file_update_age ()
+# Use `file` to get mediatype aka. MIME-type
+filemtype () # File..
 {
-  fmtdate_relative $(filectime $1) "" ""
+  local flags= ; file_tool_flags
+  case "$uname" in
+    Darwin )
+        file -${flags}I "$1" || return 1
+      ;;
+    Linux )
+        file -${flags}i "$1" || return 1
+      ;;
+    * ) error "filemtype: $uname?" 1 ;;
+  esac
 }
 
-file_modification_age ()
+filename_baseid () # ~ <Path-Name>
 {
-  fmtdate_relative $(filemtime $1) "" ""
+  basename="$(filestripext "$1")"
+  mkid "$basename" '' '_'
 }
 
-file_tool_flags()
+# for each argument echo filename-extension suffix (last non-dot name element)
+filenamext () # ~ <Name..>
 {
-  trueish "${file_names-}" && flags= || flags=b
-  falseish "${file_deref-}" || flags=${flags}L
+  local n
+  for n in "${@:?}"
+  do
+    basename -- "$n"
+  done | grep '\.' | sed 's/^.*\.\([^\.]*\)$/\1/' || true
 }
 
-# FIXME: file-deref=0?
-file_stat_flags()
+# Use `stat` to get size in bytes
+filesize () # File
 {
-  test -n "$flags" || flags=-
-  test ${file_deref:-0} -eq 0 || flags=${flags}L
-  test "$flags" != "-" || flags=
+  local flags=- ; file_stat_flags
+  while test $# -gt 0
+  do
+    case "$uname" in
+      Darwin )
+          stat -L -f '%z' "$1" || return 1
+        ;;
+      Linux | CYGWIN_NT-6.1 )
+          stat -L -c '%s' "$1" || return 1
+        ;;
+      * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
+    esac; shift
+  done
+}
+
+# Return basename for one file, using filenamext to extract extension.
+# See basenames for multiple args, and pathname to preserve (relative) directory
+# elements for name.
+filestripext () # ~ <Name>
+{
+  ext="$(filenamext "$1")"
+  test -n "$ext" && set -- "$1" ".$ext"
+  basename -- "$@"
+}
+
+# Strip comments lines, including pre-proc directives and empty lines.
+filter_content_lines () # (s) ~ [<Marker-Regex>] # Remove marked or empty lines from stream
+{
+  grep -v '^\s*\('"${1:-"#"}"'.*\|\s*\)$'
+}
+
+filter_empty_lines () # (s) ~ # Remove empty lines from stream
+{
+  grep -v '^\s*$'
+}
+
+# Strip comments, including line-continuations.
+# See line-comment-conts-collapse to transform them.
+filter_line_comments () # (s) ~ [<Marker>]
+{
+  sed ':a; N; $!ba; s/'"${1:-"#"}"'[^\\\n]*\(\\\n[^\\\n]*\)*\n//g'
 }
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the
@@ -296,7 +356,7 @@ file_stat_flags()
 #
 # If this routine is given no data is hangs indefinitely. It does not have
 # indicators for data availble at stdin.
-foreach()
+foreach () # [(s)] ~ ['-' | <Arg...>]
 {
   {
     test -n "$*" && {
@@ -315,25 +375,6 @@ foreach()
   } | grep -v '^$'
 }
 
-
-# Read `foreach` lines and act, default is echo ie. same result as `foreach`
-# but with p(refix) and s(uffix) wrapped around each item produced. The
-# unwrapped loop-var is _S.
-foreach_do()
-{
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
-  foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" ; done
-}
-foreach_eval()
-{
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
-  foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
-}
-
 # Extend rows by mapping each value line using act, add result tab-separated
 # to line. See foreach-do for other details.
 foreach_addcol () #
@@ -346,6 +387,25 @@ foreach_addcol () #
 }
 # Var: F:foreach-addcol.bash
 
+# Read `foreach` lines and act, default is echo ie. same result as `foreach`
+# but with p(refix) and s(uffix) wrapped around each item produced. The
+# unwrapped loop-var is _S.
+foreach_do ()
+{
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
+  foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" ; done
+}
+
+foreach_eval ()
+{
+  test -n "${p-}" || local p= # Prefix string
+  test -n "${s-}" || local s= # Suffix string
+  test -n "${act-}" || local act="echo"
+  foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
+}
+
 # See -addcol and -do.
 foreach_inscol ()
 {
@@ -356,19 +416,109 @@ foreach_inscol ()
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
 }
 
-ignore_sigpipe()
+get_uuid ()
+{
+  test -e /proc/sys/kernel/random/uuid && {
+    cat /proc/sys/kernel/random/uuid
+    return 0
+  }
+  test -x $(which uuidgen) && {
+    uuidgen
+    return 0
+  }
+  $os_lib_log error "os" "FIXME uuid required" "" 1
+  return 1
+}
+
+# Change cwd to parent dir with existing local path element (dir/file/..) $1, leave go_to_before var in env.
+go_to_dir_with () # ~ <Local-Name>
+{
+  test -n "$1" || error "go-to-dir: Missing filename arg" 1
+
+  # Find dir with metafile
+  go_to_before=.
+  while true
+  do
+    test -e "$1" && break
+    go_to_before=$(basename -- "$(pwd)")/$go_to_before
+    test "$(pwd)" = "/" && break
+    cd ..
+  done
+
+  test -e "$1" || return 1
+}
+
+ignore_sigpipe ()
 {
   local r=$?
-  test $r -eq 141 || return $r # For bash: 128+signal where signal=SIGPIPE=13
+  test $r -eq 141 # For bash: 128+signal where signal=SIGPIPE=13
 }
 
-# Sort paths by mtime. Uses foreach-addcol to add mtime column, sort on and then
-# remove again. Listing most-recent modified file name/path first.
-sort_mtimes()
+# Little wrapper to use lines-while to read line-continuations to lines
+lines () #
 {
-  act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
+  read_f= lines_count_while_eval echo "\$line"
 }
 
+# Wrap wc but correct files with or w.o. trailing posix line-end
+line_count () # FILE
+{
+  test -s "${1-}" || return 42
+  test $(filesize "$1") -gt 0 || return 43
+  lc="$(echo $(od -An -tc -j $(( $(filesize $1) - 1 )) $1))"
+  case "$lc" in "\n" ) ;;
+    "\r" ) error "POSIX line-end required" 1 ;;
+    * ) printf '\n' >>$1 ;;
+  esac
+  local lc=$(wc -l $1 | awk '{print $1}')
+  echo $lc
+}
+
+# Offset content from input/file to line-based window.
+lines_slice() # [First-Line] [Last-Line] [-|File-Path]
+{
+  test -n "${3-}" || error "File-Path expected" 1
+  test "$3" = "-" && set -- "$1" "$2"
+  test -n "$1" && {
+    test -n "$2" && { # Start - End: tail + head
+      tail -n "+$1" "$3" | head -n $(( $2 - $1 + 1 ))
+      return $?
+    } || { # Start - ... : tail
+      tail -n "+$1" "$3"
+      return $?
+    }
+
+  } || {
+    test -n "$2" && { # ... - End : head
+      head -n "$2" "$3"
+      return $?
+    } || { # Otherwise cat
+      cat "$3"
+    }
+  }
+}
+
+# See read-while, but echo every line after command has tested it.
+lines_while () # ~ <Cmd <argv...>>
+{
+  echo=true read_while "$@"
+}
+
+# Read $line as long as CMD evaluates, and increment $line_number.
+# CMD can be silent or verbose in anyway, but when it fails the read-loop
+# is broken.
+lines_count_while_eval () # CMD
+{
+  test $# -gt 0 || return
+
+  line_number=0
+  while ${read:-read_with_flags} line
+  do
+    eval "$*" || break
+    line_number=$(( $line_number + 1 ))
+  done
+  test $line_number -gt 0 || return
+}
 
 normalize_relative()
 {
@@ -411,31 +561,92 @@ normalize_relative()
   esac
 }
 
-
-# Read file filtering octothorp comments, like this one, and empty lines
-# XXX: this one support leading whitespace but others in ~/bin/*.sh do not
-read_nix_style_file () # [cat_f=] ~ File [Grep-Filter]
+# Because '!' does not work with "$@"
+not ()
 {
-  test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
-  test -n "${1-}" || set -- "-" "${2-}"
-  test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
-  test -z "${cat_f-}" && {
-    grep -Ev "$2" "$1" || return $?
+  ! "$@"
+}
+
+# Combined dirname/basename to remove .ext(s) but return path
+pathname() # PATH EXT...
+{
+  local name="$1" dirname="$(dirname "$1")"
+  fnmatch "./*" "$1" && dirname="$(echo "$dirname" | cut -c3-)"
+  shift 1
+  for ext in "$@"
+  do
+    name="$(basename -- "$name" "$ext")"
+  done
+  test -n "$dirname" -a "$dirname" != "." && {
+    printf -- "$dirname/$name\\n"
   } || {
-    cat $cat_f "$1" | grep -Ev "$2"
+    printf -- "$name\\n"
   }
 }
-# Sh-Copy: HT:tools/u-s/parts/sh-read.inc.sh
 
-grep_nix_lines()
+# basepath: see pathname as alt. to basename for ext stripping
+
+# Simple iterator over pathname
+pathnames () # exts=... [ - | PATHS ]
 {
-  grep -Ev '^\s*(#.*|\s*)$' "$@"
+  test -n "${exts-}" || exit 40
+  test "${1--}" != "-" && {
+    for path in "$@"
+    do
+      pathname "$path" $exts
+    done
+  } || {
+    { cat - | while read -r path
+      do pathname "$path" $exts
+      done
+    }
+  }
 }
 
-# Number lines from read-nix-style-file by src, filter comments after.
-enum_nix_style_file()
+# Run read-blocks until one full block has been echoed.
+read_block ()
 {
-  cat_f=-n read_nix_style_file "$@" '^[0-9]*:\s*(#.*|\s*)$' || return
+  first=true read_blocks "$@"
+}
+
+# Read all lines. Echo every one, after a particular pattern and value is found,
+# and until the pattern is matched again. Check for value again and repeat,
+# and keep reading until EOF.
+read_blocks () # ~ <Match> <Glob-Value>
+{
+  local found=false first=${first:-false} echo
+  while true
+  do
+    $found && echo=true || echo=false
+    read_while not grep -q "$1" || return
+    ! $found || ! $first || break
+    fnmatch "$1$2" "$line" && found=true || found=false
+    ${quiet:-false} && continue
+    $found \
+      && $LOG info ":read-blocks" "Reading block after matching header" "$line" \
+      || $LOG debug ":read-blocks" "Found block header but no match" "$line"
+  done
+}
+
+# Read only data, collapsing whitespace but leaving '\' as-is.
+# See read-escaped and read-asis.
+read_content ()
+{
+  read -r "$@"
+}
+
+# Read character data separated by spaces, allowing '\' to escape special chars.
+# See also read-literal and read-content.
+read_escaped ()
+{
+  #shellcheck disable=2162
+  read "$@"
+}
+
+read_escaped_literal ()
+{
+  #shellcheck disable=2162
+  IFS= read "$@"
 }
 
 # Test for file or return before read
@@ -443,52 +654,6 @@ read_if_exists()
 {
   test -n "${1-}" || return 1
   read_nix_style_file "$@" 2>/dev/null || return 1
-}
-
-# Read $line as long as CMD evaluates, and increment $line_number.
-# CMD can be silent or verbose in anyway, but when it fails the read-loop
-# is broken.
-lines_while () # CMD
-{
-  test $# -gt 0 || return
-
-  line_number=0
-  while read ${read_f-"-r"} line
-  do
-    eval $@ || break
-    line_number=$(( $line_number + 1 ))
-  done
-  test $line_number -gt 0 || return
-}
-
-# Little wrapper to use lines-while to read line-continuations to lines
-lines () #
-{
-  read_f= lines_while echo "\$line"
-}
-
-# Offset content from input/file to line-based window.
-lines_slice() # [First-Line] [Last-Line] [-|File-Path]
-{
-  test -n "${3-}" || error "File-Path expected" 1
-  test "$3" = "-" && set -- "$1" "$2"
-  test -n "$1" && {
-    test -n "$2" && { # Start - End: tail + head
-      tail -n "+$1" "$3" | head -n $(( $2 - $1 + 1 ))
-      return $?
-    } || { # Start - ... : tail
-      tail -n "+$1" "$3"
-      return $?
-    }
-
-  } || {
-    test -n "$2" && { # ... - End : head
-      head -n "$2" "$3"
-      return $?
-    } || { # Otherwise cat
-      cat "$3"
-    }
-  }
 }
 
 # [0|1] [line_number=] read-lines-while FILE WHILE [START] [END]
@@ -509,7 +674,7 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
   {
     local r=0
     lines_slice "${3-}" "${4-}" "$1" | {
-        lines_while "$2" || r=$? ; echo "$r $line_number"; }
+        lines_count_while_eval "$2" || r=$? ; echo "$r $line_number"; }
   }
   stat="$(read_lines_while_inner "$@")"
   test -n "$stat" || return
@@ -517,125 +682,77 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
   return "$(echo "$stat" | cut -f1 -d' ')"
 }
 
-
-# Change cwd to parent dir with existing local path element (dir/file/..) $1, leave go_to_before var in env.
-go_to_dir_with()
+# Read data without collapsing spaces or obeying '\' escapes, but as-is.
+read_literal ()
 {
-  test -n "$1" || error "go-to-dir: Missing filename arg" 1
+  IFS= read -r "$@"
+}
 
-  # Find dir with metafile
-  go_to_before=.
+# Read file filtering octothorp comments, like this one, and empty lines
+# XXX: this one support leading whitespace but others in ~/bin/*.sh do not
+read_nix_style_file () # [cat_f=] ~ File [Grep-Filter]
+{
+  test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
+  test -n "${1-}" || set -- "-" "${2-}"
+  test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
+  test -z "${cat_f-}" && {
+    grep -Ev "$2" "$1" || return $?
+  } || {
+    cat $cat_f "$1" | grep -Ev "$2"
+  }
+}
+# Sh-Copy: HT:tools/u-s/parts/sh-read.inc.sh
+
+# Continue reading, passing each line at stdin to Cmd until it returns non-zero
+# Returns read error (1 for EOF or others) or 0 on first non-zero command exec.
+read_while () # ~ <Cmd <argv...>>
+{
   while true
   do
-    test -e "$1" && break
-    go_to_before=$(basename -- "$(pwd)")/$go_to_before
-    test "$(pwd)" = "/" && break
-    cd ..
+    ${read:-read -r} line || return
+    echo "$line" | "$@" || return 0
+    ! ${echo:-false} || echo "$line"
   done
-
-  test -e "$1" || return 1
 }
 
-
-
-# Count lines with wc (no EOF termination correction)
-count_lines()
+read_with_flags ()
 {
-  test "${1-"-"}" = "-" && {
-    wc -l | awk '{print $1}'
-    return
-  } || {
-    while test $# -gt 0
-    do
-      wc -l $1 | awk '{print $1}'
-      shift
+  #shellcheck disable=2162
+  read "${read_f--r}"
+}
+
+realpaths()
+{
+  act=realpath p= s= foreach_do "$@"
+}
+
+# Sort into lookup table (with Awk) to remove duplicate lines.
+# Removes duplicate lines (unlike uniq -u) without sorting.
+remove_dupes () # ~
+{
+  awk '!a[$0]++' "$@"
+}
+
+# Sort paths by mtime. Uses foreach-addcol to add mtime column, sort on and then
+# remove again. Listing most-recent modified file name/path first.
+sort_mtimes ()
+{
+  act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
+}
+
+# Ziplists on lines from files. XXX: Each file should be same length.
+zipfiles()
+{
+  rows="$(count_lines "$1")"
+  { for file in "$@" ; do
+      cat "$file"
+      #truncate_lines "$file" "$rows"
     done
-  }
-}
-
-# Wrap wc but correct files with or w.o. trailing posix line-end
-line_count () # FILE
-{
-  test -s "${1-}" || return 42
-  test $(filesize "$1") -gt 0 || return 43
-  lc="$(echo $(od -An -tc -j $(( $(filesize $1) - 1 )) $1))"
-  case "$lc" in "\n" ) ;;
-    "\r" ) error "POSIX line-end required" 1 ;;
-    * ) printf '\n' >>$1 ;;
-  esac
-  local lc=$(wc -l $1 | awk '{print $1}')
-  echo $lc
-}
-
-# Count words
-count_words () # [FILE | -]...
-{
-  test "${1:-"-"}" = "-" && {
-    wc -w | awk '{print $1}'
-    return
-  } || {
-    while test $# -gt 0
-    do
-      wc -w $1 | awk '{print $1}'
-      shift
-    done
-  }
-}
-
-# Count every character
-count_chars () # [FILE | -]...
-{
-  test "${1:-"-"}" = "-" && {
-    wc -w | awk '{print $1}'
-    return
-  } || {
-    while test $# -gt 0
-    do
-      wc -c $1 | awk '{print $1}'
-      shift
-    done
-  }
-}
-
-# Count occurence of character each line
-count_char () # CHAR
-{
-  local ch="$1" ; shift
-  awk -F$ch '{print NF-1}' |
-      # strip -1 "error" for empty line
-      sed 's/^-1$//'
-}
-
-# Count tab-separated columns on first line. One line for each file.
-count_cols()
-{
-  test $# -gt 0 && {
-    while test $# -gt 0
-    do
-      { printf '\t'; head -n 1 "$1"; } | count_char '\t'
-      shift
-    done
-  } || {
-    { printf '\t'; head -n 1; } | count_char '\t'
-  }
-}
-
-get_uuid()
-{
-  test -e /proc/sys/kernel/random/uuid && {
-    cat /proc/sys/kernel/random/uuid
-    return 0
-  }
-  test -x $(which uuidgen) && {
-    uuidgen
-    return 0
-  }
-  $os_lib_log error "os" "FIXME uuid required" "" 1
-  return 1
+  } | ziplists $rows
 }
 
 # Turn lists into columns, using shell vars.
-ziplists() # [SEP=\t] Rows
+ziplists () # [SEP=\t] Rows
 {
   local col=0 row=0
   test -n "$SEP" || SEP='\t'
@@ -658,20 +775,4 @@ ziplists() # [SEP=\t] Rows
   done
 }
 
-# Ziplists on lines from files. XXX: Each file should be same length.
-zipfiles()
-{
-  rows="$(count_lines "$1")"
-  { for file in "$@" ; do
-      cat "$file"
-      #truncate_lines "$file" "$rows"
-    done
-  } | ziplists $rows
-}
-
-# Sort into lookup table (with Awk) to remove duplicate lines.
-# Removes duplicate lines (unlike uniq -u) without sorting.
-remove_dupes () # ~
-{
-  awk '!a[$0]++' "$@"
-}
+#

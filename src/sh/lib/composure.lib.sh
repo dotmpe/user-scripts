@@ -3,14 +3,15 @@
 
 composure_lib_load()
 {
-  test -n "${COMPOSURE-}" || COMPOSURE=$HOME/.local/composure
+  true "${COMPOSURE:=$HOME/.local/composure}"
 }
 
 composure_lib_init()
 {
-  test -n "$COMPOSURE" && # assert Expected Composure user setting
-  test -d "$COMPOSURE" # assert Expected Composure user dir
+  true "${COMPOSURE:?"Expected Composure user dir setting"}" &&
+  test -d "$COMPOSURE" || false "${Error:?"Expected Composure user dir"}"
 }
+
 
 composure_check_name_scripts()
 {
@@ -52,7 +53,7 @@ composure_shlib_func_id() # Func-Name Lib-File
 
 composure_shlib_sync_pairs() # [create] [force] ~
 {
-  grep_nix_lines | while read fname libfile ; do
+  filter_content_lines | while read fname libfile ; do
     is_composer_inc "$fname" || {
       trueish "$create" || {
         trueish "$force" || error "No such composer inc '$fname'" 1

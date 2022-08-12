@@ -279,7 +279,7 @@ func_comment()
   test -z "${3-}" || error "surplus arguments: '$3'" 1
 
   # find function line number, or return 1 ending function for no comment
-  grep_line="$(grep -n "^\s*$1()" "$2" | cut -d ':' -f 1)"
+  grep_line="$(grep -n "^\s*$1 *()" "$2" | cut -d ':' -f 1)"
   case "$grep_line" in [0-9]* ) ;; * ) return 1 ;; esac
 
   lines=$(echo "$grep_line" | count_words)
@@ -329,10 +329,10 @@ backup_header_comment() # Src-File [.header]
   test -f "${1-}" || return
   test -n "${2-}" || set -- "$1" ".header"
   fnmatch "/*" "$2" \
-    && backup_file="$2" \
-    || backup_file="$1$2"
+    && file_backup="$2" \
+    || file_backup="$1$2"
   # find last line of header, add output to backup
-  read_head_comment "$1" >"$backup_file" || return $?
+  read_head_comment "$1" >"$file_backup" || return $?
 }
 
 # Return span of lines from Src, starting output at Start-Line and ending

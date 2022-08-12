@@ -2,4 +2,68 @@
 - - sh-ci: Bare script to run CI suite
 - - sh-ci.tab: Matrix for sh-ci
 - - sh-main:
+
+- 2015-09-02 Std-lib: @Script.mpe
+- 2015-09-02 Str-lib: @Script.mpe
+- 2015-09-05 OS-lib: @Script.mpe
+- 2015-10-07 Date-lib: @Script.mpe
+
+- 2016-03-14 Match-lib: @Script.mpe
+- 2016-07-16 Src-lib: @Script.mpe
+- 2016-07-16 Sys-lib: @Script.mpe
+
+- 2017-02-04 Build-lib: @Script.mpe
+- 2017-10-07 Vc-lib: @Script.mpe
+- 2017-12-03 Volume-lib: @Script.mpe
+- 2017-12-30 Ck-lib: @Script.mpe
+
+- 2018-08-07 Make-lib: @Script.mpe
+- 2018-08-24 User-Tools/User-Scripts:
+
+- 2018-11-11 Functions-lib:
+- 2018-11-11 Redo-lib:
+- 2018-11-11 Setup-sh-tpl-lib:
+- 2018-11-11 Shell-lib:
+- 2018-11-22 ANSI-tpl-lib:
+- 2018-11-22 Bash-ac-lib:
+- 2018-11-22 Conf-lib:
+- 2018-11-22 Domain-lib:
+- 2018-11-22 Git-lib:
+- 2018-11-22 Lib-lib:
+- 2018-11-22 Logger-theme-lib:
+- 2018-11-22 Util-lib:
+- 2018-11-22 Util-min-lib:
+- 2018-11-29 Env-d-lib:
+- 2018-11-29 Logger-lib:
+- 2018-11-29 Logger-std-lib:
+- 2018-11-29 Run-lib:
+- 2018-11-29 Run-scr-lib:
+- 2018-11-29 Script-lib:
+- 2018-11-29 User-env-lib:
+- 2018-12-04 Composure-lib:
+- 2018-12-04 Docker-sh-lib:
+- 2018-12-04 Function-lib:
+- 2018-12-04 Oil-lib:
+- 2018-12-23 Log-lib:
+
+- 2022-01-18 Syslog-lib:
+- 2022-02-01 Us1-lib:
+- 2022-02-25 Shell-cache-lib:
+
+
+- 2018-12-23 U_S-Dckr-lib:
+- 2018-12-23 U_S-Git-lib:
+- 2018-12-23 U_S-Travis-lib:
+- 2018-12-23 U_S-User-lib:
+- 2019-01-04 U_S-Basher-lib:
+- 2019-01-04 U_S-Man-lib:
+- 2020-03-09 U_S-Ledge-lib:
+- 2020-09-12 U_S-Stats-lib:
+
+
+- 2020-05-30 ctx-us-lib:
+- 2020-09-11 ctx-index-lib:
+- 2020-11-19 ctx-ctx-lib:
+- 2020-11-19 ctx-us-build-lib:
+
 # --

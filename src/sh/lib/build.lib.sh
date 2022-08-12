@@ -438,7 +438,7 @@ expand_format () # ~ <Format> <Name-Parts>
 }
 
 
-test -n "$__lib_load" || {
+test -n "${__lib_load-}" || {
 
   case "$(basename -- "$0")" in
 
