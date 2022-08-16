@@ -47,12 +47,12 @@ default_do_main ()
   local target="$(echo $REDO_TARGET | tr './' '_')" part
   part=$( lookup_exists $target.do $build_parts_bases ) && {
 
-    $LOG "notice" ":part:$1" "Building part" "PWD=$PWD 0=$0 part=$part"
+    $LOG "notice" ":part:$1" "Building part" "$PWD:$0:$part"
     default_do_include $part "$@"
     exit $?
   }
 
-  $LOG "notice" ":main" "Building target" "PWD=$PWD 0=$0 1=$1"
+  $LOG "notice" ":main:$1" "Building target" "$PWD:$0"
 
   case "$1" in
 
@@ -85,17 +85,21 @@ default_do_main ()
     # without additional redo files (using components-txt and build-component).
     # See U-s:build.lib.sh
     * )
+        # FIXME: this taints every target in the components-txt every time
+        # some (other?) rule is updated a bit. There has to be a better way.
 
-        test "$1" != "$components_txt" ||
-          $LOG alert ":build-component" \
-            "Cannot build table from table" "$components_txt" 1
+        test "${components_txt_build:=0}" = "1" && {
+          build-ifchange $components_txt || return
+        } || {
+          test "$components_txt_build" = "0" || {
+            build-ifchange $components_txt_build || return
+          }
+        }
 
-        build-ifchange $components_txt || return
-
-        test -s "${components_txt-}" || {
+        test "$1" != "${components_txt-}" -a -s "${components_txt-}" || {
           $LOG alert ":build-component:$1" \
             "Cannot build from table w/o table" "${components_txt-null}" 1
-          return 1
+          return
         }
 
         build_component_exists "$1" && {

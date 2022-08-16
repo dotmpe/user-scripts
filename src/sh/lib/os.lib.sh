@@ -2,9 +2,10 @@
 
 ## OS - files, paths
 
+
 os_lib_load()
 {
-  test -n "${uname-}" || uname="$(uname -s)"
+  : "${uname:="$(uname -s)"}"
 }
 
 os_lib_init()
@@ -628,9 +629,9 @@ read_blocks () # ~ <Match> <Glob-Value>
   done
 }
 
-# Read only data, collapsing whitespace but leaving '\' as-is.
-# See read-escaped and read-asis.
-read_content ()
+# Read only data, trimming whitespace but leaving '\' as-is.
+# See read-escaped and read-literal for other modes/impl.
+read_data () # (s) ~ <Read-argv...> # Read into variables, ignoring escapes and collapsing whitespacek
 {
   read -r "$@"
 }
@@ -639,18 +640,18 @@ read_content ()
 # See also read-literal and read-content.
 read_escaped ()
 {
-  #shellcheck disable=2162
+  #shellcheck disable=2162 # Escaping can be useful to ignore line-ends, and read continuations as one line
   read "$@"
 }
 
-read_escaped_literal ()
+read_escaped_literal () # (s) ~ <Read-argv...> # Read obeying escapes and without collapsing whitespace.
 {
   #shellcheck disable=2162
   IFS= read "$@"
 }
 
 # Test for file or return before read
-read_if_exists()
+read_if_exists ()
 {
   test -n "${1-}" || return 1
   read_nix_style_file "$@" 2>/dev/null || return 1
@@ -683,7 +684,7 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
 }
 
 # Read data without collapsing spaces or obeying '\' escapes, but as-is.
-read_literal ()
+read_literal () # (s) ~ <Read-argv...> # Read as-is, with escapes and whitespace intact
 {
   IFS= read -r "$@"
 }
@@ -721,7 +722,7 @@ read_with_flags ()
   read "${read_f--r}"
 }
 
-realpaths()
+realpaths ()
 {
   act=realpath p= s= foreach_do "$@"
 }
@@ -741,7 +742,7 @@ sort_mtimes ()
 }
 
 # Ziplists on lines from files. XXX: Each file should be same length.
-zipfiles()
+zipfiles ()
 {
   rows="$(count_lines "$1")"
   { for file in "$@" ; do

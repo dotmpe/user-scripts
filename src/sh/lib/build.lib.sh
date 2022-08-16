@@ -59,6 +59,11 @@ build ()
 build_component_alias () # <Name> <Targets...>
 {
   shift
+  #shellcheck disable=SC2046
+  set -- $(eval "echo $*")
+  # XXX: not sure if this can something with spaces/other special characters
+  # properly. May be test such later...
+  #eval "set -- $(echo $* | lines_printf '"%s"')"
   build-ifchange "$@"
 }
 
@@ -171,16 +176,18 @@ build_components () # ~ <Name> [<Type>]
 {
   $LOG "note" "" "Building components" "$*"
 
-  local name="$1" name_p type="${2:-"[^ ]*"}" ; shift 2
+  local name="$1" name_p type="${2:-"[^ ]*"}" comptab; shift 2
   fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
-  grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt" | {
-    read name type args
-    test -n "$name" || error "No such component '$type:$name" 1
-    # Rules have to expand globs by themselves.
-    set -o noglob; set -- $name $args; set +o noglob
-    $LOG "info" "" "Building as '$type' component" "$*"
-    build_component_${type//-/_} "$@"
-  }
+  comptab=$(grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt") &&
+    test -n "$comptab" || {
+      error "No such component '$type:$name" ; return 1
+    }
+
+  read_data name type args <<<"$comptab"
+  # Rules have to expand globs by themselves.
+  set -o noglob; set -- $name $args; set +o noglob
+  $LOG "info" "" "Building as '$type' component" "$*"
+  build_component_${type//-/_} "$@"
 }
 
 build_fetch_component () # Path
@@ -440,7 +447,7 @@ expand_format () # ~ <Format> <Name-Parts>
 
 test -n "${__lib_load-}" || {
 
-  case "$(basename -- "$0")" in
+  case "$(basename -- "$0" .lib.sh )" in
 
     ( "build" )
         . "${U_S}/tools/redo/env.sh" || exit $?
