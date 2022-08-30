@@ -9,6 +9,8 @@ check alias lint
 current alias .meta/cache/ledges.list
 .cllct/src/sh-stats function build_sh_stats u_s-stats
 
+lint alias lint-tags shellcheck
+
 # Baseline describes third-party components, dependencies, host.hk
 # For host/env prerequisites and checks see init and init-checks targets.
 # lint

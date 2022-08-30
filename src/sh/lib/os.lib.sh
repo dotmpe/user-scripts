@@ -70,10 +70,9 @@ basenames () # [exts=] ~ [ .EXTS ] PATH...
 # Count occurence of character each line
 count_char () # CHAR
 {
-  local ch="$1" ; shift
-  awk -F$ch '{print NF-1}' |
-      # strip -1 "error" for empty line
-      sed 's/^-1$//'
+  local ch="$1"; shift
+  # strip -1 "error" for empty line
+  awk -F$ch '{print NF-1}' | sed 's/^-1$//'
 }
 
 # Count every character

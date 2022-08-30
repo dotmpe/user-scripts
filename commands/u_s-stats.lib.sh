@@ -23,7 +23,7 @@ build_sh_stats ()
   #    .cllct/src/functions/*.func-list \
   #    .cllct/src/functions/*/*.func-deps
 
-  u_s_sh_stats >"$3"
+  u_s_sh_stats >"${3:?"Expected temporary build file"}"
   build_chatty && cat "$3" >&2
   build-stamp <"$3"
 }
