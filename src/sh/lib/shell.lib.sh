@@ -57,12 +57,13 @@ shell_check () #
     test 1 -eq $KORN_SHELL \
       -o 1 -eq $Z_SHELL \
       -o 1 -eq $D_A_SHELL \
-      -o 1 -eq $BA_SHELL || {
+      -o 1 -eq $IS_BASH || {
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
       {
         echo "Found typeset cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
-        ls -la $(which $SHELL_NAME)
+        shell_bin=$(command -v -- "$SHELL_NAME")
+        test ! -e "$shell_bin" || ls -la $shell_bin
         type typeset
         echo SHELL:$SHELL
         echo END
