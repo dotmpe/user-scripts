@@ -17,41 +17,42 @@ lib_lib_init()
 }
 
 
-# Check if loaded or list all loaded libs
-lib_loaded_env_ids() # [Check-Libs...]
+# Verify lib was loaded or bail out
+lib_assert() # Libs...
 {
-  test $# -gt 0 && {
-
-    while test $# -gt 0
-    do
-      lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
-
-      test "$1" = "$(eval echo \${${lib_id}_lib_loaded-})" || return
-      shift
-    done
-    return
-
-  } || {
-    # List all
-    sh_genv '[a-z][a-z0-9_]*_lib_loaded' | sed 's/_lib_loaded=0$//'
-  }
+  local log_key=$scriptname/$$:u-s:lib:assert
+  test $# -gt 0 || return 98
+  while test $# -gt 0
+  do
+    mkvid "$1"
+    test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
+      log_key=$log_key $lib_lib_log error "" "Assert loaded '$1'" "" 1
+      return 1
+    }
+    shift
+  done
 }
 
-lib_loaded()
+lib_errors ()
 {
-  test $# -gt 0 && {
-    lib_loaded_env_ids "$@"
-    return $?
+  local r=0
+  set -- $(sh_env | grep '_lib_loaded=[^0]' | sed 's/_lib_loaded=.*//' )
+  test -z "$*" || {
+      $LOG warn "" "Lib-load problems" "$*"; r=1
   }
-  # List all
-  foreach $lib_loaded
+  set -- $(sh_env | grep '_lib_init=[^0]' | sed 's/_lib_init=.*//' )
+  test -z "$*" || {
+      $LOG warn "" "Lib-init problems" "$*"; r=1
+  }
+  return $r
 }
 
 # Echoes if path exists. See sys.lib.sh lookup-exists
-lib_exists () # [lookup_first=1] ~ Name Dirs...
+lib_exists () # [lookup_first=1] ~ <Lib-name> [<Dirs...>]
 {
   local name="$1" r=1
   shift
+  test $# -gt 0 || -- $(echo "$SCRIPTPATH" | tr ':' '\n')
   while test $# -gt 0
   do
     test -e "$1/$name.lib.sh" && {
@@ -61,27 +62,6 @@ lib_exists () # [lookup_first=1] ~ Name Dirs...
     shift
   done
   return $r
-}
-
-# Echo every occurence of *.lib.sh on SCRIPTPATH
-lib_path() # Local-Name Path-Var-Name
-{
-  test $# -le 2 || return 98
-  test -n "${2-}" || set -- "$1" SCRIPTPATH
-  lookup_test=${lookup_test:-"lib_exists"} \
-  lookup_first=${lookup_first:-0} \
-    lookup_path $2 "$1"
-}
-
-# Echo only first result for lib_path
-lib_lookup() # Lib
-{
-  lookup_first=1 lib_path "$1"
-}
-
-lib_paths()
-{
-  act=lib_path foreach_do "$@"
 }
 
 # List matching names existing on path.
@@ -107,13 +87,6 @@ lib_glob () # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
   }
 }
 
-# List all paths or names for libs (see lib-glob for formats)
-lib_list() # [Path-Var-Name] [Format]
-{
-  test $# -le 2 || return 98
-  lib_glob "*" "${1:-"SCRIPTPATH"}" "${2:-"names-list"}"
-}
-
 # Find libs by content regex, list paths in format (see lib-glob for formats)
 lib_grep() # grep_f=-Hni ~ Regex [Name-Glob [Path-Var-Name]]
 {
@@ -125,8 +98,87 @@ lib_grep() # grep_f=-Hni ~ Regex [Name-Glob [Path-Var-Name]]
   }
 }
 
-# Lookup and load sh-lib on SCRIPTPATH
-lib_load() # Libs...
+# After load, execute <lib-id>_lib_init() if defined for each lib in load seq.
+lib_init () # ~ [<Lib-names...>]
+{
+  test $# -gt 0 || set -- $lib_loaded
+  local log_key=$scriptname/$$:u-s:lib:init
+  log_key=$log_key $lib_lib_log info "" "Init libs '$*'" ""
+
+  # TODO: init only once, set <libid>_lib_init=...
+  while test $# -gt 0
+  do
+    lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
+    type ${lib_id}_lib_init 2> /dev/null 1> /dev/null && {
+      ${lib_id}_lib_init || { r=$?
+        log_key=$log_key $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
+        return $r
+      }
+      eval ${lib_id}_lib_init=0
+    }
+    shift
+  done
+}
+
+# List all paths or names for libs (see lib-glob for formats)
+lib_list () # ~ [<Path-Var-name>] [<Format-key>]
+{
+  test $# -le 2 || return 98
+  lib_glob "*" "${1:-"SCRIPTPATH"}" "${2:-"names-list"}"
+}
+
+lib_loaded () # ~ [<Lib-ids...>] # Check wether given are loaded or list loaded
+{
+  test $# -gt 0 && {
+    # Check given
+    lib_loaded_env_ids "$@"
+    return $?
+  }
+  # List all
+  foreach $lib_loaded
+}
+
+# Check if loaded or list all loaded libs
+lib_loaded_env_ids() # [Check-Libs...]
+{
+  test $# -gt 0 && {
+
+    while test $# -gt 0
+    do
+      lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
+
+      test "$1" = "$(eval echo \${${lib_id}_lib_loaded-})" || return
+      shift
+    done
+    return
+
+  } || {
+    # List all
+    sh_genv '[a-z][a-z0-9_]*_lib_loaded' | sed 's/_lib_loaded=0$//'
+  }
+}
+
+lib_lookup () # ~ <Lib-name> # Echo only first result for lib_path
+{
+  lookup_first=1 lib_path "$1"
+}
+
+# Echo every occurence of *.lib.sh on SCRIPTPATH
+lib_path () # ~ <Local-name> [<Path-Var-name>]
+{
+  test $# -le 2 || return 98
+  test -n "${2-}" || set -- "$1" SCRIPTPATH
+  lookup_test=${lookup_test:-"lib_exists"} \
+  lookup_first=${lookup_first:-0} \
+    lookup_path $2 "${1:?}"
+}
+
+lib_paths () # (s?) ~ [<Lib-names...>]
+{
+  act=lib_path foreach_do "$@"
+}
+
+lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
 {
   test -n "${1-}" || return 190
   test -n "${lib_lib_log-}" || return 108 # NOTE: sanity
@@ -209,44 +261,6 @@ lib_load() # Libs...
   done
 }
 
-# Verify lib was loaded or bail out
-lib_assert() # Libs...
-{
-  local log_key=$scriptname/$$:u-s:lib:assert
-  test $# -gt 0 || return 98
-  while test $# -gt 0
-  do
-    mkvid "$1"
-    test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
-      log_key=$log_key $lib_lib_log error "" "Assert loaded '$1'" "" 1
-      return 1
-    }
-    shift
-  done
-}
-
-# After loaded, execute <lib-id>_lib_init() if defined for each lib in load seq.
-lib_init() # [Libs...]
-{
-  test $# -gt 0 || set -- $lib_loaded
-  local log_key=$scriptname/$$:u-s:lib:init
-  log_key=$log_key $lib_lib_log info "" "Init libs '$*'" ""
-
-  # TODO: init only once, set <libid>_lib_init=...
-  while test $# -gt 0
-  do
-    lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
-    type ${lib_id}_lib_init 2> /dev/null 1> /dev/null && {
-      ${lib_id}_lib_init || { r=$?
-        log_key=$log_key $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
-        return $r
-      }
-      eval ${lib_id}_lib_init=0
-    }
-    shift
-  done
-}
-
 # TODO: Call *_lib_unload and unset loaded var. See also reload. #lib-unload
 # See COMPO:c-lib-reset
 lib_unload() # [Libs...]
@@ -321,20 +335,6 @@ lib_require() # Libs...
     set -- $LIB_REQ ; unset LIB_REQ
     lib_load "$@"
   done
-}
-
-lib_errors()
-{
-  local r=0
-  set -- $(sh_env | grep '_lib_loaded=[^0]' | sed 's/_lib_loaded=.*//' )
-  test -z "$*" || {
-      $LOG warn "" "Lib-load problems" "$*"; r=1
-  }
-  set -- $(sh_env | grep '_lib_init=[^0]' | sed 's/_lib_init=.*//' )
-  test -z "$*" || {
-      $LOG warn "" "Lib-init problems" "$*"; r=1
-  }
-  return $r
 }
 
 # Id: U-S:src/sh/lib/lib.lib.sh                                   vim:ft=bash:
