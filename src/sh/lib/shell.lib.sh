@@ -54,10 +54,10 @@ shell_lib_init()
 shell_check () #
 {
   type typeset 2>&1 >/dev/null && {
-    test 1 -eq $KORN_SHELL \
-      -o 1 -eq $Z_SHELL \
-      -o 1 -eq $D_A_SHELL \
-      -o 1 -eq $IS_BASH || {
+    test 1 -eq ${K_SHELL:?} \
+      -o 1 -eq ${Z_SHELL:?} \
+      -o 1 -eq ${DA_SHELL:?} \
+      -o 1 -eq ${BA_SHELL:?} || {
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
       {
@@ -78,8 +78,8 @@ shell_init_mode ()
   # Try to figure out what we are.. and how to keep it Bourne Shell compatible
   test "$SHELL_NAME" = "bash" && BA_SHELL=1 || BA_SHELL=0
   test "$SHELL_NAME" = "zsh" && Z_SHELL=1 || Z_SHELL=0
-  test "$SHELL_NAME" = "ksh" && KORN_SHELL=1 || KORN_SHELL=0
-  test "$SHELL_NAME" = "dash" && D_A_SHELL=1 || D_A_SHELL=0
+  test "$SHELL_NAME" = "ksh" && K_SHELL=1 || K_SHELL=0
+  test "$SHELL_NAME" = "dash" && DA_SHELL=1 || DA_SHELL=0
   test "$SHELL_NAME" = "ash" && A_SHELL=1 || A_SHELL=0
   test "$SHELL_NAME" = "sh" && B_SHELL=1 || B_SHELL=0
 }
@@ -103,8 +103,8 @@ sh_init_mode ()
 
   test $BA_SHELL -eq 1 -o $IS_BASH_SH -eq 1 && IS_BASH=1 || IS_BASH=0
 
-  test $D_A_SHELL -eq 1 -o $IS_DASH_SH -eq 1 && IS_DASH=1 || IS_DASH=0
-  test $D_A_SHELL -eq 1 -o $A_SHELL -eq 1 -o $IS_DASH_SH -eq 1 && IS_A=1 || IS_A=0
+  test $DA_SHELL -eq 1 -o $IS_DASH_SH -eq 1 && IS_DASH=1 || IS_DASH=0
+  test $DA_SHELL -eq 1 -o $A_SHELL -eq 1 -o $IS_DASH_SH -eq 1 && IS_A=1 || IS_A=0
   # FIXME A_SHELL=..
 
   #test $BB_SH -eq 1 -o $IS_BB_SH -eq 1 && IS_BB=1 || IS_BB=0
