@@ -354,6 +354,19 @@ build_fetch_symlinks_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
   shopt -u nullglob
 }
 
+# TODO: virtual target to build components-txt table, and to generate rules for
+# every record.
+build_table_for_targets () # ~ <>
+{
+  false
+}
+
+# Virtual target that shows various status bits about build system
+build_info ()
+{
+  echo "${!build_component_*}" | words_to_lines | cut -c 12- >&2
+}
+
 # Return first globbed part, given glob pattern and expanded path.
 # Returned part is everything matched from first to last wildcard glob,
 # so this works on globstar and to a degree with multiple wildcards.
