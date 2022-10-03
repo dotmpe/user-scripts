@@ -2,16 +2,18 @@
 
 build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  lib_require argv date match $package_build_tool || return
+  true "${BUILD_TOOL:=${package_build_tool:?}}"
 
-  local var=${package_build_tool}_commands cmd
+  lib_require argv date match $BUILD_TOOL || return
+
+  local var=${BUILD_TOOL}_commands cmd
   test -n "${!var-}" || {
-    $LOG error "" "No build tool commands" "$package_build_tool" 1
+    $LOG error "" "No build tool commands" "$BUILD_TOOL" 1
     return
   }
   for name in ${!var-}
   do
-    cmd="build${name:${#package_build_tool}}"
+    cmd="build${name:${#BUILD_TOOL}}"
     eval "$(cat <<EOM
 $cmd ()
 {
@@ -51,12 +53,12 @@ build_lib_init ()
 
 build ()
 {
-  test -n "${package_build_tool-}" || return 1
-  $package_build_tool "$@"
+  test -n "${BUILD_TOOL-}" || return 1
+  $BUILD_TOOL "$@"
 }
 
 # Alias target: defer to other targets
-build_component_alias () # <Name> <Targets...>
+build_component__alias () # <Name> <Targets...>
 {
   shift
   #shellcheck disable=SC2046
@@ -68,36 +70,23 @@ build_component_alias () # <Name> <Targets...>
 }
 
 # Defer to script: build a (single) target using a source script that can build multiple targets
-build_component_defer () # ~ <Target-Name> <Part-Name>
+build_component__defer () # ~ <Target-Name> <Part-Name>
 {
   local part
   part=$(sh_lookup "$2" $build_parts_bases )
   source "$part"
 }
 
-build_component_exists () # Target
-{
-  test -n "${1-}" || return 98
-  read_nix_style_file "$components_txt" | {
-    while read name type args
-    do
-      test "$name" = "$1" && return
-      continue
-    done
-    return 1
-  }
-}
-
 # Almost like alias, except this expands strings containing shell expressions.
 # These can be brace-expansions, variables or even subcommands.
-build_component_expand () # ~ <Target-Name> <Target-Expressions...>
+build_component__expand () # ~ <Target-Name> <Target-Expressions...>
 {
   shift
   build-ifchange $(eval "echo $*")
 }
 
 #
-build_component_expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-Formats...>
+build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-Formats...>
 {
   local source_cmd=
   shift
@@ -119,7 +108,7 @@ build_component_expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-F
 }
 
 # Function target: invoke function with build-args
-build_component_function () # ~ <Target-Name> [<Function-Name>] <Libs...>
+build_component__function () # ~ <Target-Name> [<Function-Name>] <Libs...>
 {
   local libs name=$1 func="$2"
   shift 2
@@ -135,7 +124,7 @@ build_component_function () # ~ <Target-Name> [<Function-Name>] <Libs...>
 }
 
 # Symlinks: create each dest, linking to srcs
-build_component_symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
+build_component__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 {
   local src match dest grep="$(glob_spec_grep "$2")" f
   test ${quiet:-0} -eq 1 || f=-v
@@ -163,7 +152,7 @@ build_component_symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 
 # Simpleglob: defer to target paths obtained by expanding source-spec
 #build_component_glob () # ~ <Name> <Target-Pattern> <Source-Globs...>
-build_component_simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
+build_component__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 {
   local src match glob=$(echo "$3" | sed 's/%/*/')
   build-ifchange $( for src in $glob
@@ -171,6 +160,24 @@ build_component_simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
       match="$(glob_spec_var "$glob" "$src")"
       echo "$2" | sed 's/\*/'"$match"'/'
     done )
+}
+
+build_component_exists () # ~ <Target-name>
+{
+  test -n "${1-}" || return 98
+  read_nix_style_file "$components_txt" | {
+    while read name type args
+    do
+      test "$name" = "$1" && return
+      continue
+    done
+    return 1
+  }
+}
+
+build_component_types ()
+{
+  compgen -A function | grep '^build_component__' | cut -c 18- | tr '_' '-'
 }
 
 # Call the build-component-* handler (based on rule's type), by retrieving the
@@ -204,7 +211,7 @@ build_components () # ~ <Name> [<Type>] [<Build-arv>]
   # Rules have to expand globs by themselves.
   set -o noglob; set -- $name_ $args_; set +o noglob
   $LOG "info" "" "Building as '$type_:$name_' component" "$*"
-  build_component_${type_//-/_} "$@"
+  build_component__${type_//-/_} "$@"
 }
 
 build_fetch_component () # Path
@@ -361,11 +368,49 @@ build_table_for_targets () # ~ <>
   false
 }
 
+build_env_vars ()
+{
+  {
+    echo "${!package_*}"
+    echo "${!components_*}"
+    echo "${!BUILD_*}"
+    echo "${!build_*}"
+    eval "echo \"\${!${BUILD_TOOL^^}*}\""
+    eval "echo \"\${!${BUILD_TOOL}*}\""
+  } | tr ' ' '\n'
+}
+
 # Virtual target that shows various status bits about build system
 build_info ()
 {
-  echo "${!build_component_*}" | words_to_lines | cut -c 12- >&2
+  {
+    echo "Package: ${package_name-null}/${package_version-null}"
+    echo "Env:"
+    build_env_vars | while read -r envname
+    do
+      printf '%s="%s"\n' "$envname" "${!envname}"
+    done |
+      sed 's/^/  - /'
+
+    echo "Builder: $(${BUILD_TOOL:?} --version) ($BUILD_TOOL)"
+    echo "Build component types: " >&2
+    build_component_types | sed 's/^/  - /'
+
+    echo "Build sources: " >&2
+    build-sources | sed 's/^/  - /'
+
+    echo "Build targets: " >&2
+    build-targets | sed 's/^/  - /'
+
+    echo "Build status: "
+    for name in $build_main_targets
+    do
+      echo "  - $name: | "
+      build-log $name 2>&1 | sed 's/^/      /'
+    done
+  } >&2
 }
+
 
 # Return first globbed part, given glob pattern and expanded path.
 # Returned part is everything matched from first to last wildcard glob,
