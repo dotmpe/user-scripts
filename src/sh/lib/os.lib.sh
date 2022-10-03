@@ -610,9 +610,9 @@ read_block ()
 }
 
 # Read all lines. Echo every one, after a particular pattern and value is found,
-# and until the pattern is matched again. Check for value again and repeat,
-# and keep reading until EOF.
-read_blocks () # ~ <Match> <Glob-Value>
+# and until the pattern is matched again. Check that line for value again and
+# repeat, keep reading until EOF.
+read_blocks () # ~ <Match> <Value-glob>
 {
   local found=false first=${first:-false} echo
   while true
@@ -647,6 +647,26 @@ read_escaped_literal () # (s) ~ <Read-argv...> # Read obeying escapes and withou
 {
   #shellcheck disable=2162
   IFS= read "$@"
+}
+
+read_head_blocks () # ~ <Head> <Values>
+{
+  local echo
+  while true
+  do
+    echo=false read_while not grep -q "^$1"
+    section=$( echo "$line" | sed "s#^$1##" | awk '{ print $1 }' )
+    read -r _
+    test $# -gt 2 && {
+      fnmatch "* $section *" " $* " && echo=true || echo=false
+    } || {
+      echo=true
+    }
+    { read_while grep -qE "^[0-9]+ " || break
+    } | sed "s#^#$section #"
+  done
+
+  #read_while not grep -q "^$1" | sed "s#^#$section #"
 }
 
 # Test for file or return before read

@@ -5,8 +5,9 @@
 ansi_tpl_lib_load ()
 {
   # Ask terminal about possible colors if we can
-  test "${TERM:-dumb}" = "dumb" &&
-    true "${ncolors:=0}" || true ${ncolors:=$(tput colors)}
+  test "${TERM:-dumb}" = "dumb" && true "${ncolors:=0}" || {
+    true "${ncolors:=0}" || true ${ncolors:=$(tput colors)} || return
+  }
 
   # Load term-part to set this to more sensible default
   true "${COLORIZE:=$(test $ncolors -gt 0 && printf 1 || printf 0)}"
@@ -30,7 +31,7 @@ ansi_tpl_env_def ()
     _f7= WHITE=   _b7= BG_WHITE= \
     BOLD= REVERSE= NORMAL=
 
-  ${INIT_LOG:?} debug ":ansi:tpl" "Defaulted markup to none" "TERM:$TERM ncolors:$ncolors" 7
+  ${INIT_LOG:?} debug ":ansi:tpl" "Defaulted markup to none" "c:$COLORIZE TERM:$TERM ncolors:$ncolors" 7
 }
 
 ansi_tpl_lib_init ()

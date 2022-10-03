@@ -126,7 +126,11 @@ build_component_function () # ~ <Target-Name> [<Function-Name>] <Libs...>
   test "${func:-"-"}" != "-" ||
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
-  test $# -eq 0 || { lib_require "$@" || return; }
+  test $# -eq 0 || {
+    build-ifchange "$(lib_path "$@" || return)" &&
+    lib_require "$@" || return
+    shift
+  }
   $func "$@"
 }
 
@@ -170,24 +174,37 @@ build_component_simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 }
 
 # Call the build-component-* handler (based on rule's type), by retrieving the
-# first target/type/arguments rule from the compoentns-txt file, by matching an
+# first target/type/arguments rule from the compoentns-txt file, matching a
 # rule name (and type if given).
-build_components () # ~ <Name> [<Type>]
+#
+# Specs are read as-is except for whitespace and brace-expansions, and passed
+# as arguments to the handler function. The build target arguments $1,$2,$3 are
+# stored in BUILD_TARGET{,_{BASE,TMP}} so they are accessible by the recipe as
+# well.
+#
+# Any other sort of expansion (shell variables, glob and other patterns) are
+# left completely to the build-component-* handler.
+build_components () # ~ <Name> [<Type>] [<Build-arv>]
 {
   $LOG "note" "" "Building components" "$*"
 
-  local name="$1" name_p type="${2:-"[^ ]*"}" comptab; shift 2
+  local name="$1" name_p name_ type="${2:-"[^ ]*"}" type_ comptab; shift 2
   fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
   comptab=$(grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt") &&
     test -n "$comptab" || {
       error "No such component '$type:$name" ; return 1
     }
 
-  read_data name type args <<<"$comptab"
+  # Redo only has REDO_TARGET, but not the basename or temporary file in env.
+  BUILD_TARGET=$1
+  BUILD_TARGET_BASE=$2
+  BUILD_TARGET_TMP=$3
+
+  read_data name_ type_ args_ <<<"$comptab"
   # Rules have to expand globs by themselves.
-  set -o noglob; set -- $name $args; set +o noglob
-  $LOG "info" "" "Building as '$type' component" "$*"
-  build_component_${type//-/_} "$@"
+  set -o noglob; set -- $name_ $args_; set +o noglob
+  $LOG "info" "" "Building as '$type_:$name_' component" "$*"
+  build_component_${type_//-/_} "$@"
 }
 
 build_fetch_component () # Path
@@ -215,7 +232,7 @@ build_fetch_component () # Path
 build_run () # ~ <Target>
 {
   grep -q "^$1 " "$components_txt" && {
-    build_components "$1"
+    build_components "$@"
     return $?
   }
 
@@ -455,7 +472,7 @@ test -n "${__lib_load-}" || {
         test $# -gt 0 || set -- $build_all_targets
         while test $# -gt 0
         do
-          build_run "$1" || {
+          build_run "$@" || {
             $LOG error "$1" "" "E:$?"
             exit 1
           }
