@@ -1,27 +1,8 @@
 #!/usr/bin/env bash
 
-build_lib_load () # sh:no-stat: OIl has trouble parsing heredoc
+build_lib_load ()
 {
-  true "${BUILD_TOOL:=${package_build_tool:?}}"
-
-  lib_require argv date match $BUILD_TOOL || return
-
-  local var=${BUILD_TOOL}_commands cmd
-  test -n "${!var-}" || {
-    $LOG error "" "No build tool commands" "$BUILD_TOOL" 1
-    return
-  }
-  for name in ${!var-}
-  do
-    cmd="build${name:${#BUILD_TOOL}}"
-    eval "$(cat <<EOM
-$cmd ()
-{
-  $name "\$@"
-}
-EOM
-    )"
-  done
+  true "${PROJECT_CACHE:="$PWD/.meta/cache"}"
 
   test -n "${sh_file_exts-}" || sh_file_exts=".sh .bash"
 
@@ -29,20 +10,27 @@ EOM
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
 }
 
-build_lib_init ()
+build_lib_init () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  # List of targets for build tool
-  test -n "${components_txt-}" || {
-    true "${COMPONENTS_TXT:="$(PWD=$CWD out_fmt=one cwd_lookup_path components.txt .components.txt)"}"
+  build_define_with_package || return
 
-    components_txt=$COMPONENTS_TXT
+  lib_require argv date match $BUILD_TOOL || return
+
+  build_define_commands || return
+
+  #build_init env_lookup components
+
+  # List of targets for build tool
+  test -n "${BUILD_RULES-}" || {
+    true "${COMPONENTS_TXT:="$(PWD=$CWD out_fmt=one cwd_lookup_path build-rules.txt .build-rules.txt)"}"
+
+    BUILD_RULES=$COMPONENTS_TXT
   }
 
-  # Toggle or alternate target for build tool to build components-txt
-  #test -n "${components_txt_build-}" ||
-  #  components_txt_build=${COMPONENTS_TXT_BUILD:-"1"}
+  # Toggle or alternate target for build tool to build build-rules.txt
+  #test -n "${BUILD_RULES_BUILD-}" ||
+  #  BUILD_RULES_BUILD=${COMPONENTS_TXT_BUILD:-"1"}
 
-  true "${PROJECT_CACHE:="$CWD/.meta/cache"}"
   true "${COMPONENT_TARGETS:="$PROJECT_CACHE/component-targets.list"}"
 
   # Targets for CI jobs
@@ -53,8 +41,58 @@ build_lib_init ()
 
 build ()
 {
-  test -n "${BUILD_TOOL-}" || return 1
-  $BUILD_TOOL "$@"
+  command "${BUILD_TOOL:?}" "$@"
+}
+
+# Cache part files of current build-env profile
+build_add_cache ()
+{
+  BUILD_ENV_CACHE="${BUILD_ENV_CACHE:-}${BUILD_ENV_CACHE:+ }${1:?}"
+}
+
+# Exported functions that are part of the build-env profile
+build_add_handler ()
+{
+  BUILD_ENV_FUN=${BUILD_ENV_FUN:-}${BUILD_ENV_FUN:+ }${1:?}
+}
+
+# Variables defined by the current build-env
+build_add_setting ()
+{
+  BUILD_ENV_DEP=${BUILD_ENV_DEP:-}${BUILD_ENV_DEP:+ }${1:?}
+}
+
+# Sources from which the current build-env was assembled
+build_add_source ()
+{
+  BUILD_ENV_SRC="${BUILD_ENV_SRC:-}${BUILD_ENV_SRC:+ }${1:?}"
+}
+
+build_boot () # ~ <Tags...>
+{
+  test $# -gt 0 || set -- redo-
+  build_add_source BUILD_ENV_BOOT
+  local tag
+  while test $# -gt 0
+  do
+    test "$(type -t build_define__${1//-/_})" = "function" && {
+      build_define__${1//-/_} || return
+    }
+    build_add_handler build_init__${1//-/_}
+    BUILD_ENV_BOOT="${BUILD_ENV_BOOT:-}${BUILD_ENV_BOOT:+ }${1:?}"
+    shift
+  done &&
+  build_env &&
+  for tag in $BUILD_ENV_BOOT
+  do
+    echo "build_init__${tag//-/_}"
+  done
+}
+
+build_boot_for_target () # ~ <Target>
+{
+  # TODO: per-target boot tags
+  build_boot redo-
 }
 
 # Alias target: defer to other targets
@@ -116,8 +154,8 @@ build_component__function () # ~ <Target-Name> [<Function-Name>] <Libs...>
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
   test $# -eq 0 || {
-    build-ifchange "$(lib_path "$@" || return)" &&
     lib_require "$@" || return
+    build-ifchange "$(lib_path "$@" || return)" &&
     shift
   }
   $func "$@"
@@ -127,7 +165,7 @@ build_component__function () # ~ <Target-Name> [<Function-Name>] <Libs...>
 build_component__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 {
   local src match dest grep="$(glob_spec_grep "$2")" f
-  test ${quiet:-0} -eq 1 || f=-v
+  ${quiet:-false} || f=-v
 
   shopt -s nullglob
   for src in $2
@@ -162,17 +200,10 @@ build_component__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
     done )
 }
 
+# XXX: would need to expand all rules
 build_component_exists () # ~ <Target-name>
 {
-  test -n "${1-}" || return 98
-  read_nix_style_file "$components_txt" | {
-    while read name type args
-    do
-      test "$name" = "$1" && return
-      continue
-    done
-    return 1
-  }
+  false
 }
 
 build_component_types ()
@@ -197,7 +228,7 @@ build_components () # ~ <Name> [<Type>] [<Build-arv>]
 
   local name="$1" name_p name_ type="${2:-"[^ ]*"}" type_ comptab; shift 2
   fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
-  comptab=$(grep '^'"$name_p"' '"$type"'\($\| \)' "$components_txt") &&
+  comptab=$(grep '^'"$name_p"' '"$type"'\($\| \)' "$BUILD_RULES") &&
     test -n "$comptab" || {
       error "No such component '$type:$name" ; return 1
     }
@@ -214,9 +245,261 @@ build_components () # ~ <Name> [<Type>] [<Build-arv>]
   build_component__${type_//-/_} "$@"
 }
 
+build_define_commands ()
+{
+  local var=${BUILD_TOOL}_commands cmd
+  test -n "${!var-}" || {
+    $LOG error "" "No build tool commands" "$BUILD_TOOL" 1
+    return
+  }
+  for name in ${!var-}
+  do
+    cmd="build${name:${#BUILD_TOOL}}"
+    eval "$(cat <<EOM
+$cmd ()
+{
+  $name "\$@"
+}
+EOM
+    )"
+  done
+}
+
+build_define_with_package ()
+{
+  true "${BUILD_TOOL:=${package_build_tool:?}}"
+
+  #true "${init_sh_libs:="os sys str match log shell script ${BUILD_TOOL:?} build"}"
+
+  true "${build_parts_bases:="$(for base in ${!package_tools_redo_parts_bases__*}; do eval "echo ${!base}"; done )"}"
+  true "${build_parts_bases:="${UCONF:?}/tools/redo/parts ${HOME:?}/bin/tools/redo/parts ${U_S:?}/tools/redo/parts"}"
+  true "${build_main_targets:="${package_tools_redo_targets_main-"all help build test"}"}"
+  true "${build_all_targets:="${package_tools_redo_targets_all-"build test"}"}"
+}
+
+
+# The build env takes care of bootstrapping the profile using a selected set
+# of resolvers.
+build_env () # ~ [<Handler-tags...>]
+{
+  #env_amend build "$@"
+  ENV_START=$(date --iso=ns)
+  BUILD_ENV_ARGS="$*"
+  true "${ENV_BOOT_DEF:=$PWD/.meta/cache/env.sh}"
+  test -e "${ENV_BOOT:-$ENV_BOOT_DEF}" && {
+    true "${ENV_BOOT:=$ENV_BOOT_DEF}"
+    . "$ENV_BOOT" || return
+  } || {
+    build_lib_load || return
+  }
+  build_env_init || return
+  test "${1:-}" != all || shift
+  test $# -gt 0 || set -- ${BUILD_ENV_DEF:-attributes rule-params}
+  local tag cache
+  for tag in "$@"
+  do
+    build_env__${tag//-/_} || continue #return
+  done
+  for tag in \
+    ENV_START BUILD_ENV_ARGS ENV_BOOT_DEF ENV_BOOT BUILD_ENV_DEF \
+    BUILD_ENV_CACHE $BUILD_ENV_DEP BUILD_ENV_SRC
+  do
+    echo "$tag=\"${!tag-null}\""
+  done
+  for tag in $BUILD_ENV_FUN
+  do
+    #typeset "$tag"
+    type "$tag" | tail -n +2
+  done
+  for cache in $BUILD_ENV_CACHE
+  do
+    echo "# Build env cache: $cache"
+    cat "$cache"
+  done
+  echo "# Build env OK: '$*' completed"
+  echo "ENV_AT=\"$(date --iso=ns)\""
+}
+
+build_env_rule_exists ()
+{
+  local vid var val
+  case "${1:?}" in
+    ( "@"* )
+        mkvid "${1:1}" || return
+        var=build_at_${vid}_targets
+      ;;
+    ( * )
+        mkvid "$1" || return
+        var=build_${vid}_targets
+      ;;
+  esac
+  val=${!var-}
+  test -n "$val" && BUILD_RULE="$val"
+}
+
+build_env_sh ()
+{
+  build_env_vars | build_sh
+  #build_env "$@"
+  #| build_sh
+}
+
+build_sh ()
+{
+  while read -r vname val
+  do
+    val="${!vname-null}"
+    printf '%s=%s\n' "$vname" "${val@Q}"
+  done
+}
+
+build_env_targets ()
+{
+  set -o noglob; set -- ${BUILD_RULE:?}; set +o noglob
+  build-ifchange "$@"
+}
+
+build_init__package ()
+{
+  { test -e ./.meta/package/envs/main.sh -a \
+    ./.meta/package/envs/main.sh -nt package.yaml
+  } || {
+    htd package update && htd package write-scripts
+  }
+}
+
+build_env__package ()
+{
+  build_add_cache ./.meta/package/envs/main.sh
+}
+
+
+build_define__redo_ ()
+{
+  build_add_handler build_part_lookup
+}
+
+build_init__redo_ ()
+{
+  source "${U_S:?}/src/sh/lib/build.lib.sh" &&
+  source "${U_S:?}/src/sh/lib/redo.lib.sh" &&
+    redo_lib_load &&
+    build_lib_load &&
+    build_define_commands &&
+    build_define_with_package
+}
+
+build_init__redo_libs ()
+{
+  {
+    sh_include_path_langs="redo main ci bash sh" &&
+    . "${U_S:?}/tools/sh/parts/include.sh" &&
+    sh_include lib-load &&
+    package_build_tool=redo &&
+    lib_load match redo build &&
+    . "${UCONF:?}/tools/redo/env.sh"
+  } || return
+}
+
+build_init__redo_env_target_ ()
+{
+  . "${U_S:?}/src/sh/lib/sys.lib.sh" &&
+  . "$U_S/src/sh/lib/str.lib.sh"
+}
+
+build_init__redo_libs_ ()
+{
+  scriptname="default.do"
+  . "${U_S:?}/src/sh/lib/os.lib.sh" &&
+  . "$U_S/src/sh/lib/match.lib.sh" &&
+  . "$U_S/tools/sh/parts/lib_util.sh" &&
+  . "$U_S/src/sh/lib/lib.lib.sh" &&
+  lib_lib_load && lib_lib_init &&
+  test ! -e "$CWD/build-lib.sh" || {
+    . "$CWD/build-lib.sh" || return
+    build_add_source "$CWD/build-lib.sh"
+  }
+  INIT_LOG=$LOG match_lib_init
+}
+
+
+build_env__redo_libs ()
+{
+  false
+}
+
+
+build_env_init ()
+{
+  test -n "${BUILD_RULES:-}" || {
+    test -e ".meta/stat/index/components-local.list" &&
+      BUILD_RULES=.meta/stat/index/components-local.list
+  # XXX: deprecate
+    test -e ".components.txt" && BUILD_RULES=.components.txt
+    test -e ".build-rules.txt" && BUILD_RULES=.build-rules.txt
+  }
+
+  test -n "${attributes:-}" || {
+    test -e ".meta/attributes" && attributes=.meta/attributes
+    test -e ".attributes" && attributes=.attributes
+  }
+
+  attributes_sh="${PROJECT_CACHE:?}/attributes.sh"
+
+  build_add_setting PROJECT_CACHE
+}
+
+build_env__attributes ()
+{
+  test -e "${attributes:-}" || {
+    $LOG info "" "No attributes" "${attributes-null}"
+    return 0
+  }
+  build_file "$attributes_sh" "$attributes" "" \
+    attributes_sh "$attributes" &&
+  build_add_cache "$attributes_sh" &&
+  build_add_source "$attributes" &&
+  build_add_setting "attributes attributes_sh"
+}
+
+build_env__rule_params ()
+{
+  params_sh="${PROJECT_CACHE:?}/params.sh"
+  case "${ENV:=dev}" in
+    ( ${build_env_devspec:="dev*"} ) build_rules || return ;;
+    ( * )
+      ${quiet:-false} ||
+        echo "No rules-build for non-dev: $ENV" >&2
+      true "${BUILD_RULES:=${BUILD_RULES:?}}" ;;
+  esac
+  build_file "$params_sh" "$BUILD_RULES" "" \
+    params_sh "$BUILD_RULES" &&
+
+  build_add_cache "$params_sh" &&
+  build_add_source "$BUILD_RULES" &&
+  build_add_setting "BUILD_RULES params_sh"
+}
+
+# Try to give the user an informative view of current build environment.
+build_env_vars ()
+{
+  {
+    echo "${!APP*}"
+    echo "${!package_*}"
+    echo "${!components_*}"
+    echo "${!BUILD*}"
+    echo "${!build_*}"
+    eval "echo \"\${!${BUILD_TOOL^^}*}\""
+    eval "echo \"\${!${BUILD_TOOL}*}\""
+    echo lib_loaded verbosity v
+    echo "${!LIB*}"
+    echo "${!ENV*}"
+  } | tr ' ' '\n' | grep -v '^[ \t]*$'
+}
+
 build_fetch_component () # Path
 {
-  read_nix_style_file "$components_txt" |
+  read_nix_style_file "$BUILD_RULES" |
     while read target_name type target_spec source_specs
   do
     case "$type" in
@@ -236,9 +519,14 @@ build_fetch_component () # Path
   return 1
 }
 
+build_rule_exists () # ~ <Rule-target>
+{
+  grep -q "^${1:?} " "${BUILD_RULES:?}"
+}
+
 build_run () # ~ <Target>
 {
-  grep -q "^$1 " "$components_txt" && {
+  grep -q "^$1 " "$BUILD_RULES" && {
     build_components "$@"
     return $?
   }
@@ -250,7 +538,7 @@ build_run () # ~ <Target>
 cd \$REDO_BASE
 ENV_NAME=redo \
   . ./tools/redo/env.sh &&
-  build-ifchange "\$components_txt" &&
+  build-ifchange "\$BUILD_RULES" &&
   build_fetch_rules
 EOM
     } > "$COMPONENT_TARGETS.do"
@@ -260,7 +548,7 @@ EOM
   local name
   name=$( grep -F " $1 " "$COMPONENT_TARGETS" | cut -d' ' -f1 ) && {
 
-    case "$(grep "^$name " "$components_txt" | cut -d' ' -f2)" in
+    case "$(grep "^$name " "$BUILD_RULES" | cut -d' ' -f2)" in
       ( simpleglob )
           build-ifchange "$1"
           return $?
@@ -336,7 +624,7 @@ build_fetch_simpleglob_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
 # Produce a list of <Group> <Target> <Sources> from c.txt
 build_fetch_rules ()
 {
-  read_nix_style_file "$components_txt" | {
+  read_nix_style_file "$BUILD_RULES" | {
     while read name type args
     do
       set -o noglob; set -- $name $args; set +o noglob
@@ -348,7 +636,7 @@ build_fetch_rules ()
 build_fetch_symlinks_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
 {
   local group=$1 src match dest grep="$(glob_spec_grep "$2")" f
-  test ${quiet:-0} -eq 1 || f=-v
+  ${quiet:-false} || f=-v
 
   shopt -s nullglob
   for src in $2
@@ -361,54 +649,102 @@ build_fetch_symlinks_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
   shopt -u nullglob
 }
 
-# TODO: virtual target to build components-txt table, and to generate rules for
-# every record.
-build_table_for_targets () # ~ <>
-{
-  false
-}
-
-build_env_vars ()
-{
-  {
-    echo "${!package_*}"
-    echo "${!components_*}"
-    echo "${!BUILD_*}"
-    echo "${!build_*}"
-    eval "echo \"\${!${BUILD_TOOL^^}*}\""
-    eval "echo \"\${!${BUILD_TOOL}*}\""
-  } | tr ' ' '\n'
-}
-
 # Virtual target that shows various status bits about build system
 build_info ()
 {
   {
     echo "Package: ${package_name-null}/${package_version-null}"
-    echo "Env:"
-    build_env_vars | while read -r envname
-    do
-      printf '%s="%s"\n' "$envname" "${!envname}"
-    done |
-      sed 's/^/  - /'
+    echo "Env: | "
+    build_env_vars | build_sh | sed 's/^/    /'
 
     echo "Builder: $(${BUILD_TOOL:?} --version) ($BUILD_TOOL)"
-    echo "Build component types: " >&2
+
+    echo "Build rule types: "
     build_component_types | sed 's/^/  - /'
 
-    echo "Build sources: " >&2
+    echo "Build sources: "
     build-sources | sed 's/^/  - /'
 
-    echo "Build targets: " >&2
+    echo "Build targets: "
     build-targets | sed 's/^/  - /'
 
     echo "Build status: "
     for name in $build_main_targets
     do
+      test "$name" != :info || continue
       echo "  - $name: | "
-      build-log $name 2>&1 | sed 's/^/      /'
+      { build-log $name 2>&1 || true
+      } | sed 's/^/      /'
     done
   } >&2
+}
+
+# TODO: add TTL impl.
+build_file () # ~ <File-target> <File-source> <TTL> <Command-argv...>
+{
+  test -e "${1:?}" && {
+    test -n "${2:-}" && {
+      # age1 < age2 && return
+      test "$1" -nt "$2" && return
+      # age1 - TTL < age2 && return
+      false
+    }
+    test -n "${3:-}" && {
+      # age1 < TTL && return
+      false
+    }
+  }
+  local dest=$1 destdir=$(dirname "$1")
+  shift 3 || return
+  test -d "$destdir" || mkdir -vp "$destdir" >&2
+  "$@" > "$dest"
+}
+
+# Translate Lookup path element and given/local name to filesystempath,
+# or return err-stat.
+# Copy of lookup_exists
+build_part_lookup () # NAME DIRS...
+{
+  local name="$1" r=1
+  shift
+  while test $# -gt 0
+  do
+    test -e "$1/$name" && {
+      echo "$1/$name"
+      test ${lookup_first:-1} -eq 1 && return || r=0
+    }
+    shift
+  done
+  return $r
+}
+
+build_rules ()
+{
+  true "${BUILD_RULES:=${BUILD_RULES:?}}"
+  test "${BUILD_RULES_BUILD:-0}" = "1" && {
+    build-ifchange "$BUILD_RULES" || return
+  } || {
+    test "${BUILD_RULES_BUILD:-0}" = "0" || {
+      BUILD_RULES=${BUILD_RULES_BUILD:?}
+      build-ifchange "$BUILD_RULES" || return
+    }
+  }
+}
+
+# TODO: can use build-ifchange to add dependencies for target, also add
+# build-stamp on only the rule part for given target.
+build_rules_for_target () # ~ <Target> <Basename> <Tempname>
+{
+  build_rules &&
+
+    build-stamp
+}
+
+# TODO: virtual target to build components-txt table, and to generate rules for
+# every record.
+build_table_for_targets () # ~ <>
+{
+  false
 }
 
 
@@ -492,7 +828,7 @@ list_scripts () # [Generator] [Newer-Than]
 
 build_chatty () # Level
 {
-  test ${quiet:-$(test $verbosity -lt ${1:-3} && printf 1 || printf 0)} -eq 0
+  test ${quiet:-$(test $verbosity -lt ${1:-3} && printf true || printf false )} -eq 0
 }
 
 build_copy_changed ()
@@ -519,13 +855,44 @@ expand_format () # ~ <Format> <Name-Parts>
   done
 }
 
+attributes_sh ()
+{
+  grep -Ev '^\s*(#.*|\s*)$' "$@" |
+  awk '{ st = index($0,":") ;
+      key = substr($0,0,st-1) ;
+      gsub(/[^A-Za-z0-9]/,"_",key) ;
+      print toupper(key) "=\"" substr($0,st+2) "\"" }'
+}
+
+params_sh ()
+{
+  grep -Po '^#  *@\K[A-Za-z_-][A-Za-z0-9/\\_-]*: .*' "$@" |
+  awk '{ st = index($0,":") ;
+      key = substr($0,0,st-1) ;
+      gsub(/[^A-Za-z0-9_]/,"_",key) ;
+      print "build_" key "_targets=\"" substr($0,st+2) "\"" }'
+}
+
+
 
 test -n "${__lib_load-}" || {
 
-  case "$(basename -- "$0" .lib.sh )" in
+  case "${build_entry_point:-$(basename -- "$0" .lib.sh )}" in
+
+    ( "build-" )
+        true "${quiet:=true}"
+        subcmd=${1:?}
+        shift
+        build_"${subcmd//-/_}" "$@" || exit
+      ;;
 
     ( "build" )
-        . "${U_S}/tools/redo/env.sh" || exit $?
+        . "${U_S}/tools/redo/env.sh" || { r=$?
+          test $r = 96 && {
+            echo "E$r: Env recursion?" >&2
+          }
+          exit $r
+        }
 
         test $# -gt 0 || set -- $build_all_targets
         while test $# -gt 0

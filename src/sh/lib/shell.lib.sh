@@ -147,10 +147,32 @@ shell_def ()
         env
       } | sort -u
     }
+
     sh_isset() # sh:no-stat
     {
       test "${!1-unset}" != "unset"
     }
+
+    sh_fun() # Is name of shell funtion # sh:no-stat
+    {
+      test "$(type -t "$1")" = "function"
+    }
+
+    sh_als() # Is name of shell alias # sh:no-stat
+    {
+      test "$(type -t "$1")" = "alias"
+    }
+
+    sh_bi()
+    {
+      test "$(type -t "$1")" = "builtin"
+    }
+
+    sh_kw()
+    {
+      test "$(type -t "$1")" = "keyword"
+    }
+
   } || {
     $us_log info shell.lib "Choosing non-bash sh-env-init"
     sh_env() # sh:no-stat

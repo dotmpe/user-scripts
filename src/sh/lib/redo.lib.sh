@@ -14,6 +14,9 @@ redo-targets\ \
 redo-unlocked\ \
 redo-whichdo\ \
 redo-keep-going
+
+  #true "${DEBUG:=${REDO_DEBUG-${DEBUG-}}}"
+  true "${redo_opts:="-j4"}"
 }
 
 redo_lib_init()

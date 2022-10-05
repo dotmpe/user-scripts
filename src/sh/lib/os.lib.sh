@@ -654,16 +654,16 @@ read_head_blocks () # ~ <Head> <Values>
   local echo
   while true
   do
-    echo=false read_while not grep -q "^$1"
+    echo=false read_while not grep -q "^$1" || break
     section=$( echo "$line" | sed "s#^$1##" | awk '{ print $1 }' )
-    read -r _
+    read -r _ || break
     test $# -gt 2 && {
       fnmatch "* $section *" " $* " && echo=true || echo=false
     } || {
       echo=true
     }
-    { read_while grep -qE "^[0-9]+ " || break
-    } | sed "s#^#$section #"
+    { read_while grep -qE "^[0-9]+ "
+    } | sed "s#^#$section #" || break
   done
 
   #read_while not grep -q "^$1" | sed "s#^#$section #"

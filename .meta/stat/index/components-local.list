@@ -1,3 +1,6 @@
+# @main: all help build test
+# @all: build test
+
 ## Define project Redo targets
 # Target-Name Target-Type Target-Value
 configure function
