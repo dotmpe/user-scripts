@@ -31,6 +31,7 @@ test -n "${sh_util_:-}" || {
 
 sh_include \
   env-init-log \
+  env-gnu \
   env-0-1-lib-sys \
   print-color remove-dupes unique-paths
 
