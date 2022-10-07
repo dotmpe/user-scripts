@@ -156,7 +156,7 @@ build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-
 # The final sequence is passed as arguments to the handler.
 build_component__function () # ~ <Target> [<Function>] [<Lib>] [<Args>]
 {
-  local libs name=$1 func="$2"
+  local libs name=${1:?} func=${2:--}
   shift 2
   test "${func:-"-"}" != "*" ||
     func="build__$(mkvid "$BUILD_NAME_NS" && printf -- "$vid")"
@@ -961,6 +961,13 @@ fnmatch ()
             return 1
         ;;
     esac
+}
+
+# Take any string and return a Regex to match that exact string, see
+# match-grep-pattern-test.
+match_grep() # String
+{
+  echo "$1" | $gsed -E 's/([^A-Za-z0-9{}(),?!@+_])/\\\1/g'
 }
 
 
