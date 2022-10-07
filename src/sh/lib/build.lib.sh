@@ -145,17 +145,30 @@ build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-
     done )
 }
 
-# Function target: invoke function with build-args
-build_component__function () # ~ <Target-Name> [<Function-Name>] <Libs...>
+# Function target: invoke function with build-args.
+# If function is '-' then it is set to `mkvid build_$BUILD_TARGET`. A special
+# case is made for '*' type, which is identical to '-' but uses  BUILD_NAME_NS
+# instead of the target name. These functions can use BUILD_NAME_PARTS to
+# access the rest of the name.
+#
+# To specify a sh lib to load both lib-require and lib-path must be available.
+#
+# The final sequence is passed as arguments to the handler.
+build_component__function () # ~ <Target> [<Function>] [<Lib>] [<Args>]
 {
   local libs name=$1 func="$2"
   shift 2
+  test "${func:-"-"}" != "*" ||
+    func="build__$(mkvid "$BUILD_NAME_NS" && printf -- "$vid")"
+
   test "${func:-"-"}" != "-" ||
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
   test $# -eq 0 || {
-    lib_require "$@" || return
-    build-ifchange "$(lib_path "$@" || return)" &&
+    test -z "$1" -o "$1" = "--" || {
+      build-ifchange "$(lib_path "$1" || return)" &&
+      lib_require "$1" || return
+    }
     shift
   }
   $func "$@"
@@ -211,34 +224,39 @@ build_component_types ()
   compgen -A function | grep '^build_component__' | cut -c 18- | tr '_' '-'
 }
 
-# Call the build-component-* handler (based on rule's type), by retrieving the
-# first target/type/arguments rule from the compoentns-txt file, matching a
-# rule name (and type if given).
-#
-# Specs are read as-is except for whitespace and brace-expansions, and passed
-# as arguments to the handler function. The build target arguments $1,$2,$3 are
+# XXX: The build target arguments $1,$2,$3 are
 # stored in BUILD_TARGET{,_{BASE,TMP}} so they are accessible by the recipe as
 # well.
+
+# Get directive line from build-rules based on name, and invoke
+# build-component--* handler based on build rule type.
 #
-# Any other sort of expansion (shell variables, glob and other patterns) are
-# left completely to the build-component-* handler.
-build_components () # ~ <Name> [<Type>] [<Build-arv>]
+# Specs are read as-is except for whitespace and brace-expansions, and passed
+# as arguments to the handler function.
+# Any other sort of expansion (shell variables, file glob and other patterns)
+# are left completely to the build-component-* handler.
+#
+# The directive line selection is based on grep, so any name pattern can be
+# given to invoke a certain handler function for target names that follow a
+# certain pattern (such as files or URI). This function by default selects
+# an exact name, but it will always escape '/' so it can accept path names
+# but it does not escape '.' or special regex meta characters.
+build_components () # ~ <Name>
 {
-  $LOG "note" "" "Building components" "$*"
-
-  local name="$1" name_p name_ type="${2:-"[^ ]*"}" type_ comptab; shift 2
-  fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
-  comptab=$(grep '^'"$name_p"' '"$type"'\($\| \)' "$BUILD_RULES") &&
+  local comptab
+  comptab=$(build_rule_fetch "${1:?}") &&
     test -n "$comptab" || {
-      error "No such component '$type:$name" ; return 1
+      error "No such component '$1" ; return 1
     }
+  $LOG "note" "" "Building component for target" "${1:?}"
 
-  # Redo only has REDO_TARGET, but not the basename or temporary file in env.
-  BUILD_TARGET=$1
-  BUILD_TARGET_BASE=$2
-  BUILD_TARGET_TMP=$3
-
+  local name="${1:?}" name_ type_
+  shift
   read_data name_ type_ args_ <<<"$comptab"
+  test -n "$type_" || {
+    error "Empty directive for component '$name" ; return 1
+  }
+
   # Rules have to expand globs by themselves.
   set -o noglob; set -- $name_ $args_; set +o noglob
   $LOG "info" "" "Building as '$type_:$name_' component" "$*"
@@ -521,7 +539,14 @@ build_fetch_component () # Path
 
 build_rule_exists () # ~ <Rule-target>
 {
-  grep -q "^${1:?} " "${BUILD_RULES:?}"
+  grep_f=-q build_rule_fetch "$@"
+}
+
+build_rule_fetch () # ~ <Rule-target>
+{
+  local name=${1:?} name_p
+  fnmatch "*/*" "$name" && name_p="$(match_grep "$name")" || name_p="$name"
+  grep ${grep_f:--m1} "^$name_p"'\($\| \)' "${BUILD_RULES:?}"
 }
 
 build_run () # ~ <Target>
@@ -720,7 +745,7 @@ build_part_lookup () # NAME DIRS...
 
 build_rules ()
 {
-  true "${BUILD_RULES:=${BUILD_RULES:?}}"
+  true "${BUILD_RULES:=${package_build_rules_tab:?}}"
   test "${BUILD_RULES_BUILD:-0}" = "1" && {
     build-ifchange "$BUILD_RULES" || return
   } || {
@@ -733,11 +758,64 @@ build_rules ()
 
 # TODO: can use build-ifchange to add dependencies for target, also add
 # build-stamp on only the rule part for given target.
-build_rules_for_target () # ~ <Target> <Basename> <Tempname>
+build_rules_for_target () # ~ <Name> <Basename> <Tempfile>
 {
   build_rules &&
 
-    build-stamp
+  # Redo only has REDO_TARGET, but not the basename or temporary file in env.
+  BUILD_TARGET=$1
+  BUILD_TARGET_BASE=$2
+  BUILD_TARGET_TMP=$3
+
+  true "${BUILD_NAME_SEPS:=":"}"
+
+  # Split function type directives with specific name pattern on first
+  # colon, and use that as prefix to find a build rule for this group of
+  # targets that can be handled with one generic build handler.
+
+  # FIXME: handle root (empty initial name part) properly
+  local nsep
+  for nsep in $BUILD_NAME_SEPS
+  do
+    fnmatch "$nsep*$nsep*" "$1" && {
+      set -- "${1#:*}"
+      BUILD_NAME_NS=${1//$nsep*}
+      set -- "$nsep$BUILD_NAME_NS$nsep"
+      BUILD_NAME_PARTS=${BUILD_TARGET:${#1}}
+      set -- "$1[^ ]*"
+    } || true
+  done
+
+  test "$1" != "${BUILD_RULES-}" -a -s "${BUILD_RULES-}" || {
+    # Prevent redo self.id != src.id assertion failure
+    $LOG alert ":build-component:$1" \
+      "Cannot build rules table from empty table" "${BUILD_RULES-null}" 1
+    return
+  }
+
+  # Shortcut execution for simple aliases, but takes literal values only
+  { build_init__redo_env_target_ || return
+  } >&2
+  build_env_rule_exists "$1" && {
+    build_env_targets
+    exit
+  }
+
+  # Run build based on matching rule in BUID_RULES table
+
+  build_rule_exists "$1" || {
+    #print_err "error" "" "Unknown target, see '$BUILD_TOOL help'" "$1"
+    $LOG "error" "" "Unknown target, see '$BUILD_TOOL help'" "$1" $?
+    return
+  }
+
+  $LOG "notice" ":exists:$1" "Found build rule for target" "$1"
+  { build_init__redo_libs_ "$1" || return
+  } >&2
+  build_components "$1" || return
+
+  # Add dependency on
+  build_rule_fetch "$1" | build-stamp
 }
 
 # TODO: virtual target to build components-txt table, and to generate rules for
@@ -873,6 +951,17 @@ params_sh ()
       print "build_" key "_targets=\"" substr($0,st+2) "\"" }'
 }
 
+fnmatch ()
+{
+    case "$2" in
+        $1)
+            return 0
+        ;;
+        *)
+            return 1
+        ;;
+    esac
+}
 
 
 test -n "${__lib_load-}" || {
