@@ -48,7 +48,7 @@ lib_errors ()
 }
 
 # Echoes if path exists. See sys.lib.sh lookup-exists
-lib_exists () # [lookup_first=1] ~ <Lib-name> [<Dirs...>]
+lib_exists () # [lookup_first=true] ~ <Lib-name> [<Dirs...>]
 {
   local name="$1" r=1
   shift
@@ -57,7 +57,7 @@ lib_exists () # [lookup_first=1] ~ <Lib-name> [<Dirs...>]
   do
     test -e "$1/$name.lib.sh" && {
       echo "$1/$name.lib.sh"
-      test ${lookup_first:-1} -eq 1 && return || r=0
+      ${lookup_first:-true} && return || r=0
     }
     shift
   done
@@ -76,7 +76,7 @@ lib_glob () # Pattern ([Path-Var-Name]) ([paths]|paths-list|names|names-list)
   test -n "${1-}" || set -- "*" "${2-}" "${3-"paths"}"
   test -n "${2-}" || set -- "$1" "SCRIPTPATH" "${3-"paths"}"
   lookup_test=${lookup_test:-"lib_glob_names"}  \
-  lookup_first=${lookup_first:-0} lookup_path $2 "$1" | grep -v '^\s*$' | {
+  lookup_first=${lookup_first:-false} lookup_path $2 "$1" | grep -v '^\s*$' | {
     case ${3-"paths"} in
       names ) tr -s ' ' '\n' | sed 's/^.*\/\([^\.]*\)\..*$/\1/' | tr -s '\n ' ' ' ;;
       names-list|name-list ) tr -s '\n ' '\n' | sed 's/^.*\/\([^\.]*\)\..*$/\1/' | tr -s '\n ' ' ' | tr -s ' ' '\n' ;;
@@ -160,7 +160,7 @@ lib_loaded_env_ids() # [Check-Libs...]
 
 lib_lookup () # ~ <Lib-name> # Echo only first result for lib_path
 {
-  lookup_first=1 lib_path "$1"
+  lookup_first=true lib_path "$1"
 }
 
 # Echo every occurence of *.lib.sh on SCRIPTPATH
@@ -169,8 +169,7 @@ lib_path () # ~ <Local-name> [<Path-Var-name>]
   test $# -le 2 || return 98
   test -n "${2-}" || set -- "$1" SCRIPTPATH
   lookup_test=${lookup_test:-"lib_exists"} \
-  lookup_first=${lookup_first:-0} \
-    lookup_path $2 "${1:?}"
+  lookup_first=${lookup_first:-false} lookup_path $2 "${1:?}"
 }
 
 lib_paths () # (s?) ~ [<Lib-names...>]
@@ -209,7 +208,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
         f_lib_path="$( echo "$SCRIPTPATH" | tr ':' '\n' | while read _PATH
           do
             $lookup_test "$1" "$_PATH" && {
-              test ${lookup_first:-0} -eq 0 && break || continue
+              ! ${lookup_first:-false} && break || continue
             } || continue
           done)"
 
@@ -219,7 +218,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
         }
 
         log_key=$log_key $lib_lib_log debug "" "Loading lib '$1'" ""
-        test ${lookup_first:-0} -eq 0 && {
+        ! ${lookup_first:-false} && {
 
           . "$f_lib_path" || { r=$?; lib_src_stat=$r
             log_key=$log_key \

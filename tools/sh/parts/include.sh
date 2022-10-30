@@ -103,7 +103,7 @@ sh_require ()
 
   local sh_include_partid sh_include_part_var
 
-  for sh_include_partid in $*
+  for sh_include_partid in "$@"
   do
     sh_include_part_var=sh_include_part_${sh_include_partid//-/_}
     test ${!sh_include_part_var:-1} -eq 0 ||

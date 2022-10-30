@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 
+### Build.lib: Frontends and shell toolkit for build system
+
+
 build_lib_load ()
 {
-  true "${PROJECT_CACHE:="$PWD/.meta/cache"}"
+  true "${build_rules_defnames:=build-rules.txt .build-rules.txt .components.txt .meta/stat/index/components-local.list}"
+
+  BUILD_SPECIAL_RE='[\+\@\:\%\&\*]'
+  BUILD_VIRTUAL_RE='[\?\+-]'
+
+  declare -g -A BUILD_NAME_SEPS=( [":"]=special ["/"]=filepath
+    ["-"]=min ["+"]=plus
+    ["?"]=qm
+    ["&"]=amp ["@"]=at
+    ["%"]=pct
+    ["*"]=shexpand
+  )
+
+  #true "${BUILD_ENV_DEF:=defaults redo--}"
 
   test -n "${sh_file_exts-}" || sh_file_exts=".sh .bash"
 
@@ -12,7 +28,7 @@ build_lib_load ()
 
 build_lib_init () # sh:no-stat: OIl has trouble parsing heredoc
 {
-  build_define_with_package || return
+  build_env__define__from_package || return
 
   lib_require argv date match $BUILD_TOOL || return
 
@@ -20,12 +36,7 @@ build_lib_init () # sh:no-stat: OIl has trouble parsing heredoc
 
   #build_init env_lookup components
 
-  # List of targets for build tool
-  test -n "${BUILD_RULES-}" || {
-    true "${COMPONENTS_TXT:="$(PWD=$CWD out_fmt=one cwd_lookup_path build-rules.txt .build-rules.txt)"}"
-
-    BUILD_RULES=$COMPONENTS_TXT
-  }
+  #build_env__define__build_rules || return
 
   # Toggle or alternate target for build tool to build build-rules.txt
   #test -n "${BUILD_RULES_BUILD-}" ||
@@ -47,52 +58,49 @@ build ()
 # Cache part files of current build-env profile
 build_add_cache ()
 {
-  BUILD_ENV_CACHE="${BUILD_ENV_CACHE:-}${BUILD_ENV_CACHE:+ }${1:?}"
+  BUILD_ENV_CACHE=${BUILD_ENV_CACHE:-}${BUILD_ENV_CACHE:+ }${1:?} &&
+    test $# -eq 1
 }
 
 # Exported functions that are part of the build-env profile
 build_add_handler ()
 {
-  BUILD_ENV_FUN=${BUILD_ENV_FUN:-}${BUILD_ENV_FUN:+ }${1:?}
+  BUILD_ENV_FUN=${BUILD_ENV_FUN:-}${BUILD_ENV_FUN:+ }${1:?} && test $# -eq 1
 }
 
 # Variables defined by the current build-env
 build_add_setting ()
 {
-  BUILD_ENV_DEP=${BUILD_ENV_DEP:-}${BUILD_ENV_DEP:+ }${1:?}
+  BUILD_ENV_DEP=${BUILD_ENV_DEP:-}${BUILD_ENV_DEP:+ }${1:?} && test $# -eq 1
 }
 
 # Sources from which the current build-env was assembled
 build_add_source ()
 {
-  BUILD_ENV_SRC="${BUILD_ENV_SRC:-}${BUILD_ENV_SRC:+ }${1:?}"
+  BUILD_ENV_SRC="${BUILD_ENV_SRC:-}${BUILD_ENV_SRC:+ }${1:?}" && test $# -eq 1
 }
 
-build_boot () # ~ <Tags...>
+# Run specs from BOOT_SPECS
+build_boot () # (Build-Action) ~ <Argv...>
 {
-  test $# -gt 0 || set -- redo-
-  build_add_source BUILD_ENV_BOOT
+  case "${BUILD_ACTION:?}" in
+    ( boot )
+      ;;
+
+    ( env )
+      ;;
+
+    ( * )
+      ;;
+  esac
+
+  test $# -gt 0 || set -- ${BOOT_SPECS:?}
+
   local tag
-  while test $# -gt 0
+  for tag in "$@"
   do
-    test "$(type -t build_define__${1//-/_})" = "function" && {
-      build_define__${1//-/_} || return
-    }
-    build_add_handler build_init__${1//-/_}
-    BUILD_ENV_BOOT="${BUILD_ENV_BOOT:-}${BUILD_ENV_BOOT:+ }${1:?}"
-    shift
-  done &&
-  build_env &&
-  for tag in $BUILD_ENV_BOOT
-  do
-    echo "build_init__${tag//-/_}"
+    build_env__boot__"${tag//-/_}" || return
   done
-}
-
-build_boot_for_target () # ~ <Target>
-{
-  # TODO: per-target boot tags
-  build_boot redo-
 }
 
 # Alias target: defer to other targets
@@ -107,23 +115,44 @@ build_component__alias () # <Name> <Targets...>
   build-ifchange "$@"
 }
 
-# Defer to script: build a (single) target using a source script that can build multiple targets
-build_component__defer () # ~ <Target-Name> <Part-Name>
+# Defer to script: build a (single) target using a source script. Normally,
+# Redo selects nearest recipe (see redo-whichdo). This will load a 'do' part
+# file with given name, or use the encoded target and lookup a *.do file
+# elsewhere.
+build_component__defer () # ~ <Target-name> [<Part-name>]
 {
-  local part
-  part=$(sh_lookup "$2" $build_parts_bases )
-  source "$part"
+  local pn=${2:-${1:?}} part
+  test -n "${2:-}" || pn="$(echo "$pn" | tr './' '_')"
+  part=$( build_part_lookup "$pn.do" ${BUILD_PARTS_BASES:?} ) ||
+    return ${_E_continue:-196}
+  $LOG "info" ":defer:$2" "Building include" "$1"
+  ${show_recipe:-false} && {
+    echo "build-ifchange \"$part\""
+  } || {
+    build-ifchange "$part" || return
+  }
+  shift
+  $LOG "debug" ":defer:$1" "Sourcing include" "$part"
+  ${show_recipe:-false} && {
+    echo "set -- \"${BUILD_TARGET:?}\" \"${BUILD_TARGET_BASE:?}\" \"${BUILD_TARGET_TMP:?}\""
+    echo "source \"$part\""
+  } || {
+    set -- "${BUILD_TARGET:?}" "${BUILD_TARGET_BASE:?}" "${BUILD_TARGET_TMP:?}"
+    source "$part"
+  }
 }
 
-# Almost like alias, except this expands strings containing shell expressions.
-# These can be brace-expansions, variables or even subcommands.
+# Somewhat like alias, but this expands strings containing
+# shell expressions.
+#
+# XXX: These can be brace-expansions, variables or even subshells.
 build_component__expand () # ~ <Target-Name> <Target-Expressions...>
 {
   shift
   build-ifchange $(eval "echo $*")
 }
 
-#
+# XXX: Use command as output to fill single placeholder in pattern(s)
 build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-Formats...>
 {
   local source_cmd=
@@ -154,9 +183,9 @@ build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-
 # To specify a sh lib to load both lib-require and lib-path must be available.
 #
 # The final sequence is passed as arguments to the handler.
-build_component__function () # ~ <Target> [<Function>] [<Lib>] [<Args>]
+build_component__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
 {
-  local libs name=${1:?} func=${2:--}
+  local name=${1:?} func=${2:--}
   shift 2
   test "${func:-"-"}" != "*" ||
     func="build__$(mkvid "$BUILD_NAME_NS" && printf -- "$vid")"
@@ -165,6 +194,7 @@ build_component__function () # ~ <Target> [<Function>] [<Lib>] [<Args>]
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
   test $# -eq 0 || {
+    set -- $(eval "echo $*")
     test -z "$1" -o "$1" = "--" || {
       build-ifchange "$(lib_path "$1" || return)" &&
       lib_require "$1" || return
@@ -172,6 +202,96 @@ build_component__function () # ~ <Target> [<Function>] [<Lib>] [<Args>]
     shift
   }
   $func "$@"
+}
+build_component__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
+{
+  local name=${1:?} func=${2:--}
+  shift 2
+  test "${func:-"-"}" != "-" ||
+    func="build_$(mkvid "$name" && printf -- "$vid")"
+
+  test "${func:-"-"}" != "*" ||
+    func="build_$(mkvid "$BUILD_TARGET" && printf -- "$vid")"
+
+  test "${func:-"-"}" != ":" ||
+    func="build_$(mkvid "$BUILD_TARGET_KEY" && printf -- "$vid")"
+
+  test $# -eq 0 || {
+    # XXX: function uses eval to expand vars
+    set -- $(eval "echo $*")
+    # FIXME: parse seq properly
+    test -z "$1" -o "$1" = "--" || {
+      build-ifchange "$1" &&
+      source "$1" || return
+    }
+    shift
+    test "${1:-}" != "--" || shift
+  }
+  $func "$@"
+}
+
+# Compose: build file from given function(s)
+# TODO: as compose-names but do static analysis to resolve dependencies
+build_component__compose () # ~ <Target> <Composed...>
+{
+  false
+}
+
+build_component__compose_names () # ~ <Target> <Composed...>
+{
+  shift || return ${_E_GAE:-193}
+  : "${@:?"Expected one or more functions to typeset"}"
+  local fun tp rs r
+  for fun in "$@"
+  do
+    build_component__compose__resolve "$fun" || return
+  done
+  build-stamp < "${BUILD_TARGET_TMP:?}"
+  typeset build_component__compose | build-stamp
+}
+
+build_component__compose__resolve ()
+{
+  # There are myriads of ways to start looking for a function definition,
+  # and also to generate a typeset.
+
+  { tp="$(type -t "${1:?}")" && test "$tp" = "function"
+  } || {
+    for rs in ${COMPO_RESOLVE:-tagsfile composure}
+    do
+      build_component__compose__resolve_function__${rs} "$1"; r=$?
+      test $r -eq 0 && break ||
+        test $r -eq ${_E_continue:-196} && continue
+    done
+    test $r -eq 0 || {
+      test $r -eq ${_E_continue:-196} &&
+        $LOG error "" "Failed to resolve" "$BUILD_TARGET:$1:$COMPO_RESOLVE" ||
+        $LOG error "" "Error during resolve" "$BUILD_TARGET:$1"
+      return $r
+    }
+  }
+  #build_component__compose__typeset__${BUILD_COMPO_TGEN:-sh}
+  $LOG info "" "Typesetting..." "$1"
+  type "$1" | tail -n +2 > "${BUILD_TARGET_TMP:?}" || return
+}
+
+# TODO: look in users C_INC/which composure.sh
+build_component__compose__resolve_function__composure ()
+{
+  return ${_E_continue:-196}
+}
+
+build_component__compose__resolve_function__tagsfile ()
+{
+  local tsrc
+  tsrc=$(grep -m 1 "^$1"$'\t' ${TAGS:?} | awk '{print $2}') || {
+    $LOG error "" "Unknown function" "$BUILD_TARGET:$1"
+    return ${_E_continue:-196}
+  }
+  BASE=source . "$tsrc" || {
+    $LOG error "" "Failed to include" "$BUILD_TARGET:$1:$tsrc" 1 || return
+  }
+  build-ifchange "$tsrc"
 }
 
 # Symlinks: create each dest, linking to srcs
@@ -203,6 +323,7 @@ build_component__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 
 # Simpleglob: defer to target paths obtained by expanding source-spec
 #build_component_glob () # ~ <Name> <Target-Pattern> <Source-Globs...>
+# XXX: this is not a simple glob but a map-path-pattern based on glob input
 build_component__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 {
   local src match glob=$(echo "$3" | sed 's/%/*/')
@@ -213,7 +334,7 @@ build_component__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
     done )
 }
 
-# XXX: would need to expand all rules
+# XXX: would need to expand all rules.
 build_component_exists () # ~ <Target-name>
 {
   false
@@ -221,26 +342,23 @@ build_component_exists () # ~ <Target-name>
 
 build_component_types ()
 {
-  compgen -A function | grep '^build_component__' | cut -c 18- | tr '_' '-'
+  sh_fun_for_pref "build_component__" | cut -c 18- | tr '_' '-'
 }
 
-# XXX: The build target arguments $1,$2,$3 are
-# stored in BUILD_TARGET{,_{BASE,TMP}} so they are accessible by the recipe as
-# well.
-
 # Get directive line from build-rules based on name, and invoke
-# build-component--* handler based on build rule type.
+# build-component:* handler based on build rule type.
 #
-# Specs are read as-is except for whitespace and brace-expansions, and passed
-# as arguments to the handler function.
-# Any other sort of expansion (shell variables, file glob and other patterns)
-# are left completely to the build-component-* handler.
+# Specs are read as-is except for whitespace and brace-expansions, and
+# passed as arguments to the handler function.
+# Any other sort of expansion (shell variables, file glob and other
+# patterns) are left completely to the build-component:* handler.
 #
-# The directive line selection is based on grep, so any name pattern can be
-# given to invoke a certain handler function for target names that follow a
-# certain pattern (such as files or URI). This function by default selects
-# an exact name, but it will always escape '/' so it can accept path names
-# but it does not escape '.' or special regex meta characters.
+# The directive line selection is based on grep, so any name pattern
+# can be given to invoke a certain handler function for target names
+# that follow a certain pattern (such as files or URI). This function
+# by default selects an exact name, but it will always escape '/' so
+# it can accept path names XXX: but it does not escape '.' or special
+# regex meta characters.
 build_components () # ~ <Name>
 {
   local comptab
@@ -248,7 +366,7 @@ build_components () # ~ <Name>
     test -n "$comptab" || {
       error "No such component '$1" ; return 1
     }
-  $LOG "note" "" "Building component for target" "${1:?}"
+  $LOG "note" "" "Building component '${1:?}' for target" "${BUILD_TARGET:?}"
 
   local name="${1:?}" name_ type_
   shift
@@ -259,75 +377,112 @@ build_components () # ~ <Name>
 
   # Rules have to expand globs by themselves.
   set -o noglob; set -- $name_ $args_; set +o noglob
-  $LOG "info" "" "Building as '$type_:$name_' component" "$*"
-  build_component__${type_//-/_} "$@"
+  $LOG "info" "" "Building as '$type_:$name_' component" "argv($#):$*"
+  ${show_recipe:-false} && {
+    echo "# build:rule: $name_ $type_ ( $args_ )"
+    echo "set -- ${*@Q}"
+    sh_fun_body build_component__${type_//-/_} | sed 's/^    //'
+  } || {
+    build_component__${type_//-/_} "$@"
+  }
 }
 
+# Make build-* wrapper functions to actual builder
 build_define_commands ()
 {
-  local var=${BUILD_TOOL}_commands cmd
+  set -- $(builder_commands) || return
+  local name cmd
+  for name in "$@"
+  do
+    cmd="build${name:${#BUILD_TOOL}}"
+    nameref="\${BUILD_TOOL:?}${name:${#BUILD_TOOL}}"
+    sh_fun "$cmd" && {
+      true
+    } || {
+      sh_fun "$name" && {
+        eval "$(cat <<EOM
+$cmd ()
+{
+$(sh_fun_body "$name")
+}
+EOM
+        )"
+      } || {
+        eval "$(cat <<EOM
+$cmd ()
+{
+  command "$nameref" "\$@"
+}
+EOM
+        )"
+      }
+    }
+  done
+}
+
+builder_commands ()
+{
+  local var=${BUILD_TOOL:?}_commands
   test -n "${!var-}" || {
     $LOG error "" "No build tool commands" "$BUILD_TOOL" 1
     return
   }
-  for name in ${!var-}
-  do
-    cmd="build${name:${#BUILD_TOOL}}"
-    eval "$(cat <<EOM
-$cmd ()
-{
-  $name "\$@"
+  echo "${!var-}"
 }
-EOM
-    )"
-  done
-}
-
-build_define_with_package ()
-{
-  true "${BUILD_TOOL:=${package_build_tool:?}}"
-
-  #true "${init_sh_libs:="os sys str match log shell script ${BUILD_TOOL:?} build"}"
-
-  true "${build_parts_bases:="$(for base in ${!package_tools_redo_parts_bases__*}; do eval "echo ${!base}"; done )"}"
-  true "${build_parts_bases:="${UCONF:?}/tools/redo/parts ${HOME:?}/bin/tools/redo/parts ${U_S:?}/tools/redo/parts"}"
-  true "${build_main_targets:="${package_tools_redo_targets_main-"all help build test"}"}"
-  true "${build_all_targets:="${package_tools_redo_targets_all-"build test"}"}"
-}
-
 
 # The build env takes care of bootstrapping the profile using a selected set
 # of resolvers.
+#
+# TODO:
+# The given tags are used as the initial set of build-env handlers.
+# The handlers have a define and an optional build phase, and before building
+# any dependent handlers will have to be defined (and build) as well.
+# If there are built parts, these may need to be sourced as well before
+# proceeding.
+#
+# The result of these handlers is a build profile with variables and script
+# parts generated for a certain project folder.
+# This output can be tailored for a certain start-up profile, keeping each
+# build invocation as lightweight and customized as possible.
+# But also provide a stepping stone to start more complicated profile boots,
+# should certain targets require to do a lot of shell scripting.
+# XXX: build-boot resolves parts
+#
+#
+
 build_env () # ~ [<Handler-tags...>]
 {
-  #env_amend build "$@"
-  ENV_START=$(date --iso=ns)
-  BUILD_ENV_ARGS="$*"
-  true "${ENV_BOOT_DEF:=$PWD/.meta/cache/env.sh}"
-  test -e "${ENV_BOOT:-$ENV_BOOT_DEF}" && {
-    true "${ENV_BOOT:=$ENV_BOOT_DEF}"
-    . "$ENV_BOOT" || return
-  } || {
-    build_lib_load || return
+  ENV_START="$(date --iso=ns)"
+  echo "ENV_START=\"\$(date --iso=ns)\""
+  test $# -gt 0 || {
+    set -- ${BUILD_ENV:-${BUILD_ENV_DEF:?"Missing build env"}}
   }
-  build_env_init || return
-  test "${1:-}" != all || shift
-  test $# -gt 0 || set -- ${BUILD_ENV_DEF:-attributes rule-params}
-  local tag cache
+  # build_env__reset
+  build_env__init
+  local tag cache val
   for tag in "$@"
   do
-    build_env__${tag//-/_} || continue #return
+    build_env__define__${tag//-/_} || return
+    sh_fun build_env__build__${tag//-/_} && {
+      build_env__build__${tag//-/_} || return
+      # XXX: Output init/checks?
+    }
+    sh_fun build_env__boot__${tag//-/_} && {
+      build_env__boot__${tag//-/_} || return
+      build_add_handler build_env__boot__${tag//-/_}
+      BOOT_SPECS="${BOOT_SPECS:-}${BOOT_SPECS:+ }$tag"
+    }
+    true
   done
   for tag in \
-    ENV_START BUILD_ENV_ARGS ENV_BOOT_DEF ENV_BOOT BUILD_ENV_DEF \
+    ENV_START BUILD_ENV_ARGS BOOT_ENV_DEF BOOT_SPECS BUILD_ENV_DEF \
     BUILD_ENV_CACHE $BUILD_ENV_DEP BUILD_ENV_SRC
   do
-    echo "$tag=\"${!tag-null}\""
-  done
+    declare -p "$tag" 2> /dev/null || echo "$tag="
+  done | sed 's/declare /declare -g /'
   for tag in $BUILD_ENV_FUN
   do
-    #typeset "$tag"
-    type "$tag" | tail -n +2
+    sh_fun_type "$tag" || return
   done
   for cache in $BUILD_ENV_CACHE
   do
@@ -335,7 +490,27 @@ build_env () # ~ [<Handler-tags...>]
     cat "$cache"
   done
   echo "# Build env OK: '$*' completed"
-  echo "ENV_AT=\"$(date --iso=ns)\""
+  echo "ENV_AT=\"\$(date --iso=ns)\""
+}
+
+build_env__init ()
+{
+  true "${BOOT_SPECS:=}"
+  true "${BUILD_ENV_CACHE:=}"
+  true "${BUILD_ENV_FUN:=}"
+  true "${BUILD_ENV_DEP:=}"
+  true "${BUILD_ENV_SRC:=}"
+  #declare -g \
+  #  BOOT_SPECS= BUILD_ENV_CACHE= BUILD_ENV_FUN= BUILD_ENV_DEP= BUILD_ENV_SRC=
+}
+
+build_env__reset ()
+{
+  BOOT_SPECS=
+  BUILD_ENV_CACHE=
+  BUILD_ENV_FUN=
+  BUILD_ENV_DEP=
+  BUILD_ENV_SRC=
 }
 
 build_env_rule_exists ()
@@ -362,22 +537,13 @@ build_env_sh ()
   #| build_sh
 }
 
-build_sh ()
+
+build_env__boot__attributes ()
 {
-  while read -r vname val
-  do
-    val="${!vname-null}"
-    printf '%s=%s\n' "$vname" "${val@Q}"
-  done
+  . "$attributes_sh"
 }
 
-build_env_targets ()
-{
-  set -o noglob; set -- ${BUILD_RULE:?}; set +o noglob
-  build-ifchange "$@"
-}
-
-build_init__package ()
+build_env__boot__package ()
 {
   { test -e ./.meta/package/envs/main.sh -a \
     ./.meta/package/envs/main.sh -nt package.yaml
@@ -386,28 +552,16 @@ build_init__package ()
   }
 }
 
-build_env__package ()
-{
-  build_add_cache ./.meta/package/envs/main.sh
-}
-
-
-build_define__redo_ ()
-{
-  build_add_handler build_part_lookup
-}
-
-build_init__redo_ ()
+build_env__boot__redo_ ()
 {
   source "${U_S:?}/src/sh/lib/build.lib.sh" &&
   source "${U_S:?}/src/sh/lib/redo.lib.sh" &&
     redo_lib_load &&
     build_lib_load &&
-    build_define_commands &&
-    build_define_with_package
+    build_define_commands
 }
 
-build_init__redo_libs ()
+build_env__boot__redo_libs ()
 {
   {
     sh_include_path_langs="redo main ci bash sh" &&
@@ -419,44 +573,49 @@ build_init__redo_libs ()
   } || return
 }
 
-build_init__redo_env_target_ ()
+
+build_env__boot__rule_params ()
 {
-  . "${U_S:?}/src/sh/lib/sys.lib.sh" &&
-  . "$U_S/src/sh/lib/str.lib.sh"
+  . "$params_sh"
 }
 
-build_init__redo_libs_ ()
+
+build_env__build__attributes ()
 {
-  scriptname="default.do"
-  . "${U_S:?}/src/sh/lib/os.lib.sh" &&
-  . "$U_S/src/sh/lib/match.lib.sh" &&
-  . "$U_S/tools/sh/parts/lib_util.sh" &&
-  . "$U_S/src/sh/lib/lib.lib.sh" &&
-  lib_lib_load && lib_lib_init &&
-  test ! -e "$CWD/build-lib.sh" || {
-    . "$CWD/build-lib.sh" || return
-    build_add_source "$CWD/build-lib.sh"
+  test -e "${attributes:-}" || {
+    $LOG info "" "No attributes" "${attributes-null}"
+    return 1
   }
-  INIT_LOG=$LOG match_lib_init
+  build_file "$attributes_sh" "$attributes" "" \
+    attributes_sh "$attributes"
+}
+
+build_env__build__build_rules ()
+{
+  build_add_setting "BUILD_RULES"
+}
+
+build_env__build__package ()
+{
+  build_add_cache ./.meta/package/envs/main.sh
+}
+
+build_env__build__rule_params ()
+{
+  case "${ENV:=dev}" in
+    ( ${build_env_devspec:="dev*"} ) build_rules || return ;;
+    ( * )
+        ${quiet:-false} || echo "No rules-build for non-dev: $ENV" >&2 ;;
+  esac
+  build_file "$params_sh" "${BUILD_RULES:?}" "" params_sh "$BUILD_RULES" &&
+  build_add_cache "$params_sh" &&
+  build_add_source "$BUILD_RULES" &&
+  build_add_setting "BUILD_RULES params_sh"
 }
 
 
-build_env__redo_libs ()
+build_env__define__attributes ()
 {
-  false
-}
-
-
-build_env_init ()
-{
-  test -n "${BUILD_RULES:-}" || {
-    test -e ".meta/stat/index/components-local.list" &&
-      BUILD_RULES=.meta/stat/index/components-local.list
-  # XXX: deprecate
-    test -e ".components.txt" && BUILD_RULES=.components.txt
-    test -e ".build-rules.txt" && BUILD_RULES=.build-rules.txt
-  }
-
   test -n "${attributes:-}" || {
     test -e ".meta/attributes" && attributes=.meta/attributes
     test -e ".attributes" && attributes=.attributes
@@ -464,39 +623,126 @@ build_env_init ()
 
   attributes_sh="${PROJECT_CACHE:?}/attributes.sh"
 
-  build_add_setting PROJECT_CACHE
-}
-
-build_env__attributes ()
-{
-  test -e "${attributes:-}" || {
-    $LOG info "" "No attributes" "${attributes-null}"
-    return 0
-  }
-  build_file "$attributes_sh" "$attributes" "" \
-    attributes_sh "$attributes" &&
   build_add_cache "$attributes_sh" &&
   build_add_source "$attributes" &&
   build_add_setting "attributes attributes_sh"
 }
 
-build_env__rule_params ()
+build_env__define__build_rules ()
+{
+  true "${BUILD_RULES:="$(PWD=$CWD out_fmt=one build_part_lookup \
+      ${build_rules_defnames:?})"}"
+
+  test -n "${BUILD_RULES:-}" || {
+    test -e ".meta/stat/index/components-local.list" &&
+      BUILD_RULES=.meta/stat/index/components-local.list
+  }
+  test -n "${BUILD_RULES:-}" || {
+  # XXX: deprecate
+    test -e ".components.txt" && BUILD_RULES=.components.txt
+  }
+  test -n "${BUILD_RULES:-}" || {
+    test -e ".build-rules.txt" && BUILD_RULES=.build-rules.txt
+  }
+}
+
+build_env__define__default_partsbases ()
+{
+  echo "$PWD"
+  local pb rpwd=$(realpath "$PWD")
+  for pb in ${UCONF:?} ${US_BIN:?} ${U_S:?}
+  do
+    test "$(realpath "$pb")" = "$rpwd" && continue
+    echo "$pb"
+  done
+}
+
+build_env__define__default_partsdirs ()
+{
+  test $# -gt 0 || set -- $(build_env__define__default_partsbases)
+  local pb
+  for pb in "$@"
+  do
+    test -d "$pb/tools/redo/parts" || continue
+    echo "$pb/tools/redo/parts"
+  done
+}
+
+build_env__define__defaults ()
+{
+  true "${UCONF:="$HOME/.conf"}"
+  true "${U_S:="$HOME/project/user-scripts"}"
+  true "${US_BIN:="$HOME/bin"}"
+
+  true "${PROJECT_CACHE:=".meta/cache"}"
+  build_add_setting PROJECT_CACHE
+
+  true "${BUILD_PARTS_BASES:=$(build_env__define__default_partsdirs)}"
+  true "${BUILD_TOOL:="redo"}"
+  build_add_setting "BUILD_PARTS_BASES BUILD_TOOL"
+
+  true "${build_main_targets:="all help build test"}"
+  true "${build_all_targets:="build test"}"
+  build_add_setting "build_main_targets build_all_targets"
+
+  true "${quiet:=true}"
+}
+
+build_env__define__from_package ()
+{
+  true "${BUILD_TOOL:=${package_build_tool:?}}"
+  true "${BUILD_RULES:=${package_build_rules_tab:?}}"
+
+  #true "${init_sh_libs:="os sys str match log shell script ${BUILD_TOOL:?} build"}"
+
+  true "${BUILD_PARTS_BASES:="$(for base in ${!package_tools_redo_parts_bases__*}; do eval "echo ${!base}"; done )"}"
+  true "${build_main_targets:="${package_tools_redo_targets_main-"all help build test"}"}"
+  true "${build_all_targets:="${package_tools_redo_targets_all-"build test"}"}"
+  # dep package
+  # vars BUILD_TOOL BUILD_PARTS_BASES BUILD_MAIN_TARGETS BUILD_ALL_TARGETS
+}
+
+build_env__define__redo_ ()
+{
+  build_add_handler "$(sh_fun_for_pref "build_which__")"\
+" $(sh_fun_for_pref "build_target_with__")"\
+" $(sh_fun_for_pref "build_for_target_with__")"\
+" build_for_target build_which build_boot build_lib_load"\
+" build_target build_resolver build_if"\
+" build_part_lookup build_component__defer build_component__function"\
+" build_rules build_components read_data sh_fun_body sh_fun_type"\
+" build_env_rule_exists"\
+" build_rule_exists build_rule_fetch"\
+" fnmatch mkvid match_grep"\
+" build_component__defer"\
+" build_component__alias"
+#" build_copy_changed"
+}
+
+build_env__boot__defaults ()
+{
+  build_lib_load
+}
+
+build_env__define__redo__ ()
+{
+  build_env__define__redo_ &&
+  build_add_setting "BUILD_SPECIAL_RE BUILD_VIRTUAL_RE BUILD_NAME_SEPS" &&
+  source "${U_S:?}/src/sh/lib/redo.lib.sh" && redo_lib_load &&
+    build_define_commands || return
+
+  local cmd
+  for cmd in $(builder_commands)
+  do
+    build_add_handler "build${cmd:${#BUILD_TOOL}}"
+  done
+}
+
+build_env__define__rule_params ()
 {
   params_sh="${PROJECT_CACHE:?}/params.sh"
-  case "${ENV:=dev}" in
-    ( ${build_env_devspec:="dev*"} ) build_rules || return ;;
-    ( * )
-      ${quiet:-false} ||
-        echo "No rules-build for non-dev: $ENV" >&2
-      true "${BUILD_RULES:=${BUILD_RULES:?}}" ;;
-  esac
-  build_file "$params_sh" "$BUILD_RULES" "" \
-    params_sh "$BUILD_RULES" &&
-
-  build_add_cache "$params_sh" &&
-  build_add_source "$BUILD_RULES" &&
-  build_add_setting "BUILD_RULES params_sh"
 }
+
 
 # Try to give the user an informative view of current build environment.
 build_env_vars ()
@@ -537,6 +783,7 @@ build_fetch_component () # Path
   return 1
 }
 
+
 build_rule_exists () # ~ <Rule-target>
 {
   grep_f=-q build_rule_fetch "$@"
@@ -549,9 +796,10 @@ build_rule_fetch () # ~ <Rule-target>
   grep ${grep_f:--m1} "^$name_p"'\($\| \)' "${BUILD_RULES:?}"
 }
 
+# XXX: old experiment writing real build frontend
 build_run () # ~ <Target>
 {
-  grep -q "^$1 " "$BUILD_RULES" && {
+  grep -q "^$1 " "${BUILD_RULES:?}" && {
     build_components "$@"
     return $?
   }
@@ -582,6 +830,15 @@ EOM
   }
 
   build-ifchange "$1"
+}
+
+build_sh ()
+{
+  while read -r vname val
+  do
+    val="${!vname-null}"
+    printf '%s=%s\n' "$vname" "${val@Q}"
+  done
 }
 
 build_fetch_alias_rules () # ~ <Group-Name> <Prerequisites...>
@@ -650,7 +907,7 @@ build_fetch_simpleglob_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
 build_fetch_rules ()
 {
   read_nix_style_file "$BUILD_RULES" | {
-    while read name type args
+    while read_escaped_ name type args
     do
       set -o noglob; set -- $name $args; set +o noglob
       build_fetch_${type//-/_}_rules "$@"
@@ -673,6 +930,47 @@ build_fetch_symlinks_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
   done
   shopt -u nullglob
 }
+
+
+# Show recipe commands that build-target would have executed.
+# See also build-sh-for-target.
+build_for_target () # TODO: show what content would have been generated
+{
+  show_recipe=true build_resolver \
+    build_for_target_with__ ${BUILD_TARGET_METHODS:-}
+}
+
+build_for_target_with__env ()
+{
+  show_recipe=true build_target_with__env "$@"
+}
+
+build_for_target_with__parts ()
+{
+  show_recipe=true build_target_with__parts "$@"
+}
+
+build_for_target_with__rules ()
+{
+  show_recipe=true build_target_with__rules "$@"
+}
+
+
+# Helper for build-resolver handlers.
+build_if () # ~ <Target...>
+{
+  ${inline_special:-false } && {
+    $LOG error "" "TODO: inline special recipe lines"
+    return 1
+  } || {
+    ${show_recipe:-false} && {
+      echo "build-ifchange ${*@Q}"
+    } || {
+      build-ifchange "${@:?}" || return
+    }
+  }
+}
+
 
 # Virtual target that shows various status bits about build system
 build_info ()
@@ -719,9 +1017,11 @@ build_file () # ~ <File-target> <File-source> <TTL> <Command-argv...>
       false
     }
   }
+  # XXX: preparing the dest dir is a recipe task under Redo, not a builder
+  # responsibility
   local dest=$1 destdir=$(dirname "$1")
   shift 3 || return
-  test -d "$destdir" || mkdir -vp "$destdir" >&2
+  #test -d "$destdir" || mkdir -vp "$destdir" >&2
   "$@" > "$dest"
 }
 
@@ -736,86 +1036,80 @@ build_part_lookup () # NAME DIRS...
   do
     test -e "$1/$name" && {
       echo "$1/$name"
-      test ${lookup_first:-1} -eq 1 && return || r=0
+      ${lookup_first:-true} && return || r=0
     }
     shift
   done
   return $r
 }
 
+build_resolver ()
+{
+  local method r hpref=${1:?Handler name prefix expected}
+  shift
+  $LOG debug "" "Looking up build handler" "${BUILD_TARGET:?}"
+  for BUILD_SPEC in $(build_which)
+  do
+    test "$BUILD_SPEC" = "$BUILD_TARGET" &&
+      BUILD_TARGET_KEY= || BUILD_TARGET_KEY=${BUILD_TARGET:${#BUILD_SPEC}}
+
+    #echo "Trying to resolve with '$BUILD_SPEC'..." >&2
+    test $# -gt 0 || set -- env parts rules
+    for method in "$@"
+    do
+      ${hpref:?}${method} "${BUILD_SPEC:?}" && {
+        #echo "Target resolved at $method '$BUILD_SPEC'" >&2
+        exit
+      } || { r=$?
+        test $r = ${_E_continue:-196} || {
+          $LOG error "" "Failed at $method" "$BUILD_SPEC: E$r"
+          exit $r
+        }
+      }
+    done
+  done
+  #print_err "error" "" "Unknown target, see '$BUILD_TOOL help'" "$1"
+  $LOG "error" ":build-target" "Unknown target, see '$BUILD_TOOL help'" \
+    "${BUILD_TARGET:?}"
+  return ${_E_failure:-195}
+}
+
 build_rules ()
 {
-  true "${BUILD_RULES:=${package_build_rules_tab:?}}"
   test "${BUILD_RULES_BUILD:-0}" = "1" && {
-    build-ifchange "$BUILD_RULES" || return
+    ${show_recipe:-false} && {
+      echo "build-ifchange \"${BUILD_RULES:?}\""
+    } || {
+      build-ifchange "${BUILD_RULES:?}" || return
+    }
   } || {
     test "${BUILD_RULES_BUILD:-0}" = "0" || {
       BUILD_RULES=${BUILD_RULES_BUILD:?}
-      build-ifchange "$BUILD_RULES" || return
+      ${show_recipe:-false} && {
+        echo "build-ifchange \"${BUILD_RULES:?}\""
+      } || {
+        ${BUILD_TOOL:?}-ifchange "${BUILD_RULES:?}" || return
+      }
     }
   }
 }
 
-# TODO: can use build-ifchange to add dependencies for target, also add
-# build-stamp on only the rule part for given target.
+# XXX: old
+# TODO: could add dependencies for :env:* and also :rule:* pseudo targets.
 build_rules_for_target () # ~ <Name> <Basename> <Tempfile>
 {
-  build_rules &&
-
-  # Redo only has REDO_TARGET, but not the basename or temporary file in env.
-  BUILD_TARGET=$1
-  BUILD_TARGET_BASE=$2
-  BUILD_TARGET_TMP=$3
-
-  true "${BUILD_NAME_SEPS:=":"}"
+  # XXX: now, show do path lookup similar to Redo?
 
   # Split function type directives with specific name pattern on first
   # colon, and use that as prefix to find a build rule for this group of
   # targets that can be handled with one generic build handler.
 
-  # FIXME: handle root (empty initial name part) properly
-  local nsep
-  for nsep in $BUILD_NAME_SEPS
-  do
-    fnmatch "$nsep*$nsep*" "$1" && {
-      set -- "${1#:*}"
-      BUILD_NAME_NS=${1//$nsep*}
-      set -- "$nsep$BUILD_NAME_NS$nsep"
-      BUILD_NAME_PARTS=${BUILD_TARGET:${#1}}
-      set -- "$1[^ ]*"
-    } || true
-  done
-
-  test "$1" != "${BUILD_RULES-}" -a -s "${BUILD_RULES-}" || {
+  test "${1:?}" != "${BUILD_RULES-}" -a -s "${BUILD_RULES-}" || {
     # Prevent redo self.id != src.id assertion failure
-    $LOG alert ":build-component:$1" \
+    $LOG alert ":build-rules:$1" \
       "Cannot build rules table from empty table" "${BUILD_RULES-null}" 1
     return
   }
-
-  # Shortcut execution for simple aliases, but takes literal values only
-  { build_init__redo_env_target_ || return
-  } >&2
-  build_env_rule_exists "$1" && {
-    build_env_targets
-    exit
-  }
-
-  # Run build based on matching rule in BUID_RULES table
-
-  build_rule_exists "$1" || {
-    #print_err "error" "" "Unknown target, see '$BUILD_TOOL help'" "$1"
-    $LOG "error" "" "Unknown target, see '$BUILD_TOOL help'" "$1" $?
-    return
-  }
-
-  $LOG "notice" ":exists:$1" "Found build rule for target" "$1"
-  { build_init__redo_libs_ "$1" || return
-  } >&2
-  build_components "$1" || return
-
-  # Add dependency on
-  build_rule_fetch "$1" | build-stamp
 }
 
 # TODO: virtual target to build components-txt table, and to generate rules for
@@ -823,6 +1117,197 @@ build_rules_for_target () # ~ <Name> <Basename> <Tempfile>
 build_table_for_targets () # ~ <>
 {
   false
+}
+
+build_sh_for_target () # TODO: show recipe that would be used to generate target
+{
+  false
+}
+
+
+# Generic handler to dispatch build for different types of rules, recipes.
+build_target ()
+{
+  build_resolver build_target_with__ ${BUILD_TARGET_METHODS:-}
+}
+
+build_target_with__env ()
+{
+  # XXX: Shortcut execution for simple aliases, but takes literal values only.
+  #build_env_rule_exists "${1:-${BUILD_TARGET:?}}" && {
+
+  #  set -o noglob; set -- ${BUILD_RULE:?}; set +o noglob
+  #  build-ifchange "$@"
+  #  exit
+  #}
+
+  local vid var
+  mkvid "${1:-${BUILD_TARGET:?}}" &&
+  var=build_${vid}_targets &&
+  { test -n "${!var:-}" || return ${_E_continue:-196}; } &&
+  { ${show_recipe:-false} && {
+      echo "build-ifchange ${!var:?}"
+    } || {
+      build-ifchange ${!var:?}
+    }
+  }
+}
+
+build_target_with__parts ()
+{
+  # FIXME: should copy/symlink these files to proper location,
+  # let Redo handle lookup and disable filestat here and focus on
+  # alternate path formats.
+  #fnmatch "dev*" "${ENV:?}"
+  build_component__defer "${1:?}" "${2:-}"
+}
+
+build_target_with__rules ()
+{
+  build_rules &&
+
+  # Run build based on matching rule in BUID_RULES table
+  build_rule_exists "${1:?}" || {
+    return ${_E_continue:-196}
+  }
+
+  # XXX: add if not added by build-rules?
+  build_if "${BUILD_RULES:?}" &&
+
+  $LOG "notice" ":build-rules" "Found build rule for target" "$1"
+  build_components "$1" || return
+}
+
+
+# Step one to resolve a target is getting a lookup sequence, by examining the
+# pattern(s) of the target name. See `Target name patterns` for
+# definitions.
+build_which () # ~ [<Target>]
+{
+  local target=${1:-${BUILD_TARGET:?}} method
+  [[ "$target" =~ ^${BUILD_SPECIAL_RE:?} ]] &&
+    method=${BUILD_NAME_SEPS[${target:0:1}]} || method=filepath
+  build_which__"${method:?}" "$target"
+}
+
+build_which__amp ()
+{
+  echo "$1"
+  echo "${1/&/:and:}"
+  echo "${1/&/and-}"
+}
+
+build_which__at ()
+{
+  echo "$1"
+  echo "${1/@/at-}"
+  echo "${1/@/:at:}"
+}
+
+build_which__file_name ()
+{
+  local n=$(basename "${1:?}") b e _e h= dh def='%' # default
+  test "${n:0:1}" = "." && { h=.; n=${n:1}; }
+  { test -z "$h" || ! ${lookup_hidden_def:-false}; } && dh=false || dh=true
+  b=${n/.*}
+  e=${n#*.}
+  test "$b" = "$e" && {
+    echo "$h$b"
+    ! $dh || echo ".$def"
+    echo "$def"
+  } || {
+    echo "$h$b.$e"
+    b="$def"
+    ! $dh || echo ".$b.$e"
+    while test -n "$e"
+    do
+      echo "$b.$e"
+      ! $dh || echo ".$b.$e"
+      _e=${e#*.}
+      test "$e" != "$_e" || break
+      e=$_e
+    done
+    echo "$b"
+    ! $dh || echo ".$b"
+  }
+}
+
+build_which__file_path ()
+{
+  local p=${1:?}
+  while ! [[ "$p" =~ ^[/\.]$ ]]
+  do
+    echo "$p"
+    p=$(dirname "$p")
+  done
+}
+
+# Given a target with or without directory path, yield every lookup name.
+# This mirrors redo-whichdo, but using Redo as frontend the default.do lookup
+# has already finished. Now we can look at env or other systems for the recipe,
+# using the same lookup path.
+build_which__filepath ()
+{
+  local p n
+  fnmatch "*/*" "${1:?}" && {
+    fnmatch "*/" "$1" && p="${1}" || n=$(basename "$1")
+    true "${p:=$(dirname "$1")}"
+  } || n=$1
+
+  local path name paths names
+  test -z "${n:-}" || names=$(build_which__file_name "${n:?}")
+  test -z "${p:-}" || paths=$(build_which__file_path "${p:?}" | sed 's/$/\//')
+
+  local first=true
+  for path in ${paths:-} ""
+  do
+    for name in ${names:-""}
+    do echo "$path$name"
+    done
+    # Don't use the actual basename except at exact given pathname
+    ! $first || {
+      names=$(echo "$names" | tail -n +2)
+      first=false
+    }
+  done
+}
+
+build_which__min ()
+{
+  echo "$1"
+  echo "${1/-/::}"
+  echo "${1/-/-}"
+}
+
+build_which__pct ()
+{
+  echo "$1"
+  echo "${1/\%/:rules:pattern:}"
+}
+
+build_which__plus ()
+{
+  echo "$1"
+  echo "${1/+/:in:}"
+  echo "${1/+/in-}"
+}
+
+build_which__qm ()
+{
+  echo "$1"
+  echo "${1/?/:target:recipe:}"
+  echo "${1/?/:target:prerequisites:}"
+}
+
+# This is identical to handling directory paths, except '/' is the ':' char
+build_which__special ()
+{
+  local p=${1:?}
+  while test -n "$p"
+  do
+    echo "$p"
+    p=${p%:*}
+  done
 }
 
 
@@ -951,41 +1436,115 @@ params_sh ()
       print "build_" key "_targets=\"" substr($0,st+2) "\"" }'
 }
 
-fnmatch ()
-{
-    case "$2" in
-        $1)
-            return 0
-        ;;
-        *)
-            return 1
-        ;;
-    esac
-}
+. "${U_S:?}/tools/sh/parts/fnmatch.sh"
+. "${U_S:?}/tools/sh/parts/str-id.sh"
+
 
 # Take any string and return a Regex to match that exact string, see
 # match-grep-pattern-test.
-match_grep() # String
+match_grep () # String
 {
-  echo "$1" | $gsed -E 's/([^A-Za-z0-9{}(),?!@+_])/\\\1/g'
+  echo "${1:?}" | sed -E 's/([^A-Za-z0-9{}(),?!@+_])/\\\1/g'
+}
+
+sh_fun ()
+{
+  test "$(type -t "${1:?}")" = "function"
+}
+
+sh_fun_for_pref ()
+{
+  compgen -A function | grep '^'"${1:?}"
+}
+
+sh_fun_body ()
+{
+  sh_fun_type "${1:?}" | sed 's/^\(\('"$1"' *() *\)\|\({ *\)\|}\)$//' | grep -v '^ *$'
+}
+
+sh_fun_type ()
+{
+  type "${1:?}" | tail -n +2
+}
+
+# Read only data, trimming whitespace but leaving '\' as-is.
+# See read-escaped and read-literal for other modes/impl.
+read_data () # (s) ~ <Read-argv...> # Read into variables, ignoring escapes and collapsing whitespacek
+{
+  read -r "$@"
+}
+
+# Read character data separated by spaces, allowing '\' to escape special chars.
+# See also read-literal and read-content.
+read_escaped ()
+{
+  #shellcheck disable=2162 # Escaping can be useful to ignore line-ends, and read continuations as one line
+  read "$@"
+}
+
+
+
+build-env ()
+{
+  build_env "$@"
+}
+
+build-ood ()
+{
+  test $# -eq 0 || return ${_E_GAE:-$?}
+  command ${BUILD_TOOL:?}-ood | grep -v '^'"${BUILD_VIRTUAL_RE:?}"
+}
+
+# XXX: tools generate
+build_env__boot__ood=BUILD_TOOL
+
+build-show ()
+{
+  BUILD_TARGET=${1}
+  BUILD_TARGET_BASE=
+  BUILD_TARGET_TMP=
+  build_for_target
+}
+
+build-which ()
+{
+  build_which "$@"
 }
 
 
 test -n "${__lib_load-}" || {
 
-  case "${build_entry_point:-$(basename -- "$0" .lib.sh )}" in
+  build_entry_point=${SCRIPTNAME:-$(basename -- "$0" .lib.sh )}
+  case "$build_entry_point" in
 
     ( "build-" )
-        true "${quiet:=true}"
-        subcmd=${1:?}
+        BUILD_ACTION=${1:?}
         shift
-        build_"${subcmd//-/_}" "$@" || exit
+        build_boot "$@" &&
+        sh_fun "build_${BUILD_ACTION//-/_}" || {
+          $LOG error "" "No such entrypoint" "$BUILD_ACTION" $?
+          exit
+        }
+        build_"${BUILD_ACTION//-/_}" "$@"
+        exit
+      ;;
+
+    ( "build-"* )
+        BUILD_ACTION=${build_entry_point:6}
+        sh_fun "$build_entry_point" || {
+          $LOG error "" "No such entrypoint" "$build_entry_point" $?
+          exit
+        }
+        build_boot "$@" && "${build_entry_point}" "$@"
+        exit
       ;;
 
     ( "build" )
+        export log_key=build-[$$]
+
         . "${U_S}/tools/redo/env.sh" || { r=$?
           test $r = 96 && {
-            echo "E$r: Env recursion?" >&2
+            echo "E$r: Env recursion? [$log_key]" >&2
           }
           exit $r
         }
@@ -994,7 +1553,7 @@ test -n "${__lib_load-}" || {
         while test $# -gt 0
         do
           build_run "$@" || {
-            $LOG error "$1" "" "E:$?"
+            $LOG error ":run:$1" "" "E:$?"
             exit 1
           }
           shift

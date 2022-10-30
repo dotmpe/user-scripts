@@ -56,12 +56,14 @@ FROM Files JOIN Deps on Files.rowid = Deps.source WHERE Files.is_generated=1;
   }
 }
 
-redo ()
+redo () # ~ <Redo-argv...> # Wrapper, insert our redo-opts from env into argv
 {
   command redo ${redo_opts-} "$@"
 }
 
-redo-keep-going()
+redo-keep-going () # ~ # Return handler for recipe commands, test wether Redo
+# should try to continue, so that an important recipe can try to go as far as
+# possible as well and ignore some things along the way.
 {
   local r=$?
   test ${REDO_KEEP_GOING:-0} -eq 1 || return $r

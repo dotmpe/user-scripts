@@ -16,7 +16,7 @@ pop_scriptname ()
 scriptname_include ()
 {
   local stat scriptname
-  for scriptname in $@
+  for scriptname in "$@"
   do
     push_scriptname $scriptname
     sh_include $scriptname || stat=$?

@@ -58,9 +58,13 @@ mkid() # Str Extra-Chars Substitute-Char
 }
 
 # to filter strings to variable id name
-mkvid() # STR
+mkvid () # STR
 {
-  test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
+  true "${1:?}"
+  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]+$ ]] && test -z "${upper:-}" && {
+    vid="$1"
+    return
+  }
   trueish "${upper-}" && {
     vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr '[:lower:]' '[:upper:]')
     return

@@ -39,18 +39,22 @@ mksid() # STR
 # Sync-Sh: BIN:str-htd.lib.sh
 
 # Variable-like ID for any series of chars, only alphanumerics and underscore
-mkvid() # STR
+mkvid () # STR
 {
-  test $# -eq 1 -a -n "${1-}" || error "mkvid argument expected ($*)" 1
+  true "${1:?}"
+  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]+$ ]] && test -z "${upper:-}" && {
+    vid="$1"
+    return
+  }
   test "${upper-'nil'}" = "1" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
+    vid=$(printf -- "${1//%/%%}" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'a-z' 'A-Z')
     return
   }
   test "${upper-'nil'}" = "0" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
+    vid=$(printf -- "${1//%/%%}" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr 'A-Z' 'a-z')
     return
   }
-  vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
+  vid=$(printf -- "${1//%/%%}" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
   # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
 }
 
