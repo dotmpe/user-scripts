@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Was .cllct/src/components.list.do
+
 set -euETo pipefail
 shopt -s extdebug
 

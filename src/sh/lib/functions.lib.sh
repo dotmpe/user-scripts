@@ -1,6 +1,6 @@
 #!/bin/sh
 
-functions_lib_load()
+functions_lib_load ()
 {
   # XXX: use coffeescript/NPM bash-parser package?
   #which -s "coffee" && {
@@ -13,7 +13,7 @@ functions_lib_load()
 
 # NOTE: its a bit fuzzy on the part after '<id>()' but works
 
-list_functions() # Sh-File
+list_functions () # Sh-File
 {
   local file=$1 grep
   test ${list_functions_liberal:-0} -eq 0 &&
@@ -29,13 +29,13 @@ list_functions() # Sh-File
   return 0
 }
 
-list_functions_foreach() # Sh-Files...
+list_functions_foreach () # Sh-Files...
 {
   p= s= act=list_functions foreach_do "$@"
 }
 
 # List functions matching grep pattern in files
-functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Grep> <Sh-Files>
+functions_grep () # List matching function names [first_match=1] ~ <Func-Name-Grep> <Sh-Files>
 {
   test -n "${1-}" -a $# -gt 1 || return 98
   local grep="$1" ; shift
@@ -51,7 +51,7 @@ functions_grep() # List matching function names [first_match=1] ~ <Func-Name-Gre
 
 # List all function declaration lines found in given source, or current executing
 # script. To match on specific names instead, see find-functions.
-functions_list() # (ls-func|list-func(tions)) [ --(no-)list-functions-scriptname ]
+functions_list () # (ls-func|list-func(tions)) [ --(no-)list-functions-scriptname ]
 {
   test -z "${2-}" || {
     # Turn on scriptname output prefix if more than one file is given
@@ -61,7 +61,7 @@ functions_list() # (ls-func|list-func(tions)) [ --(no-)list-functions-scriptname
   list_functions_foreach "$@"
 }
 
-functions_ranges()
+functions_ranges ()
 {
   test $# -gt 1 && multiple_srcs=1 || multiple_srcs=0
   functions_list "$@" | while read a1 a2 ; do
@@ -74,7 +74,7 @@ functions_ranges()
   done
 }
 
-functions_filter_ranges()
+functions_filter_ranges ()
 {
   test $# -gt 2 && multiple_srcs=1 || multiple_srcs=0
   upper=0 default_env out-fmt xtl
@@ -94,7 +94,7 @@ functions_filter_ranges()
 
 # List function calls, ignoring executable scriptnames not on PATH
 # Print real exec script path and SRC-script.
-functions_execs() # SRC...
+functions_execs () # SRC...
 {
   list_sh_calls_foreach "$@" | sort -u | while read -r script cmd
     do
@@ -106,12 +106,12 @@ functions_execs() # SRC...
     done | join_lines
 }
 
-functions_cmdnames()
+functions_cmdnames ()
 {
   { list_sh_calls_foreach "$@" || return $?; } | sort -u
 }
 
-functions_calls()
+functions_calls ()
 {
   #lib_load build-htd # XXX: for sh-calls, move to sep. lib later
 
@@ -127,7 +127,7 @@ functions_calls()
 }
 
 # Scan for calls using target list
-text_lookup() # SOURCES TARGETS [FUNC_TAB]
+text_lookup () # SOURCES TARGETS [FUNC_TAB]
 {
   test -n "${1-}" || set -- $cllct_src_base/call-graph/sources.txt "${2-}" "${3-}"
   test -n "${2-}" || set -- "${1-}" $cllct_src_base/call-graph/targets.txt "${3-}"
@@ -149,7 +149,7 @@ text_lookup() # SOURCES TARGETS [FUNC_TAB]
 
 
 # List names of functions/commands called by scripts
-list_sh_calls()
+list_sh_calls ()
 {
   #$sh_list_calls "$@" || $_failed_ "$*"
   test -x $HOME/project/oil/bin/oshc || {
@@ -161,7 +161,7 @@ list_sh_calls()
     $OIL/bin/oshc deps "$@" --chained-commands="sudo time"
 }
 
-list_sh_calls_foreach()
+list_sh_calls_foreach ()
 {
   $LOG note "" "List-Sh-Calls-Foreach" "$*"
   list_sh_calls_foreach_inner() # sh:no-stat
@@ -172,11 +172,11 @@ list_sh_calls_foreach()
 }
 
 # List functions matching grep pattern in files
-functions_find() # Grep Sh-Files
+functions_find () # Grep Sh-Files
 {
   local grep="$1" ; shift
   falseish "$first_match" && first_match=
-  for file in $@
+  for file in "$@"
   do
     grep -q '^\s*'"$grep"'().*$' $file || continue
     echo "$file"

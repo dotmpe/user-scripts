@@ -1,12 +1,14 @@
-export log_key=redo:default.do[$$]
+true "${UC_LOG_BASE:=redo:default.do[$$]}"
+declare -x UC_LOG_BASE
 export verbosity="${verbosity:=${v:-4}}"
-$LOG info ":redo-env" "Starting..." "v=$verbosity:tools/redo/env.sh"
+$LOG info ":Tools:Redo:env" "Starting..." "v=$verbosity:U-s:tools/redo/env.sh"
 
 true "${CWD:="${REDO_STARTDIR:?}"}"
 true "${SUITE:="Main"}"
-true "${BUILD_ENV:=defaults redo--}"
+true "${BUILD_ENV:=build-rules rule-params redo-- defaults stderr_}"
 true "${PROJECT_CACHE:=".meta/cache"}"
-true "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/components.list"}"
+true "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
+true "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"
 
 true "${redo_opts:="-j4"}"
 
@@ -15,14 +17,14 @@ BUILD_ENV_FUN=build_copy_changed
 
 
 # Add current file to deps
-redo-ifchange "${CWD:?}/tools/redo/env.sh" &&
+#redo-ifchange "${CWD:?}/tools/redo/env.sh" &&
 
-true "${REDO_ENV_CACHE:="${PROJECT_CACHE:=".meta/cache"}/redo-env.sh"}"
+true "${BUILD_ENV_CACHE:="${PROJECT_CACHE:=".meta/cache"}/redo-env.sh"}"
 
 # Built-in recipe for redo profile
-test "${REDO_TARGET:-}" = "$REDO_ENV_CACHE" && {
+test "${BUILD_TARGET:?}" = "$BUILD_ENV_CACHE" && {
 
-  $LOG info ":redo-env" "Building cache..." "tools/redo/env.sh"
+  $LOG info ":Tools:Redo:env" "Building cache..." "${BUILD_ENV_CACHE:?}"
   build_env_default || return
 
   # Load additional local build-env parameters
@@ -40,11 +42,20 @@ test "${REDO_TARGET:-}" = "$REDO_ENV_CACHE" && {
 
 } || {
 
+  test "$BUILD_TARGET" != "$BUILD_RULES" -a \
+      "$BUILD_TARGET" != "$BUILD_RULES_BUILD" -a \
+      -e "$BUILD_ENV_CACHE" || {
+
+    #build_env_targets_default &&
+    build_env_default
+    return
+  }
+
   # For every other target, source the built profile and continue.
-  redo-ifchange "$REDO_ENV_CACHE" || return
-  $LOG debug ":redo-env" "Sourcing cache..." "tools/redo/env.sh"
-  source "$REDO_ENV_CACHE"
+  redo-ifchange "$BUILD_ENV_CACHE" || return
+  $LOG debug ":Tools:Redo:env" "Sourcing cache..." "${BUILD_ENV_CACHE:?}"
+  source "$BUILD_ENV_CACHE"
 }
 
-$LOG "info" "" "Started redo env" "tools/redo/env.sh"
+$LOG "info" ":Tools:Redo:env" "Started redo env" "${BUILD_ENV_CACHE:?}"
 # Id: U-s

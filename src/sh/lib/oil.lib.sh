@@ -2,14 +2,14 @@
 
 ## Oil Shell
 
-oil_lib_load()
+oil_lib_load ()
 {
   OIL_CONTAINER=u-s-oil-treebox
   OIL_IMAGE=dotmpe/treebox:dev
   OIL_PATH=/src/github.com/dotmpe/oil
 }
 
-oil_docker_init()
+oil_docker_init ()
 {
   lib_assert docker-sh
   docker_name=$OIL_CONTAINER
@@ -43,7 +43,7 @@ oil_docker_init()
   docker_sh_c require_updated
 }
 
-oil_docker_reset()
+oil_docker_reset ()
 {
   docker_sh_c_delete "$OIL_CONTAINER"
 }

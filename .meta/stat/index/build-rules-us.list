@@ -1,0 +1,41 @@
+## Build-rules for components local to +U-s
+
+# @main: all help @build @test
+# @all: @build @test
+
+## Define project Redo targets
+:configure function
+:install function
+# TODO: install-deps check
+# @at.init: :configure :install @check
+# @at.build: @check src-sh manual
+# @at.check: @lint
+# @at.test: %bats-baseline %bats-unit
+
+&current alias .meta/cache/ledges.list
+
+.cllct/src/sh-stats function build_sh_stats u_s-stats
+
+# @at.lint: lint-tags shellcheck
+
+# Baseline describes third-party components, dependencies, host.hk
+# For host/env prerequisites and checks see init and init-checks targets.
+# lint
+%bats-baseline simpleglob .build/tests/baseline-*.tap test/baseline/%.bats
+%bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
+# TODO: benchmarks
+# TODO: manual
+# @at.manual: :manuals
+:manuals function - u_s-man
+:pack function
+
+:if:lines function -
+#:if:lines:* function -
+
+# TODO: auto-install/config
+&build-rules expand ${PROJECT_CACHE:?}/build-rules.list
+&build-rules:* defer concat-rules
+.meta/cache/build-rules.list defer concat-rules
+
+# manual-user-lib simpleglob src/man/man7/User-Script:*.7
+# Id: User-scripts/ .meta/stat/index/build-rules-us.list ex:ft=less.txt:
