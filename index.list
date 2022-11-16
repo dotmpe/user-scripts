@@ -1,2 +1,25 @@
+bin/u-s: - @dev
+build.txt: - @dev
+.cllct/src: - @dev
+default.do: - @dev
+commands/u_s: - @dev
+tools/sh/init.sh: - @dev
+tools/sh/init-from.sh: - @dev
+tools/sh/init-gh.sh: - @dev
+tools/sh/init-here.sh: - @dev
+tools/sh/init-include.sh: - @dev
+tools/sh/init-wrapper.sh: - @dev
+tools/sh/parts/fnmatch.sh: - @dev
+tools/sh/parts/init.sh: - @dev
+tools/sh/parts/init-here.sh: - @dev
+tools/sh/parts/init-wrapper.sh: - @dev
+tools/sh/parts/lib_util.sh: - @dev
 &function-context - context-lib src-htd-lib
 &context-local - context-lib src-htd-lib
+
+build-lib.sh: -
+contexts/ctx-us-build.lib.sh: -
+src/sh/lib/build.lib.sh: -
+
+tools/sh/log.sh: -
+tools/sh/util.sh: -

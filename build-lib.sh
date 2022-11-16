@@ -32,7 +32,7 @@ build___if_change__ ()
 
   declare p
   p="${BUILD_TARGET:${#BUILD_SPEC}}"
-  build-ifchange "$p" ; summary
+  build-ifchange "$p" ; build_summary
 }
 
 # :if:change:% pseudo-target
@@ -42,7 +42,7 @@ build___if_change___ ()
 
   declare p
   p="${BUILD_TARGET:$(( ${#BUILD_SPEC} - 1 ))}"
-  build-ifchange "$p" ; summary
+  build-ifchange "$p" ; build_summary
 }
 
 # Pseudo-target: depend on file targets, but validate on content lines
@@ -106,7 +106,44 @@ build___if__line_col1__ ()
   $LOG info ":if:line-col1" "File line-key check done" "$key:$file"
 }
 
-summary ()
+# XXX: rename to not-dev lists...
+build__meta_cache_source_dev_list ()
+{
+  sh_mode strict dev build
+  build-ifchange :if:scr-fun:build-lib.sh:build__meta_cache_source_dev_list || return
+  build-ifchange "${1:?}" "$REDO_BASE/index.list" &&
+  declare sym src
+  sym=$(build-sym "${1:?}") &&
+  while read -r src
+  do
+    grep -qF "$src: " "$REDO_BASE/index.list" || continue
+
+    grep -F "$src: " "$REDO_BASE/index.list" | grep -q ' @dev' &&
+      continue
+
+    echo "$src"
+  done < "$sym"
+}
+
+build__meta_cache_source_dev_sh_list ()
+{
+  sh_mode strict dev build
+  build-ifchange :if:scr-fun:build-lib.sh:build__meta_cache_source_dev_sh_list || return
+  build-ifchange "${1:?}" "$REDO_BASE/index.list" &&
+  declare sym src
+  sym=$(build-sym "${1:?}") &&
+  while read -r src
+  do
+    grep -qF "$src: " "$REDO_BASE/index.list" || continue
+
+    grep -F "$src: " "$REDO_BASE/index.list" | grep -q ' @dev' &&
+      continue
+
+    echo "$src"
+  done < "$sym"
+}
+
+build_summary ()
 {
   declare r=$? sc tc ; test $r != 0 || r=
   sc=$(wc -l <<< "$(redo-sources)")

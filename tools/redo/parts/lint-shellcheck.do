@@ -1,5 +1,5 @@
 
-# Created: 2022
+# Created: 2022-08-30
 
 
 sh_mode strict dev build
@@ -23,13 +23,13 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
 }
 
 test "unset" = "${IF_DEPS[@]-unset}" && {
-  shls_sym="&sh-list"
-  build-ifchange "$shls_sym" || return
-  $LOG warn ":lint-shellcheck.do" "Could not use If-Deps to get list symbol, using '$shls_sym'"
+  true "${LINT_SC_SRC_SPEC:="&lint-shellcheck:src"}"
+  build-ifchange "${LINT_SC_SRC_SPEC:?}" || return
+  $LOG warn ":lint-shellcheck.do" "Could not use If-Deps to get list symbol, using '$LINT_SC_SRC_SPEC'"
 } ||
-  shls_sym=${IF_DEPS[0]}
+  LINT_SC_SRC_SPEC=${IF_DEPS[0]}
 
-sh_list=$(build-sym "$shls_sym")
+sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
 
 test -s "$sh_list" || return 0
 
@@ -49,9 +49,7 @@ test $# -eq 0 && {
   test ! -e "$errors" || rm "$errors"
 } || {
   cat "$@" >| "$errors"
-  rm "$@"
-  test ! -s "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
-  rm "$errors"
+  test ! -s "$errors" && rm "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
 }
 
 build-always
@@ -64,7 +62,7 @@ test -s "$BUILD_TARGET_TMP" && {
     cnt=$(wc -l < "$BUILD_TARGET") || return
 }
 
-test $cnt -eq 0 ||
+test "${cnt:-0}" -eq 0 ||
   stderr_ "Lint (shellcheck): $cnt"
 
 #

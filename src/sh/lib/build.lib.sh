@@ -357,6 +357,7 @@ build_target__from__expand_all () # ~ <Target-Name> <Source-Command...> -- <Targ
     do
       for fmt in "$@"
       do
+        #shellcheck disable=2086
         eval "echo $( expand_format "$fmt" $nameparts )"
       done
     done )
@@ -367,8 +368,10 @@ build_target__from__expand_all () # ~ <Target-Name> <Source-Command...> -- <Targ
   }
   ${show_recipe:-false} && {
     echo "build-ifchange $targets"
-  } ||
+  } || {
+    #shellcheck disable=2086
     build-ifchange $targets
+  }
 }
 
 build_component_recipe__expand_all ()
@@ -385,6 +388,7 @@ build_component_recipe__expand_all ()
 # To specify a sh lib to load both lib-require and lib-path must be available.
 #
 # The final sequence is passed as arguments to the handler.
+#shellcheck disable=2059
 build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
 {
   declare name=${1:?} func=${2:--}
@@ -396,6 +400,7 @@ build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
   test $# -eq 0 || {
+    #shellcheck disable=2046
     set -- $(eval "echo $*")
     test -z "$1" -o "$1" = "--" || {
       sh_fun lib_path || {
@@ -414,6 +419,7 @@ build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
   }
   $func "$@"
 }
+#shellcheck disable=2059
 build_target__from__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
 {
   declare name=${1:?} func=${2:--}
@@ -430,17 +436,18 @@ build_target__from__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
   test "${func:-"-"}" != ":" ||
     func="build_$(mkvid "$name" && printf -- "$vid")"
 
-  test $# -eq 0 || {
-    # XXX: function uses eval to expand vars
-    set -- $(eval "echo $*")
-    # FIXME: parse seq properly
-    test -z "$1" -o "$1" = "--" || {
-      build_target_ "$1" &&
-      source "$1" || return
-    }
-    shift
-    test "${1:-}" != "--" || shift
-  }
+  # XXX: function argv?
+  #test $# -eq 0 || {
+  #  # XXX: function uses eval to expand vars
+  #  set -- $(eval "echo $*")
+  #  # FIXME: parse seq properly
+  #  test -z "$1" -o "$1" = "--" || {
+  #    build_target_ "$1" &&
+  #    source "$1" || return
+  #  }
+  #  shift
+  #  test "${1:-}" != "--" || shift
+  #}
   $func "$@"
 }
 
@@ -453,7 +460,7 @@ build_target__from__compose () # ~ <Target> <Composed...>
 
 build_target__from__compose_names () # ~ <Target> <Composed...>
 {
-  shift || return ${_E_GAE:-193}
+  shift || return "${_E_GAE:-193}"
   : "${@:?"Expected one or more functions to typeset"}"
   declare fun tp rs r
   for fun in "$@"
@@ -473,12 +480,12 @@ build_target__from__compose__resolve ()
   } || {
     for rs in ${COMPO_RESOLVE:-tagsfile composure}
     do
-      build_target__from__compose__resolve_function__${rs} "$1"; r=$?
+      build_target__from__compose__resolve_function__"${rs}" "$1"; r=$?
       test $r -eq 0 && break ||
-        test $r -eq ${_E_continue:-196} && continue
+        test "$r" -eq "${_E_continue:-196}" && continue
     done
     test $r -eq 0 || {
-      test $r -eq ${_E_continue:-196} &&
+      test "$r" -eq "${_E_continue:-196}" &&
         $LOG error "" "Failed to resolve" "$BUILD_TARGET:$1:$COMPO_RESOLVE" ||
         $LOG error "" "Error during resolve" "$BUILD_TARGET:$1"
       return $r
@@ -492,15 +499,15 @@ build_target__from__compose__resolve ()
 # TODO: look in users C_INC/which composure.sh
 build_target__from__compose__resolve_function__composure ()
 {
-  return ${_E_continue:-196}
+  return "${_E_continue:-196}"
 }
 
 build_target__from__compose__resolve_function__tagsfile ()
 {
   declare tsrc
-  tsrc=$(grep -m 1 "^$1"$'\t' ${TAGS:?} | awk '{print $2}') || {
+  tsrc=$(grep -m 1 "^$1"$'\t' "${TAGS:?}" | awk '{print $2}') || {
     $LOG error "" "Unknown function" "$BUILD_TARGET:$1"
-    return ${_E_continue:-196}
+    return "${_E_continue:-196}"
   }
   BASE=source . "$tsrc" || {
     $LOG error "" "Failed to include" "$BUILD_TARGET:$1:$tsrc" 1 || return
@@ -511,7 +518,8 @@ build_target__from__compose__resolve_function__tagsfile ()
 # Symlinks: create each dest, linking to srcs
 build_target__from__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 {
-  declare src match dest grep="$(glob_spec_grep "$2")" f
+  declare src match dest grep f
+  grep="$(glob_spec_grep "${2:?}")" || return
   ${quiet:-false} || f=-v
 
   shopt -s nullglob
@@ -540,7 +548,9 @@ build_target__from__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 # XXX: this is not a simple glob but a map-path-pattern based on glob input
 build_target__from__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 {
+  #shellcheck disable=2155
   declare src match glob=$(echo "$3" | sed 's/%/*/')
+  #shellcheck disable=2046
   build-ifchange $( for src in $glob
     do
       match="$(glob_spec_var "$glob" "$src")"
@@ -730,19 +740,19 @@ build_env () # ~ [<Handler-tags...>]
   declare tag cache val
   for tag in "$@"
   do
-    build_env__define__${tag//-/_} || {
+    build_env__define__"${tag//-/_}" || {
         $LOG error ":build-env:define" "Failed at" "$tag:E$?"
         return 1
       }
-    sh_fun build_env__build__${tag//-/_} && {
-      build_env__build__${tag//-/_} || {
+    sh_fun build_env__build__"${tag//-/_}" && {
+      build_env__build__"${tag//-/_}" || {
         $LOG error ":build-env:build" "Failed at" "$tag:E$?"
         return 1
       }
       # XXX: Output init/checks?
     }
-    sh_fun build_env__boot__${tag//-/_} && {
-      build_env__boot__${tag//-/_} || {
+    sh_fun build_env__boot__"${tag//-/_}" && {
+      build_env__boot__"${tag//-/_}" || {
         $LOG error ":build-env:boot" "Failed at" "$tag:E$?"
         return 1
       }
@@ -1991,8 +2001,9 @@ build_which__special ()
 # so this works on globstar and to a degree with multiple wildcards.
 glob_spec_var () # ~ <Pattern> <Path>
 {
-  test $# -eq 2 || return ${_E_GAE:-193}
+  test $# -eq 2 || return "${_E_GAE:-193}"
   set -- "${@:?}" "$(glob_spec_grep "${1:?}")"
+  #shellcheck disable=2001
   echo "${2:?}" | sed 's/'"${3:?}"'/\1/g'
 }
 
@@ -2008,14 +2019,14 @@ list_src_files () # Generator Newer-Than Magic-Regex [Extensions-or-Globs...]
 {
   declare generator="${1:-"vc_tracked"}" nt=${2:-} mrx=${3:-}
   shift 3
-  { test $generator = - || $generator; } | while read -r path ; do
+  { test "$generator" = - || "$generator"; } | while read -r path ; do
 
 # Cant do anything with dirs or empty files
     test ! -d "$path" -a -s "$path" || continue
 
 # Allow for faster updates by checking only changed files
     test -z "$nt" || {
-        test "$path" -nt $nt || continue
+        test "$path" -nt "$nt" || continue
     }
 
 # Scan name extension or glob match first
@@ -2033,7 +2044,7 @@ list_src_files () # Generator Newer-Than Magic-Regex [Extensions-or-Globs...]
 
 # Or grep for sha-bang pattern
     test -z "$mrx" || {
-      head -n1 "$path" | grep -qm 1 $mrx || continue
+      head -n1 "$path" | grep -qm 1 "$mrx" || continue
     }
     echo "$path"
   done
@@ -2042,6 +2053,7 @@ list_src_files () # Generator Newer-Than Magic-Regex [Extensions-or-Globs...]
 # List any /bin/*sh or non-empty .sh/.bash file, from everything checked into SCM
 list_sh_files () # [Generator] [Newer-Than]
 {
+  #shellcheck disable=2086
   list_src_files "${1-}" "${2-}" "$sh_shebang_re" $sh_file_exts
 }
 
@@ -2085,6 +2097,7 @@ expand_format () # ~ <Format> <Name-Parts>
   shift
   for part in "$@"
   do
+    #shellcheck disable=2001,2154
     case "$format" in
       *'%*'* ) echo "$format" | sed 's#%\*#'"$part"'#g' ;;
       *'%_'* ) mkvid "$part"; echo "$format" | sed 's/%_/'"$vid"'/g' ;;
@@ -2225,21 +2238,23 @@ test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 
 build-ood ()
 {
-  test $# -eq 0 || return ${_E_GAE:-$?}
+  test $# -eq 0 || return "${_E_GAE:-$?}"
   command ${BUILD_TOOL:?}-ood | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
     sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
 }
 
+#shellcheck disable=2120
 build-sources ()
 {
-  test $# -eq 0 || return ${_E_GAE:-$?}
+  test $# -eq 0 || return "${_E_GAE:-$?}"
   command ${BUILD_TOOL:?}-sources | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
     sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
 }
 
+#shellcheck disable=2120
 build-targets ()
 {
-  test $# -eq 0 || return ${_E_GAE:-$?}
+  test $# -eq 0 || return "${_E_GAE:-$?}"
   command ${BUILD_TOOL:?}-targets | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
     sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
 }
@@ -2253,7 +2268,7 @@ build-targets ()
 # raw. To show other internals see build-symbol.
 build-show ()
 {
-  test $# -eq 1 || return ${_E_GAE:-$?}
+  test $# -eq 1 || return "${_E_GAE:-$?}"
   BUILD_TARGET=${1:?}
   BUILD_TARGET_BASE=
   BUILD_TARGET_TMP=
@@ -2324,13 +2339,13 @@ build_symbolic_target ()
 
 build-sym ()
 {
-  test $# -eq 1 || return ${_E_GAE:-$?}
+  test $# -eq 1 || return "${_E_GAE:-$?}"
   build_symbolic_target "$@"
 }
 
 build-symbolic-target ()
 {
-  test $# -eq 1 || return ${_E_GAE:-$?}
+  test $# -eq 1 || return "${_E_GAE:-$?}"
   build_symbolic_target "$@"
 }
 

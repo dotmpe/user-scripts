@@ -8,12 +8,11 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
 {
   CWD=${REDO_STARTDIR:?}
   BUILD_STARTDIR=$CWD
-  BUILD_BASE=$REDO_BASE
+  BUILD_BASE=${REDO_BASE:?}
   BUILD_ID=$REDO_RUNID
   true "${ENV:="dev"}"
   true "${APP:="User-Scripts/0.0.2-dev"}"
   true "${ENV_BUILD:="tools/redo/env.sh"}"
-
   BUILD_TOOL=redo
   local sub="${BUILD_STARTDIR:${#BUILD_BASE}}"
   BUILD_SCRIPT=${sub}${sub:+/}default.do
@@ -150,9 +149,11 @@ build_source ()
   declare rp bll
   test "${1:0:1}" != "/" || set -- "$(realpath "$1" --relative-to "${CWD:?}")"
 
-  redo-ifchange "$1" && rp=$(realpath "$1") || {
-    $LOG error :build:source "Error during redo-ifchange" "$1:E$?" ; return 1
-  }
+  rp=$(realpath "$1")
+  # XXX:
+  #redo-ifchange "$1" && rp=$(realpath "$1") || {
+  #  $LOG error :build:source "Error during redo-ifchange" "$1:E$?" ; return 1
+  #}
   test -n "${build_source[$rp]-}" && return
   $LOG info :build:source "Found build source" "$1"
   {
@@ -240,7 +241,7 @@ build_error_handler ()
 {
   local r=$? lastarg=$_
   #! sh_fun stderr_ ||
-  #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r"
+  #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r" 0
   $LOG error ":on-error" "In recipe for '${BUILD_TARGET:?}' ($lastarg)" "E$r"
   exit $r
 }

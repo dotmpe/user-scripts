@@ -4,18 +4,12 @@
 
 sh_mode strict dev build
 
-# TODO: should only test files no longer marked as 'dev', see attributes-local
-
+#shellcheck disable=2120
 lint-tags ()
 {
-  test -z "$*" && {
-    # TODO: forbid only one tag... setup degrees of tags allowed per release
-
-    git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' "$@" && return 1 || true
-  } || {
-
-    git grep '\(XXX\|FIXME\|TODO\):' "$@" && return 1 || true
-  }
+  # XXX: no-commit
+  #git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' "$@" && return 1 || true
+  git grep '\(XXX\|FIXME\|TODO\):' "$@" && return 1 || true
 }
 
 test "${BUILD_SPEC:?}" = :lint:tags: && {
@@ -26,7 +20,7 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   build-ifchange "$script" || return
   # Do not need to fail here and keep rebuilding this target because of the exit
   # state. Instead check for error lines in other target and fail appropiately
-  lint-tags "$script" >| "$errors" || {
+  lint-tags < "$script" >| "$errors" || {
     ! ${sei_fail:-false} || return
     $LOG warn ":lint-tags.do" "Embedded tags lint (continuing)" "$script"
   }
@@ -34,17 +28,21 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   return
 }
 
-test "unset" = "${IF_DEPS[@]-unset}" && {
-  srcls_sym="&source-list"
-  build-ifchange "$srcls_sym" || return
-  $LOG warn ":lint-tags.do" "Could not use If-Deps to get list symbol, using '$srcls_sym'"
-} ||
-  srcls_sym=${IF_DEPS[0]}
 
-source_list=$(build-sym "$srcls_sym")
+# TODO: should only test files no longer marked as 'dev', see attributes-local
+
+test "unset" = "${IF_DEPS[@]-unset}" && {
+  true "${LINT_TAGS_SRC_SPEC:="&lint-tags:src"}"
+  build-ifchange "${LINT_TAGS_SRC_SPEC:?}" || return
+  $LOG warn ":lint-tags.do" "Could not use If-Deps to get list symbol, using '$LINT_TAGS_SRC_SPEC'"
+} ||
+  LINT_TAGS_SRC_SPEC=${IF_DEPS[0]}
+
+source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
 
 test -s "$source_list" || return 0
 
+#shellcheck disable=2046
 redo-ifchange $({
     while read -r x
     do
@@ -60,9 +58,7 @@ test $# -eq 0 && {
   test ! -e "$errors" || rm "$errors"
 } || {
   cat "$@" >| "$errors"
-  rm "$@"
-  test ! -s "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
-  rm "$errors"
+  test ! -s "$errors" && rm "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
 }
 
 build-always
@@ -75,7 +71,7 @@ test -s "$BUILD_TARGET_TMP" && {
     cnt=$(wc -l < "$BUILD_TARGET") || return
 }
 
-test $cnt -eq 0 ||
+test "${cnt:-0}" -eq 0 ||
   stderr_ "Lint (tags): $cnt"
 
 #

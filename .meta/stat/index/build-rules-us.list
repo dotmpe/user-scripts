@@ -28,8 +28,10 @@
 &current alias .meta/cache/ledges.list
 *lint expand \&{tags,shellcheck}-lint
 &sh-list expand ${PROJECT_CACHE:?}/source-sh.list
+&sh-dev-list expand ${PROJECT_CACHE:?}/source-dev-sh.list
 &shellcheck-lint expand ${PROJECT_CACHE:?}/lint-shellcheck.list
 &source-list expand ${PROJECT_CACHE:?}/source.list
+&source-dev-list expand ${PROJECT_CACHE:?}/source-dev.list
 &tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
 
 
@@ -39,7 +41,6 @@
 # TODO: install-deps check
 # Baseline describes third-party components, dependencies, host.hk
 # For host/env prerequisites and checks see init and init-checks targets.
-# lint
 %bats-baseline simpleglob .build/tests/baseline-*.tap test/baseline/%.bats
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
@@ -53,17 +54,19 @@
 # TODO: manual
 :manuals function - u_s-man
 :pack function
-&sh-list:* eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-&shellcheck-lint:* defer-with &sh-list -- lint-shellcheck
-&tags-lint:* defer-with &source-list -- lint-tags
-&source-list:* exec-if :git:index -- git ls-files
+#&sh-list:* eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&shellcheck-lint:* defer-with &sh-dev-list -- lint-shellcheck
+&tags-lint:* defer-with &source-dev-list -- lint-tags
+#&source-list:* exec-if :git:index -- git ls-files
 
 
 # TODO: auto-install/config
 .cllct/src/sh-stats function build_sh_stats u_s-stats
 .meta/cache/build-rules.list defer concat-rules
-.meta/cache/source-sh.list eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 .meta/cache/source.list exec-if :git:index -- git ls-files
+.meta/cache/source-dev.list function - &source-list
+.meta/cache/source-sh.list eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+.meta/cache/source-dev-sh.list function - &sh-list
 
 
 ### Special pseudo-target helpers
