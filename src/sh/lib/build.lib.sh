@@ -172,6 +172,21 @@ build_boot () # (Build-Action) ~ <Argv...>
   done
 }
 
+build_target___if_deps_ () # ~ <Target-name> <Prerequisites> -- ...
+{
+  declare -ga IF_DEPS=()
+  while argv_has_next "$@"
+  do
+    IF_DEPS+=( "$1" )
+    shift
+  done
+  argv_is_seq "$@" || return
+  shift
+  test 0 -eq "${#IF_DEPS[*]}" || {
+    build-ifchange "${IF_DEPS[@]}" || return
+  }
+}
+
 # Alias target: defer to other targets.
 #
 # This uses Target-Parent env to give the lookup of sub targets additional
@@ -222,7 +237,7 @@ build_target__from__defer () # ~ <Target-name> [<Part-name>]
     return ${_E_continue:-196}
   }
   $LOG "info" ":defer:$2" "Building include" "$1"
-  build_target_ "$part"
+  build_target_ "$part" || return
   shift
   $LOG "debug" ":defer:$1" "Sourcing include" "$part"
   ${show_recipe:-false} && {
@@ -242,6 +257,17 @@ build_target__from__defer_sequence () # ~ <Target-name> <Part-names <...>>
   for pn in "$@"
   do build_target__from__defer "$t" "$pn" || return
   done
+}
+
+build_target__from__defer_with () # ~ <Target-name> <Prerequisites> -- <Part-name>
+{
+  declare target="${1:?}"
+  shift
+  build_target___if_deps_ "$@" || return
+  shift $(( 1 + ${#IF_DEPS[*]} )) || return
+  # XXX: might as well do sequence here
+  #build_target__from__defer "$target" "$@"
+  build_target__from__defer_sequence "$target" "$@"
 }
 
 # Wrapper for generic recipe part
@@ -264,18 +290,9 @@ build_target__from__eval () # ~ <Target-name> <Command...>
 build_target__from__eval_if () # ~ <Target-name> <Prerequisites> -- <Command...>
 {
   declare target="${1:?}"
-  declare -a deps=()
   shift
-  while argv_has_next "$@"
-  do
-    deps+=( "$1" )
-    shift
-  done
-  argv_is_seq "$@" || return
-  shift
-  test 0 -eq "${#deps[*]}" || {
-    build-ifchange "${deps[@]}" || return
-  }
+  build_target___if_deps_ "$@" || return
+  shift $(( 1 + ${#IF_DEPS[*]} )) || return
   build_target__from__eval "$target" "$@"
 }
 
@@ -291,18 +308,9 @@ build_target__from__exec () # ~ <Target-name> <Command...>
 build_target__from__exec_if () # ~ <Target-name> <Prerequisites> -- <Command...>
 {
   declare target="${1:?}"
-  declare -a deps=()
   shift
-  while argv_has_next "$@"
-  do
-    deps+=( "$1" )
-    shift
-  done
-  argv_is_seq "$@" || return
-  shift
-  test 0 -eq "${#deps[*]}" || {
-    build-ifchange "${deps[@]}" || return
-  }
+  build_target___if_deps_ "$@" || return
+  shift $(( 1 + ${#IF_DEPS[*]} )) || return
   build_target__from__exec "$target" "$@"
 }
 
@@ -1053,9 +1061,8 @@ build_env__define__redo_ ()
   build_add_handler \
 "$(sh_fun_for_pref "build_install_")"\
 " $(sh_fun_for_pref "build_which__")"\
-" $(sh_fun_for_pref "build_target__with__")"\
+" $(sh_fun_for_pref "build_target_")"\
 " $(sh_fun_for_pref "build_for_target__with__")"\
-" $(sh_fun_for_pref "build_target__from__")"\
 " build_env_sh build_env_vars build_sh"\
 " build_for_target build_which build_boot build_lib_load build_env_default"\
 " build_source"\
@@ -1066,8 +1073,7 @@ build_env__define__redo_ ()
 " build_env_rule"\
 " build_rule_exists build_rule_fetch"\
 " fnmatch mkvid match_grep sh_fun"\
-" build_target__parent__reset_group"\
-" build_ build_target_ sh_unset sh_unset_ifset"\
+" build_ sh_unset sh_unset_ifset"\
 " build_alias_part build_unalias"\
 " expand_format"\
 " env__def__build_source"

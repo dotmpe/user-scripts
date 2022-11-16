@@ -47,8 +47,11 @@
 &context-local:* defer-sequence uconf-deps context-local
 :install function
 :git:index defer scm-git-index
-&lint-shellcheck:* defer lint-shellcheck
-&lint-tags:* defer lint-tags
+&lint-shellcheck:* defer-with &sh-list -- lint-shellcheck
+:lint:shellcheck: defer lint-shellcheck
+&lint-tags:* defer-with &source-list -- lint-tags
+:lint:tags: defer lint-tags
+
 # TODO: manual
 :manuals function - u_s-man
 :pack function

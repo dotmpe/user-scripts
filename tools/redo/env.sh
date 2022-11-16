@@ -1,5 +1,6 @@
-true "${UC_LOG_BASE:=redo:default.do[$$]}"
-declare -x UC_LOG_BASE
+#true "${UC_LOG_BASE:=redo:default.do[$$]}"
+declare -x UC_LOG_BASE=redo:default.do[$$]
+
 export verbosity="${verbosity:=${v:-4}}"
 $LOG info ":Tools:Redo:env" "Starting..." "v=$verbosity:U-s:tools/redo/env.sh"
 

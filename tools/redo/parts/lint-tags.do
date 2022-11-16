@@ -2,11 +2,9 @@
 # Created: 2018-10-17
 
 
-build-ifchange "&source-list"
-source_list=$(build-sym "&source-list")
+sh_mode strict dev build
 
 # TODO: should only test files no longer marked as 'dev', see attributes-local
-
 
 lint-tags ()
 {
@@ -20,19 +18,45 @@ lint-tags ()
   }
 }
 
-{
+test "${BUILD_SPEC:?}" = :lint:tags: && {
 
-  declare x fail
-  while read -r x
-  do
-    lint-tags "$x" || {
-      fail=$?
-      echo "$x"
-      echo "Failed at $x E$fail" >&2
-    }
-  done
-  return ${fail:-0}
+  declare script errors
+  script="${BUILD_TARGET:${#BUILD_SPEC}}"
+  errors=${PROJECT_CACHE:?}/lint-tags-${script//\//-}.errors
+  build-ifchange "$script" || return
+  lint-tags "$script" >| "$errors"
+  return
+}
 
-} < "$source_list"
+test "unset" = "${IF_DEPS[@]-unset}" && {
+  srcls_sym="&source-list"
+  build-ifchange "$srcls_sym" || return
+  $LOG warn ":lint-tags.do" "Could not use If-Deps to get list symbol, using '$srcls_sym'"
+} ||
+  srcls_sym=${IF_DEPS[0]}
+
+source_list=$(build-sym "$srcls_sym")
+
+test -s "$source_list" || return 0
+
+redo-ifchange $({
+    while read -r x
+    do
+      test -f "$x" -a ! -h "$x" || continue
+      echo ":lint:tags:$x"
+    done
+  } < "$source_list")
+
+declare errors=${PROJECT_CACHE:?}/lint-tags.errors
+shopt -s nullglob
+set -- "${PROJECT_CACHE:?}"/lint-tags-*.errors
+test $# -eq 0 && {
+  test ! -e "$errors" || rm "$errors"
+} || {
+  cat "$@" >| "$errors"
+  rm "$@"
+  test ! -s "$errors" || cat "$errors"
+  rm "$errors"
+}
 
 #

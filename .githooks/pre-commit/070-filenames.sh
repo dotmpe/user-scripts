@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
+
+#shellcheck disable=2086,2209
 test ${SHLVL:-0} -le ${lib_lvl:-0} && status=return || { lib_lvl=$SHLVL && set -euo pipefail -o posix && status=exit ; } # Inherit shell or init new
 
-test -z "${scm_nok:-}" || $status $scm_nok
+test -z "${scm_nok:-}" || "$status" "$scm_nok"
 
-: "${PROJECT_BASE:="`git rev-parse --show-toplevel`"}"
+: "${PROJECT_BASE:="$(git rev-parse --show-toplevel)"}"
 
 : "${max_lines_per_check:=10}"
 # XXX: : "${keep_going:=1}"
 
 : "${fail_cnt:=0}"
 : "${pass_cnt:=0}"
-: "${step:=$(( $pass_cnt + $fail_cnt ))}"
+: "${step:=$(( pass_cnt + fail_cnt ))}"
 
 c_nr=070
 c_lbl="Filename encoding check"
@@ -45,7 +47,7 @@ for file in $files
 do
   IFS=$' \t\n'
   test -e "$file" || continue # Ignore deleted (assuming it is, or renamed)
-  step=$(( $step + 1 ))
+  step=$(( step + 1 ))
 
   # Cross platform projects tend to avoid non-ASCII filenames; prevent
   # them from being added to the repository. We exploit the fact that the
@@ -54,8 +56,8 @@ do
     # Note that the use of brackets around a tr range is ok here, (it's
     # even required, for portability to Solaris 10's /usr/bin/tr), since
     # the square bracket bytes happen to fall in the designated range.
-    test $(git diff --cached --name-only --diff-filter=A -z $against -- "$file" |
-      LC_ALL=C tr -d '[ -~]\0' | wc -c) != 0
+    test "$(git diff --cached --name-only --diff-filter=A -z $against -- "$file" |
+      LC_ALL=C tr -d '[ -~]\0' | wc -c)" != 0
   then
     cat <<\EOF
 Error: Attempt to add a non-ASCII file name.
@@ -70,7 +72,7 @@ If you know what you are doing you can disable this check using:
 
 EOF
 
-    test -x "$(which ggrep)" && ggrep=ggrep || ggrep=grep
+    command -v ggrep >/dev/null 2>&1 && ggrep=ggrep || ggrep=grep
     { git diff --cached --name-only --diff-filter=A -z $against -- "$file" |
       tr -s '\n\r' '\n' |
       $ggrep --color='auto' '[^[:print:]]' ||
@@ -78,21 +80,21 @@ EOF
     } | head -n $max_lines_per_check
     echo
     _070_stat=1
-    fail_cnt=$(( $fail_cnt + 1 ))
-    test ${keep_going} -ne 0 || break
+    fail_cnt=$(( fail_cnt + 1 ))
+    ${keep_going:-true} || break
   fi
 
 done
 
 : "${CMD:=$(basename -- "$0" .sh)}"
-test $step -gt $(( $pass_cnt + $fail_cnt )) ||
+test $step -gt $(( pass_cnt + fail_cnt )) ||
   $LOG "warn" "$CMD" "No staged files to check!"
 
 export step
-pass_cnt=$(( $step - $fail_cnt ))
+pass_cnt=$(( step - fail_cnt ))
 test $fail_cnt -eq 0 &&
   echo "Pass [$c_nr] $c_lbl done: $pass_cnt/$step" >&2 ||
   echo "Fail [$c_nr] $c_lbl errored: $pass_cnt/$step" >&2
-$status $_070_stat
+"$status" "$_070_stat"
 
 # Copy: U-S-wiki:
