@@ -5,7 +5,7 @@ $LOG info ":Tools:Redo:env" "Starting..." "v=$verbosity:U-s:tools/redo/env.sh"
 
 true "${CWD:="${REDO_STARTDIR:?}"}"
 true "${SUITE:="Main"}"
-true "${BUILD_ENV:=build-rules rule-params redo-- defaults stderr_}"
+true "${BUILD_ENV:=build-rules build-lib rule-params redo-- defaults stderr_ argv}"
 true "${PROJECT_CACHE:=".meta/cache"}"
 true "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
 true "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"

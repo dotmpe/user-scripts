@@ -1,7 +1,12 @@
-#!/usr/bin/env bash
+
 # Created: 2018-10-17
 
+
+build-ifchange "&source-list"
+source_list=$(build-sym "&source-list")
+
 # TODO: should only test files no longer marked as 'dev', see attributes-local
+
 
 lint-tags ()
 {
@@ -15,7 +20,8 @@ lint-tags ()
   }
 }
 
-git ls '*.sh' | {
+{
+
   declare x fail
   while read -r x
   do
@@ -26,6 +32,7 @@ git ls '*.sh' | {
     }
   done
   return ${fail:-0}
-}
+
+} < "$source_list"
 
 #

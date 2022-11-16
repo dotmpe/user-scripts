@@ -326,21 +326,16 @@ default_do_main ()
       ;;
 
 
-    .build/tests/*.tap ) default_do_include \
-          "tools/redo/parts/_build_tests_*.tap.do" "$@"
-      ;;
+    .build/tests/*.tap ) build_component__defer "_build_tests_*.tap" ;;
 
-    src/md/man/User-Script:*-overview.md ) default_do_include \
-          "tools/redo/parts/src_man_man7_User-Script:*-overview.md.do" "$@"
-      ;;
+    src/md/man/User-Script:*-overview.md )
+          build_component__defer "src_man_man7_User-Script:*-overview.md.do" ;;
 
-    src/man/man7/User-Script:*.7 ) default_do_include \
-          "tools/redo/parts/src_man_man7_User-Script:*.7.do" "$@"
-      ;;
+    src/man/man7/User-Script:*.7 )
+          build_component__defer "src_man_man7_User-Script:*.7.do" ;;
 
-    src/man/man*/*.* ) default_do_include \
-          "tools/redo/parts/src_man_man*_*.*.do" "$@"
-      ;;
+    src/man/man*/*.* )
+          build_component__defer "src_man_man*_*.*.do" ;;
 
 
     * )

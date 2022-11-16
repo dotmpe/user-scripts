@@ -35,7 +35,7 @@ build_lib_load ()
     ["?"]=qm
     ["&"]=amp ["@"]=at
     [%]=pct
-    ["*"]=expand
+    ["*"]=star
   )
 
   #true "${BUILD_ENV_DEF:=defaults redo--}"
@@ -179,12 +179,11 @@ build_boot () # (Build-Action) ~ <Argv...>
 # calling those/that target directly (since the current one is virtual) this
 # needs build-always so that the sub-target never misses the needed env to
 # build the lookup sequence.
-build_component__alias () # <Name> <Targets...>
+build_target__from__alias () # <Name> <Targets...>
 {
   declare target="${1:?}"
   shift
   #shellcheck disable=SC2046
-  #set -- $(eval "echo $*")
   # XXX: not sure if this can something with spaces/other special characters
   # properly. May be test such later...
   #eval "set -- $(echo $* | lines_printf '"%s"')"
@@ -211,7 +210,7 @@ build_component__alias () # <Name> <Targets...>
 # Alternatively the recipe can create a redo file that works as well, but that
 # may get very project context specific.
 #
-build_component__defer () # ~ <Target-name> [<Part-name>]
+build_target__from__defer () # ~ <Target-name> [<Part-name>]
 {
   declare pn=${2:-${1:?}} part
   test -n "${2:-}" -o -z "${TARGET_ALIAS:-}" || {
@@ -235,30 +234,94 @@ build_component__defer () # ~ <Target-name> [<Part-name>]
   }
 }
 
-build_component__dir_index () # <Name> <Dirs...>
+# Sometimes, one generic recipe part is not enough.
+build_target__from__defer_sequence () # ~ <Target-name> <Part-names <...>>
+{
+  declare t=${1:?} pn
+  shift
+  for pn in "$@"
+  do build_target__from__defer "$t" "$pn" || return
+  done
+}
+
+# Wrapper for generic recipe part
+build_target__from__dir_index () # ~ <Target-name> <Dirs...>
 {
   declare target="${1:?}"
   shift
   TARGET_PARENT="${target}" TARGET_GROUP="${@@Q}" TARGET_ALIAS=os-dir-index build-ifchange "$@"
 }
 
+build_target__from__eval () # ~ <Target-name> <Command...>
+{
+  declare target="${1:?}"
+  shift
+  $LOG warn ":eval" "Evaluating command" "$*"
+  eval "${@:?}" > "${BUILD_TARGET_TMP:?}"
+  build-stamp < "$BUILD_TARGET_TMP"
+}
+
+build_target__from__eval_if () # ~ <Target-name> <Prerequisites> -- <Command...>
+{
+  declare target="${1:?}"
+  declare -a deps=()
+  shift
+  while argv_has_next "$@"
+  do
+    deps+=( "$1" )
+    shift
+  done
+  argv_is_seq "$@" || return
+  shift
+  test 0 -eq "${#deps[*]}" || {
+    build-ifchange "${deps[@]}" || return
+  }
+  build_target__from__eval "$target" "$@"
+}
+
+build_target__from__exec () # ~ <Target-name> <Command...>
+{
+  declare target="${1:?}"
+  shift
+  $LOG warn ":exec" "Running command" "$*"
+  command "${@:?}" > "${BUILD_TARGET_TMP:?}"
+  build-stamp < "$BUILD_TARGET_TMP"
+}
+
+build_target__from__exec_if () # ~ <Target-name> <Prerequisites> -- <Command...>
+{
+  declare target="${1:?}"
+  declare -a deps=()
+  shift
+  while argv_has_next "$@"
+  do
+    deps+=( "$1" )
+    shift
+  done
+  argv_is_seq "$@" || return
+  shift
+  test 0 -eq "${#deps[*]}" || {
+    build-ifchange "${deps[@]}" || return
+  }
+  build_target__from__exec "$target" "$@"
+}
+
 # Somewhat like alias, but this expands strings containing
 # shell expressions.
 #
 # XXX: These can be brace-expansions, variables or even subshells.
-build_component__expand () # ~ <Target-Name> <Target-Expressions...>
+build_target__from__expand () # ~ <Target-name> <Target-expressions...>
 {
   declare target=${1:?}
   shift
-  #shellcheck disable=SC2046
   set -- $(eval "echo $*")
 
-  #build-always
+  # XXX: build-always
   TARGET_PARENT=${target} TARGET_GROUP="${@@Q}" build-ifchange "${@:?}"
 }
 
 # XXX: Use command as output to fill single placeholder in pattern(s)
-build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-Formats...>
+build_target__from__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-Formats...>
 {
   declare -a source_cmd=()
   shift
@@ -291,7 +354,7 @@ build_component__expand_all () # ~ <Target-Name> <Source-Command...> -- <Target-
 
 build_component_recipe__expand_all ()
 {
-  show_recipe=true build_component__expand_all "$@"
+  show_recipe=true build_target__from__expand_all "$@"
 }
 
 # Function target: invoke function with build-args.
@@ -303,7 +366,7 @@ build_component_recipe__expand_all ()
 # To specify a sh lib to load both lib-require and lib-path must be available.
 #
 # The final sequence is passed as arguments to the handler.
-build_component__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
+build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
 {
   declare name=${1:?} func=${2:--}
   shift 2
@@ -332,7 +395,7 @@ build_component__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
   }
   $func "$@"
 }
-build_component__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
+build_target__from__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
 {
   declare name=${1:?} func=${2:--}
   shift 2
@@ -364,25 +427,25 @@ build_component__function () # ~ <Target> [<Function>] [<Src...>] [<Args>]
 
 # Compose: build file from given function(s)
 # TODO: as compose-names but do static analysis to resolve dependencies
-build_component__compose () # ~ <Target> <Composed...>
+build_target__from__compose () # ~ <Target> <Composed...>
 {
   false
 }
 
-build_component__compose_names () # ~ <Target> <Composed...>
+build_target__from__compose_names () # ~ <Target> <Composed...>
 {
   shift || return ${_E_GAE:-193}
   : "${@:?"Expected one or more functions to typeset"}"
   declare fun tp rs r
   for fun in "$@"
   do
-    build_component__compose__resolve "$fun" || return
+    build_target__from__compose__resolve "$fun" || return
   done
   build-stamp < "${BUILD_TARGET_TMP:?}"
-  typeset build_component__compose | build-stamp
+  typeset build_target__from__compose | build-stamp
 }
 
-build_component__compose__resolve ()
+build_target__from__compose__resolve ()
 {
   # There are myriads of ways to start looking for a function definition,
   # and also to generate a typeset.
@@ -391,7 +454,7 @@ build_component__compose__resolve ()
   } || {
     for rs in ${COMPO_RESOLVE:-tagsfile composure}
     do
-      build_component__compose__resolve_function__${rs} "$1"; r=$?
+      build_target__from__compose__resolve_function__${rs} "$1"; r=$?
       test $r -eq 0 && break ||
         test $r -eq ${_E_continue:-196} && continue
     done
@@ -402,18 +465,18 @@ build_component__compose__resolve ()
       return $r
     }
   }
-  #build_component__compose__typeset__${BUILD_COMPO_TGEN:-sh}
+  #build_target__from__compose__typeset__${BUILD_COMPO_TGEN:-sh}
   $LOG info "" "Typesetting..." "$1"
   type "$1" | tail -n +2 > "${BUILD_TARGET_TMP:?}" || return
 }
 
 # TODO: look in users C_INC/which composure.sh
-build_component__compose__resolve_function__composure ()
+build_target__from__compose__resolve_function__composure ()
 {
   return ${_E_continue:-196}
 }
 
-build_component__compose__resolve_function__tagsfile ()
+build_target__from__compose__resolve_function__tagsfile ()
 {
   declare tsrc
   tsrc=$(grep -m 1 "^$1"$'\t' ${TAGS:?} | awk '{print $2}') || {
@@ -427,7 +490,7 @@ build_component__compose__resolve_function__tagsfile ()
 }
 
 # Symlinks: create each dest, linking to srcs
-build_component__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
+build_target__from__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 {
   declare src match dest grep="$(glob_spec_grep "$2")" f
   ${quiet:-false} || f=-v
@@ -456,7 +519,7 @@ build_component__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 # Simpleglob: defer to target paths obtained by expanding source-spec
 #build_component_glob () # ~ <Name> <Target-Pattern> <Source-Globs...>
 # XXX: this is not a simple glob but a map-path-pattern based on glob input
-build_component__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
+build_target__from__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 {
   declare src match glob=$(echo "$3" | sed 's/%/*/')
   build-ifchange $( for src in $glob
@@ -520,7 +583,7 @@ build_component_recipe__expand () # <Name> <Targets...>
 
 build_component_types ()
 {
-  sh_fun_for_pref "build_component__" | cut -c 18- | grep -v '__' | tr '_' '-'
+  sh_fun_for_pref "build_target__from__" | cut -c 18- | grep -v '__' | tr '_' '-'
 }
 
 # Get directive line from build-rules based on name, and invoke
@@ -566,10 +629,10 @@ build_components () # ~ <Name>
       return
     }
     echo "set -- ${*@Q}"
-    sh_fun_body build_component__${type_//-/_} | sed 's/^    //'
+    sh_fun_body build_target__from__${type_//-/_} | sed 's/^    //'
     return
   } || {
-    build_component__${type_//-/_} "$@"
+    build_target__from__${type_//-/_} "$@"
   }
 }
 
@@ -992,7 +1055,7 @@ build_env__define__redo_ ()
 " $(sh_fun_for_pref "build_which__")"\
 " $(sh_fun_for_pref "build_target__with__")"\
 " $(sh_fun_for_pref "build_for_target__with__")"\
-" $(sh_fun_for_pref "build_component__")"\
+" $(sh_fun_for_pref "build_target__from__")"\
 " build_env_sh build_env_vars build_sh"\
 " build_for_target build_which build_boot build_lib_load build_env_default"\
 " build_source"\
@@ -1480,7 +1543,7 @@ build_resolver ()
   declare method r hpref=${1:?Handler name prefix expected} br_handler brhref
   shift
   declare -g BUILD_HANDLER=
-  $LOG debug ":build:resolve" "Starting lookup for target" "${BUILD_TARGET:?}"
+  $LOG debug ":build:resolve" "Starting lookup for target" "${BUILD_TARGET//%/%%}"
   set -o noglob
   for BUILD_SPEC in $(build_which)
   do
@@ -1500,12 +1563,12 @@ build_resolver ()
         brhref=${brhref//__/:}
         brhref=${brhref//_/-}
         BUILD_HANDLER=$brhref
-        $LOG debug ":build:resolve" "Target handled at ${brhref} '$BUILD_SPEC'" >&2
+        $LOG debug ":build:resolve" "Target handled at ${brhref} '${BUILD_SPEC//%/%%}'" >&2
         ${show_recipe:-false} && return
         exit 0
       } || { r=$?
         test $r = ${_E_continue:-196} || {
-          $LOG error "" "Failed at $method" "$BUILD_SPEC: E$r"
+          $LOG error "" "Failed at $method" "${BUILD_SPEC//%/%%}: E$r"
           ${show_recipe:-false} && return $r
           exit $r
         }
@@ -1668,7 +1731,7 @@ build_target__with__env ()
 # Build-resolver that looks for target in file tree
 build_target__with__parts ()
 {
-  build_component__defer "${1:?}" "${2:-}"
+  build_target__from__defer "${1:?}" "${2:-}"
 }
 
 # Build-resolver that looks for target in rules-table
@@ -1780,8 +1843,8 @@ build_which__amp ()
 build_which__at ()
 {
   echo "$1"
-  echo "${1/@/at-}"
   echo "${1/@/:at:}"
+  echo "${1/@/at-}"
 }
 
 build_which__file_name ()
@@ -1879,16 +1942,29 @@ build_which__qm ()
   echo "${1/?/:target:prerequisites:}"
 }
 
+build_which__star ()
+{
+  echo "$1"
+  echo "${1/\*/:glob:}"
+  echo "${1/\*/glob-}"
+}
+
 # This is identical to handling directory paths, except '/' is the ':' char.
 # The algorithm here is much simpler because there are no directory vs.
 # filename elements (yet).
 build_which__special ()
 {
-  declare p=${1:?}
+  declare p=${1:?} d=${1//[^:]} c
+  d=${#d}
   while test -n "$p"
   do
     echo "$p"
+    # Assemble lookup pattern
     p=${p%:*}
+    c=${p//[^:]}
+    c=${#c}
+    echo "$p$(while test $(( d - 1 )) -ge $c; do printf '%s' ":%"; d=$(( d - 1 )); done)"
+    test $d -eq $c || echo "$p:"
   done
 }
 
