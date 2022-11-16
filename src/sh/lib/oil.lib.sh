@@ -2,6 +2,7 @@
 
 ## Oil Shell
 
+
 oil_lib_load ()
 {
   OIL_CONTAINER=u-s-oil-treebox
@@ -16,12 +17,14 @@ oil_docker_init ()
   docker_image=$OIL_IMAGE
   docker_sh_c_init() # sh:no-stat
   {
+    #shellcheck disable=2086,2154
     ${dckr_pref}docker exec --user root $OIL_CONTAINER \
       sh -c 'echo treebox:treeobx | chpasswd' &&
     oil bash -c 'git checkout 2a94f6ff && git clean -dfx && make configure && build/dev.sh minimal'
   }
   oil() # sh:no-stat
   {
+    #shellcheck disable=2086
     ${dckr_pref}docker exec -i -w "$OIL_PATH" "$OIL_CONTAINER" "$@"
   }
   oshc() # sh:no-stat

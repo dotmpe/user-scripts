@@ -26,11 +26,11 @@
 &build-rules expand ${PROJECT_CACHE:?}/build-rules.list
 &context-local expand ${PROJECT_CACHE:?}/context-local.list
 &current alias .meta/cache/ledges.list
-*lint expand \&lint-{tags,shellcheck}
-&lint-shellcheck expand ${PROJECT_CACHE:?}/lint-shellcheck.list
-&lint-tags expand ${PROJECT_CACHE:?}/lint-tags.list
+*lint expand \&{tags,shellcheck}-lint
 &sh-list expand ${PROJECT_CACHE:?}/source-sh.list
+&shellcheck-lint expand ${PROJECT_CACHE:?}/lint-shellcheck.list
 &source-list expand ${PROJECT_CACHE:?}/source.list
+&tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
 
 
 ## Other aliased scripts (defer parts) and function target/pattern handlers
@@ -47,21 +47,23 @@
 &context-local:* defer-sequence uconf-deps context-local
 :install function
 :git:index defer scm-git-index
-&lint-shellcheck:* defer-with &sh-list -- lint-shellcheck
 :lint:shellcheck: defer lint-shellcheck
-&lint-tags:* defer-with &source-list -- lint-tags
 :lint:tags: defer lint-tags
 
 # TODO: manual
 :manuals function - u_s-man
 :pack function
-&sh-list:* eval-if :git:index -- git ls-files '*.sh'
+&sh-list:* eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&shellcheck-lint:* defer-with &sh-list -- lint-shellcheck
+&tags-lint:* defer-with &source-list -- lint-tags
 &source-list:* exec-if :git:index -- git ls-files
 
 
 # TODO: auto-install/config
 .cllct/src/sh-stats function build_sh_stats u_s-stats
 .meta/cache/build-rules.list defer concat-rules
+.meta/cache/source-sh.list eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+.meta/cache/source.list exec-if :git:index -- git ls-files
 
 
 ### Special pseudo-target helpers

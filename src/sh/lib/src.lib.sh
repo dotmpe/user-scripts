@@ -307,18 +307,20 @@ read_head_comment()
 {
   local r=''
 
+  #shellcheck disable=2016
   # Scan #-diretives to first proper comment line
   read_lines_while "$1" 'echo "$line" | grep -qE "^\s*#[^ ]"' || r=$?
   test -n "$line_number" || return
 
   # If no line matched start at firstline
-  test -n "$r" && first_line=1 || first_line=$(( $line_number + 1 ))
+  test -n "$r" && first_line=1 || first_line=$(( line_number + 1 ))
 
+  #shellcheck disable=2016
   # Read rest, if still commented.
   read_lines_while "$1" 'echo "$line" | grep -qE "^\s*#(\ .*)?$"' $first_line || return
 
   span_lines=$line_number
-  last_line=$(( $first_line + $span_lines - 1 ))
+  last_line=$(( first_line + span_lines - 1 ))
   lines_slice $first_line $last_line "$1" | $gsed 's/^\s*#\ \?//'
 }
 
@@ -352,9 +354,9 @@ source_lines() # Src Start-Line End-Line [Span-Lines]
   test -n "$Span_Lines" || {
     end_line=$3
     test -n "$end_line" || end_line=$(count_lines "$1")
-    Span_Lines=$(( $end_line - $start_line ))
+    Span_Lines=$(( end_line - start_line ))
   }
-  tail -n +$start_line $1 | head -n $Span_Lines
+  tail -n +$start_line "$1" | head -n "$Span_Lines"
 }
 
 
@@ -374,7 +376,7 @@ expand_source_line() # Src-File Line
   local srcfile="$(source_lines "$1" "$2" "" 1 | awk '{print $2}')"
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile" || return
-  trueish "${keep_source-0}" || rm $srcfile
+  trueish "${keep_source-0}" || rm "$srcfile"
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 
@@ -384,7 +386,7 @@ expand_srcline()
 {
   test -f "$srcfile" || error "src-file $*: '$srcfile'" 1
   expand_line "$@" "$srcfile"
-  trueish "${keep_source-0}" || rm $srcfile
+  trueish "${keep_source-0}" || rm "$srcfile"
   std_info "Replaced line with resolved src of '$srcfile'"
 }
 

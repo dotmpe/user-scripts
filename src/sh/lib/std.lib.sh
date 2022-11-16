@@ -28,7 +28,7 @@ std_lib_init ()
   test -n "${LOG-}" && std_lib_log="$LOG" || std_lib_log="$INIT_LOG"
   test -z "${v-}" || verbosity=$v
 
-  true ${STD_INTERACTIVE:=`eval "$std_interactive"; printf $?`}
+  true "${STD_INTERACTIVE:=`eval "$std_interactive"; printf "%i" $?`}"
 
   std_uc_env_def &&
   $INIT_LOG debug "" "Initialized std.lib" "$0"
@@ -179,19 +179,19 @@ log_bw()
 
 log_16()
 {
-  printf -- "$1\n"
+  printf -- "%s\n" "$1"
 }
 
 log_256()
 {
-  printf -- "$1\n"
+  printf -- "%s\n" "$1"
 }
 
 # stdio helper functions
 log()
 {
   test -n "${log_key:-}" || log_src_id_var
-  printf -- "$bb[$bk$(log_src_id)$bb]${norm-} $1\n"
+  printf -- "%s[%s] %s %s\n" "$bb" "$bk$(log_src_id)$bb" "${norm-}" "$1"
 }
 
 err()

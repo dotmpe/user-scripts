@@ -10,16 +10,16 @@ ansi_tpl_lib_load ()
   }
 
   # Load term-part to set this to more sensible default
-  true "${COLORIZE:=$(test $ncolors -gt 0 && printf 1 || printf 0)}"
+  true "${COLORIZE:=$(test "$ncolors" -gt 0 && printf 1 || printf 0)}"
 
   test -n "${CS-}" || CS=dark
 
-  test $COLORIZE -eq 1 || ansi_tpl_env_def
+  test "$COLORIZE" -eq 1 || ansi_tpl_env_def
 }
 
 ansi_tpl_env_def ()
 {
-  # XXX: not in dash
+  #shellcheck disable=1007
   declare -g \
     _f0= BLACK=   _b0= BG_BLACK= \
     _f1= RED=     _b1= BG_RED= \
@@ -36,18 +36,18 @@ ansi_tpl_env_def ()
 
 ansi_tpl_lib_init ()
 {
-  test ${COLORIZE:-1} -eq 1 || {
+  test "${COLORIZE:-1}" -eq 1 || {
     # Declare empty if required (if not found yet)
     declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def
     return
   }
 
   local tset
-  case "$TERM" in xterm | screen ) ;; ( * ) false ;; esac && tset=set ||
+  case "$TERM" in xterm | screen ) ;; ( * ) false ;; esac && tset="set" ||
   case "$TERM" in xterm-256color | screen-256color ) ;; ( * ) false ;; esac &&
   case ${ncolors:-0} in
-    (   8 ) tset=set ;;
-    ( 256 ) tset=seta ;;
+    (   8 ) tset="set" ;;
+    ( 256 ) tset="seta" ;;
     (   * ) bash_env_exists _f0 || ansi_tpl_env_def; return ;;
   esac || {
     # If no color support found, simply set vars and return zero-status.
@@ -56,18 +56,18 @@ ansi_tpl_lib_init ()
     declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def; return;
   }
 
-  : ${_b0:=${BG_BLACK:=$(tput ${tset}b 0)}}
-  : ${_b1:=${BG_RED:=$(tput ${tset}b 1)}}
-  : ${_b2:=${BG_GREEN:=$(tput ${tset}b 2)}}
-  : ${_b3:=${BG_YELLOW:=$(tput ${tset}b 3)}}
-  : ${_b4:=${BG_BLUE:=$(tput ${tset}b 4)}}
-  : ${_b5:=${BG_CYAN:=$(tput ${tset}b 5)}}
-  : ${_b6:=${BG_MAGENTA:=$(tput ${tset}b 6)}}
-  : ${_b7:=${BG_WHITE:=$(tput ${tset}b 7)}}
+  : "${_b0:=${BG_BLACK:=$(tput ${tset}b 0)}}"
+  : "${_b1:=${BG_RED:=$(tput ${tset}b 1)}}"
+  : "${_b2:=${BG_GREEN:=$(tput ${tset}b 2)}}"
+  : "${_b3:=${BG_YELLOW:=$(tput ${tset}b 3)}}"
+  : "${_b4:=${BG_BLUE:=$(tput ${tset}b 4)}}"
+  : "${_b5:=${BG_CYAN:=$(tput ${tset}b 5)}}"
+  : "${_b6:=${BG_MAGENTA:=$(tput ${tset}b 6)}}"
+  : "${_b7:=${BG_WHITE:=$(tput ${tset}b 7)}}"
 
-  : ${REVERSE:=$(tput rev)}
-  : ${BOLD:=$(tput bold)}
-  : ${NORMAL:=$(tput sgr0)}
+  : "${REVERSE:=$(tput rev)}"
+  : "${BOLD:=$(tput bold)}"
+  : "${NORMAL:=$(tput sgr0)}"
   if [ "$CS" = "dark" ]
   then
     NORMAL="\[\033[0;37m\]"
@@ -76,6 +76,7 @@ ansi_tpl_lib_init ()
     NORMAL="\[\033[0;38m\]"
     SEP="\[\033[1;30m\]"
   fi
+  #shellcheck disable=2153
   PSEP="$BWHITE:$NORMAL"
   ISEP="$SEP \d$NORMAL"
   TSEP="${SEP}T$NORMAL"
@@ -90,10 +91,11 @@ ansi_tpl_aliases ()
   then
 
     alias tree='tree -C'
-    case "$uname" in
-      darwin ) alias ls='ls -G'
+    #shellcheck disable=2154
+    case "${uname:?}" in
+      Darwin ) alias ls='ls -G'
         ;;
-      linux ) alias ls='ls --color=auto'
+      Linux ) alias ls='ls --color=auto'
           #alias dir='dir --color=auto'
           #alias vdir='vdir --color=auto'
         ;;

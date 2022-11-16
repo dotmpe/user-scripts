@@ -20,6 +20,7 @@ mkdir -p "$(dirname "$1")"
 
 # Redo if libs associated have changed.
 # NOTE: would be nice to track function-source instead
+#shellcheck disable=SC2046,2001
 redo-ifchange $( echo "$redo_paths" | sed 's#^\(\.\/\)\?#'"$REDO_BASE/"'#g' )
 
 test ! -e "$1" -o -s "$1" || rm "$1"
@@ -31,7 +32,7 @@ test ! -e "$1" -o -s "$1" || rm "$1"
   . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
   init_sh_libs="$init_sh_libs match src sys std package functions build-htd" &&
-  util_mode=boot . $REDO_BASE/tools/sh/init.sh
+  util_mode=boot . "$REDO_BASE"/tools/sh/init.sh
 
   scriptname="do:$REDO_PWD:$1" && {
     test -n "$redo_lib_id" -a -n "$redo_paths" || {
@@ -40,6 +41,7 @@ test ! -e "$1" -o -s "$1" || rm "$1"
   cd "$REDO_BASE" &&
   build_init && for path in $redo_paths
   do
+    #shellcheck disable=2086
     build_lib_func_list $redo_paths '\ \#.*\ sh:no-stat' | grep -v '^ *$'
   done >"$REDO_BASE/$REDO_PWD/$3"
   build_chatty && {

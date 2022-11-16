@@ -5,10 +5,10 @@
 #  ✗  error red white
 #
 
-while read line
+while read -r line
 do
 
-  echo -e $( echo "$line" | sed -E '
+  echo -e "$( echo "$line" | sed -E '
 
     s/✓/\\033[0;32m&\\033[0m/g
     s/✗/\\033[0;31m&\\033[0m/g
@@ -24,8 +24,7 @@ do
 
     s/\*/\\&/g
 
-  ')
-
+  ')"
 
 done
 

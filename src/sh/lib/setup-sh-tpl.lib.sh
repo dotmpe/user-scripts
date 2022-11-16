@@ -23,7 +23,7 @@ setup_sh_tpl_name_index() # Name-Value Base-Var-Id
   test -n "$1" || error "setup-sh-tpl: name-index arg:1 '$*'" 1
   test -n "$2" || error "setup-sh-tpl: name-index arg:2 '$*'" 2
 
-  local i=1 name= type=
+  local i=1 name="" type=""
   while true
   do
     name="$(eval echo \"\${${2}_${i}__name-}\")"
@@ -31,7 +31,7 @@ setup_sh_tpl_name_index() # Name-Value Base-Var-Id
     test -z "$name" || {
         { test "$1" = "$name" || fnmatch "$1" "$name"; } &&
             { echo "$i"; return; }; }
-    i=$(( $i + 1 )) ; name= type=
+    i=$(( i + 1 )) ; name= type=
   done
   return 1
 }
@@ -85,14 +85,14 @@ setup_sh_tpl() # SH-Tpl-File [Base-Var-Id] [Dest-Dir]
 {
   test $# -ge 1 || return 98
   test -n "${2-}" || set -- "$1" "$(setup_sh_tpl_basevar "$1")" "${3-}"
-  local i=1 cwd="$PWD" name= type= contents= mtime= r
+  local i=1 cwd="$PWD" name="" type="" contents="" mtime="" r
   test -z "${3-}" || cd "$3"
   test -e "$cwd/$1" && set -- "$cwd/$1" "$2" "$3"
   . "$1"
   while true
   do
     setup_sh_tpl_item "$i" "$2" || { r=$?; test "$r" = 1 && r=; break; }
-    i=$(( $i + 1 )) ; name= type= contents= mtime=
+    i=$(( i + 1 )) ; name="" type="" contents="" mtime=""
   done
   test -z "${3-}" || cd "$cwd"
   return $r

@@ -3,19 +3,21 @@
 # Pub/dist
 
 # XXX: export publish_ts=$(epoch_microtime)
-export publish_ts=$($gdate +%s.%N)
+#shellcheck disable=2154
+publish_ts=$($gdate +%s.%N)
+export publish_ts=$publish_ts
 ci_stages="$ci_stages publish"
 
 ci_announce "Starting ci:publish"
 
 npm install https://github.com/dotmpe/tap-xunit
-tap-xunit() { $PWD/node_modules/.bin/tap-xunit "$@"; }
+tap-xunit() { "$PWD"/node_modules/.bin/tap-xunit "$@"; }
 
 sh_include "report-times"
 
 stage_cnt=$(echo $ci_stages | wc -w | awk '{print $1}')
 
-echo TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}
+echo "TRAVIS_TEST_RESULT=${TRAVIS_TEST_RESULT-}"
 
 test "${CIRCLECI:-}" != "true" || mkdir -p ~/project/reports/junit
 test "${SHIPPABLE:-}" != "true" || mkdir -p shippable/testresults

@@ -32,8 +32,7 @@ build___if_change__ ()
 
   declare p
   p="${BUILD_TARGET:${#BUILD_SPEC}}"
-  build-ifchange "$p" &&
-  summary
+  build-ifchange "$p" ; summary
 }
 
 # :if:change:% pseudo-target
@@ -43,8 +42,7 @@ build___if_change___ ()
 
   declare p
   p="${BUILD_TARGET:$(( ${#BUILD_SPEC} - 1 ))}"
-  build-ifchange "$p" &&
-  summary
+  build-ifchange "$p" ; summary
 }
 
 # Pseudo-target: depend on file targets, but validate on content lines
@@ -86,7 +84,7 @@ build___if__scr_fun__ ()
   f="${s//*:}"
   s="${s//:*}"
 
-  build-ifchange :if:lines:$s || return
+  build-ifchange :if:lines:"$s" || return
   typeset -f "$f" | build-stamp
   $LOG info ":if:fun" "Script function check done" "$s:$f"
 }
@@ -110,8 +108,10 @@ build___if__line_col1__ ()
 
 summary ()
 {
-  declare r=$? ; test $r != 0 || r=
-  stderr_ "Build ${r:-ok}${r:+not ok}, $(wc -l <<< "$(redo-sources)") source(s) and $(wc -l <<< "$(redo-targets)") target(s)" $r
+  declare r=$? sc tc ; test $r != 0 || r=
+  sc=$(wc -l <<< "$(redo-sources)")
+  tc=$(wc -l <<< "$(redo-targets)")
+  stderr_ "Build ${r:+not ok: E}${r:-ok}, $sc source(s) and $tc target(s)" "${r:-0}"
 }
 
 # Id: User-Scripts/ build-lib.sh  ex:ft=bash:

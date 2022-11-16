@@ -19,15 +19,17 @@ path="$(grep '^'"$lib_id"'\>	' "sh-libs.list" | sed 's/^[^\t]*\t//g')"
 test -n "$path" -a -e "$REDO_BASE/$path" || { echo "No such path '$path'" >&2; exit 1; }
 mkdir -p "$(dirname "$1")"
 
-redo-ifchange functions/$lib_id-lib.func-list $REDO_BASE/$path
+redo-ifchange functions/"$lib_id"-lib.func-list "$REDO_BASE/${path:?}"
 
 test ! -e "$1" -o -s "$1" || rm "$1"
+
+#shellcheck disable=2154
 
 U_S=$REDO_BASE CWD=$REDO_BASE . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
 CWD=$REDO_BASE \
 init_sh_libs="$init_sh_libs match src std function functions" \
-U_S=$REDO_BASE . $REDO_BASE/tools/sh/init.sh
+U_S="$REDO_BASE" . "$REDO_BASE"/tools/sh/init.sh
 
 # XXX: cleanup, still depends on ~/bin
 SCRIPTPATH=$SCRIPTPATH:$HOME/bin

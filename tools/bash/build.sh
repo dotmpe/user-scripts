@@ -7,7 +7,7 @@ echo_lines () # [ - | FILE ]
   test -e "${1-}" -o "${1-}" = "-" || return
   local in
   test $# -eq 1 && in=$1 || in=1
-  wc -l $in | { read lines _; echo "$in: $lines lines"; }
+  wc -l "$in" | { read lines _; echo "$in: $lines lines"; }
 }
 
 build_dbgcmd () # Cmd-Line...

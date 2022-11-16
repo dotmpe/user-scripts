@@ -21,6 +21,7 @@ sh_include env-strict debug-exit \
 
 : "${ci_tools:="$CWD/tools/ci"}"
 
+#shellcheck disable=2154
 ci_env_ts=$($gdate +"%s.%N")
 ci_stages="${ci_stages:-} ci_env"
 
@@ -44,14 +45,14 @@ test -n "${ci_util_:-}" || {
   . "$U_S/tools/ci/util.sh"
 }
 
-: ${INIT_LOG:="$CWD/tools/sh/log.sh"}
+: "${INIT_LOG:="$CWD/tools/sh/log.sh"}"
 
 $INIT_LOG note "" "CI Env pre-load time: $(echo "$sh_env_ts - $ci_env_ts"|bc) seconds"
 ci_env_end_ts=$($gdate +"%s.%N")
 
 $INIT_LOG note "" "Sh Env load time: $(echo "$ci_env_end_ts - $ci_env_ts"|bc) seconds"
 test -z "${CI:-}" || {
-  test ${verbosity:-${v:-3}} -lt 4 ||
+  test "${verbosity:-${v:-3}}" -lt 4 ||
     print_yellow "ci:env:${SUITE}" "Starting: $0 ${_ENV-} #$#:'$*'" >&2
 }
 # From: Script.mpe/0.0.4-dev tools/ci/env.sh

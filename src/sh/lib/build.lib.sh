@@ -50,7 +50,7 @@ build_lib_init () # sh:no-stat: OIl has trouble parsing heredoc
 {
   build_env__define__from_package || return
 
-  lib_require argv date match $BUILD_TOOL || return
+  lib_require argv date match "$BUILD_TOOL" || return
 
   build_define_commands || return
 
@@ -161,6 +161,7 @@ build_boot () # (Build-Action) ~ <Argv...>
       ;;
   esac
 
+  #shellcheck disable=2086
   test $# -gt 0 || set -- ${BOOT_SPECS:-}
 
   declare tag
@@ -202,6 +203,7 @@ build_target__from__alias () # <Name> <Targets...>
   # XXX: not sure if this can something with spaces/other special characters
   # properly. May be test such later...
   #eval "set -- $(echo $* | lines_printf '"%s"')"
+  #shellcheck disable=2124
   TARGET_PARENT="${target}" TARGET_GROUP="${@@Q}" build-ifchange "${@:?}"
 }
 
@@ -233,11 +235,16 @@ build_target__from__defer () # ~ <Target-name> [<Part-name>]
   }
   test -n "${2:-}" || pn="$(echo "$pn" | tr '/.' '_')"
 
+  #shellcheck disable=2086
   part=$( build_part_lookup "$pn.do" ${BUILD_PARTS_BASES:?} ) || {
     return ${_E_continue:-196}
   }
-  $LOG "info" ":defer:$2" "Building include" "$1"
-  build_target_ "$part" || return
+  # XXX: functional targets do not always need to be rebuild if their recipe
+  # changes a bit.
+  ! ${dev:-false} || {
+    $LOG "info" ":defer:$2" "Building include" "$1"
+    build_target_ "$part" || return
+  }
   shift
   $LOG "debug" ":defer:$1" "Sourcing include" "$part"
   ${show_recipe:-false} && {
@@ -267,7 +274,8 @@ build_target__from__defer_with () # ~ <Target-name> <Prerequisites> -- <Part-nam
   shift $(( 1 + ${#IF_DEPS[*]} )) || return
   # XXX: might as well do sequence here
   #build_target__from__defer "$target" "$@"
-  build_target__from__defer_sequence "$target" "$@"
+  build_target__from__defer_sequence "$target" "$@" &&
+  build-always
 }
 
 # Wrapper for generic recipe part
@@ -275,6 +283,7 @@ build_target__from__dir_index () # ~ <Target-name> <Dirs...>
 {
   declare target="${1:?}"
   shift
+  #shellcheck disable=2124
   TARGET_PARENT="${target}" TARGET_GROUP="${@@Q}" TARGET_ALIAS=os-dir-index build-ifchange "$@"
 }
 
@@ -283,7 +292,7 @@ build_target__from__eval () # ~ <Target-name> <Command...>
   declare target="${1:?}"
   shift
   $LOG warn ":eval" "Evaluating command" "$*"
-  eval "${@:?}" > "${BUILD_TARGET_TMP:?}"
+  eval "${*:?}" > "${BUILD_TARGET_TMP:?}"
   build-stamp < "$BUILD_TARGET_TMP"
 }
 
@@ -322,9 +331,11 @@ build_target__from__expand () # ~ <Target-name> <Target-expressions...>
 {
   declare target=${1:?}
   shift
+  #shellcheck disable=2046
   set -- $(eval "echo $*")
 
   # XXX: build-always
+  #shellcheck disable=2124
   TARGET_PARENT=${target} TARGET_GROUP="${@@Q}" build-ifchange "${@:?}"
 }
 

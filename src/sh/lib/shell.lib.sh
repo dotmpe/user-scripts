@@ -11,10 +11,10 @@ shell_lib_load()
   # XXX: env-name, cs, base and sh-id....
   test -n "${MPE_ENV_NAME-}" || MPE_ENV_NAME=dev
   test -n "${CS-}" || CS=dark
-  test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "$0")
+  test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "%s" "$0")
 
   # Shell Name depends on env SHELL
-  test -h $SHELL &&
+  test -h "$SHELL" &&
     SHELL_NAME=$(basename -- "$(readlink -- "$SHELL")") ||
     SHELL_NAME="$(basename -- "$SHELL")"
 }
@@ -42,7 +42,7 @@ shell_lib_init()
   shell_init_mode
 
   req_init_log us || return
-  local log_key=$scriptname/$$:u-s:shell:lib:init
+  local log_key="$scriptname/$$":u-s:shell:lib:init
 
   log_key=$log_key $us_log debug "" "Running final shell.lib init"
 
@@ -53,11 +53,11 @@ shell_lib_init()
 # is-bash check, expect no typeset (ksh) TODO: zshell bi table.
 shell_check () #
 {
-  type typeset 2>&1 >/dev/null && {
-    test 1 -eq ${K_SHELL:?} \
-      -o 1 -eq ${Z_SHELL:?} \
-      -o 1 -eq ${DA_SHELL:?} \
-      -o 1 -eq ${BA_SHELL:?} || {
+  type typeset >/dev/null 2>&1 && {
+    test 1 -eq "${K_SHELL:?}" \
+      -o 1 -eq "${Z_SHELL:?}" \
+      -o 1 -eq "${DA_SHELL:?}" \
+      -o 1 -eq "${BA_SHELL:?}" || {
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
       {
@@ -181,7 +181,7 @@ shell_def ()
     }
     sh_isset() # sh:no-stat
     {
-      sh_env | grep -qi '^'$1=
+      sh_env | grep -qi "^$1="
     }
   }
   sh_isenv() # XXX: Exported vars? @Base # sh:no-stat

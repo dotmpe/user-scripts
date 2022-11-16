@@ -7,11 +7,13 @@ set -euo pipefail
   CWD=$REDO_BASE
   U_S=$REDO_BASE
 
+  #shellcheck disable=SC2154
+
   . "${_ENV:="$REDO_BASE/tools/redo/env.sh"}" &&
 
   init_sh_libs="$init_sh_libs match src std" \
   util_mode=boot \
-    . $REDO_BASE/tools/sh/init.sh
+    . "$REDO_BASE"/tools/sh/init.sh
 
   # XXX: cleanup, still depends on ~/bin
   SCRIPTPATH=$SCRIPTPATH:$HOME/bin

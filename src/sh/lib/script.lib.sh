@@ -17,6 +17,7 @@ script_lib_init()
 
 script_lib_init_()
 {
+  #shellcheck disable=2154
   set -- "$scriptname" "Delayed script-log init, check lib-init!"
   script_lib_init && $script_log warn "$@"
 }

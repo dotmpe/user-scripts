@@ -24,7 +24,13 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   script="${BUILD_TARGET:${#BUILD_SPEC}}"
   errors=${PROJECT_CACHE:?}/lint-tags-${script//\//-}.errors
   build-ifchange "$script" || return
-  lint-tags "$script" >| "$errors"
+  # Do not need to fail here and keep rebuilding this target because of the exit
+  # state. Instead check for error lines in other target and fail appropiately
+  lint-tags "$script" >| "$errors" || {
+    ! ${sei_fail:-false} || return
+    $LOG warn ":lint-tags.do" "Embedded tags lint (continuing)" "$script"
+  }
+  test -s "$errors" || rm "$errors"
   return
 }
 
@@ -55,8 +61,21 @@ test $# -eq 0 && {
 } || {
   cat "$@" >| "$errors"
   rm "$@"
-  test ! -s "$errors" || cat "$errors"
+  test ! -s "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
   rm "$errors"
 }
+
+build-always
+
+declare cnt
+test -s "$BUILD_TARGET_TMP" && {
+  cnt=$(wc -l < "$BUILD_TARGET_TMP") || return
+} || {
+  test ! -s "$BUILD_TARGET" ||
+    cnt=$(wc -l < "$BUILD_TARGET") || return
+}
+
+test $cnt -eq 0 ||
+  stderr_ "Lint (tags): $cnt"
 
 #

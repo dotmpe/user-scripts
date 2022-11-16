@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 docid="$(basename -- "$1" -lib.missing-deps)" &&
 case "$docid" in
@@ -7,16 +6,16 @@ case "$docid" in
     * ) ;; esac
 
 redo-ifchange "functions/$docid-lib.func-list"
-while read caller
+while read -r caller
 do
   test -n "$caller" || continue
 
   redo-ifchange "functions/$docid-lib/$caller.func-deps"
   test -e "functions/$docid-lib/$caller.func-deps" || continue
-  while read callee
+  while read -r callee
   do
     grep -q "^$callee$" functions/*.func-list || {
-      test -x "$(which $callee)" && continue
+      command -v "$callee" >/dev/null 2>&1 && continue
       echo "$caller $callee"
     }
   done <"functions/$docid-lib/$caller.func-deps"

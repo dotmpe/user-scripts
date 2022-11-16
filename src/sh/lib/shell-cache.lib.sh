@@ -28,7 +28,7 @@ shell_max_age () # Seconds Cmd Args...
   shift 1
   local vid; mkvid "$*"
   test "${shell_cached["$vid"]+isset}" -a \
-      ${shell_cache_time["$vid"]:-0} -gt $refresh_time || {
+      "${shell_cache_time["$vid"]:-0}" -gt $refresh_time || {
     shell_cached["$vid"]="$("$@")"
     shell_cache_time["$vid"]=$(date_epochsec)
   }
