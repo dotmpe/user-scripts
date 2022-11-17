@@ -636,7 +636,7 @@ build_components () # ~ <Name>
     test -n "$comptab" || {
       error "No such component '$1" ; return 1
     }
-  $LOG "note" "" "Building component '${1:?}' for target" "${BUILD_TARGET:?}"
+  $LOG "note" "" "Building component '${1:?}' for target" "${BUILD_TARGET//%/%%}"
 
   declare name="${1:?}" name_ type_
   shift
@@ -1665,7 +1665,7 @@ build_rules ()
 {
   test "${BUILD_TARGET:?}" != "${BUILD_RULES-}" -o -s "${BUILD_RULES-}" || {
     # Try to prevent redo self.id != src.id assertion failure
-    $LOG alert ":build-rules:$BUILD_TARGET" \
+    $LOG alert ":build-rules:${BUILD_TARGET//%/%%}" \
       "Cannot build rules table from empty table" "${BUILD_RULES-null}" 1
     return
   }
@@ -1764,16 +1764,16 @@ build_target__with__parts ()
 # Build-resolver that looks for target in rules-table
 build_target__with__rules ()
 {
-  $LOG "debug" ":target::rules" "Starting build rule for target" "$1"
+  $LOG "debug" ":target::rules" "Starting build rule for target" "${1//%/%%}"
   build_rules || return
 
   # Run build based on matching rule in BUILD_RULES table
   build_rule_exists "${1:?}" || {
-    $LOG "debug" ":target::rules" "No such rule" "$1"
+    $LOG "debug" ":target::rules" "No such rule" "${1//%/%%}"
     return ${_E_continue:-196}
   }
 
-  $LOG "notice" ":target::rules" "Found build rule for target" "$1"
+  $LOG "notice" ":target::rules" "Found build rule for target" "${1//%/%%}"
   build_components "$1" || return
 }
 
@@ -1845,18 +1845,20 @@ build_which () # ~ [<Target>]
   test "${target:0:1}" != '\' || {
     # FIXME: log isnt printing escape in strings
     $LOG warn :build-which "Initial character in target is escape" \
-        "${target//\\/\\\\}"
+        "${target//%/%%}"
   }
 
   [[ "$target" =~ ^${BUILD_SPECIAL_RE:?} ]] && {
     test "${BUILD_NAME_SEPS[${target:0:1}]-isset}" != isset || {
       $LOG error ":build-which" \
         "Missing handler for special character prefix" \
-        "${target//\\/\\\\}"
+        "${target//%/%%}"
       return
     }
     method=${BUILD_NAME_SEPS[${target:0:1}]}
   } || method=filepath
+  ! ${BUILD_LOOKUP_DEBUG:-false} ||
+    $LOG debug :build-which "Using '$method' handler for lookup" "${target//%/%%}"
   build_which__"${method:?}" "$target"
 }
 
@@ -1927,6 +1929,14 @@ build_which__filepath ()
   declare path name paths names
   test -z "${n:-}" || names=$(build_which__file_name "${n:?}")
   test -z "${p:-}" || paths=$(build_which__file_path "${p:?}" | sed 's/$/\//')
+  ! ${BUILD_LOOKUP_DEBUG:-false} || {
+    test -n "${n:-}" &&
+      stderr_ "Lookup file names for '$n': ${names//$'\n'/ }" ||
+      stderr_ "No file name for target '${1//%/%%}'"
+    test -n "${p:-}" &&
+      stderr_ "Lookup path names for '$p': ${paths//$'\n'/ }" ||
+      stderr_ "No path name for target '${1//%/%%}'"
+  }
 
   declare first=true
   for path in ${paths:-} ""

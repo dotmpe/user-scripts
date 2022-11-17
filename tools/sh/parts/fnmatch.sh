@@ -5,7 +5,7 @@
 fnmatch ()
 {
     case "${2:?NAME}" in
-        "${1:?PATTERN}")
+        ${1:?PATTERN})
             return 0
         ;;
         *)
