@@ -7,203 +7,37 @@
 default_do_env () # ~ # Prepare shell profile with build-target handler
 {
   CWD=${REDO_STARTDIR:?}
+  BUILD_TOOL=redo
+  BUILD_ID=$REDO_RUNID
   BUILD_STARTDIR=$CWD
   BUILD_BASE=${REDO_BASE:?}
-  BUILD_ID=$REDO_RUNID
-  true "${ENV:="dev"}"
-  true "${APP:="User-Scripts/0.0.2-dev"}"
-  true "${ENV_BUILD:="tools/redo/env.sh"}"
-  BUILD_TOOL=redo
-  local sub="${BUILD_STARTDIR:${#BUILD_BASE}}"
-  BUILD_SCRIPT=${sub}${sub:+/}default.do
-  declare -x UC_LOG_BASE="${BUILD_SCRIPT}[$$]"
-
-  test "unset" = "${log_key-unset}" || {
-      unset log_key
-      declare +x log_key
-    }
+  BUILD_PWD="${CWD:${#BUILD_BASE}}"
+  test -z "$BUILD_PWD" || BUILD_PWD=${BUILD_PWD:1}
+  BUILD_SCRIPT=${BUILD_PWD}${BUILD_PWD:+/}default.do
+  test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
 
   # Use ENV-BUILD as-is when given, or fall-back to default built-in method.
-  test -e "$ENV_BUILD" && {
-    . "$ENV_BUILD" || return
-  } || {
-    default_do_env_default
-  }
-}
-
-default_do_env_default () # ~ # Default method to prepare redo shell profile
-{
-  $LOG info ":default.do:env-default" "Starting default env..." "${BUILD_TARGET:?}"
-  true "${BUILD_ENV_CACHE:="${PROJECT_CACHE:=".meta/cache"}/redo-env.sh"}"
-
-  # Built-in recipe for redo profile
-  test "${BUILD_TARGET:?}" = "$BUILD_ENV_CACHE" && {
-
-    $LOG info ":default.do:env-default" "Building cache..." "${BUILD_ENV_CACHE:?}"
-    build_env_default || return
-
-    # Load additional local build-env parameters
-    true "${ENV_BUILD_ENV:=$( sh_path=$CWD default_do_lookup \
-        .build-env.sh \
-        .meta/build-env.sh \
-        tools/redo/build-env.sh )}"
-    test -z "${ENV_BUILD_ENV:-}" || {
-      redo-ifchange "$ENV_BUILD_ENV" || return
-      . "$ENV_BUILD_ENV" || return
-    }
-
-    # Finally run some steps to generate the profile
-    quiet=true build_env
-    exit
-
-  } || {
-
-    test -e "$BUILD_ENV_CACHE" || {
-      #build_env_targets_default &&
-      build_env_default
-      return
-    }
-
-    # For every other target, source the built profile and continue.
-    redo-ifchange "$BUILD_ENV_CACHE" || return
-    $LOG debug ":default.do:env-default" "Sourcing cache..." "${BUILD_ENV_CACHE:?}"
-    source "$BUILD_ENV_CACHE"
-  }
-}
-# Export: build-target-env-default
-
-build_env_default ()
-{
-  $LOG info ":build-env-default" "Starting default env..." "${BUILD_TARGET:?}"
-  test "unset" != ${CWD-unset} || declare -l CWD
-  test -n "${BUILD_PATH:-}" || declare -l BUILD_PATH
-  true "${CWD:=$PWD}"
-
-  # No need loading script used as entry point again
-  test "unset" != ${build_source[*]-unset} || {
-    declare -gA build_source
-  }
-  declare rp
-  rp=$(realpath "$0")
-  build_source[$rp]=$0
-
-  # Projects should execute their own BUILD_PATH, a default is set by this lib
-  # but +U-s does not have super-projects.
-  test "$rp" != "$(realpath "$U_S")/src/sh/lib/build.lib.sh" || BUILD_PATH=$U_S
-
-  # Either set initial build-path as argument, or provide entire
-  # Env-Buildpath as env. Standard is to use hard-coded default sequence, and
-  # only establish that sequence determined after loading specififed or or
-  # local build-lib, the former must exist while the latter is optional.
-  test $# -eq 0 && {
-    ! test -e "$CWD/build-lib.sh" || {
-      build_source "$CWD/build-lib.sh" || return
-    }
-  } || {
-    test -e "${1:?}/build-lib.sh" || {
-      $LOG error :build-env-default "Expected build-lib" "$1" ; return 1
-    }
-    build_source "$1/build-lib.sh" || return
-  }
-
-  true "${BUILD_PATH:=$CWD ${BUILD_BASE:?} ${BUILD_STARTDIR:?}}"
-
-  declare -l dir
-  for dir in ${BUILD_PATH:?}
-  do
-    { test "unset" = "${build_source[$dir]-unset}" &&
-      test -e "$dir/build-lib.sh"
-    } || continue
-    build_source "$dir/build-lib.sh" || return
-    set -- "$@" "$dir"
-  done
-  $LOG debug :build-env-default "Found build libs" "$*"
-
-  # If this script is the entry point, there is no need to load it again.
-  # Could make this a lot shorter but want to warn about Build-Entry-Point.
-  { test -n "${build_entry_point:-}" &&
-    fnmatch "build*" "${build_entry_point:-}"
-  } && {
-
-    # If the entry point is build*, then this is the /expected/ source.
-    # however we already added the entry-point script above
-    local bl="${U_S:?}/src/sh/lib/build.lib.sh"
-    rp=$(realpath "$bl")
-    ! test "unset" = "${build_source[$rp]-unset}" ||
-      $LOG warn ":build-env-default" \
-        "Expected build.lib entry point but was" "$0" && false
-
-  } || {
-    build_source "${U_S:?}/src/sh/lib/build.lib.sh"
-  }
-
-  build_lib_load || return
-  $LOG debug :build-env-default "Done"
-}
-# Export: build-env-default
-
-build_source ()
-{
-  declare -p build_source >/dev/null 2>&1 || env__def__build_source
-
-  declare rp bll
-  test "${1:0:1}" != "/" || set -- "$(realpath "$1" --relative-to "${CWD:?}")"
-
-  rp=$(realpath "$1")
-  # XXX:
-  #redo-ifchange "$1" && rp=$(realpath "$1") || {
-  #  $LOG error :build:source "Error during redo-ifchange" "$1:E$?" ; return 1
+  #test -e "$ENV_BUILD" && {
+  #  . "$ENV_BUILD" || return
+  #} || {
+  #  default_do_env_default || return
   #}
-  test -n "${build_source[$rp]-}" && return
-  $LOG info :build:source "Found build source" "$1"
-  {
-    build_source[$rp]=$1 &&
-    source "$1"
-  } || {
-    $LOG error :build:source "Error loading source" "$1:E$?" ; return 1
-  }
-  $LOG debug :build:source "Loading build source" "$1"
-  ! sh_fun build__lib_load && return
-  build__lib_load || bll=$?
-  # XXX: may be keep this per-source path but dont need it anyway..
-  #build_source_[]=$(typeset -f build__lib_load)
-  unset -f build__lib_load
-  return ${bll:-0}
-}
 
-default_do_lookup () # ~ <Paths...> # Lookup paths at PATH.
-# Regular source or command do not look up paths, only local (base) names.
-{
-  local n e bd found sh_path=${sh_path:-} sh_path_var=${sh_path_var:-PATH}
+  # TODO: work on build-env/env-build in build.lib, keep copies of routines
+  # there for now
+  BUILD_PATH=$BUILD_PATH:$U_S
 
-  test -n "$sh_path" || {
-    sh_path=${!sh_path_var:?}
+  source "${U_S:?Required +U-s profile for @dev}/src/sh/lib/build.lib.sh" &&
+  declare r
+  build_ env-build || { r=$?
+    $LOG error "" "build_ env-build returned" "E$r"
+    return $r
   }
 
-  for n in "${@:?}"
-  do
-    found=false
-    for bd in $(echo "$sh_path" | tr ':' '\n')
-    do
-      for e in ${sh_exts:-""}
-      do
-        test -e "$bd/$n$e" || continue
-        echo "$bd/$n$e"
-        found=true
-        break 2
-      done
-    done
-    ${found} && {
-      ${any:-false} && {
-        ${first_only:-true} && return || continue
-      }
-    } || {
-      ${any:-false} && continue || return
-    }
-  done
-  ${found}
+  #true "${ENV:="@dev"}"
+  #true "${APP:="@User-Scripts/0.0.2-dev"}"
+  #true "${ENV_BUILD:="tools/${BUILD_TOOL:?}/env.sh"}"
 }
-# Copy: sh-lookup
 
 sh_fun ()
 {
@@ -284,10 +118,11 @@ default_do_main ()
 
   # Perform a standard ENV_BUILD build (with ENV_BUILD_ENV) if needed, and
   # source profile.
-  default_do_env || return
-
-  # Add current file to deps
-  redo-ifchange "${CWD:?}/default.do" || return
+  declare ret
+  default_do_env || { ret=$?
+    $LOG error "" "Error in default.do env" "E$ret"
+    return $ret
+  }
 
   # Its possible to keep short build sequences in this file (below in the
   # case/easc). But to prevent unnecessary rebuilds after changing any other
@@ -323,21 +158,21 @@ default_do_main ()
       ;;
 
     # Default build target
-    all|@all|:all )     ${BUILD_TOOL:?}-always && build $build_all_targets
+    all|@all|:all )     ${BUILD_TOOL:?}-always && ${BUILD_TOOL:?} ${build_all_targets:?}
       ;;
 
 
-    .build/tests/*.tap ) build_component__defer "_build_tests_*.tap" ;;
+    .build/tests/*.tap )
+          build_target__from__source_part "$1" "_build_tests_*.tap" ;;
 
     src/md/man/User-Script:*-overview.md )
-          build_component__defer "src_man_man7_User-Script:*-overview.md.do" ;;
+          build_target__from__source_part "$1" "src_man_man7_User-Script:*-overview.md.do" ;;
 
     src/man/man7/User-Script:*.7 )
-          build_component__defer "src_man_man7_User-Script:*.7.do" ;;
+          build_target__from__source_part "$1" "src_man_man7_User-Script:*.7.do" ;;
 
     src/man/man*/*.* )
-          build_component__defer "src_man_man*_*.*.do" ;;
-
+          build_target__from__source_part "$1" "src_man_man*_*.*.do" ;;
 
     * )
         # Build target using alternative methods if possible.
@@ -345,6 +180,7 @@ default_do_main ()
       ;;
 
   esac
+
   # End build if handler has not exit already
   exit $?
 }

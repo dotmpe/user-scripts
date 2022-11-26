@@ -6,16 +6,18 @@
 : "${BRANCH_NAME:="${TRAVIS_BRANCH-}"}"
 : "${BRANCH_NAME:="$(git rev-parse --abbrev-ref HEAD)"}" # NOTE: may report HEAD in detached state
 
-test -n "${TRAVIS_TIMER_START_TIME:-}" ||
-  : "${TRAVIS_TIMER_START_TIME:=$($gdate +%s%N)}"
+test -n "${TRAVIS_TIMER_START_TIME:-}" || {
+  true "${gdate:=date}"
+  : "${TRAVIS_TIMER_START_TIME:=$(${gdate:?} +%s%N)}"
+}
 
-travis_ci_timer_ts=$(echo "$TRAVIS_TIMER_START_TIME"|sed 's/\([0-9]\{9\}\)$/.\1/')
+travis_ci_timer_ts=$(echo "${TRAVIS_TIMER_START_TIME:?}"|sed 's/\([0-9]\{9\}\)$/.\1/')
 
 true "${SESSION_ID:="$(uuidgen)"}"
-: "${TRAVIS_BRANCH:=$BRANCH_NAME}"
+: "${TRAVIS_BRANCH:=${BRANCH_NAME:?}}"
 : "${TRAVIS_JOB_ID:=}"
 : "${TRAVIS_JOB_NUMBER:=}"
-: "${TRAVIS_BUILD_ID:=$SESSION_ID}"
+: "${TRAVIS_BUILD_ID:=${SESSION_ID:?}}"
 : "${GIT_COMMIT:="$(git rev-parse HEAD)"}"
 : "${TRAVIS_COMMIT:="$GIT_COMMIT"}"
 : "${TRAVIS_COMMIT_RANGE:="$COMMIT_RANGE"}"

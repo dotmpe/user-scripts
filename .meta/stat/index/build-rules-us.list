@@ -8,7 +8,7 @@
 
 ## Main project targets
 
-# @at.init: :configure :install @check
+# @at.init: @configure :install @check
 # @at.check: @lint
 # @at.build: @check &context-local &current src-sh manual
 # @at.test: %bats-baseline %bats-unit
@@ -19,6 +19,9 @@
 # @and.ctx-local: &context-local
 # @at.lint: *lint
 # @at.manual: :manuals
+
+@configure expand ${PROJECT_CACHE:?}/{attributes,params,redo-env}.sh
+@configured ifdone @configure
 
 
 ## Symbols for single targets, file groups and mapped sets
@@ -44,7 +47,6 @@
 %bats-baseline simpleglob .build/tests/baseline-*.tap test/baseline/%.bats
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
-:configure function
 &context-local:* defer-sequence uconf-deps context-local
 :install function
 :git:index defer scm-git-index
@@ -54,19 +56,19 @@
 # TODO: manual
 :manuals function - u_s-man
 :pack function
-#&sh-list:* eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-&shellcheck-lint:* defer-with &sh-dev-list -- lint-shellcheck
-&tags-lint:* defer-with &source-dev-list -- lint-tags
-#&source-list:* exec-if :git:index -- git ls-files
+#&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&shellcheck-lint:* if &sh-dev-list -- defer lint-shellcheck
+#&source-list:* if :git:index -- exec git ls-files
+&tags-lint:* if &source-dev-list -- defer lint-tags
 
 
 # TODO: auto-install/config
-.cllct/src/sh-stats function build_sh_stats u_s-stats
-.meta/cache/build-rules.list defer concat-rules
-.meta/cache/source.list exec-if :git:index -- git ls-files
-.meta/cache/source-dev.list function - &source-list
-.meta/cache/source-sh.list eval-if :git:index -- git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-.meta/cache/source-dev-sh.list function - &sh-list
+./.cllct/src/sh-stats function build_sh_stats u_s-stats
+./.meta/cache/build-rules.list defer concat-rules
+./.meta/cache/source.list if :git:index -- exec git ls-files
+./.meta/cache/source-dev.list function - &source-list
+./.meta/cache/source-sh.list if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+./.meta/cache/source-dev-sh.list function - &sh-list
 
 
 ### Special pseudo-target helpers
@@ -80,4 +82,4 @@
 
 
 # manual-user-lib simpleglob src/man/man7/User-Script:*.7
-# Id: User-scripts/ .meta/stat/index/build-rules-us.list ex:ft=less.txt:
+# Id: User-scripts/ .meta/stat/index/build-rules-us.list ex:ft=less-txt:

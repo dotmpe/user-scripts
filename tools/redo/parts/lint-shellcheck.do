@@ -22,12 +22,12 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
   return
 }
 
-test "unset" = "${IF_DEPS[@]-unset}" && {
+test "unset" = "${DEPS[@]-unset}" && {
   true "${LINT_SC_SRC_SPEC:="&lint-shellcheck:src"}"
-  build-ifchange "${LINT_SC_SRC_SPEC:?}" || return
   $LOG warn ":lint-shellcheck.do" "Could not use If-Deps to get list symbol, using '$LINT_SC_SRC_SPEC'"
+  build-ifchange "${LINT_SC_SRC_SPEC:?}" || return
 } ||
-  LINT_SC_SRC_SPEC=${IF_DEPS[0]}
+  LINT_SC_SRC_SPEC=${DEPS[0]}
 
 sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
 

@@ -1,6 +1,15 @@
 
 # Created: 2018-10-17
 
+# This recipe has two modes: one to call a 'tags' lint check for a set of
+# files, and one to execute the actual check. It needs a list of files, a
+# target prefix to reserve for either mode, and a place to put check failures.
+
+# XXX: currently using defer-with type rule to pass symbolic source list
+# with DEP. Something more declarative would be nice to do all that.
+# Ie. build__declare lint-tags lint-tags-%, but also need to replace namespace,
+# get location for build cache...
+
 
 sh_mode strict dev build
 
@@ -28,15 +37,13 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   return
 }
 
-
-# TODO: should only test files no longer marked as 'dev', see attributes-local
-
-test "unset" = "${IF_DEPS[@]-unset}" && {
-  true "${LINT_TAGS_SRC_SPEC:="&lint-tags:src"}"
+test "unset" = "${DEPS[@]-unset}" && {
+  true "${LINT_TAGS_SRC_SPEC:="&lint-tags:files"}"
+  $LOG warn ":lint-tags.do" \
+    "Could not use Deps to get list symbol, using '$LINT_TAGS_SRC_SPEC'"
   build-ifchange "${LINT_TAGS_SRC_SPEC:?}" || return
-  $LOG warn ":lint-tags.do" "Could not use If-Deps to get list symbol, using '$LINT_TAGS_SRC_SPEC'"
 } ||
-  LINT_TAGS_SRC_SPEC=${IF_DEPS[0]}
+  LINT_TAGS_SRC_SPEC=${DEPS[0]}
 
 source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
 

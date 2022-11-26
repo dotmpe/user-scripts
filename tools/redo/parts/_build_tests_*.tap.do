@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 build-ifchange .meta/cache/components.list
 lib_require match
-set -o noglob; set -- "$@" $(build_fetch_component "$1"); set +o noglob
+set -o noglob; set -- "$@" $(build_rule_fetch "$1"); set +o noglob
 set -- "$@" $(glob_spec_var "$5" "$1")
 set -- "$@" $(echo "$6" | sed 's/%/'"$7"'/')
 test -d $(dirname "$1") || mkdir -p $(dirname "$1")

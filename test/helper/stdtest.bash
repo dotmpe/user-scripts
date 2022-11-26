@@ -19,7 +19,7 @@ type diag >/dev/null 2>&1 || {
     #BATS_TEST_DIAGNOSTICS=1
     #echo "$1" >>"$BATS_OUT"
     # XXX: since Bats 1.2.0?
-    echo "# $1" >>&3
+    echo "# $1" >&3
   }
 }
 

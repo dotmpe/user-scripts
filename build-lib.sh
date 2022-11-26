@@ -45,48 +45,9 @@ build___if_change___ ()
   build-ifchange "$p" ; build_summary
 }
 
-# Pseudo-target: depend on file targets, but validate on content lines
-# (excluding blank lines and comments)
-build___if__lines__ ()
+build___if_scr_fun ()
 {
-  sh_mode strict dev build
-
-  declare p
-  p="${BUILD_TARGET:${#BUILD_SPEC}}"
-  build-ifchange "$p"
-  build-stamp <<< "$(grep -Ev '^\s*\(#.*|\s*)$' "${p:?}")"
-  $LOG info ":if:lines" "File lines check done" "$p"
-}
-
-# Pseudo-target: depend on certain function typeset. To invalidate without
-# having prerequisites of its own, it uses build-always.
-# See always if:scr-fun for a better alt.
-build___if__fun__ ()
-{
-  sh_mode strict dev build
-
-  declare p
-  p="${BUILD_TARGET:${#BUILD_SPEC}}"
-  typeset -f "$p" | build-stamp
-  build-always
-  $LOG info ":if:fun" "Function check done" "$p"
-}
-
-# Pseudo-target: depend on file and function typeset. This does not source
-# anything, but allows to generate targets to check certain function definitions
-# without using build-always.
-build___if__scr_fun__ ()
-{
-  sh_mode strict dev build
-
-  declare s f
-  s="${BUILD_TARGET:${#BUILD_SPEC}}"
-  f="${s//*:}"
-  s="${s//:*}"
-
-  build-ifchange :if:lines:"$s" || return
-  typeset -f "$f" | build-stamp
-  $LOG info ":if:fun" "Script function check done" "$s:$f"
+  build___if__scr_fun__
 }
 
 build___if__line_col1__ ()
@@ -106,7 +67,10 @@ build___if__line_col1__ ()
   $LOG info ":if:line-col1" "File line-key check done" "$key:$file"
 }
 
-# XXX: rename to not-dev lists...
+
+# Source-dev: helper to reduce large source sets based on not-index @dev.
+# XXX: Targets not present in index are ignored.
+# If the target is listed, it must have @dev tag to be listed by this target.
 build__meta_cache_source_dev_list ()
 {
   sh_mode strict dev build
