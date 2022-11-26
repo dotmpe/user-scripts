@@ -28,15 +28,10 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
   BUILD_PATH=$BUILD_PATH:$U_S
 
   source "${U_S:?Required +U-s profile for @dev}/src/sh/lib/build.lib.sh" &&
-  declare r
-  build_ env-build || { r=$?
-    $LOG error "" "build_ env-build returned" "E$r"
-    return $r
-  }
+  build_ env-build || return
 
-  #true "${ENV:="@dev"}"
-  #true "${APP:="@User-Scripts/0.0.2-dev"}"
-  #true "${ENV_BUILD:="tools/${BUILD_TOOL:?}/env.sh"}"
+  true "${ENV:="@dev"}"
+  true "${APP:="@User-Scripts/0.0.2-dev"}"
 }
 
 sh_fun ()
