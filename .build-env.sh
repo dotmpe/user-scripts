@@ -9,7 +9,7 @@ true "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
 true "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"
 #true "${BUILD_ENV_STATIC:=build-boot}"
 #true "${BUILD_TARGET_METHODS:=env}"
-BUILD_ENV="attributes build-rules rule-params stderr- argv"
+BUILD_ENV="build-rules rule-params stderr- argv"
 true "${redo_opts:="-j4"}"
 
 # XXX: for part:.meta/cache/components.list

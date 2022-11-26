@@ -45,29 +45,6 @@ build___if_change___ ()
   build-ifchange "$p" ; build_summary
 }
 
-build___if_scr_fun ()
-{
-  build___if__scr_fun__
-}
-
-build___if__line_col1__ ()
-{
-  sh_mode strict dev build
-  build-ifchange :if:scr-fun:build-lib.sh:build___if__line_col1__ || return
-
-  declare s file key
-  s="${BUILD_TARGET:${#BUILD_SPEC}}"
-  file="${s//*:}"
-  # Key may contain any number of colons
-  key="${s:0:$(( ${#s} - ${#file} - 1 ))}"
-
-  build-ifchange "$file"
-  build-stamp <<< "$(grep "^$key " "$file")"
-
-  $LOG info ":if:line-col1" "File line-key check done" "$key:$file"
-}
-
-
 # Source-dev: helper to reduce large source sets based on not-index @dev.
 # XXX: Targets not present in index are ignored.
 # If the target is listed, it must have @dev tag to be listed by this target.
