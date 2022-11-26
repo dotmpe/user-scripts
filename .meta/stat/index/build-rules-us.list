@@ -2,7 +2,7 @@
 
 
 ## Project targets info
-# @main: all help @build @test
+# @main: all help @configure @build @test
 # @all: @build @test
 
 
@@ -12,6 +12,9 @@
 # @at.check: @lint
 # @at.build: @check &context-local &current src-sh manual
 # @at.test: %bats-baseline %bats-unit
+
+# XXX:
+# @at.env: all @configure @check
 
 
 ## Other alias groups

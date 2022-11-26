@@ -714,8 +714,18 @@ build_install_rule ()
 
 build_main_target ()
 {
+  build_target_group "all ${build_main_targets:?}"
+}
+
+build_env_target ()
+{
+  build_target_group "${build_at_env_targets:?}"
+}
+
+build_target_group ()
+{
   #test "${1:-${BUILD_TARGET:?}}" = "all"
-  case " all ${build_main_targets:?} " in *" ${1:-${BUILD_TARGET:?}} "* )
+  case " ${1:?} " in *" ${BUILD_TARGET:?} "* )
     ;; * ) false ;;
   esac
 }
@@ -2031,7 +2041,10 @@ env__define__attributes ()
   #    To allow the target to build, one or more special targets need to be
   #    specified on which an exception can be made here.
 
-  build_main_target && {
+  { build_main_target || {
+      test -n "${build_at_env_targets:-}" && build_env_target
+    }
+  } && {
     $LOG info ::attributes "Building and loading attributes" "$BUILD_TARGET"
     build-ifchange "$attributes_sh" || return
   } || {
@@ -2149,7 +2162,10 @@ env__define__build_env_cache ()
     return ${_E_break:-197}
   }
   # On load scripts
-  build_main_target && {
+  { build_main_target || {
+      test -n "${build_at_env_targets:-}" && build_env_target
+    }
+  } && {
     $LOG info ::build-env-cache "Building and loading build-env cache" "$BUILD_TARGET"
     build-ifchange "$BUILD_ENV_CACHE" || return
   } || {
@@ -2411,7 +2427,10 @@ env__define__rule_params ()
     return ${_E_break:-197}
   }
 
-  build_main_target && {
+  { build_main_target || {
+      test -n "${build_at_env_targets:-}" && build_env_target
+    }
+  } && {
     $LOG info ::rule-params "Building and loading params" "$BUILD_TARGET"
     build-ifchange "$params_sh" || return
   } || {
