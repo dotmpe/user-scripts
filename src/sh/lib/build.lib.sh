@@ -257,7 +257,7 @@ build_env_build ()
   build_boot "$@" build-env-cache || r=$?
   test ${r:-0} -eq ${_E_break:-197} && {
 
-    test "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE}" && {
+    test "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE:-}" && {
       echo BUILD_ENV_CACHE[$BUILD_TARGET]: caches: ${BUILD_ENV_CACHES:-} seed: ${ENV_BUILD_ENV:-} >&2
       test -z "${BUILD_ENV_CACHES?}" || build-ifchange $BUILD_ENV_CACHES
       test -z "${ENV_BUILD_ENV?}" || build-ifchange $ENV_BUILD_ENV
