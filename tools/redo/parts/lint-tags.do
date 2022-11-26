@@ -45,18 +45,19 @@ test "unset" = "${DEPS[@]-unset}" && {
 } ||
   LINT_TAGS_SRC_SPEC=${DEPS[0]}
 
-source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
-
+#source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
+source_list=${PROJECT_CACHE:?}/source.list
 test -s "$source_list" || return 0
 
-#shellcheck disable=2046
-redo-ifchange $({
+declare -a tags
+mapfile -t tags <<< "$({
     while read -r x
     do
       test -f "$x" -a ! -h "$x" || continue
       echo ":lint:tags:$x"
     done
-  } < "$source_list")
+  } < "$source_list")"
+redo-ifchange "${tags[@]}" || return
 
 declare errors=${PROJECT_CACHE:?}/lint-tags.errors
 shopt -s nullglob

@@ -51,6 +51,14 @@
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
+#&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&shellcheck-lint:* if &sh-dev-list -- defer lint-shellcheck
+#&source-list:* if :git:index -- exec git ls-files
+&tags-lint:* if &source-dev-list -- defer lint-tags
+
+
+## Function handlers
+
 :install function
 :git:index defer scm-git-index
 :lint:shellcheck: defer lint-shellcheck
@@ -59,10 +67,7 @@
 # TODO: manual
 :manuals function - u_s-man
 :pack function
-#&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-&shellcheck-lint:* if &sh-dev-list -- defer lint-shellcheck
-#&source-list:* if :git:index -- exec git ls-files
-&tags-lint:* if &source-dev-list -- defer lint-tags
+
 
 
 # TODO: auto-install/config

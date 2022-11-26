@@ -29,18 +29,20 @@ test "unset" = "${DEPS[@]-unset}" && {
 } ||
   LINT_SC_SRC_SPEC=${DEPS[0]}
 
-sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
+#sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
+sh_list=${PROJECT_CACHE:?}/source-sh.list
 
 test -s "$sh_list" || return 0
 
-#shellcheck disable=2046
-build-ifchange $( {
+declare -a shck
+mapfile -t shck <<< "$({
     while read -r x
     do
       test -f "$x" -a ! -h "$x" || continue
       echo ":lint:shellcheck:$x"
     done
-  } < "$sh_list")
+  } < "$source_list")"
+redo-ifchange "${shck[@]}" || return
 
 declare errors=${PROJECT_CACHE:?}/lint-shellcheck.errors
 shopt -s nullglob
