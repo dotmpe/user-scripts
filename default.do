@@ -75,6 +75,17 @@ build_error_handler ()
   exit $r
 }
 
+# Log-like handler for main default.do routines
+default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
+{
+  declare lk=${2:-}
+  test -n "$lk" -a "${lk:0:1}" = '$' && {
+    lk="${log_key:-REDO[$$]}${log_key:+}(::${lk:1})"
+  } ||
+    true "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
+  $LOG "${1:-notice}" "$lk" "${3:?}" "${4:-}" ${5:-}
+}
+
 default_do_main ()
 {
   # Get build-environment. Using `build- env` this is reduced to a single
@@ -109,20 +120,26 @@ default_do_main ()
   BUILD_TARGET_BASE=$2
   BUILD_TARGET_TMP=$3
 
+  # XXX: Not making this configurable (yet), parts will first have to be build
+  # build_ do-session shell-mode
   sh_mode dev strict build || return
+
+  #build_ do-env ||
+  #  default_do_ error \$do-env "Error getting %.do env" "E$?" $?
 
   # Perform a standard ENV_BUILD build (with ENV_BUILD_ENV) if needed, and
   # source profile.
-  declare ret
-  default_do_env || { ret=$?
-    $LOG error "" "Error in default.do env" "E$ret"
-    return $ret
-  }
+  default_do_env ||
+    default_do_ error \$~do-env "Error getting %.do env" "E$?" $?
 
   # Its possible to keep short build sequences in this file (below in the
   # case/easc). But to prevent unnecessary rebuilds after changing any other
-  # default.do part we want them elsewhere where we can better control their
-  # dependencies, preferably as precise as possible.
+  # default.do part we want these elsewhere where we can better control their
+  # dependencies and effects.
+
+  test ! -e "${BUILD_SELECT_SH:=.build-select.sh}" && unset BUILD_SELECT_SH ||
+    . "${BUILD_SELECT_SH:?}"
+
   case "${1:?}" in
 
     # 'all' is the only special redo-builtin (it does not show up in
@@ -130,47 +147,37 @@ default_do_main ()
     # seems to be accepted, '-' prefixed arguments are parsed as redo options
     # but after '--' we can pass targets that start with '-' as well.
 
-    -env )     ${BUILD_TOOL:?}-always && build_ env-sh >&2  ;;
-    -info )    ${BUILD_TOOL:?}-always && build_ info >&2 ;;
-    -ood )     ${BUILD_TOOL:?}-always && build-ood >&2 ;;
-    -sources ) ${BUILD_TOOL:?}-always && build-sources >&2 ;;
-    -targets ) ${BUILD_TOOL:?}-always && build-targets >&2 ;;
-    "??"* )
-        BUILD_TARGET=${BUILD_TARGET:2}
-        BUILD_TARGET_BASE=${BUILD_TARGET_BASE:2}
-        BUILD_TARGET_TMP=${BUILD_TARGET_TMP:2}
-        ${BUILD_TOOL:?}-always && build_ which "${BUILD_TARGET:?}" >&2 ;;
-    "?"* )
-        BUILD_TARGET=${BUILD_TARGET:1}
-        BUILD_TARGET_BASE=${BUILD_TARGET_BASE:1}
-        BUILD_TARGET_TMP=${BUILD_TARGET_TMP:1}
-        ${BUILD_TOOL:?}-always && build_ for-target "${BUILD_TARGET:?}" >&2 ;;
+    # Current informative, inline recipes. Each of these is (more or less)
+    # equal to calling build-<...> (and none are actually builds).
+    -env )          ${BUILD_TOOL:?}-always && build_ env-sh >&2  ;;
+    -info )         ${BUILD_TOOL:?}-always && build_ info >&2 ;;
+    -ood )          ${BUILD_TOOL:?}-always && build-ood >&2 ;;
+    -sources )      ${BUILD_TOOL:?}-always && build-sources >&2 ;;
+    -targets )      ${BUILD_TOOL:?}-always && build-targets >&2 ;;
+    "?"*|-show )    ${BUILD_TOOL:?}-always && build_ show-recipe >&2 ;;
+    "??"*|-which )  ${BUILD_TOOL:?}-always && build_ which-names >&2 ;;
+    "???"*|-what )  ${BUILD_TOOL:?}-always && build_ what-parts >&2 ;;
 
-    ${HELP_TARGET:-help}|-help )    ${BUILD_TOOL:?}-always
-        echo "Usage: ${BUILD_TOOL-(BUILD_TOOL unset)} [${build_main_targets// /|}]" >&2
-        echo "Default target (all): ${build_all_targets-(unset)}" >&2
-        echo "Version: ${APP-(APP unset)}" >&2
+    # These directly call functions are defined at the project level, but can
+    # be inherited.
+    # XXX: fix non-recursive env-require
+
+    ${HELP_TARGET:-help}|-help|-h ) ${BUILD_TOOL:?}-always &&
+        # env_require local-libs || return
+        build__usage_help
       ;;
 
     # Default build target
-    all|@all|:all )     ${BUILD_TOOL:?}-always && ${BUILD_TOOL:?} ${build_all_targets:?}
+    all|@all|:all )
+        # env_require local-libs || return
+        build__all
       ;;
-
-
-    .build/tests/*.tap )
-          build_target__from__source_part "$1" "_build_tests_*.tap" ;;
-
-    src/md/man/User-Script:*-overview.md )
-          build_target__from__source_part "$1" "src_man_man7_User-Script:*-overview.md.do" ;;
-
-    src/man/man7/User-Script:*.7 )
-          build_target__from__source_part "$1" "src_man_man7_User-Script:*.7.do" ;;
-
-    src/man/man*/*.* )
-          build_target__from__source_part "$1" "src_man_man*_*.*.do" ;;
 
     * )
         # Build target using alternative methods if possible.
+        #
+        # env_require ${BUILD_TARGET_METHODS// /builder} || return
+        # env_require ${BUILD_TARGET_HANDLERS:?} || return
         build_ target
       ;;
 

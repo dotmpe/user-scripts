@@ -18,7 +18,7 @@ lint-tags ()
 {
   # XXX: no-commit
   #git grep '\(XXX\|FIXME\|TODO\): .*\<no-commit\>' "$@" && return 1 || true
-  git grep '\(XXX\|FIXME\|TODO\):' "$@" && return 1 || true
+  git grep '\(XXX\|FIXME\|TODO\):' -- "$@" && return 1 || true
 }
 
 test "${BUILD_SPEC:?}" = :lint:tags: && {
@@ -29,7 +29,7 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   build-ifchange "$script" || return
   # Do not need to fail here and keep rebuilding this target because of the exit
   # state. Instead check for error lines in other target and fail appropiately
-  lint-tags < "$script" >| "$errors" || {
+  lint-tags "$script" >| "$errors" || {
     ! ${sei_fail:-false} || return
     $LOG warn ":lint-tags.do" "Embedded tags lint (continuing)" "$script"
   }
@@ -38,7 +38,7 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
 }
 
 test "unset" = "${DEPS[@]-unset}" && {
-  true "${LINT_TAGS_SRC_SPEC:="&lint-tags:files"}"
+  true "${LINT_TAGS_SRC_SPEC:="&lint-tags:file-list"}"
   $LOG warn ":lint-tags.do" \
     "Could not use Deps to get list symbol, using '$LINT_TAGS_SRC_SPEC'"
   build-ifchange "${LINT_TAGS_SRC_SPEC:?}" || return
@@ -47,7 +47,10 @@ test "unset" = "${DEPS[@]-unset}" && {
 
 #source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
 source_list=${PROJECT_CACHE:?}/source.list
-test -s "$source_list" || return 0
+test -s "$source_list" || {
+  $LOG warn :lint-tags "Lint check finished bc there is nothing to check"
+  return
+}
 
 declare -a tags
 mapfile -t tags <<< "$({
@@ -57,7 +60,8 @@ mapfile -t tags <<< "$({
       echo ":lint:tags:$x"
     done
   } < "$source_list")"
-redo-ifchange "${tags[@]}" || return
+redo-ifchange "${tags[@]}" ||
+  $LOG warn :lint-tags "Lint check aborted" "E$?" $? || return
 
 declare errors=${PROJECT_CACHE:?}/lint-tags.errors
 shopt -s nullglob
@@ -79,7 +83,9 @@ test -s "$BUILD_TARGET_TMP" && {
     cnt=$(wc -l < "$BUILD_TARGET") || return
 }
 
-test "${cnt:-0}" -eq 0 ||
+test "${cnt:-0}" -eq 0 || {
   stderr_ "Lint (tags): $cnt"
+  $LOG warn :lint-tags "Files containing 'tags' lint" "$cnt" $?
+}
 
-#
+# ID: lint-tags

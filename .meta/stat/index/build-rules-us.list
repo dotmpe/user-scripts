@@ -9,6 +9,7 @@
 ## Main project targets
 
 # @at.init: @configure :install @check
+# @at.configure: @build-env
 # @at.check: @lint
 # @at.build: @check &context-local &current src-sh manual
 # @at.test: %bats-baseline %bats-unit
@@ -23,25 +24,34 @@
 # @at.lint: *lint
 # @at.manual: :manuals
 
-@configure expand ${PROJECT_CACHE:?}/{attributes,params,redo-env}.sh
+
+# These are hard-wired by parts run during build-env,
+# these are caches included in ~, and a complete build-env cache file
+*caches expand ${PROJECT_CACHE:?}/{params,redo-env}.sh
+
+# With working symbol frontend could ask for above. Until then a particular
+# path is given, to be used to configure parent target for all build-env parts:
+
+@build-env function -
+
 @configured ifdone @configure
 
 
-## Symbols for single targets, file groups and mapped sets
+## Symbols for single targets and mapped sets
 
 &build-rules expand ${PROJECT_CACHE:?}/build-rules.list
 &context-local expand ${PROJECT_CACHE:?}/context-local.list
 &current alias .meta/cache/ledges.list
 *lint expand \&{tags,shellcheck}-lint
-&sh-list expand ${PROJECT_CACHE:?}/source-sh.list
 &sh-dev-list expand ${PROJECT_CACHE:?}/source-dev-sh.list
+&sh-list expand ${PROJECT_CACHE:?}/source-sh.list
 &shellcheck-lint expand ${PROJECT_CACHE:?}/lint-shellcheck.list
-&source-list expand ${PROJECT_CACHE:?}/source.list
 &source-dev-list expand ${PROJECT_CACHE:?}/source-dev.list
+&source-list expand ${PROJECT_CACHE:?}/source.list
 &tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
 
 
-## Other aliased scripts (defer parts) and function target/pattern handlers
+## Other aliases for target groups
 
 &build-rules:* defer concat-rules
 # TODO: install-deps check
@@ -51,18 +61,21 @@
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
-#&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-&shellcheck-lint:* if &sh-dev-list -- defer lint-shellcheck
-#&source-list:* if :git:index -- exec git ls-files
-&tags-lint:* if &source-dev-list -- defer lint-tags
+&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
+&source-list:* if :git:index -- exec git ls-files
+&tags-lint:* if &source-dev-list -- part lint-tags source-do
 
 
 ## Function handlers
 
+:check function -
 :install function
-:git:index defer scm-git-index
-:lint:shellcheck: defer lint-shellcheck
-:lint:tags: defer lint-tags
+:git:index part scm-git-index
+
+# Use 'source-do' directly during dev to avoid needless rebuilds
+:lint:shellcheck: part lint-shellcheck source-do
+:lint:tags: part lint-tags source-do
 
 # TODO: manual
 :manuals function - u_s-man
@@ -72,22 +85,22 @@
 
 # TODO: auto-install/config
 ./.cllct/src/sh-stats function build_sh_stats u_s-stats
-./.meta/cache/build-rules.list defer concat-rules
+./.meta/cache/build-rules.list part concat-rules
 ./.meta/cache/source.list if :git:index -- exec git ls-files
 ./.meta/cache/source-dev.list function - &source-list
 ./.meta/cache/source-sh.list if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 ./.meta/cache/source-dev-sh.list function - &sh-list
 
 
-### Special pseudo-target helpers
+### Special psuedo-target helpers (moved to build-env shell)
 
-:if: function -
-:if:lines: function -
-:if:fun: function -
-
-:if:scr-fun: function -
-:if:line-col1: function -
+#:if: function -
+#:if:lines: function -
+#:if:fun: function -
+#
+#:if:scr-fun: function -
+#:if:line-col1: function -
 
 
 # manual-user-lib simpleglob src/man/man7/User-Script:*.7
-# Id: User-scripts/ .meta/stat/index/build-rules-us.list ex:ft=less-txt:
+# Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less.txt:

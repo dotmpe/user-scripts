@@ -1,5 +1,7 @@
 
-# Local build routines for +U-s
+### Local build routines for +U-s
+
+# normally compiled into bootstrap/default.do
 
 
 build__lib_load ()
@@ -10,6 +12,29 @@ build__lib_load ()
       concat-rules .list "&build-rules"
 }
 
+
+build__all ()
+{
+  ${BUILD_TOOL:?}-always && build_targets_ ${build_all_targets:?}
+}
+
+build__build_env ()
+{
+  ctx=ENV=${ENV:-}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
+  build-stamp <<< "$ctx"
+  $LOG warn ":(@build-env)" Finished "$ctx+v=${v:-}"
+}
+
+build__usage_help ()
+{
+  ${BUILD_TOOL:?}-always
+  echo "Usage: ${BUILD_TOOL-(BUILD_TOOL unset)} [${build_main_targets// /|}]" >&2
+  echo "Default target (all): ${build_all_targets-(unset)}" >&2
+  echo "Version: ${APP-(APP unset)}" >&2
+  echo "Env: ${ENV-(unset)}" >&2
+  echo "Build env: ${BUILD_ENV-(unset)}" >&2
+  echo "For more complete listings of profile, sources and targets see '${BUILD_TOOL:?} -- -info'" >&2
+}
 
 # Psuedo-target so that we can invoke redo (with options) but make it act like
 # redo-ifchange (which does not accept options).
@@ -48,6 +73,11 @@ build___if_change___ ()
 # Source-dev: helper to reduce large source sets based on not-index @dev.
 # XXX: Targets not present in index are ignored.
 # If the target is listed, it must have @dev tag to be listed by this target.
+build____meta_cache_source_dev_list ()
+{
+  false
+}
+
 build__meta_cache_source_dev_list ()
 {
   sh_mode strict dev build
@@ -83,6 +113,7 @@ build__meta_cache_source_dev_sh_list ()
     echo "$src"
   done < "$sym"
 }
+
 
 build_summary ()
 {
