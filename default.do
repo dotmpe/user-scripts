@@ -38,7 +38,7 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
 
 sh_fun ()
 {
-  test "$(type -t "$1")" = function
+  declare -F "${1:?}" >/dev/null 2>&1
 }
 # Copy: sh-fun
 
