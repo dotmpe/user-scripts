@@ -264,16 +264,17 @@ build_env_build ()
 
     test "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE:-}" && {
       test -z "${BUILD_ENV_CACHES?}" || {
-        build-ifchange $BUILD_ENV_CACHES
+        build-ifchange ${BUILD_ENV_CACHES//:/ } || return
         echo BUILD_ENV_CACHE[$BUILD_TARGET]: caches: ${BUILD_ENV_CACHES:-} >&2
       }
       test -z "${ENV_BUILD_ENV?}" || {
-        build-ifchange $ENV_BUILD_ENV
+        build-ifchange ${ENV_BUILD_ENV//:/ } || return
         echo BUILD_ENV_CACHE[$BUILD_TARGET]: seed: ${ENV_BUILD_ENV:-} >&2
       }
     }
     return ${r:-}
   }
+
   #build_boot default-do-env-default
   #build_boot default-redo-env
   test -z "${BUILD_ENV:-}" || build_boot $BUILD_ENV || return
@@ -1295,7 +1296,7 @@ build_target__from__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 build_target__from__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
 {
   #shellcheck disable=2155
-  declare src match glob=$(echo "$3" | sed 's/%/*/')
+  declare src match glob=$(echo "${3:?}" | sed 's/%/*/')
   #shellcheck disable=2046
   build-ifchange $( for src in $glob
     do

@@ -80,16 +80,23 @@ build__build_env ()
 build__meta_cache_source_dev_list ()
 {
   sh_mode strict dev
-  build-ifchange :if:scr-fun:build-lib.sh:build__meta_cache_source_dev_list || return
-  build-ifchange "${1:?}" "$REDO_BASE/index.list" &&
+  build-ifchange \
+    :if:scr-fun:${U_S:?}/build-lib.sh:build__meta_cache_source_dev_list \
+    "${2:?}" "${BUILD_BASE:?}/index.list" || return
   declare sym src
+  # Get filename for list and check for antries at dev
   sym=$(build-sym "${1:?}") &&
   while read -r src
   do
-    grep -qF "$src: " "$REDO_BASE/index.list" || continue
-
-    grep -F "$src: " "$REDO_BASE/index.list" | grep -q ' @dev' &&
+    grep -qF "$src: " "${BUILD_BASE:?}/index.list" || {
+      # $LOG warn ignored unindexed
       continue
+    }
+
+    grep -F "$src: " "${BUILD_BASE:?}/index.list" | grep -vq ' @dev' && {
+      # $LOG warn ignored @dev
+      continue
+    }
 
     echo "$src"
   done < "$sym"

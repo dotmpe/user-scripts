@@ -93,12 +93,12 @@ default_do_main ()
   sh_mode ${BUILD_MODE:-strict build} || return
 
   #build_ do-env ||
-  #  default_do_ error \$do-env "Error getting %.do env" "E$?" $?
+  #  default_do_ error \$do-env "Error getting %%.do env" "E$?" $?
 
   # Perform a standard ENV_BUILD build (with ENV_BUILD_ENV) if needed, and
   # source profile.
   default_do_env ||
-    default_do_ error \$~do-env "Error getting %.do env" "E$?" $?
+    default_do_ error \$~do-env "Error getting %%.do env" "E$?" $?
 
   # Its possible to keep short build sequences in this file (below in the
   # case/easc). But to prevent unnecessary rebuilds after changing any other
@@ -136,7 +136,7 @@ default_do_main ()
     # XXX: fix non-recursive env-require
 
     ${HELP_TARGET:-help}|-help|-h ) ${BUILD_TOOL:?}-always &&
-        env_require local-libs || return
+        env_require build-libs || return
         build__usage_help
       ;;
 

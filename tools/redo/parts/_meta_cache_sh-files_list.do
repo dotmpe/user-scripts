@@ -2,9 +2,12 @@
 
 ## Build shell-script list
 
+
 # List all shell scripts for further static analysis
 
-build-ifchange "$REDO_BASE/.meta/cache/scm-status"
+build-ifchange "$REDO_BASE/.meta/cache/stage.md5.git.scm" || return
+
+env_require us-libs || return
 
 lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index
 
