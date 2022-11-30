@@ -137,7 +137,7 @@ default_do_main ()
   # default.do part we want these elsewhere where we can better control their
   # dependencies and effects.
 
-  test ! -e "${BUILD_SELECT_SH:=.build-select.sh}" && unset BUILD_SELECT_SH ||
+  test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" && unset BUILD_SELECT_SH ||
     . "${BUILD_SELECT_SH:?}"
 
   case "${1:?}" in
