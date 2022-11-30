@@ -21,7 +21,7 @@ match_lib_init()
 # match-grep-pattern-test.
 match_grep() # String
 {
-  echo "$1" | $gsed -E 's/([^A-Za-z0-9{}(),?!@+_])/\\\1/g'
+  echo "$1" | ${gsed:-sed} -E 's/([^A-Za-z0-9{}(),?!@+_])/\\\1/g'
 }
 
 
