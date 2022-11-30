@@ -23,10 +23,6 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
   #  default_do_env_default || return
   #}
 
-  # TODO: work on build-env/env-build in build.lib, keep copies of routines
-  # there for now
-  BUILD_PATH=$BUILD_PATH:$U_S
-
   source "${U_S:?Required +U-s profile for @dev}/src/sh/lib/build.lib.sh" &&
   build_ env-build || return
 
