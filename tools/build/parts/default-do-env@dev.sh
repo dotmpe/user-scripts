@@ -5,8 +5,8 @@
 #  default_do_env_default || return
 #}
 
-BUILD_MODE=strict\ dev
-sh_mode $BUILD_MODE
+#BUILD_MODE=strict\ dev
+#sh_mode $BUILD_MODE
 
 true "${ENV_BUILD_CACHE:=.meta/cache/redo-env.sh}"
 #test -e "${ENV_BUILD_CACHE:?}" && {
