@@ -53,7 +53,7 @@
 &tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
 
 
-## Symbols for mappings to directives and functions
+## Other aliases for parts and simple rules
 
 &build-rules:* defer concat-rules
 # TODO: install-deps check
