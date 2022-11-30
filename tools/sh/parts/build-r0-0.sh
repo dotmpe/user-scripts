@@ -13,11 +13,13 @@ env__build__attributes ()
 env__build__build_env_cache ()
 {
   env_require build-envs || return
+  build_targets_ :if-scr-fun:${U_S:?}/tools/sh/parts/build-r0-0.sh:env__build__build_env_cache || return
 
-  # build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
+  #build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
 
   # Finally run some steps to generate the profile
-  set -- ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
+  #set -- ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
+  set --
   $LOG warn ":build-env-cache($BUILD_TARGET)" "Building..." "$*"
   quiet=true build_env "$@" >| "${BUILD_TARGET_TMP:?}" || return
   build-stamp < "${BUILD_TARGET_TMP:?}"

@@ -6,11 +6,12 @@
 #}
 
 true "${ENV_BUILD_CACHE:=.meta/cache/redo-env.sh}"
-test -e "${ENV_BUILD_CACHE:?}" && {
-  . "$ENV_BUILD_CACHE" || return
-} || {
+#test -e "${ENV_BUILD_CACHE:?}" && {
+#
+#  . "$ENV_BUILD_CACHE" # || return
+#} || {
   #default_do_env_default || return
   source "${U_S:?Required +U-s profile for @dev}/src/sh/lib/build.lib.sh" &&
   build_ env-build || return
-}
+#}
 #

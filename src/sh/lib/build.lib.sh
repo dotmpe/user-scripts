@@ -232,8 +232,9 @@ EOM
 
 build_env () # ~ [<Handler-tags...>]
 {
-  test $# -gt 0 || set -- ${BUILD_ENV:?Missing build env}
-  build_env_init && build_boot "$@" || return
+  #test $# -gt 0 || set -- ${BUILD_ENV:?Missing build env}
+  #build_env_init && build_boot "$@" || return
+
   declare tag cache
   for tag in \
     BUILD_ENV_CACHES $BUILD_ENV_DEP BUILD_ENV_SRC BUILD_ENV_CACHE
@@ -253,7 +254,7 @@ build_env () # ~ [<Handler-tags...>]
   echo "# Build env OK: '$*' completed"
 }
 
-# XXX: Handler to boot default.do
+# TODO: Provide boostrap for default.do tools/sh/parts/default-do-env@dev
 build_env_build ()
 {
   mkdir -vp ${PROJECT_CACHE:?} >&2 || return
