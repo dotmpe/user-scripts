@@ -1,7 +1,7 @@
 # XXX: dont need anything fancy currently. But would want to try write generic
 # concat recipe.
 
-sh_mode dev strict build
+sh_mode strict dev
 
 test -d "$(dirname "$3")" || mkdir -p "$(dirname "$3")"
 

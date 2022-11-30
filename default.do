@@ -6,15 +6,17 @@
 
 default_do_env () # ~ # Prepare shell profile with build-target handler
 {
-  CWD=${REDO_STARTDIR:?}
-  BUILD_TOOL=redo
-  BUILD_ID=$REDO_RUNID
-  BUILD_STARTDIR=$CWD
-  BUILD_BASE=${REDO_BASE:?}
-  BUILD_PWD="${CWD:${#BUILD_BASE}}"
-  test -z "$BUILD_PWD" || BUILD_PWD=${BUILD_PWD:1}
-  BUILD_SCRIPT=${BUILD_PWD}${BUILD_PWD:+/}default.do
-  test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
+  test -n "${BUILD_ID:-}" || {
+    CWD=${REDO_STARTDIR:?}
+    BUILD_TOOL=redo
+    BUILD_ID=$REDO_RUNID
+    BUILD_STARTDIR=$CWD
+    BUILD_BASE=${REDO_BASE:?}
+    BUILD_PWD="${CWD:${#BUILD_BASE}}"
+    test -z "$BUILD_PWD" || BUILD_PWD=${BUILD_PWD:1}
+    BUILD_SCRIPT=${BUILD_PWD}${BUILD_PWD:+/}default.do
+    test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
+  }
 
   # Use ENV-BUILD as-is when given, or fall-back to default built-in method.
   #test -e "$ENV_BUILD" && {
@@ -30,46 +32,15 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
   true "${APP:="@User-Scripts/0.0.2-dev"}"
 }
 
+. "${U_S:?}/tools/sh/parts/fnmatch.sh"
+. "${U_S:?}/tools/sh/parts/sh-mode.sh"
+. "${U_S:?}/tools/sh/parts/sh-error.sh"
+
 sh_fun ()
 {
   test "$(type -t "$1")" = function
 }
-
-sh_mode ()
-{
-  test $# -eq 0 && {
-    # XXX: sh-mode summary
-    echo "$0: sh-mode: $-" >&2
-    trap >&2
-  } || {
-    while test $# -gt 0
-    do
-      case "${1:?}" in
-          ( build )
-                set -CET &&
-                trap "build_error_handler" ERR
-              ;;
-          ( dev )
-                set -hET &&
-                shopt -s extdebug
-              ;;
-          ( strict ) set -euo pipefail ;;
-          ( * ) stderr_ "! $0: sh-mode: Unknown mode '$1'" 1 || return ;;
-      esac
-      shift
-    done
-  }
-}
-# Copy: sh-mode
-
-build_error_handler ()
-{
-  local r=$? lastarg=$_
-  #! sh_fun stderr_ ||
-  #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r" 0
-  $LOG error ":on-error" "In recipe for '${BUILD_TARGET:?}' ($lastarg)" "E$r"
-  exit $r
-}
+# Copy: sh-fun
 
 # Log-like handler for main default.do routines
 default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
@@ -81,6 +52,7 @@ default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
     true "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
   $LOG "${1:-notice}" "$lk" "${3:?}" "${4:-}" ${5:-}
 }
+# XXX:
 
 default_do_main ()
 {
@@ -118,7 +90,7 @@ default_do_main ()
 
   # XXX: Not making this configurable (yet), parts will first have to be build
   # build_ do-session shell-mode
-  sh_mode dev strict build || return
+  sh_mode strict dev || return
 
   #build_ do-env ||
   #  default_do_ error \$do-env "Error getting %.do env" "E$?" $?
@@ -133,10 +105,14 @@ default_do_main ()
   # default.do part we want these elsewhere where we can better control their
   # dependencies and effects.
 
-  test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" && unset BUILD_SELECT_SH ||
-    . "${BUILD_SELECT_SH:?}"
+  declare ERROR STATUS BUILD_SELECT_SH
 
-  case "${1:?}" in
+  test ! -e "${BUILD_SELECT_SH:=./.build-build.sh}" &&
+    unset BUILD_SELECT_SH || {
+      . "${BUILD_SELECT_SH:?}" || sh_error -ne "${_E_next:-196}" || return
+    }
+
+  test 0 -eq ${STATUS:-1} || case "${1:?}" in
 
     # 'all' is the only special redo-builtin (it does not show up in
     # redo-{targets,sources}), everything else are proper targets. Anything
@@ -145,8 +121,8 @@ default_do_main ()
 
     # Current informative, inline recipes. Each of these is (more or less)
     # equal to calling build-<...> (and none are actually builds).
-    -env )          ${BUILD_TOOL:?}-always && build_ env-sh >&2  ;;
-    -info )         ${BUILD_TOOL:?}-always && build_ info >&2 ;;
+    -env* )         ${BUILD_TOOL:?}-always && build_ "${1:1}" >&2  ;;
+    -info* )        ${BUILD_TOOL:?}-always && build_ "${1:1}" >&2 ;;
     -ood )          ${BUILD_TOOL:?}-always && build-ood >&2 ;;
     -sources )      ${BUILD_TOOL:?}-always && build-sources >&2 ;;
     -targets )      ${BUILD_TOOL:?}-always && build-targets >&2 ;;
@@ -159,7 +135,7 @@ default_do_main ()
     # XXX: fix non-recursive env-require
 
     ${HELP_TARGET:-help}|-help|-h ) ${BUILD_TOOL:?}-always &&
-        # env_require local-libs || return
+        env_require local-libs || return
         build__usage_help
       ;;
 

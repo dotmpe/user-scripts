@@ -1,7 +1,8 @@
 # Build properties. See .package.sh for main project data/settings, and
 # README for main version, BUILD_RULES file.
 
-sh_mode strict build
+sh_mode strict dev
+# XXX: build
 
 true "${SUITE:="Main"}"
 #true "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist argv}"

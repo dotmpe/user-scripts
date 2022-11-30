@@ -13,7 +13,7 @@
 # - OS Dir Index {I,}Name := *
 # - OS Dir Index {I,}Path := *
 
-sh_mode strict dev build
+sh_mode strict dev
 
 # FIXME: need to store parameters as well
 build_alias_part

@@ -5,7 +5,7 @@
 
 # This recipe is always executed, because I do not know of another validator.
 
-sh_mode strict dev build
+sh_mode strict dev
 
 build_alias_part
 

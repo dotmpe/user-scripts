@@ -1,4 +1,4 @@
-sh_mode dev build strict
+sh_mode dev strict
 
 
 # Some targets need to re-run after the filetree changes.

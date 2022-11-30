@@ -16,4 +16,6 @@ case "${1:?}" in
   src/man/man*/*.* )
         build_target__from__source_part "$1" "src_man_man*_*.*.do" ;;
 
+  * ) return ${_E_next:-196} ;;
+
 esac

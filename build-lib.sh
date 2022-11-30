@@ -53,7 +53,7 @@ build___if___ ()
 # :if:change psuedo-target handler instead.
 build___if_change__ ()
 {
-  sh_mode strict dev build
+  sh_mode strict dev
 
   declare p
   p="${BUILD_TARGET:${#BUILD_SPEC}}"
@@ -63,7 +63,7 @@ build___if_change__ ()
 # :if:change:% pseudo-target
 build___if_change___ ()
 {
-  sh_mode strict dev build
+  sh_mode strict dev
 
   declare p
   p="${BUILD_TARGET:$(( ${#BUILD_SPEC} - 1 ))}"
@@ -80,7 +80,7 @@ build____meta_cache_source_dev_list ()
 
 build__meta_cache_source_dev_list ()
 {
-  sh_mode strict dev build
+  sh_mode strict dev
   build-ifchange :if:scr-fun:build-lib.sh:build__meta_cache_source_dev_list || return
   build-ifchange "${1:?}" "$REDO_BASE/index.list" &&
   declare sym src
@@ -98,7 +98,7 @@ build__meta_cache_source_dev_list ()
 
 build__meta_cache_source_dev_sh_list ()
 {
-  sh_mode strict dev build
+  sh_mode strict dev
   build-ifchange :if:scr-fun:build-lib.sh:build__meta_cache_source_dev_sh_list || return
   build-ifchange "${1:?}" "$REDO_BASE/index.list" &&
   declare sym src

@@ -1,5 +1,5 @@
 
-sh_mode strict dev build
+sh_mode strict dev
 
 build_alias_part
 

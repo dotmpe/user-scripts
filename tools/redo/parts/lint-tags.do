@@ -11,7 +11,7 @@
 # get location for build cache...
 
 
-sh_mode strict dev build
+sh_mode strict dev
 
 #shellcheck disable=2120
 lint-tags ()

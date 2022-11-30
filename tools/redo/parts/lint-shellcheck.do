@@ -2,7 +2,7 @@
 # Created: 2022-08-30
 
 
-sh_mode strict dev build
+sh_mode strict dev
 
 test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
 
