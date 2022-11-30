@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-redo-ifchange "../cache/sh-libs.list" || return
+redo-ifchange "${PROJECT_CACHE:?}/sh-libs.list" || return
 
 lib_id="$(basename -- "$1" -lib.func-list)" &&
 case "$lib_id" in
@@ -11,7 +11,7 @@ case "$lib_id" in
 
 # Transform target-name (lib_id) to original file-paths
 # Should really have just one path for shell-lib components
-{ lib_path="$(grep "/\?$lib_id.lib.sh" ../cache/sh-libs.list | cut -d' ' -f4)" &&
+{ lib_path="$(grep "/\?$lib_id.lib.sh" ${PROJECT_CACHE:?}/sh-libs.list | cut -d' ' -f4)" &&
   test -n "$lib_path"
 } || {
   $LOG warn "$1" "No paths for '$lib_id'"
