@@ -1395,7 +1395,7 @@ build_target__seq__if_lines () # ~ <File <...>> -- <Rule <...>>
 
 # Pseudo-target: depend on certain function typeset. To invalidate without
 # having prerequisites of its own, it uses build-always.
-# See always if:scr-fun for a better alt.
+# See always if-scr-fun for a better alt.
 build_target__seq__if_fun () # ~ <Fun <..>> -- <Rule <...>>
 {
   declare -ga IF_FUN=()

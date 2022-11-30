@@ -43,6 +43,7 @@
 &build-rules expand ${PROJECT_CACHE:?}/build-rules.list
 &context-local expand ${PROJECT_CACHE:?}/context-local.list
 &current alias .meta/cache/ledges.list
+&git-index expand ${PROJECT_CACHE:?}/index.git.scm
 *lint expand \&{tags,shellcheck}-lint
 &sh-dev-list expand ${PROJECT_CACHE:?}/source-dev-sh.list
 &sh-list expand ${PROJECT_CACHE:?}/source-sh.list
@@ -62,9 +63,9 @@
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
-&sh-list:* if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&sh-list:* if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 &shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
-&source-list:* if :git:index -- exec git ls-files
+&source-list:* if &git-index -- exec git ls-files
 &tags-lint:* if &source-dev-list -- part lint-tags source-do
 
 
@@ -72,7 +73,6 @@
 
 :check function -
 :install function
-:git:index part scm-git-index
 
 # Use 'source-do' directly during dev to avoid needless rebuilds
 :lint:shellcheck: part lint-shellcheck source-do
@@ -87,20 +87,10 @@
 # TODO: auto-install/config
 ./.cllct/src/sh-stats function build_sh_stats u_s-stats
 ./.meta/cache/build-rules.list part concat-rules
-./.meta/cache/source.list if :git:index -- exec git ls-files
+./.meta/cache/source.list if &git-index -- exec git ls-files
 ./.meta/cache/source-dev.list function - &source-list
-./.meta/cache/source-sh.list if :git:index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+./.meta/cache/source-sh.list if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 ./.meta/cache/source-dev-sh.list function - &sh-list
-
-
-### Special psuedo-target helpers (moved to build-env shell)
-
-#:if: function -
-#:if:lines: function -
-#:if:fun: function -
-#
-#:if:scr-fun: function -
-#:if:line-col1: function -
 
 
 # manual-user-lib simpleglob src/man/man7/User-Script:*.7

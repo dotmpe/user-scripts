@@ -13,6 +13,11 @@ _git_scm ()
 {
   case "${1:?}" in
 
+  ( describe )
+        _git_scm "ifchange-HEAD" || return
+        git describe --always
+      ;;
+
   ( ifchange-HEAD )
         build-ifchange "${GITDIR:?}/HEAD" || return
       ;;
@@ -21,9 +26,9 @@ _git_scm ()
         build-ifchange "${GITDIR:?}/index" || return
       ;;
 
-  ( describe )
-        _git_scm "ifchange-HEAD" || return
-        git describe --always
+  ( index )
+        _git_scm "ifchange-index" || return
+        build-stamp < "${GITDIR:?}/index"
       ;;
 
   ( stage.md5 )
@@ -37,6 +42,7 @@ _git_scm ()
         printf git:
         git describe --always && git status
       ;;
+
 
   ( debug )
         {
