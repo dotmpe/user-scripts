@@ -13,11 +13,52 @@ build__lib_load ()
 }
 
 
+
+## Util.
+
+
+#assert_base_dir ()
+assert_base_dir ()
+{
+  test_same_dir "$PWD" "$REDO_BASE"
+}
+
+#assert_start_dir ()
+assert_start_dir ()
+{
+  test_same_dir "$PWD" "$REDO_STARTDIR"
+}
+
+
+#build_summary ()
+build_summary ()
+{
+  declare r=$? sc tc ; test $r != 0 || r=
+  sc=$(wc -l <<< "$(redo-sources)")
+  tc=$(wc -l <<< "$(redo-targets)")
+  stderr_ "Build ${r:+not ok: E}${r:-ok}, $sc source(s) and $tc target(s)" "${r:-0}"
+}
+
+#test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
+test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
+{
+  test "$(realpath "${1:?}")" = "$(realpath "${2:?}")"
+}
+
+
+
+## Target handlers
+
+
+#build__all ()
+# 'all' default impl.
 build__all ()
 {
   ${BUILD_TOOL:?}-always && build_targets_ ${build_all_targets:?}
 }
 
+#build__build_env ()
+# '@build-env' finished handler with info
 build__build_env ()
 {
   ctx=ENV=${ENV:-}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
@@ -25,59 +66,17 @@ build__build_env ()
   $LOG warn ":(@build-env)" Finished "$ctx+v=${v:-}"
 }
 
-build__usage_help ()
-{
-  ${BUILD_TOOL:?}-always
-  echo "Usage: ${BUILD_TOOL-(BUILD_TOOL unset)} [${build_main_targets// /|}]" >&2
-  echo "Default target (all): ${build_all_targets-(unset)}" >&2
-  echo "Version: ${APP-(APP unset)}" >&2
-  echo "Env: ${ENV-(unset)}" >&2
-  echo "Build env: ${BUILD_ENV-(unset)}" >&2
-  echo "For more complete listings of profile, sources and targets see '${BUILD_TOOL:?} -- -info'" >&2
-}
-
-# Psuedo-target so that we can invoke redo (with options) but make it act like
-# redo-ifchange (which does not accept options).
-build___if__ ()
-{
-  build___if_change__ "$@"
-}
-
-# :if:% pseudo-target
-build___if___ ()
-{
-  build___if_change___ "$@"
-}
-
-# Same as build :if but when other :if:* rules might match as well use this
-# :if:change psuedo-target handler instead.
-build___if_change__ ()
-{
-  sh_mode strict dev
-
-  declare p
-  p="${BUILD_TARGET:${#BUILD_SPEC}}"
-  build-ifchange "$p" ; build_summary
-}
-
-# :if:change:% pseudo-target
-build___if_change___ ()
-{
-  sh_mode strict dev
-
-  declare p
-  p="${BUILD_TARGET:$(( ${#BUILD_SPEC} - 1 ))}"
-  build-ifchange "$p" ; build_summary
-}
+#build__meta_cache_source_dev_list ()
+#
+# XXX: it would be nice to have a build-if that returns non-zero if nothing was
+# changed. Not sure if that is possible, many targets may still run but the
+# conclusion may be that nothing had to be done.
+# So, for example for configuration nothing needs to be reloaded.
+# Of course can always build a target to do it...
 
 # Source-dev: helper to reduce large source sets based on not-index @dev.
 # XXX: Targets not present in index are ignored.
 # If the target is listed, it must have @dev tag to be listed by this target.
-build____meta_cache_source_dev_list ()
-{
-  false
-}
-
 build__meta_cache_source_dev_list ()
 {
   sh_mode strict dev
@@ -96,6 +95,7 @@ build__meta_cache_source_dev_list ()
   done < "$sym"
 }
 
+#build__meta_cache_source_dev_sh_list ()
 build__meta_cache_source_dev_sh_list ()
 {
   sh_mode strict dev
@@ -114,13 +114,17 @@ build__meta_cache_source_dev_sh_list ()
   done < "$sym"
 }
 
-
-build_summary ()
+#build__usage_help ()
+build__usage_help ()
 {
-  declare r=$? sc tc ; test $r != 0 || r=
-  sc=$(wc -l <<< "$(redo-sources)")
-  tc=$(wc -l <<< "$(redo-targets)")
-  stderr_ "Build ${r:+not ok: E}${r:-ok}, $sc source(s) and $tc target(s)" "${r:-0}"
+  ${BUILD_TOOL:?}-always
+  echo "Usage: ${BUILD_TOOL-(BUILD_TOOL unset)} [${build_main_targets// /|}]" >&2
+  echo "Default target (all): ${build_all_targets-(unset)}" >&2
+  echo "Version: ${APP-(APP unset)}" >&2
+  echo "Env: ${ENV-(unset)}" >&2
+  echo "Build env: ${BUILD_ENV-(unset)}" >&2
+  echo "For more complete listings of profile, sources and targets see '${BUILD_TOOL:?} -- -info'" >&2
 }
+
 
 # Id: User-Scripts/ build-lib.sh  ex:ft=bash:

@@ -107,9 +107,10 @@ default_do_main ()
 
   declare ERROR STATUS BUILD_SELECT_SH
 
-  test ! -e "${BUILD_SELECT_SH:=./.build-build.sh}" &&
+  test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" &&
     unset BUILD_SELECT_SH || {
-      . "${BUILD_SELECT_SH:?}" || sh_error -ne "${_E_next:-196}" || return
+      . "${BUILD_SELECT_SH:?}" && STATUS=0 ||
+        sh_error -ne "${_E_next:-196}" || return
     }
 
   test 0 -eq ${STATUS:-1} || case "${1:?}" in

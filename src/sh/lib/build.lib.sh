@@ -5,10 +5,17 @@
 
 build_lib_load ()
 {
+  true "${BUILD_TOOL:=null}"
+
   true "${build_rules_defnames:=$(echo {,.}build-rules.{txt,list} .components.txt .meta/stat/index/components-local.list)}"
 
+  true "${build_tools_parts:=sh build ci ${BUILD_TOOL:?}}"
+  true "${build_tools_src_specs:=${build_tools_parts// /,}}"
+
   # A bunch of names for sh files to inject, if found for cold bootstraps
-  true "${build_envs_defnames:=$(echo {,.}{attributes,package,env,params,build-env})}"
+  # Hidden first, then normal, generic local first, then more specifc, or shared
+  true "${build_envs_defnames:=$(echo {.,}{attributes,package,env,params,build-env})}"
+  true "${build_libs_defnames:=$(echo {.,}lib {.,}build-lib tools/{${build_tools_src_specs}}/lib)}"
 
   true "${sh_file_exts:=.sh .bash}"
 
@@ -16,10 +23,6 @@ build_lib_load ()
 
   # Not sure what shells to restrict to, so setting it very liberal
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
-
-  true "${BUILD_TOOL:=null}"
-  true "${build_tools_parts:=sh build ci ${BUILD_TOOL:?}}"
-  true "${build_tools_src_specs:=$build_tools_parts}"
 }
 
 build_lib_init () # ~
@@ -1011,14 +1014,16 @@ build_target__from__eval () # ~ <Command...>
 {
   $LOG warn ":eval" "Evaluating command" "$*"
   eval "${*:?}" > "${BUILD_TARGET_TMP:?}" || return
-  build-stamp < "$BUILD_TARGET_TMP"
+  test -s "${BUILD_TARGET_TMP:?}" &&
+    build-stamp < "$BUILD_TARGET_TMP" || rm "$BUILD_TARGET_TMP"
 }
 
 build_target__from__exec () # ~ <Command...>
 {
   $LOG warn ":exec" "Running command" "$*"
   command "${@:?}" > "${BUILD_TARGET_TMP:?}" || return
-  build-stamp < "$BUILD_TARGET_TMP"
+  test -s "${BUILD_TARGET_TMP:?}" &&
+    build-stamp < "$BUILD_TARGET_TMP" || rm "$BUILD_TARGET_TMP"
 }
 
 # Somewhat like alias, but this expands strings containing
@@ -2430,24 +2435,28 @@ build-ifdone ()
 build-ood ()
 {
   test $# -eq 0 || return "${_E_GAE:-$?}"
-  command ${BUILD_TOOL:?}-ood | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
-    sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
+  command ${BUILD_TOOL:?}-ood | build_list_strip_phony
 }
 
 #shellcheck disable=2120
 build-sources ()
 {
   test $# -eq 0 || return "${_E_GAE:-$?}"
-  command ${BUILD_TOOL:?}-sources | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
-    sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
+  command ${BUILD_TOOL:?}-sources | build_list_strip_phony
 }
 
 #shellcheck disable=2120
 build-targets ()
 {
   test $# -eq 0 || return "${_E_GAE:-$?}"
-  command ${BUILD_TOOL:?}-targets | grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
-    sed 's/^\.\..*$/..\/.../g' | awk '!a[$0]++'
+  command ${BUILD_TOOL:?}-targets | build_list_strip_phony
+}
+
+build_list_strip_phony ()
+{
+  grep -v '^'"${BUILD_VIRTUAL_RE:?}" |
+    sed 's/^\.\..*$/..\/.../g' |
+    awk '!a[$0]++' || true
 }
 
 
@@ -2627,7 +2636,8 @@ build_ () # ~ <Build-action> <Argv <...>>
   $LOG info "" "@@@ Bootstrap for '${BUILD_ACTION:?}' done" "${ENV_BOOT[*]}"
 
   # build-* handlers override exists else defer execution to build_<action>
-  for build_action_handler in build-"$BUILD_ACTION" build_$(build_target_name__function "${BUILD_ACTION:?}")
+  for build_action_handler in build-"$BUILD_ACTION" \
+    build_$(build_target_name__function "${BUILD_ACTION:?}")
   do
     sh_fun "$build_action_handler" && break
   done
@@ -2638,7 +2648,9 @@ build_ () # ~ <Build-action> <Argv <...>>
   $LOG debug "" "Ready for script '$BUILD_ACTION'" "$*"
 
   # Execute build-action
+
   "${build_action_handler}" "$@" || ret=$?
+
   $LOG debug "" "Finished script '$BUILD_ACTION'" "E${ret:-0}:$*"
 
   # XXX: When finished, add all env parts used during bootstrap to dependencies
