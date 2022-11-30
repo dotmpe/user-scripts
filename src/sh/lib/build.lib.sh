@@ -761,7 +761,8 @@ build_resolver ()
     do
       br_handler=${hpref:?}${method}
       # @debug @lookup
-      #$LOG debug ":build:resolve" "Checking with $br_handler" "${BUILD_SPEC:?}"
+      ! ${BUILD_LOOKUP_DEBUG:-false} ||
+        $LOG debug ":build:resolve" "Checking with $br_handler" "${BUILD_SPEC//%/%%}"
       $br_handler "${BUILD_SPEC:?}" && {
         brhref=$br_handler
         brhref=${brhref//--/__}
@@ -1729,7 +1730,9 @@ build_target__with__parts () # ~ [<Build-target>]
 {
   declare pn=${BUILD_SPEC:?}
   pn=${pn/.\/}
+  test -n "$pn" || return ${_E_next:-196}
   pn="$(echo "$pn" | tr '/.' '_')"
+  test -n "$pn" || return ${_E_next:-196}
   build_target__from__part "$pn" source-do
   # 'part <pn> source-do' is equiv to build-target-rule 'source-do <part>',
   # however 'part' without any further parameters equals adding an ifchange

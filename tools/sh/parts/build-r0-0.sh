@@ -13,9 +13,6 @@ env__build__attributes ()
 env__build__build_env_cache ()
 {
   env_require build-envs || return
-  build_targets_ :if-scr-fun:${U_S:?}/tools/sh/parts/build-r0-0.sh:env__build__build_env_cache || return
-
-  #build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
 
   # Finally run some steps to generate the profile
   #set -- ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
@@ -190,6 +187,9 @@ env__define__build_env_cache ()
   # Project could include $BUILD_ENV_CACHE.do file to override built-in recipe
   true "${BUILD_ENV_CACHE:="${PROJECT_CACHE:=".meta/cache"}/${BUILD_TOOL:?}-env.sh"}"
   test "${BUILD_TARGET:?}" = "$BUILD_ENV_CACHE" && {
+    build_targets_ :if-scr-fun:${U_S:?}/tools/sh/parts/build-r0-0.sh:env__build__build_env_cache || return
+    #build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
+
     # Include any libs that might override env:build:build-env-cache
     env_require build-libs || return
     # Run build routine
