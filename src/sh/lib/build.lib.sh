@@ -1086,15 +1086,12 @@ build_target__from__expand_all () # ~ <Source-Command...> -- <Target-Formats...>
 #shellcheck disable=2059
 build_target__from__function () # ~ [<Function>] [<Args>]
 {
-  declare name=${BUILD_SPEC:-${BUILD_TARGET:?}} func=${1:--}
+  declare name=${BUILD_SPEC:-${BUILD_TARGET:?}} fun=${1:--}
   shift
   declare lk
   test $# -gt 0 && lk=":fun($#)" || lk=:fun
 
-  #build_target__to__function "$name"
-
   test "${fun:-"-"}" != "-" || {
-    declare name_
     fun=${BUILD_HPREF:-build_}$(build_target_name__function "$name")
   }
 
@@ -1293,15 +1290,18 @@ build_target__from__symlinks () # ~ <Target-Name> <Source-Glob> <Target-Format>
 # Simpleglob: defer to target paths obtained by expanding source-spec
 #build_target_glob () # ~ <Name> <Target-Pattern> <Source-Globs...>
 # XXX: this is not a simple glob but a map-path-pattern based on glob input
-build_target__from__simpleglob () # ~ <Target-Name> <Target-Spec> <Source-Spec>
+build_target__from__simpleglob () # ~ <Target-Spec> <Source-Spec>
 {
+  build-ifchange :if-scr-fun:${U_S:?}/src/sh/lib/build.lib.sh:build_target__from__simpleglob || return
+
   #shellcheck disable=2155
-  declare src match glob=$(echo "${3:?}" | sed 's/%/*/')
+  declare src match glob=$(echo "${2:?}" | sed 's/%/*/')
+
   #shellcheck disable=2046
   build-ifchange $( for src in $glob
     do
       match="$(glob_spec_var "$glob" "$src")"
-      echo "$2" | sed 's/\*/'"$match"'/'
+      echo "$1" | sed 's/\*/'"$match"'/'
     done )
 }
 
@@ -1987,6 +1987,15 @@ build_which__special ()
   done
 }
 
+
+us_shlibs_list ()
+{
+  build-ifchange ${PROJECT_CACHE:?}/sh-libs.list &&
+  cut -d ' ' -f 4 ${PROJECT_CACHE:?}/sh-libs.list | while read -r p
+  do
+    basename "$p" .lib.sh
+  done
+}
 
 
 ## Env parts

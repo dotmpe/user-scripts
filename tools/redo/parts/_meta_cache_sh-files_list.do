@@ -7,7 +7,8 @@
 
 build-ifchange "$REDO_BASE/.meta/cache/stage.md5.git.scm" || return
 
-env_require us-libs || return
+build_env_declare us-libs || return
+#env_require us-libs || return
 
 lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index
 

@@ -2,6 +2,9 @@
 
 ## Annotate shell libraries
 
+
+set +C
+
 # TODO:add dependency for each script file on this target,
 # keep a simple list with lib src names and grep title label and head comment
 # as rest-line for sh-files.
@@ -11,7 +14,7 @@ list=.meta/cache/source-sh.list
 
 build-ifchange "$listsym" || return
 
-env_require us-libs || return
+build_env_declare us-libs || return
 
 lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index || return
 

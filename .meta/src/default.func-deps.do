@@ -10,13 +10,15 @@ case "$lib_id" in
 
 redo-ifchange "$REDO_BASE/.meta/src/default.func-deps.do"
 
-redo-ifchange "sh-libs.list"
+redo-ifchange "../cache/sh-libs.list"
 
 # Transform target-name (lib_id) to original file-paths
 # Should really have just one path for shell-lib components
-path="$(grep '^'"$lib_id"'\>	' "sh-libs.list" | sed 's/^[^\t]*\t//g')"
+path="$(grep '^'"$lib_id"'\>	' "../cache/sh-libs.list" | cut -d' ' -f4)"
+#sed 's/^[^\t]*\t//g')"
 
-test -n "$path" -a -e "$REDO_BASE/$path" || { echo "No such path '$path'" >&2; exit 1; }
+test -n "$path" -a -e "$REDO_BASE/$path" ||
+  $LOG error ::src/%%.func-deps "No such path" "$path" 1 || return
 mkdir -p "$(dirname "$1")"
 
 redo-ifchange functions/"$lib_id"-lib.func-list "$REDO_BASE/${path:?}"

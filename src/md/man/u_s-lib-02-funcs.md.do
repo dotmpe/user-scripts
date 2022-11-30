@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-true "${sh_libs_list:="$REDO_BASE/.meta/src/sh-libs.list"}"
+true "${sh_libs_list:="$REDO_BASE/.meta/cache/sh-libs.list"}"
 redo-ifchange $sh_libs_list
 {
   echo "# See Also"

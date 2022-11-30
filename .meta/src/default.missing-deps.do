@@ -5,7 +5,7 @@ case "$docid" in
     "*.lib-deps" ) exit 22 ;; # refuse to build non lib
     * ) ;; esac
 
-redo-ifchange "functions/$docid-lib.func-list"
+redo-ifchange "functions/$docid-lib.func-list" || return
 while read -r caller
 do
   test -n "$caller" || continue

@@ -13,6 +13,8 @@ build__lib_load ()
 }
 
 
+. "${U_S:?}/commands/u_s-stats.lib.sh"
+
 
 ## Util.
 

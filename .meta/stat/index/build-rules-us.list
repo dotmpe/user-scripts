@@ -11,7 +11,7 @@
 # @at.init: @configure :install @check
 # @at.configure: @build-env
 # @at.check: @lint
-# @at.build: @check &context-local &current src-sh manual
+# @at.build: %func-lists @check &context-local &current src-sh manual
 # @at.test: %bats-baseline %bats-unit
 
 # XXX:
@@ -63,6 +63,7 @@
 %bats-unit simpleglob .build/tests/unit-*.tap test/unit/%.bats
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
+%func-lists expand-all us_shlibs_list -- .meta/src/functions/%*-lib.func-list
 &sh-list:* if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 &shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
 &source-list:* if &git-index -- exec git ls-files
@@ -79,6 +80,7 @@
 :lint:tags: part lint-tags source-do
 
 # TODO: manual
+# manual-user-lib simpleglob src/man/man7/User-Script:*.7
 :manuals function - u_s-man
 :pack function
 
@@ -93,5 +95,4 @@
 ./.meta/cache/source-dev-sh.list function - &sh-list
 
 
-# manual-user-lib simpleglob src/man/man7/User-Script:*.7
 # Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less.txt:

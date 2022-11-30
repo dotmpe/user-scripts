@@ -2,7 +2,7 @@
 # TODO: build list of commands used by each lib as part of src-sh
 set -euo pipefail
 
-sh_files="$REDO_BASE/.meta/cache/sh-files.list"
+sh_files="../cache/sh-files.list"
 # $REDO_PWD/sh-files.list
 
 redo-ifchange "$sh_files"

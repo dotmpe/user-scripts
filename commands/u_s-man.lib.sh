@@ -51,7 +51,7 @@ build_manuals () # [U_S_MAN] [REDO_BASE] ~
 
   build-ifchange $( read_nix_style_file $U_S_MAN | while read _ section topic _
 		do echo "src/man/man$section/$topic.$section"; done | tr '\n' ' ')
-  true "${sh_libs_list:="$REDO_BASE/.meta/src/sh-libs.list"}"
+  true "${sh_libs_list:="$REDO_BASE/.meta/cache/sh-libs.list"}"
 
   build-ifchange $( sort -u "$sh_libs_list" | while read lib_id src
 		do
