@@ -12,7 +12,7 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
   declare script errors
   script="${BUILD_TARGET:${#BUILD_SPEC}}"
   errors=${PROJECT_CACHE:?}/lint-shellcheck-${script//\//-}.errors
-  build-ifchange "$script" ~/.shellcheckrc ./.shellcheckrc || return
+  build-ifchange "$script" ~/.shellcheckrc ${BUILD_BASE:?}/.shellcheckrc || return
   # Do not need to fail here and keep rebuilding this target because of the exit
   # state. Instead check for error lines in other target and fail appropiately
   shellcheck -s sh -x "$script" >| "$errors" || {

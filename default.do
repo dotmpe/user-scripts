@@ -19,15 +19,8 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
     test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
   }
 
-  # Use ENV-BUILD as-is when given, or fall-back to default built-in method.
-  #test -e "$ENV_BUILD" && {
-  #  . "$ENV_BUILD" || return
-  #} || {
-  #  default_do_env_default || return
-  #}
-
-  source "${U_S:?Required +U-s profile for @dev}/src/sh/lib/build.lib.sh" &&
-  build_ env-build || return
+  # Use external script during dev
+  . ${U_S:?}/tools/build/parts/default-do-env@dev.sh || return
 
   true "${ENV:="@dev"}"
   true "${APP:="@User-Scripts/0.0.2-dev"}"
