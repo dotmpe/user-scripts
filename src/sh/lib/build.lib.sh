@@ -1990,7 +1990,7 @@ build_which__special ()
 
 ## Build-info action/frontend handlers
 #
-. "${U_S:?}/tools/sh/parts/build-info.sh"
+. "${U_S:?}/tools/build/parts/build-info.sh"
 
 
 ## Misc. build parts
