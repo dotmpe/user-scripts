@@ -7,6 +7,7 @@
 default_do_env () # ~ # Prepare shell profile with build-target handler
 {
   test -n "${BUILD_ID:-}" || {
+    # . ${U_S:?}/tools/build/parts/build-static.sh
     CWD=${REDO_STARTDIR:?}
     BUILD_TOOL=redo
     BUILD_ID=$REDO_RUNID
@@ -142,7 +143,7 @@ default_do_main ()
 
     # Default build target
     all|@all|:all )
-        # env_require local-libs || return
+        env_require build-libs || return
         build__all
       ;;
 
