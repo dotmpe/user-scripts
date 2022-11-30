@@ -37,6 +37,7 @@
 @configured ifdone @configure
 
 
+
 ## Symbols for single targets and mapped sets
 
 &build-rules expand ${PROJECT_CACHE:?}/build-rules.list
@@ -51,7 +52,7 @@
 &tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
 
 
-## Other aliases for target groups
+## Symbols for mappings to directives and functions
 
 &build-rules:* defer concat-rules
 # TODO: install-deps check

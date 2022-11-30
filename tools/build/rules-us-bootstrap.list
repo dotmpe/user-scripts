@@ -1,0 +1,37 @@
+###
+
+## Project targets info
+# @main: all help configure build test
+# @all: build test
+
+## Main targets
+
+# @at.configure:
+# @at.build:
+# @at.test:
+
+# @at.Config: @build-env
+# @at.Check: *lint :check
+
+@build-env function -
+
+@configured ifdone configure
+
+
+
+## Symbols for single targets and mapped sets
+
+
+
+## Symbols for mappings to directives and functions
+
+
+## Function handlers
+
+:check function -
+:env: function - .meta/cache/build-env.sh
+:git:index part scm-git-index
+:status function -
+
+
+#
