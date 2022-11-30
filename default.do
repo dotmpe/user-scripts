@@ -90,7 +90,7 @@ default_do_main ()
 
   # XXX: Not making this configurable (yet), parts will first have to be build
   # build_ do-session shell-mode
-  sh_mode strict dev || return
+  sh_mode ${BUILD_MODE:-strict build} || return
 
   #build_ do-env ||
   #  default_do_ error \$do-env "Error getting %.do env" "E$?" $?

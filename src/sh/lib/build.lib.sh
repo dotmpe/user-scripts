@@ -8,7 +8,7 @@ build_lib_load ()
   true "${build_rules_defnames:=$(echo {,.}build-rules.{txt,list} .components.txt .meta/stat/index/components-local.list)}"
 
   # A bunch of names for sh files to inject, if found for cold bootstraps
-  true "${build_envs_defnames:=$(echo {,.}{env,params,attributes,package,build-env})}"
+  true "${build_envs_defnames:=$(echo {,.}{attributes,package,env,params,build-env})}"
 
   true "${sh_file_exts:=.sh .bash}"
 
