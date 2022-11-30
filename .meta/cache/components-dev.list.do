@@ -4,7 +4,7 @@
 set -euETo pipefail
 shopt -s extdebug
 
-redo-ifchange "$REDO_BASE/.meta/cache/scm-status"
+redo-ifchange "$REDO_BASE/.meta/cache/stage.md5.git.scm" || return
 (
   U_S=$REDO_BASE
   CWD=$REDO_BASE

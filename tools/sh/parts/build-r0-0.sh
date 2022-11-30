@@ -14,9 +14,13 @@ env__build__build_env_cache ()
 {
   env_require build-envs || return
 
+  # build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
+
   # Finally run some steps to generate the profile
-  $LOG warn :build-env-cache "Building..." "$BUILD_TARGET"
-  quiet=true build_env ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
+  set -- ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
+  $LOG warn ":build-env-cache($BUILD_TARGET)" "Building..." "$*"
+  quiet=true build_env "$@" >| "${BUILD_TARGET_TMP:?}" || return
+  build-stamp < "${BUILD_TARGET_TMP:?}"
 }
 
 env__build__package ()
@@ -233,9 +237,10 @@ env__define__build_envs ()
       sh_lookup ${build_envs_defnames:?}) || return
 
   test -z "${ENV_BUILD_ENV:-}" || {
-    $LOG debug :build-env-cache "Using helper profile" "${ENV_BUILD_ENV//$'\n'/:}"
-    sh_source $ENV_BUILD_ENV ||
-      $LOG error "" "Sourcing build-envs returned error" "E$?:$ENV_BUILD_ENV" $? || return
+    sh_source $ENV_BUILD_ENV || $LOG error :build-envs \
+      "Sourcing build-envs returned error" "E$?:$ENV_BUILD_ENV" $? || return
+    ENV_BUILD_ENV="${ENV_BUILD_ENV//$'\n'/:}"
+    $LOG debug :build-envs "Loaded helper profile(s)" "$ENV_BUILD_ENV"
   }
 }
 
@@ -292,16 +297,18 @@ env__define__build_libs ()
 {
   build_add_setting "ENV_BUILD_LIBS"
   test -n "${ENV_BUILD_LIBS:-}" && return
+  test -n "${sh_exts:-}" -a -n "${build_libs_defnames:-}" ||
+    build_lib_load || return
+
+  # Inject any local env scripts
   ENV_BUILD_LIBS=$(sh_path=${BUILD_PATH:?} none=true any=true first=false \
-      sh_lookup {,.}build-lib tools/{build,${BUILD_TOOL:?}}/lib) ||
-        return
+      sh_lookup ${build_libs_defnames:?}) || return
+
   test -z "${ENV_BUILD_LIBS:-}" || {
-    $LOG debug :build-env-cache "Setting env libs" "${ENV_BUILD_LIBS//$'\n'/:}"
-    declare r
-    sh_source $ENV_BUILD_LIBS || { r=$?
-      $LOG error "" "Sourcing build-libs returned error" "E$r:$ENV_BUILD_LIBS"
-      return $r
-    }
+    sh_source $ENV_BUILD_LIBS || $LOG error :build-libs \
+      "Sourcing build-libs returned error" "E$r:$ENV_BUILD_LIBS" $? || return
+    ENV_BUILD_LIBS="${ENV_BUILD_LIBS//$'\n'/:}"
+    $LOG debug :build-libs "Loaded helpers (libraries)" "$ENV_BUILD_LIBS"
   }
 }
 
