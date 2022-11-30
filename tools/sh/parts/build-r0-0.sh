@@ -596,14 +596,18 @@ env__define__stderr_ ()
 
 env__define__us_build ()
 {
-  {
-    sh_include_path_langs="redo main ci bash sh" &&
-    . "${U_S:?}/tools/sh/parts/include.sh" &&
-    sh_include lib-load &&
-    package_build_tool=redo &&
-    lib_load match redo build &&
-    . "${UCONF:?}/tools/redo/env.sh"
-  } || return
+  sh_include_path_langs="redo main ci bash sh" &&
+  . "${U_S:?}/tools/sh/parts/include.sh" &&
+  sh_include lib-load &&
+  package_build_tool=redo &&
+  lib_load match redo build
+}
+
+env__define__us_libs ()
+{
+  sh_include_path_langs="redo main ci bash sh" &&
+  . "${U_S:?}/tools/sh/parts/include.sh" &&
+  sh_include lib-load
 }
 
 #

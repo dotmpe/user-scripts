@@ -7,7 +7,7 @@ functions_lib_load ()
   #  # Use NPM bash-parser to try and get command/function calls from src
   #  sh_list_calls="coffee $(lookup_path PATH sh.coffee | head -n1)"
   #} ||
-  test -n "${cllct_src_base-}" || cllct_src_base=.cllct/src
+  test -n "${cllct_src_base-}" || cllct_src_base=.meta/src
   test -n "${src_stat-}" || src_stat=$PWD/$cllct_src_base
 }
 

@@ -6,7 +6,14 @@
 # keep a simple list with lib src names and grep title label and head comment
 # as rest-line for sh-files.
 
-lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index
+listsym="&source-list"
+list=.meta/cache/source-sh.list
+
+build-ifchange "$listsym" || return
+
+env_require us-libs || return
+
+lib_require statusdir-uc src match package build-htd std sys-htd vc-htd ctx-index || return
 
 #build_sd_cache "$(basename $1)" "$hostname-$APP_ID_BREV" "$(basename "$3")"
 #test ! -e "$1.bup" || {

@@ -85,7 +85,7 @@
 
 
 # TODO: auto-install/config
-./.cllct/src/sh-stats function build_sh_stats u_s-stats
+./.meta/src/sh-stats function build_sh_stats u_s-stats
 ./.meta/cache/build-rules.list part concat-rules
 ./.meta/cache/source.list if &git-index -- exec git ls-files
 ./.meta/cache/source-dev.list function - &source-list

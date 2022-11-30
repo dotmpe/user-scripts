@@ -1,6 +1,5 @@
 bin/u-s: - @dev
 build.txt: - @dev
-.cllct/src: - @dev
 default.do: - @dev
 commands/u_s: - @dev
 tools/sh/init.sh: - @dev

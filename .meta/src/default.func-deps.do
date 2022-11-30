@@ -8,7 +8,7 @@ case "$lib_id" in
     "*.func-deps" ) exit 22 ;; # refuse to build non lib
     * ) ;; esac
 
-redo-ifchange "$REDO_BASE/.cllct/src/default.func-deps.do"
+redo-ifchange "$REDO_BASE/.meta/src/default.func-deps.do"
 
 redo-ifchange "sh-libs.list"
 

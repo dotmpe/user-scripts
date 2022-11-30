@@ -6,7 +6,7 @@ set -euo pipefail
 local topic=$(basename "${1:11}" -overview.md) \
     lib_id=$(basename "${1:23}" -overview.md)
 {
-  grep "^$lib_id\>"$'\t' .cllct/src/sh-libs.list ||
+  grep "^$lib_id\>"$'\t' metacllct/src/sh-libs.list ||
     $LOG error "" "Cannot build lib docs" "$lib_id" $?
 } |
 while read lib_id src
@@ -28,13 +28,13 @@ do
   #esac; done <"$src"
 
   printf "\nFunctions:\n:"
-  for f in $(sort -u .cllct/src/functions/$lib_id-lib.func-list)
+  for f in $(sort -u .meta/src/functions/$lib_id-lib.func-list)
   do echo "  - $f"
   done
 
   echo ""
   echo "Depends on:"
-  deps=($(shopt -s nullglob && sort -u .cllct/src/functions/$lib_id-lib/*.func-deps))
+  deps=($(shopt -s nullglob && sort -u .meta/src/functions/$lib_id-lib/*.func-deps))
   bins=()
   funcs=()
   for d in ${deps[@]}

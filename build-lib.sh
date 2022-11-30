@@ -108,7 +108,7 @@ build__meta_cache_source_dev_sh_list ()
 {
   sh_mode strict dev
   build-ifchange \
-    :if-scr-fun:${u_S:?}/build-lib.sh:build__meta_cache_source_dev_sh_list \
+    :if-scr-fun:${U_S:?}/build-lib.sh:build__meta_cache_source_dev_sh_list \
     "${2:?}" "$REDO_BASE/index.list" || return
   declare sym src
   sym=.meta/cache/source-sh.list

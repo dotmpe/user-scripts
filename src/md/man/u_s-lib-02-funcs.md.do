@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-true "${sh_libs_list:="$REDO_BASE/.cllct/src/sh-libs.list"}"
+true "${sh_libs_list:="$REDO_BASE/.meta/src/sh-libs.list"}"
 redo-ifchange $sh_libs_list
 {
   echo "# See Also"
   sort -u "$sh_libs_list" |
   while read lib_id src
-  do sh_lib_base="$REDO_BASE/.cllct/src/functions/$lib_id-lib"
+  do sh_lib_base="$REDO_BASE/.meta/src/functions/$lib_id-lib"
     sh_lib_list="$sh_lib_base.func-list"
     { redo-ifchange $sh_lib_list && test -e $sh_lib_list
     } || { $LOG error "" "No $lib_id func-list"; continue; }

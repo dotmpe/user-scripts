@@ -2,7 +2,10 @@
 # Created: 2022-08-30
 
 
-sh_mode strict dev
+sh_mode strict build
+
+test -x "$(command -v shellcheck)" ||
+  $LOG error :lint-shellcheck "No Shellcheck installation found" "" 1 || return
 
 test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
 
