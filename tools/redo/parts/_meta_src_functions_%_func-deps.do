@@ -1,7 +1,7 @@
 
 sh_mode strict build
 
-assert_inc_dir REDO_STARTDIR
+# assert_inc_dir REDO_STARTDIR
 
 mkdir -vp $(dirname "$1") >&2
 fun=$(basename "$1" .func-deps)
