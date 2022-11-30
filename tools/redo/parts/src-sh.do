@@ -15,15 +15,17 @@ build-ifchange \
   .meta/cache/context.list
 
 build-ifchange \
-  $(cut -d' ' -f4 .meta/cache/sh-libs.list | xargs -I{} \
-        echo .meta/src/functions/{}-lib.func-list )
+  $(cut -d' ' -f4 .meta/cache/sh-libs.list | \
+        xargs -I{} basename {} .lib.sh |
+        xargs -I{} echo .meta/src/functions/{}-lib.func-list )
 
 build-ifchange \
-  $(cut -d' ' -f4 .meta/cache/sh-libs.list | while read -r libid
+  $(cut -d' ' -f4 .meta/cache/sh-libs.list | while read -r pn
     do
-        test -n "${libid-}" || continue
+        test -n "${pn-}" || continue
+        libid=$(basename -- "$pn" .lib.sh) || return
+
         test -e ".meta/src/functions/${libid:?}-lib.func-list" || {
-          echo .meta/src/functions/${libid:?}-lib.func-list >&2
           continue
         }
 

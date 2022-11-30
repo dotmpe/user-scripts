@@ -27,6 +27,8 @@ build_lib_load ()
 
 build_lib_init () # ~
 {
+  return 0
+
   #shellcheck disable=2086
   # build_env_reset
   build_env_init &&
@@ -2596,24 +2598,24 @@ build-symbolic-target ()
 
 # Rebuild if any directory index changes.
 # XXX: this stamps file list but only name, not all attributes, times
-build_ifdirchange ()
+build-ifdirchange ()
 {
   true "${@:?}"
   while test $# -gt 0
   do
-    TARGET_ALIAS=os-dir-index build_targets_ "$1" || return
+    TARGET_ALIAS=os-dir-index redo-ifchange "$1" || return
     shift
   done
 }
 # XXX: tools generate
 build_env__boot__ood=BUILD_TOOL
 
-build_ifglobchange ()
+build-ifglobchange ()
 {
   true "${@:?}"
   while test $# -gt 0
   do
-    TARGET_ALIAS=os-path-glob build_targets_ "$1" || return
+    TARGET_ALIAS=os-path-glob redo-ifchange "$1" || return
     shift
   done
 }
@@ -2635,6 +2637,15 @@ build_ () # ~ <Build-action> <Argv <...>>
   declare BUILD_ACTION=${1:-${BUILD_ACTION:?}} build_action_handler r
   test $# -eq 0 || shift
 
+  # build-* handlers override exists else defer execution to build_<action>
+  build_action_handler=build-"$BUILD_ACTION"
+  sh_fun "$build_action_handler" && {
+    "${build_action_handler}" "$@"
+    return
+  }
+
+  build_action_handler=build_$(build_target_name__function "${BUILD_ACTION:?}")
+
   declare ret
   build_boot ${BUILD_BOOT-env-path log-key build-action} || { ret=$?
       test $ret -eq ${_E_break:-197} && exit
@@ -2645,12 +2656,6 @@ build_ () # ~ <Build-action> <Argv <...>>
   declare -a ENV_BOOT=( "${!ENV_DEF[@]}" )
   $LOG info "" "@@@ Bootstrap for '${BUILD_ACTION:?}' done" "${ENV_BOOT[*]}"
 
-  # build-* handlers override exists else defer execution to build_<action>
-  for build_action_handler in build-"$BUILD_ACTION" \
-    build_$(build_target_name__function "${BUILD_ACTION:?}")
-  do
-    sh_fun "$build_action_handler" && break
-  done
   sh_fun "$build_action_handler" || { ret=$?
     $LOG error "" "No such entrypoint" "$build_action_handler" $ret
     exit $ret
