@@ -16,11 +16,11 @@ ci_exec()
   test -n "$session" || sh_include start
 
   "$@" && {
-    c-pass "Main $(echo $@)"
+    c-pass "Main ${@@Q}"
     trueish "${quiet:-}" ||
       print_green "" "$suite_lbl completed '$(echo $@)'"
   } || {
-    c-fail "Main $*"; r=$failed_ret
+    c-fail "Main ${@@Q}"; r=$failed_ret
     trueish "${quiet:-}" ||
       print_red "" "$suite_lbl failed '$*': $failed_ret"
   }

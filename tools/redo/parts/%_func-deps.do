@@ -9,7 +9,7 @@ case "$lib_id" in
     "*.func-deps" ) exit 22 ;; # refuse to build non lib
     * ) ;; esac
 
-redo-ifchange "default.func-deps.do" "../cache/sh-libs.list"
+#redo-ifchange "default.func-deps.do" "../cache/sh-libs.list"
 
 { lib_path="$(grep "/\?$lib_id.lib.sh" ../cache/sh-libs.list | cut -d' ' -f4)" &&
   test -n "$lib_path" -a -e "$REDO_BASE/$lib_path"

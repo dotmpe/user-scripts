@@ -20,7 +20,7 @@ sh_cmd_funcs()
   }
 
   local src_
-  for src_ in $@
+  for src_ in "${@:?}"
   do
     test "${complete:-}" = "1" && {
       test "${zsh_spec:-}" = "1" && {
