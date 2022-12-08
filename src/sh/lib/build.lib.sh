@@ -781,7 +781,7 @@ build_resolver ()
     done
   done
   $LOG "error" ":build-target" "Unknown or unexpected target, see '$BUILD_TOOL ${HELP_TARGET:-help}'" \
-    "${BUILD_TARGET:?}"
+    "${BUILD_TARGET//%/%%}"
   return ${_E_failure:-195}
 }
 

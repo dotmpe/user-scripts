@@ -56,7 +56,7 @@ build_error_handler ()
   local r=$? lastarg=$_
   #! sh_fun stderr_ ||
   #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r" 0
-  $LOG error ":on-error" "In recipe for '${BUILD_TARGET:?}' ($lastarg)" "E$r"
+  $LOG error ":on-error" "In recipe for '${BUILD_TARGET//%/%%}' ($lastarg)" "E$r"
   exit $r
 }
 # XXX:
