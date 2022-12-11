@@ -63,11 +63,11 @@ log_src_id_key_var()
       test -n "${base-}" -a -z "$scriptname" || {
         log_key="\$CTX_PID:\$scriptname/\$scriptpid"
       }
-      test -n "$log_key" || {
+      test -n "${log_key-}" || {
         test -n "${scriptext-}" || scriptext=.sh
         log_key="\$base\$scriptext"
       }
-      test -n "$log_key" || echo "Cannot get log-src-id key" 1>&2;
+      test -n "${log_key-}" || echo "Cannot get log-src-id key" 1>&2;
     }
   }
 }
