@@ -19,20 +19,34 @@ build__lib_load ()
 ## Util.
 
 
-#assert_base_dir ()
+# assert-base-dir
 assert_base_dir ()
 {
   test_same_dir "$PWD" "$REDO_BASE"
 }
 
-#assert_start_dir ()
+# assert-patterns-spec
+# There may be other patterns, but the one this checks is prefix
+assert_pattern_spec () # ~ [<Sep>] # Sanity check for BUILD-SPEC handlers
+{
+  fnmatch "*${1:-:}" "${BUILD_SPEC:?}" && {
+
+    test "${BUILD_SPEC:?}" = "${BUILD_TARGET:0:${#BUILD_SPEC}}" &&
+    spec="${BUILD_TARGET:${#BUILD_SPEC}}"
+    return
+  } || {
+    $LOG error :export-group "Handle pattern mismatch" \
+      "${BUILD_SPEC//%/%%}:${BUILD_TARGET//%/%%}" 1 || return
+  }
+}
+
+# assert-start-dir
 assert_start_dir ()
 {
   test_same_dir "$PWD" "$REDO_STARTDIR"
 }
 
-
-#build_summary ()
+# build-summary
 build_summary ()
 {
   declare r=$? sc tc ; test $r != 0 || r=
@@ -41,7 +55,7 @@ build_summary ()
   stderr_ "Build ${r:+not ok: E}${r:-ok}, $sc source(s) and $tc target(s)" "${r:-0}"
 }
 
-#test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
+# test-same-dir () # ~ <Dir-path-1> <Dir-path-2>
 test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 {
   test "$(realpath "${1:?}")" = "$(realpath "${2:?}")"
@@ -126,7 +140,7 @@ build__meta_cache_source_dev_sh_list ()
   done < "$sym"
 }
 
-#build__usage_help ()
+# build:usage-help
 build__usage_help ()
 {
   ${BUILD_TOOL:?}-always
