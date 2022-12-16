@@ -1965,18 +1965,12 @@ build_which () # ~ [<Target>]
   build_target_lookup "$target"
 }
 
-# Recursively print every possible matching path or name for target.
+# XXX: Recursively print every possible matching path or name for target.
 #
 # # @prefix-special: :
 # # @prefix-amp-ns: :symbols :
 # # @prefix-star-ns: :sets :
 # # @prefix-pct-ns: :patterns :
-#
-# :git:index function -
-# &sh-dev-list expand ${PROJECT_CACHE:?}/source-sh-dev.list
-# &sh-dev-list:* if &sh-list -- filter @dev
-# &sh-list:* if :git:index -- eval git ls-files '*.sh' '*.do' '*.inc'
-# &source-list:* if :git:index -- eval git ls-files
 #
 # The search does not end
 # unless the initial character of the references name is a known

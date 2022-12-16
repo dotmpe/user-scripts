@@ -21,6 +21,8 @@
 
 ## Symbols for single targets and mapped sets
 
+&git-index expand ${PROJECT_CACHE:?}/index.git.scm
+&git-status expand ${PROJECT_CACHE:?}/stage.md5.git.scm
 
 
 ## Symbols for mappings to directives and functions
@@ -30,8 +32,7 @@
 
 :check function -
 :env: function - .meta/cache/build-env.sh
-:git:index part scm-git-index
 :status function -
 
 
-#
+# Id: U-s/ rules-us-bootstrap.list ex:ft=less.txt:
