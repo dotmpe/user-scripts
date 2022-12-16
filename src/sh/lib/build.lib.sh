@@ -249,6 +249,11 @@ build_env () # ~ [<Handler-tags...>]
   #test $# -gt 0 || set -- ${BUILD_ENV:?Missing build env}
   #build_env_init && build_boot "$@" || return
 
+  build_env_require || {
+    $LOG error :build-env "Missing env"
+    echo "defs: ${!ENV_DEF[*]}" >&2
+    echo "parts: ${ENV_PART[*]}" >&2
+  }
   declare tag cache
   for tag in \
     BUILD_ENV_CACHES $BUILD_ENV_DEP BUILD_ENV_SRC BUILD_ENV_CACHE
@@ -366,7 +371,9 @@ build_env_init ()
 #
 build_env_require ()
 {
-  false
+  test -n "${BUILD_ENV_FUN:-}" &&
+  test -n "${BUILD_ENV_DEP:-}"
+  #test -n "${BUILD_ENV_SRC:-}"
 }
 
 build_env_reset ()
