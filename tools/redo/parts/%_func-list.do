@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+
+sh_mode strict build
 
 redo-ifchange "${PROJECT_CACHE:?}/sh-libs.list" || return
 
@@ -11,17 +11,18 @@ case "$lib_id" in
 
 # Transform target-name (lib_id) to original file-paths
 # Should really have just one path for shell-lib components
-{ lib_path="$(grep "/\?$lib_id.lib.sh" ${PROJECT_CACHE:?}/sh-libs.list | cut -d' ' -f4)" &&
-  test -n "$lib_path"
+{ lib_path="$(grep -m1 -E "( |/)$lib_id.lib.sh( |$)" ${PROJECT_CACHE:?}/sh-libs.list |
+  cut -d' ' -f4)" && test -n "$lib_path" -a -e "$lib_path"
 } || {
   $LOG warn "$1" "No paths for '$lib_id'"
-  exit 0
+  return 0
 }
 
 # Redo if libs associated have changed.
 # NOTE: would be nice to track function-source instead
 #shellcheck disable=SC2046,2001
-redo-ifchange $(echo "$lib_path" | sed 's#^\(\.\/\)\?#'"$REDO_BASE/"'#g')
+redo-ifchange $(echo "$lib_path" | sed 's#^\(\.\/\)\?#'"$REDO_BASE/"'#g') ||
+  return
 
 test ! -e "$1" -o -s "$1" || rm "$1"
 
@@ -31,7 +32,7 @@ test ! -e "$1" -o -s "$1" || rm "$1"
   CWD=$REDO_BASE
 
   init_sh_libs="os str log match src sys std package functions build-htd" &&
-  util_mode=boot . "$REDO_BASE"/tools/sh/init.sh
+  util_mode=boot . "$REDO_BASE"/tools/sh/init.sh || return
 
   scriptname="do:$REDO_PWD:$1" && {
     test -n "$lib_id" -a -n "$lib_path" || {

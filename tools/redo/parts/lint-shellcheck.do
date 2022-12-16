@@ -17,7 +17,7 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
   # state. Instead check for error lines in other target and fail appropiately
   shellcheck -s sh -x "$script" >| "$errors" || {
     ! ${sc_fail:-false} || return
-    $LOG warn ":lint-shellcheck.do" "Shellcheck lint (continuing)" "$script"
+    $LOG warn ":lint-shellcheck.do" "Shellcheck lint (continuing)" "${script//%/%%}"
   }
   test -s "$errors" || rm "$errors"
   return

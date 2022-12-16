@@ -123,7 +123,7 @@ build_arr_seq () # ~ <Var-name> [ <Items <...>> ] [ -- <...> ]
 {
   declare vname=${1:?}
   shift
-  eval "declare -ga $vname=()"
+  eval "declare -ga $vname=()" || return
   while argv_has_next "$@"
   do
     eval "$vname+=( \"\$1\" )"
@@ -1021,7 +1021,7 @@ build_target__from__defer_sequence () # ~ <Target-name> <Part-names <...>>
 # Same as 'if ... -- defer ...'
 build_target__from__defer_with () # ~ <Prerequisites...> -- <Part-name <...>>
 {
-  build_target_dep_seq "$@" || return
+  build_target_dep_seq DEPS "$@" || return
   test 0 -eq "${#DEPS[*]}" && shift || {
     shift ${#DEPS[*]} && shift
   }
@@ -1339,7 +1339,9 @@ build_dep_seq () # ~ <Var-name> <Prerequisites> -- <...>
 {
   declare vname=${1:?}
   shift
-  build_arr_seq "$vname" "$@" || true # Warn about empty array below
+  build_arr_seq "$vname" "$@" || {
+    sh_null declare -p $vname || return
+  }
   eval "declare depcnt=\${#${vname}[@]}"
   test 0 -lt "${depcnt:?}" || {
     $LOG error "" "No $vname items in sequence" "$*"
@@ -1415,7 +1417,7 @@ build_target__seq__expression () # ~ <Command...> [ -- <Rule <...>> ]
 # build-target-rule.
 build_target__seq__if () # ~ <Dep-targets...> -- <Rule <...>>
 {
-  build_target_dep_seq "$@" || return
+  build_target_dep_seq DEPS "$@" || return
   shift ${DEPS_LEN:?} && shift || return
   build_target_rule "$@"
 }
@@ -2427,6 +2429,11 @@ sh_lookup () # ~ <Paths...> # Lookup paths at PATH.
   }
 }
 # Copy
+
+sh_null ()
+{
+  "$@" >/dev/null
+}
 
 sh_source ()
 {

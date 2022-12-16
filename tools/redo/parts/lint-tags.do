@@ -31,7 +31,7 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   # state. Instead check for error lines in other target and fail appropiately
   lint-tags "$script" >| "$errors" || {
     ! ${sei_fail:-false} || return
-    $LOG warn ":lint-tags.do" "Embedded tags lint (continuing)" "$script"
+    $LOG warn ":lint-tags.do" "Embedded tags lint (continuing)" "${script//%/%%}"
   }
   test -s "$errors" || rm "$errors"
   return

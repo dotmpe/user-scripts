@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+
+sh_mode strict dev
 
 funcname="$(basename -- "$1" .func-deps)"
 lib_id="$(basename -- "$(dirname "$1")" -lib)"
