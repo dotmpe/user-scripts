@@ -117,6 +117,20 @@ build_alias_part ()
   }
 }
 
+# Helper for rule-part directives. Returns non-zero for empty sequence but
+# ignores presence of next sequence.
+build_arr_seq () # ~ <Var-name> [ <Items <...>> ] [ -- <...> ]
+{
+  declare vname=${1:?}
+  shift
+  eval "declare -ga $vname=()"
+  while argv_has_next "$@"
+  do
+    eval "$vname+=( \"\$1\" )"
+    shift
+  done
+}
+
 # Call env:define:* routines for all given Ids, this can be called repeatedly
 # during execution to bootstrap new functions.
 #
@@ -293,8 +307,17 @@ build_env_declare ()
   do
     tag=${1:?}
     env_declared "$tag" || {
-      sh_fun env__define__"${tag//-/_}" ||
+      sh_fun env__define__"${tag//-/_}" || {
         env_boot=false env_require $tag || return
+      }
+      ! sh_fun env__declare__"${tag//-/_}" || {
+        build_add_handler env__declare__"${tag//-/_}" &&
+        env__declare__"${tag//-/_}" || return
+      }
+      #! sh_fun env__build__"${tag//-/_}" || {
+      #  env__build__"${tag//-/_}" || return
+      #}
+      build_add_handler env__define__"${tag//-/_}" &&
       env__define__"${tag//-/_}" || return
       ENV_DEF[$tag]=1
     }
@@ -1310,65 +1333,156 @@ build_target__from__simpleglob () # ~ <Target-Spec> <Source-Spec>
 }
 
 # Helper to chain build-target:from:* recipes.
-# Takes intial argv sequence, stores as DEPS[] and calls each build, then pass
-# remaining arguments to build-target-rule.
-build_target_dep_seq () # ~ <Prerequisites> -- <...>
+# Takes intial argv sequence, stores as <Var>[] using build-arr-seq.
+# Also returns non-zero if no items are found and records <Var>_LEN var
+build_dep_seq () # ~ <Var-name> <Prerequisites> -- <...>
 {
-  declare -ga DEPS=()
-  while argv_has_next "$@"
-  do
-    DEPS+=( "$1" )
-    shift
-  done
-  argv_is_seq "$@" &&
-  test 0 -lt "${#DEPS[*]}" || {
-    $LOG error "" "No dependencies in sequence"
+  declare vname=${1:?}
+  shift
+  build_arr_seq "$vname" "$@" || true # Warn about empty array below
+  eval "declare depcnt=\${#${vname}[@]}"
+  test 0 -lt "${depcnt:?}" || {
+    $LOG error "" "No $vname items in sequence" "$*"
     return 1
-    #stderr_ "! build-target-dep-seq: argv sequence expected" $? || return
   }
-  build_targets_ "${DEPS[@]}"
+  eval "declare -g ${vname}_LEN=$depcnt"
 }
 
-build_target__seq__call () # ~ <Command...> -- <Rule <...>>
+# Helper to chain build-target:from:* recipes. Like build-dep-seq, but return
+# non-zero on empty next sequence as well and call build-targets- with all items.
+build_target_dep_seq () # ~ <Var-name> <Prerequisites> -- <...>
+{
+  declare vname=${1:?} lvname=${1}_LEN
+  shift
+  build_dep_seq $vname "$@" &&
+  shift "${!lvname:?}" || return
+  argv_is_seq "$@" || {
+    $LOG error "" "No next sequence after if-$vname" "${!lvname:?}:$#:$*"
+    return 1
+  }
+  eval "build_targets_ \"\${${vname}[@]}\""
+}
+
+# call: 'Alias' for expression
+build_target__seq__call () # ~ <Command...> [ -- <Rule <...>> ]
 {
   build_target__seq__expression "$@"
 }
 
-build_target__seq__expression () # ~ <Command...> -- <Rule <...>>
+# This is not used anywhere currently, but it may be possible to execute several
+# commands in sequence as part of a recipe. XXX: I'm just not sure wheter
+# build-always or build-ifchange invocations (from multiple sub-commands) will
+# not confuse Redo. But it can at least be used to do other things in isolated
+# environments.
+build_target__seq__do () # ~ <Redo-file <...>>
 {
-  declare -ga EXPRESSION=()
-  while argv_has_next "$@"
+  build_dep_seq DO "$@" || return
+  shift "${#DO[*]}"
+  ! argv_is_seq "$@" || shift
+  declare lk
+  test ${#} -gt 0 && lk=":do(${#})" || lk=:do
+  test $# -eq 0 ||
+    $LOG warn "$lk" "Surpluss argv after Redo params" "${*//%/%%}"
+  set -- "${BUILD_TARGET:?}" "${BUILD_TARGET_BASE:?}" "${BUILD_TARGET_TMP:?}" "$@"
+  test 1 -eq "${#DO[*]}" && {
+    $LOG warn "$lk" "Forking to recipe part" "$SHELL:${DO[0]//%/%%}"
+    exec $SHELL "${DO[0]}" "$@"
+  }
+  declare src
+  for src in "${DO[@]}"
   do
-    EXPRESSION+=( "$1" )
-    shift
+    $LOG warn "$lk" "Running recipe part" "$SHELL:${src//%/%%}"
+    command "$SHELL" "$src" "$@" || return
   done
+}
+
+# expression: evalute given argv as command line (sequence part: not a
+# pipeline and -- option is reserved).
+build_target__seq__expression () # ~ <Command...> [ -- <Rule <...>> ]
+{
+  build_arr_seq EXPRESSION "$@" || return
   $LOG warn ":eval" "Executing from expression" "${EXPRESSION[*]}"
   "${EXPRESSION[@]:?}" || return
   $LOG info "::if-lines" "Expression finished" "${EXPRESSION[*]}"
+  shift "${EXPRESSION_LEN:?}"
   ! argv_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
 
 # Add first sequence as build-ifchange dependencies, and list in DEPS[].
-# Then continue with rule in next sequence.
-build_target__seq__if () # ~ <Dep-targets <...>> -- <Rule <...>>
+# Then continue with rule in next sequence by entering/recursing into
+# build-target-rule.
+build_target__seq__if () # ~ <Dep-targets...> -- <Rule <...>>
 {
   build_target_dep_seq "$@" || return
-  shift ${#DEPS[*]} && shift
+  shift ${DEPS_LEN:?} && shift || return
+  build_target_rule "$@"
+}
+
+# Equivalent to 'if' but for already existing array var
+build_target__seq__ifa () # ~ <Array-name> [ -- <Rule <...>> ]
+{
+  declare vname=${1:?}
+  shift
+  eval "build_targets_ \"\${${vname}[@]}\"" || return
+  ! argv_is_seq "$@" && return
+  shift
+  build_target_rule "$@"
+}
+
+# Like a normal 'if' except all of the prerequisite targets are treated as
+# symlink filepaths, and their real paths will be stored in DEST[] (in addition
+# to if's DEPS). Those are used as arguments for build-targets- instead.
+build_target__seq__if_dest () # ~ <Symlinks...>  -- <Rule <...>>
+{
+  build_dep_seq DEPS "$@" || return
+  read -ra DEST <<<"$(for dep in "${!DEPS[@]}"; do realpath -- "$dep"; done)"
+  build_targets_ "${DEST[@]}" || return
+  shift ${#DEPS[*]} && shift || return
+  build_target_rule "$@"
+}
+
+# Pseudo-target: depend on certain function typeset. To invalidate without
+# having prerequisites of its own, it uses build-always.
+# See if-scr-fun to validate based on specified script source file.
+build_target__seq__if_fun () # ~ <Fun <..>> [ -- <Rule <...>> ]
+{
+  build_arr_seq IF_FUN "$@" || return
+  declare typeset
+  typeset="$( for fun in "${IF_FUN[@]}"
+    do
+      typeset -f "$fun"
+    done )" || return
+  ${BUILD_TOOL:?}-stamp <<< "$typeset"
+  ${BUILD_TOOL:?}-always
+  $LOG info "::if-fun" "Function check done" "${IF_FUN[*]}"
+  shift ${#IF_FUN[@]}
+  ! argv_is_seq "$@" && return
+  shift
   build_target_rule "$@"
 }
 
 # Psuedo target checks file for line starting with key, and stamps line.
-build_target__seq__if_line_col1 () # ~ <File> <Key> [ -- <Rule <...>> ]
+# This greps for one matching line. Key has all special characters escaped
+# and is anchored left (Prefix is '^' by default) or right (set Suffix or Prefix
+# to any regex).
+build_target__seq__if_line_key () # ~ <File> <Key> [<Prefix>] [<Suffix>] \
+  # [ -- <Rule <...>> ]
 {
-  declare file=${1:?} key=${2:?}
+  declare file=${1:?} key=${2:?} l='^' r='\>'
   shift 2
   build_targets_ "$file" || return
+  test $# -eq 0 || {
+    argv_is_seq "$@" || { l=${1:-}; shift; }
+    argv_is_seq "$@" || { r=${1:?}; shift; }
+  }
   declare line keyre
-  read -r keyre <<< $(sed -E 's/([^[:alnum:]{}(),?!@+_])/\\\1/g' <<< "${key//\?/:}")
-  line=$(grep -m1 "$keyre" "$file") || {
-    $LOG error ::if-line-col1 "No line with key" "$file:$key"
+  read -r keyre <<< "$(
+      sed -E 's/([^[:alnum:]{}(),?!@+_])/\\\1/g' <<< "${key//\?/:}"
+    )"
+  line=$(grep -m1 "$l$keyre$r" "$file") || {
+    $LOG error ::if-line-key "No line with key" "$file:$key"
     return 1
   }
   build-stamp <<< "$line"
@@ -1379,7 +1493,7 @@ build_target__seq__if_line_col1 () # ~ <File> <Key> [ -- <Rule <...>> ]
 
 # Pseudo-target: depend on file targets, but validate on content lines
 # (excluding blank lines and comments)
-build_target__seq__if_lines () # ~ <File <...>> -- <Rule <...>>
+build_target__seq__if_lines () # ~ <File <...>> [ -- <Rule <...>> ]
 {
   declare -ga IF_LINES=()
   while argv_has_next "$@"
@@ -1397,46 +1511,30 @@ build_target__seq__if_lines () # ~ <File <...>> -- <Rule <...>>
   build_target_rule "$@"
 }
 
-# Pseudo-target: depend on certain function typeset. To invalidate without
-# having prerequisites of its own, it uses build-always.
-# See always if-scr-fun for a better alt.
-build_target__seq__if_fun () # ~ <Fun <..>> -- <Rule <...>>
-{
-  declare -ga IF_FUN=()
-  while argv_has_next "$@"
-  do
-    IF_FUN+=( "$1" )
-    shift
-  done
-  #shellcheck disable=2316
-  declare typeset
-  typeset="$( for fun in "${IF_FUN[@]}"
-    do
-      typeset -f "$fun"
-    done )" || return
-  ${BUILD_TOOL:?}-stamp <<< "$typeset"
-  ${BUILD_TOOL:?}-always
-  $LOG info "::if-fun" "Function check done" "${IF_FUN[*]}"
-  ! argv_is_seq "$@" && return
-  shift
-  build_target_rule "$@"
-}
-
-# Pseudo-target: depend on file and function typeset. This does not source
-# anything, but allows to generate targets to check certain function definitions
-# without using build-always.
-build_target__seq__if_scr_fun ()
+# build-target:* helper for rule part 'if-scr-fun': depend on script file and
+# function typeset.
+#
+# This allows to assemble recipes that stamp certain function definitions.
+# It does compine two sequence handlers into one, see if-scr and if-fun.
+# Ie. these are equiv::
+#
+#   if-scr-fun:<script>:<fun>       # Target of single-step recipe
+#   if-scr:<script>::if-fun:<fun>   # Two step recipe sequence encoded as target
+#
+#   if-scr-fun <script> <fun>       # Or written in build-rule syntax
+#   if-scr <script> -- if-fun <fun> # Equiv.
+#
+# This does not source anything, for that use alternative rule (seq)::
+#
+#   if-src-fun:<script>:<fun:<fun...>>
+#   if-source <script <...>> -- if-fun <fun <...>> # Equiv.
+#
+build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
 {
   declare script=${1:?}
-  ${BUILD_TOOL:?}-ifchange :if-lines:"$script" || return
-  declare -ga IF_FUN=()
-  while argv_has_next "$@"
-  do
-    IF_FUN+=( "$1" )
-    shift
-  done
-  source "$script" || return
-  #shellcheck disable=2316
+  build-ifchange :if-lines:"$script" || return
+  shift
+  build_arr_seq IF_FUN "$@" || return
   declare typeset
   typeset="$( for fun in "${IF_FUN[@]}"
     do
@@ -1465,36 +1563,79 @@ build_target__seq__ifdone ()
   build_target_rule "$@"
 }
 
-# build-target:* helper based on deps, this will source each target as well
+# build-target:* helper for rule part 'if-source': source based on if/DEPS[]
+# This will setup DEPS but source (load and evalute the script at each filepath
+# from DEPS[]) as well. To source without making and ifchange dependency see
+# 'source' directive.
+#
 # (so cannot currently use symbolic targets, XXX: add some symbol decl?)
-build_target__seq__source () # ~ <Source-scripts...> -- <...>
+build_target__seq__if_source () # ~ <Source-scripts...> [ -- <...> ]
 {
-  build_target_dep_seq "$@" || return
-  shift ${#DEPS[*]} && shift
-  declare src
+  declare lk=":if-source($#)" src
+  build_target_dep_seq DEPS "$@" || return
   for src in "${DEPS[@]}"
-  do source "$src"
+  do source "$src" || {
+      $LOG error "$lk" "During source" "E$?:$src" $? || return
+    }
   done
-  test $# -gt 0 || return 0
+  shift ${#DEPS[*]}
+  ! argv_is_seq "$@" && return
+  shift
+  build_target_rule "$@"
+}
+# Derive: build_target__seq__source
+
+# Stamp all functions after building and sourcing the script.
+# This calls sequence::
+#
+#   if-source <Script> -- if-fun <...>
+#
+build_target__seq__if_src_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
+{
+  declare script=${1:?}
+  shift
+  build_target_rule if-source "$script" -- if-fun "$@"
+}
+
+# Build SRC array from sequence and source files without making ifchange
+# dependency. See 'if-source'.
+build_target__seq__source () # ~ <Source-scripts...> [ -- <...> ]
+{
+  declare lk=":source($#)"
+  build_dep_seq SRC "$@" || return
+  declare src
+  for src in "${SRC[@]}"
+  do source "$src" || {
+      $LOG error "$lk" "During source" "E$?:$src" $? || return
+    }
+  done
+  shift ${#SRC[*]}
+  ! argv_is_seq "$@" && return
+  shift
   build_target_rule "$@"
 }
 
+# build-target:* helper for rule part: source-do directive
+#
+# sets proper arguments (ie. script parameters) sequence before sourcing
+# scripts, so that they can be written as sort of in-between format for
+# recipes. These run with the already loaded build-env profile so that may be
+# more convenient to write or develop recipe scripts, but these would need a
+# wrapper to function as standalone redo files.
+#
+# source-do is implemented separately from 'source' rule directive and
+# accumulates the psuedo-Redo scripts in DO[]
 build_target__seq__source_do () # ~ <Redo-file <...>> [-- <...>]
 {
-  declare lk
-  test $# -gt 0 && lk=":src-do($#)" || lk=:src-do
-  declare -ga DO=()
-  while argv_has_next "$@"
-  do
-    DO+=( "$1" )
-    shift
-  done
+  build_dep_seq DO "$@" || return
   shift "${#DO[*]}"
   declare -a args=()
   ! argv_is_seq "$@" || {
     shift
     args=( "$@" )
   }
+  declare lk
+  test ${#args[@]} -gt 0 && lk=":src-do(${#args[@]})" || lk=:src-do
   set -- "${BUILD_TARGET:?}" "${BUILD_TARGET_BASE:?}" "${BUILD_TARGET_TMP:?}"
   declare src
   for src in "${DO[@]}"
@@ -1508,32 +1649,7 @@ build_target__seq__source_do () # ~ <Redo-file <...>> [-- <...>]
   test 0 -lt "${#args[@]}" || return 0
   build_target_rule "${args[@]}"
 }
-
-build_target__seq__do () # ~ <Tn> <Redo-file <...>>
-{
-  declare -ga DO=()
-  while argv_has_next "$@"
-  do
-    DO+=( "$1" )
-    shift
-  done
-  test 0 -gt "${#DO[*]}" &&
-  argv_is_seq "$@" || return
-  shift
-  test $# -eq 0 ||
-    $LOG warn ":build-target:seq:do" "Surpluss argv, adding after Redo params" "${*//%/%%}"
-  set -- "${BUILD_TARGET:?}" "${BUILD_TARGET_BASE:?}" "${BUILD_TARGET_TMP:?}" "$@"
-  test 1 -eq "${#DO[*]}" && {
-    $LOG warn ":build-target:seq:do" "Forking to recipe part" "$SHELL:${DO[0]//%/%%}"
-    exec $SHELL "${DO[0]}" "$@"
-  }
-  declare src
-  for src in "${DO[@]}"
-  do
-    $LOG warn ":build-target:seq:do" "Running recipe part" "$SHELL:${src//%/%%}"
-    command "$SHELL" "$src" "$@" || return
-  done
-}
+# Derive: build_target__seq__source
 
 
 # XXX: would need to expand all rules.
@@ -2018,6 +2134,8 @@ us_shlibs_list ()
 
 # XXX: some old, mostly copies to-be compiled into final build.lib or prereqs
 # elsewhere
+
+. "${US_BIN:=$HOME/bin}/argv.lib.sh"
 
 . "${U_S:?}/tools/sh/parts/fnmatch.sh"
 . "${U_S:?}/tools/sh/parts/str-id.sh"
