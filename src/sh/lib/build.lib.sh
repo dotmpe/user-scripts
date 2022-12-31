@@ -667,6 +667,7 @@ build_from_rules () # ~ <Name>
   test -n "$type_" || {
     $LOG error "$lk" "Empty directive for rule" "symbol=$name" ; return 1
   }
+
   rf=${args_// -- /::}
   rf=${rf/ /:}
   $LOG notice "$lk" "Building rule for target" "$btf:$type_:$rf"
@@ -1880,7 +1881,7 @@ build_target__with__rules () # ~ [<Build-target>]
   # XXX: cannot do this as long as targets (symbols in rules) have special
   # characters, as ':' needs to be escaped somehow.
   #${BUILD_TOOL:?}-ifchange \
-  #  ":if-line-col1:${BUILD_RULES:?}:${BUILD_TARGET//:/?}" || return
+  #  ":if-line-key:${BUILD_RULES:?}:${BUILD_TARGET//:/?}" || return
 
   $LOG info ":target::rules" "Found build rule for target" "${1//%/%%}"
   build_from_rules "$1" || return

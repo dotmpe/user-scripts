@@ -62,6 +62,49 @@ test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 }
 
 
+build_target__from__cache_web ()
+{
+  local nss=${BUILD_TARGET:11} lname url scheme
+  lname=${nss//:*}
+  url=${nss:$(( ${#lname} + 1 ))}
+  scheme=${url//:*}
+
+  # XXX: Redo bug: '://' in the URL seems to be replaced by :/
+  # probably due to some path sanitizer cleaning up the '//' sequence
+  url=${scheme}://${url:$(( ${#scheme} + 2 ))}
+
+  local pname=${PROJECT_CACHE:?}/$lname cache tmp etag
+  cache="$pname.$scheme"
+  tmp="$pname.tmp.$scheme"
+  #etag="$pname.etag.$scheme"
+
+  # wget saves mtime
+  wget "$url" -O "$tmp" || return
+  #test ! -e "$etag" -o -s "$etag" || rm "$etag"
+  #test -e "$etag" && {
+  #  # Make conditional request
+  #  curl -SSf "$url" -o "$tmp" --etag-compare "$etag" --xattr || return
+  #  # XXX
+  #  test -s "$tmp" || return
+  #} || {
+  #  # Fetch entity
+  #  curl -SSf "$url" -o "$tmp" --etag-save "$etag" --xattr || return
+  #  lsattr -l "$tmp"
+  #  # Etag file is empty if parsing failed
+  #  test ! -e "$etag" -o -s "$etag" || rm "$etag"
+  #}
+  test -e "$cache" && {
+    diff -bq "$tmp" "$cache" && {
+      $LOG debug :cache-web "Cached web resource is up-to-date" "$nss"
+      rm "$tmp"
+      return
+    }
+  }
+  mv "$tmp" "$cache"
+  build-stamp <"$cache"
+  $LOG notice :cache-web "Updated cached web resource" "$nss"
+}
+
 
 ## Target handlers
 
