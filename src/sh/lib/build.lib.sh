@@ -1489,9 +1489,10 @@ build_target__seq__if_line_key () # ~ <File> <Key> [<Prefix>] [<Suffix>] \
   }
   declare line keyre
   read -r keyre <<< "$(
-      sed -E 's/([^[:alnum:]{}(),?!@+_])/\\\1/g' <<< "${key//\?/:}"
+      sed -E 's/([^[:alnum:],:_-])/\\\1/g' <<< "${key//\?/:}"
     )"
-  line=$(grep -m1 "$l$keyre$r" "$file") || {
+  fnmatch "*[0-9][a-z]" "$keyre" || r=
+  line=$(grep -Em1 "$l$keyre$r" "$file") || {
     $LOG error ::if-line-key "No line with key" "$file:$key"
     return 1
   }
