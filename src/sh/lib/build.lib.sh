@@ -667,6 +667,7 @@ build_from_rules () # ~ <Name>
   test -n "$type_" || {
     $LOG error "$lk" "Empty directive for rule" "symbol=$name" ; return 1
   }
+
   rf=${args_// -- /::}
   rf=${rf/ /:}
   $LOG notice "$lk" "Building rule for target" "$btf:$type_:$rf"

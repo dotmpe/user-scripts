@@ -256,6 +256,7 @@ env__define__build_function_targets ()
   env_require ${BUILD_FUNCTIONS_ENV-build-envs build-libs build-init} || return
   env_require argv || return
 
+  # XXX:
   declare rule r
   rule=${BUILD_TARGET:1}
   rule=${rule//::/ -- }
