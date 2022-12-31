@@ -661,7 +661,7 @@ build_from_rules () # ~ <Name>
     }
   $LOG debug "$lk" "Building rule for target" "$btf"
 
-  declare name="${1:?}" name_ type_ rf
+  declare name="${1:?}" name_ type_ args_ rf
   shift
   read_data name_ type_ args_ <<<"$comptab"
   test -n "$type_" || {
@@ -1074,6 +1074,38 @@ build_target__from__expand () # ~ <Target-expressions...>
   # XXX: build-always
   #shellcheck disable=2124
   TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
+}
+
+# Pick word at index from each line
+build_target__from__lines_word () # ~ <Nr> <List-ref>
+{
+  build-ifchange :if-fun:build_target__from__lines_word || return
+  test "${2:0:1}" != "&" || { # XXX: symbol target special char prefix
+    build-ifchange "${2:?}" || return
+    declare name="${2:?}" name_ type_ comptab
+    comptab=$(build_rule_fetch "$name") &&
+    read_data name_ type_ args_ <<<"$comptab"
+    set -- $1 $(eval "echo $args_")
+  }
+  test -s "${2:?}" || {
+    test -e "${2:?}" || {
+      stderr_ "! $0[$$]: build-target:from:lines-word: No such file E$?" || return
+    }
+  }
+  cut -f${1:?} -d' ' < ${2:?} >| "${BUILD_TARGET_TMP:?}"
+  build-ifchange < "${BUILD_TARGET_TMP:?}"
+}
+
+build_target__from__symbol ()
+{
+  build-ifchange :if-fun:build_target__from__symbol || return
+  declare name="${1:?}" name_ type_ comptab
+  comptab=$(build_rule_fetch "$name:\*") || {
+    stderr_ "! $0: build-target:from:symbol: Symbol expected" || return
+  }
+  read_data name_ type_ args_ <<<"$comptab"
+  set -o noglob; set -- $type_ $args_; set +o noglob
+  build_target_rule "$@"
 }
 
 # XXX: Use command as output to fill single placeholder in pattern(s)
