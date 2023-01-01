@@ -8,7 +8,7 @@ test -z "${scm_nok:-}" || "$status" "$scm_nok"
 : "${LOG:="/srv/project-local/user-scripts/tools/sh/log.sh"}"
 test -x "${LOG:-}" || exit 103
 
-: "${PROJECT_BASE:="`git rev-parse --show-toplevel`"}"
+: "${PROJECT_BASE:="$(git rev-parse --show-toplevel)"}"
 
 : "${max_lines_per_check:=10}"
 : "${keep_going:=1}"
