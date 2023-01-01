@@ -9,6 +9,8 @@ disable=SC2015
 # <var> appears unused. Verify use (or export if used externally).
 disable=SC2034 # unused, unexported var
 disable=SC2039 # In POSIX sh, 'local' is undefined
+disable=SC2046 # Quote this to prevent word splitting
+disable=SC2086 # double-quote to prevent globbing and word splitting
 disable=SC2088 # Tilde does not expand in quotes. Use $HOME.
 
 # SC2046 # Quote this to prevent word splitting
@@ -32,7 +34,10 @@ disable=SC3043 # In POSIX sh, 'local' is undefined.
 disable=SC3044 # In POSIX sh, 'declare' is undefined.
 disable=SC3045 # In POSIX sh, type -t is undefined.
 disable=SC3046 # In POSIX sh, 'source' in place of '.' is undefined.
+disable=SC3051 # In POSIX sh, 'source' in place of '.' is undefined.
 disable=SC3053 # In POSIX sh, indirect expansion is undefined
+disable=SC3054 # In POSIX sh, array references are undefined.
+disable=SC3055 # In POSIX sh, array key expansion is undefined.
 disable=SC3057 # In POSIX sh, string indexing is undefined.
 disable=SC3059 # In POSIX sh, case modification is undefined.
 disable=SC3060 # In POSIX sh, string replacement is undefined.
