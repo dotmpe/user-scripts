@@ -64,6 +64,7 @@
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
 %func-lists expand-all us_shlibs_list -- .meta/src/functions/%*-lib.func-list
+&sh-dev-list:* function - &sh-list
 &sh-list:* if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
 &shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
 &source-list:* if &git-index -- exec git ls-files
@@ -85,14 +86,13 @@
 :pack function
 
 
-
-# TODO: auto-install/config
+# TODO: auto-add rules for symbolic files for expand-type rules
 ./.meta/src/sh-stats function build_sh_stats u_s-stats
 ./.meta/cache/build-rules.list part concat-rules
-./.meta/cache/source.list if &git-index -- exec git ls-files
-./.meta/cache/source-dev.list function - &source-list
-./.meta/cache/source-sh.list if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
-./.meta/cache/source-dev-sh.list function - &sh-list
+./.meta/cache/source.list symbol &source-list
+./.meta/cache/source-dev.list symbol &source-dev-list
+./.meta/cache/source-sh.list symbol &sh-list
+./.meta/cache/source-dev-sh.list symbol &sh-dev-list
 
 
 # Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less.txt:

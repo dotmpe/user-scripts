@@ -682,6 +682,35 @@ build_from_rules () # ~ <Name>
   build_target_rule "$@"
 }
 
+# Take rule for target and run that. TODO: merge with build-from-rules,
+# see also build-target:from:symbol
+build_from_rule_for ()
+{
+  declare name="${1:?}" name_ type_ comptab
+  comptab=$(build_rule_fetch "$name") || {
+    stderr_ "! $0: build-target:from:symbol: Symbol expected" || return
+  }
+  read_data name_ type_ args_ <<<"$comptab"
+  set -o noglob; set -- $type_ $args_; set +o noglob
+  $LOG info "" "Deferring to build-target-rule" "$*"
+  build_target_rule "$@"
+}
+
+# XXX: resolve files for symbol
+build_expand_symbols ()
+{
+  declare name name_ type_ comptab
+  for name in "${@:?}"
+  do
+    comptab=$(build_rule_fetch "$name") || {
+      stderr_ "! $0: build-target:from:symbol: Symbol expected" || return
+    }
+    read_data name_ type_ args_ <<<"$comptab"
+    # XXX: should probably want these to expand on lines, not to words
+    eval "echo $args_"
+  done
+}
+
 build_install_parts ()
 {
   test "${BUILD_RULES_BUILD:-0}" != "0" || {
@@ -1096,20 +1125,21 @@ build_target__from__lines_word () # ~ <Nr> <List-ref>
   build-ifchange < "${BUILD_TARGET_TMP:?}"
 }
 
-build_target__from__symbol ()
+# Take rule from symbolic target and run that for current target
+build_target__from__symbol () # ~ <Symbol>
 {
   build-ifchange :if-fun:build_target__from__symbol || return
-  declare name="${1:?}" name_ type_ comptab
-  comptab=$(build_rule_fetch "$name:\*") || {
-    stderr_ "! $0: build-target:from:symbol: Symbol expected" || return
-  }
-  read_data name_ type_ args_ <<<"$comptab"
-  set -o noglob; set -- $type_ $args_; set +o noglob
-  build_target_rule "$@"
+  declare name="${1:?}"
+  shift
+  build_from_rule_for "${name}:\\*"
 }
 
-# XXX: Use command as output to fill single placeholder in pattern(s)
-build_target__from__expand_all () # ~ <Source-Command...> -- <Target-Formats...>
+# Take list of values and generate targets from pattern.
+# The initial source argument can be a function or executable to make
+# , or the source
+# arguments can be a sequence of one or more file(s) and symbolic target(s) to
+# files.
+build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
 {
   declare -a source_cmd=()
   while argv_has_next "$@"
@@ -1119,6 +1149,12 @@ build_target__from__expand_all () # ~ <Source-Command...> -- <Target-Formats...>
   done
   argv_is_seq "$@" || return
   shift
+
+  { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
+    } >/dev/null
+  } || {
+    source_cmd=( "cat" $(build_expand_symbols "${source_cmd[@]}") )
+  }
 
   targets=$( "${source_cmd[@]}" | while read -r nameparts
     do
