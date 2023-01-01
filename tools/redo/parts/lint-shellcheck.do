@@ -47,6 +47,7 @@ mapfile -t shck <<< "$({
   } < "$sh_list")"
 redo-ifchange "${shck[@]}" ||
   $LOG error :lint-shellcheck "Lint check aborted" "E$?" $? || return
+#build-always
 
 declare errors=${PROJECT_CACHE:?}/lint-shellcheck.errors
 shopt -s nullglob
@@ -57,8 +58,6 @@ test $# -eq 0 && {
   cat "$@" >| "$errors"
   test ! -s "$errors" && rm "$errors" || cat "$errors" >| "$BUILD_TARGET_TMP"
 }
-
-build-always
 
 declare cnt
 test -s "$BUILD_TARGET_TMP" && {
