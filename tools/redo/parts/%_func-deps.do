@@ -51,6 +51,7 @@ test -z "${r-}" || {
   exit $r
 }
 
+#shellcheck disable=2164 # Already using trap to catch non-zero
 cd "$REDO_BASE/$REDO_PWD"
 # FIXME: lots of OSHC errors in scripts, track in stderr for now
 test ! -e "$1.stderr" -o -s "$1.stderr" || rm "$1.stderr"

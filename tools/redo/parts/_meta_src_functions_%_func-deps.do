@@ -12,9 +12,7 @@ errs=$dirn/$fun.errors
 
 mkdir -vp "$dirn" >&2
 
-read -r fun grp pref inc <<< "$(
-    grep "^$fun " "$funtab"
-  )"
+read -r fun opt inc pref <<< "$( grep "^$fun " "$funtab" )"
 
 build-ifchange "$src"
 
