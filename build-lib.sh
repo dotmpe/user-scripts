@@ -16,17 +16,25 @@ build__lib_load ()
 . "${U_S:?}/commands/u_s-stats.lib.sh"
 
 
+
 ## Util.
 
 
-# assert-base-dir
+# UConf: -context-filelit-env
+
+# U-S: assert-base-dir
+# Test wheter PWD equals REDO_BASE
 assert_base_dir ()
 {
   test_same_dir "$PWD" "$REDO_BASE"
 }
 
-# assert-patterns-spec
-# There may be other patterns, but the one this checks is prefix
+# C-INC: assert-inc-dir
+# Test whether PWD or given variable equals dir that is same as C_INC
+# /C-INC: assert-inc-dir
+
+# U-S: assert-pattern-spec
+# There may be other patterns, this checks the prefix
 assert_pattern_spec () # ~ [<Sep>] # Sanity check for BUILD-SPEC handlers
 {
   fnmatch "*${1:-:}" "${BUILD_SPEC:?}" && {
@@ -40,13 +48,21 @@ assert_pattern_spec () # ~ [<Sep>] # Sanity check for BUILD-SPEC handlers
   }
 }
 
-# assert-start-dir
+# U-S: assert-start-dir
+# Test PWD is REDO_STARTDIR
 assert_start_dir ()
 {
   test_same_dir "$PWD" "$REDO_STARTDIR"
 }
 
-# build-summary
+# C-Inc: assert-sym-dir # ~ <Path> [<Target>]
+# Symlink to dir or group include
+
+# C-Inc: bats-tab
+# List Bats files from SCM
+
+# U-S: build-summary
+# Count sources and targets (of entire Redo DB, not just completed targets)
 build_summary ()
 {
   declare r=$? sc tc ; test $r != 0 || r=
@@ -54,14 +70,39 @@ build_summary ()
   tc=$(wc -l <<< "$(redo-targets)")
   stderr_ "Build ${r:+not ok: E}${r:-ok}, $sc source(s) and $tc target(s)" "${r:-0}"
 }
+# /U-S: build-summary
 
-# test-same-dir () # ~ <Dir-path-1> <Dir-path-2>
+# UConf: debug-target
+# /UConf: debug-target
+
+# C-Inc: inc-names
+# Get include filenames from &compo-index
+
+# U-S: test-same-dir () # ~ <Dir-path-1> <Dir-path-2>
 test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 {
   test "$(realpath "${1:?}")" = "$(realpath "${2:?}")"
 }
+# /U-S: test-same-dir
+
+# UConf-install
+# /UConf-install
 
 
+
+## Target lookup handlers
+
+
+# UConf:build-target :with :context
+
+
+
+## Rule handlers
+
+
+# UConf:build :seq :if-autocatalog
+
+# U-S:build-target:from: cache-web
 build_target__from__cache_web ()
 {
   local nss=${BUILD_TARGET:11} lname url scheme
@@ -104,19 +145,21 @@ build_target__from__cache_web ()
   build-stamp <"$cache"
   $LOG notice :cache-web "Updated cached web resource" "$nss"
 }
+# /U-S:build-target:from: cache-web
+
 
 
 ## Target handlers
 
 
-#build__all ()
+# U-S:build :all
 # 'all' default impl.
 build__all ()
 {
   ${BUILD_TOOL:?}-always && build_targets_ ${build_all_targets:?}
 }
 
-#build__build_env ()
+# U-S:build :build-env
 # '@build-env' finished handler with info
 build__build_env ()
 {
@@ -125,14 +168,53 @@ build__build_env ()
   $LOG warn ":(@build-env)" Finished "$ctx+v=${v:-}"
 }
 
-#build__meta_cache_source_dev_list ()
-#
+# C-Inc:build: :check
+# UConf:build: :check
+# Helper to check some stuff
+
+# UConf:build: :env:
+# Target depends on env var type and value.
+# /UConf:build: :env:
+
+# C-Inc:build: :env:update-parts
+# Build dynamic parts in cache and compare with copies in working tree.
+# /C-Inc:build: :env:update-parts
+
+# C-Inc:build: :export-group
+# Publish functions in group to file, and rebuild if group or sources change
+
+# C-Inc:build: :export-groups
+
+# C-Inc:build: :if-group-includes:<group-id>
+# Rebuild tree of inc typeset copies, so we can check canonical script format
+# /C-Inc:build: :if-group-includes
+
+# C-Inc:build: :index
+# Check indices against computed dependency listing for each function
+# /C-Inc:build: :index
+
+# UConf:build: :install
+# No-op
+
+# UConf:build: :namespaces
+# Keep user namespace tables up to date
+# /UConf:build: :namespaces
+
+# UConf:build: :shell-profile
+
+# UConf:build: :shell-profile:<flag>
+# /UConf:build: :shell-profile:
+
+# C-Inc:build: :update-index:<...>
+# Consolidate cache, see :index
+# /C-Inc:build: :update-index:
+
+# U-S:build :meta-cache-source-dev-list
 # XXX: it would be nice to have a build-if that returns non-zero if nothing was
 # changed. Not sure if that is possible, many targets may still run but the
 # conclusion may be that nothing had to be done.
 # So, for example for configuration nothing needs to be reloaded.
 # Of course can always build a target to do it...
-
 # Source-dev: helper to reduce large source sets based on not-index @dev.
 # XXX: Targets not present in index are ignored.
 # If the target is listed, it must have @dev tag to be listed by this target.
@@ -161,8 +243,9 @@ build__meta_cache_source_dev_list ()
     echo "$src"
   done < "$sym"
 }
+# /U-S:build :meta-cache-source-dev-list
 
-#build__meta_cache_source_dev_sh_list ()
+# U-S:build :meta-cache-source-dev-sh-list
 build__meta_cache_source_dev_sh_list ()
 {
   sh_mode strict dev
@@ -182,8 +265,9 @@ build__meta_cache_source_dev_sh_list ()
     echo "$src"
   done < "$sym"
 }
+# /U-S:build :meta-cache-source-dev-sh-list
 
-# build:usage-help
+# U-S:build :usage-help
 build__usage_help ()
 {
   ${BUILD_TOOL:?}-always
@@ -194,6 +278,7 @@ build__usage_help ()
   echo "Build env: ${BUILD_ENV-(unset)}" >&2
   echo "For more complete listings of profile, sources and targets see '${BUILD_TOOL:?} -- -info'" >&2
 }
+
 
 
 # Id: User-Scripts/ build-lib.sh  ex:ft=bash:

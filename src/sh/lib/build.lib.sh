@@ -1135,12 +1135,14 @@ build_target__from__symbol () # ~ <Symbol>
 }
 
 # Take list of values and generate targets from pattern.
-# The initial source argument can be a function or executable to make
-# , or the source
-# arguments can be a sequence of one or more file(s) and symbolic target(s) to
-# files.
+# The initial source argument can be a function or executable and the entire
+# source-sequences is invoked as is, and else the source arguments are treated
+# as a sequence of (one or more) file(s) or symbolic target(s) to files.
+#
+# FIXME: another function/cmd to do cat on such targets would be handy
 build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
 {
+  local stdp="! $0: build-target:from:expand-all:"
   declare -a source_cmd=()
   while argv_has_next "$@"
   do
@@ -1149,13 +1151,21 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   done
   argv_is_seq "$@" || return
   shift
-
+  test 0 -gt ${#source_cmd[*]} || {
+    stderr_ "$stdp Expected executable, filepath(s), or symbol(s): '${source_cmd[*]@Q}" ||
+      return
+  }
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
   } || {
-    source_cmd=( "cat" $(build_expand_symbols "${source_cmd[@]}") )
+    read -t source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
+    test 0 -gt ${#source_files[*]} || {
+      stderr_ "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
+        return
+    }
+    source_cmd=( "cat" )
+    source_cmd+=$source_files
   }
-
   targets=$( "${source_cmd[@]}" | while read -r nameparts
     do
       for fmt in "$@"
@@ -1164,6 +1174,9 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
         eval "echo $( expand_format "$fmt" $nameparts )"
       done
     done )
+  test -n "$targets" || {
+    stderr_ "$stdp Expected placeholder values: '${source_cmd[*]@Q}'" || return
+  }
 
   ${list_sources:-false} && {
     echo "$targets"
