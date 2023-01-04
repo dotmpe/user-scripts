@@ -30,8 +30,13 @@ test "unset" = "${DEPS[@]-unset}" && {
 } ||
   LINT_SC_SRC_SPEC=${DEPS[0]}
 
-#sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
-sh_list=${PROJECT_CACHE:?}/source-sh.list
+# FIXME build-sym #sh_list=$(build-sym "${LINT_SC_SRC_SPEC:?}")
+build_fsym_arr DEPS FILES
+sh_list=${FILES[0]}
+test -s "$sh_list" || {
+  $LOG error :lint-shellcheck "No such file" "$sh_list"
+  return 1
+}
 test -s "$sh_list" || {
   $LOG warn :lint-shellcheck "Lint check finished bc there is nothing to check"
   return

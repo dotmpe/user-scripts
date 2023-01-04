@@ -45,12 +45,19 @@ test "unset" = "${DEPS[@]-unset}" && {
 } ||
   LINT_TAGS_SRC_SPEC=${DEPS[0]}
 
-#source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
-source_list=${PROJECT_CACHE:?}/source.list
+# FIXME build-sym #source_list=$(build-sym "${LINT_TAGS_SRC_SPEC:?}")
+build_fsym_arr DEPS SOURCES
+source_list=${SOURCES[0]}
+test -s "$source_list" || {
+  $LOG error :lint-tags "No such file" "$source_list"
+  return 1
+}
 test -s "$source_list" || {
   $LOG warn :lint-tags "Lint check finished bc there is nothing to check"
   return
 }
+
+stderr_ "source: $source_list $(wc -l "$source_list")"
 
 declare -a tags
 mapfile -t tags <<< "$({
@@ -61,8 +68,7 @@ mapfile -t tags <<< "$({
     done
   } < "$source_list")"
 redo-ifchange "${tags[@]}" ||
-  $LOG warn :lint-tags "Lint check aborted" "E$?" $? || return
-#build-always
+    $LOG warn :lint-tags "Lint check aborted" "E$?" $? || return
 
 declare errors=${PROJECT_CACHE:?}/lint-tags.errors
 shopt -s nullglob

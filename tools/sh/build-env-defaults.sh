@@ -12,11 +12,18 @@ declare -g -A BUILD_NS_DIR=(
     [htd]=${HTDIR:?}
   )
 
-# Additional special target prefix names, in addition to /.
+# Special prefix characters for target references, in addition to '/' and '.'
 BUILD_SPECIAL_RE='[\+\@\:\%\&\*]'
 
-# Targets that should not generate file content
+# Special targets that should not generate file content
 BUILD_VIRTUAL_RE='[\?\+-]'
+
+# Special targets that are symbols for file paths
+BUILD_FSYM_RE='[\%\&]'
+#BUILD_AREF_RE='[\%\&]'
+
+# Special targets that are symbols for file content
+#BUILD_CREF_RE='[\%\&]'
 
 BUILD_NS=:
 BUILD_NS_=${BUILD_NS:0:1}

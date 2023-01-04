@@ -15,6 +15,8 @@ build_lib_load ()
   # A bunch of names for sh files to inject, if found for cold bootstraps
   # Hidden first, then normal, generic local first, then more specifc, or shared
   true "${build_envs_defnames:=$(echo {.,}{attributes,package,env,params,build-env})}"
+  #shellcheck disable=SC1083 # Yes, these are literal braces patterns, expanded
+  # by echo
   true "${build_libs_defnames:=$(echo {.,}lib {.,}build-lib tools/{${build_tools_src_specs}}/lib)}"
 
   true "${sh_file_exts:=.sh .bash}"
@@ -115,6 +117,45 @@ build_alias_part ()
     }
     build_unalias
   }
+}
+
+# Build two arrays for given arguments, resolving symbols
+build_file_arr ()
+{
+  declare refa_vname=${1:?} fpa_vname=${2:?}
+  shift 2
+  # Build first array: mixed symbol and file target arguments
+  build_arr_seq $refa_vname "$@" || return
+  # Build second array: resolve all with Build-FSym-Re char prefix
+  build_fsym_arr $refa_vname $fpa_vname
+}
+
+build_fsym_arr ()
+{
+  declare ref REFS=${!1} fpa_vname=${2:?}
+  build-ifchange "${REFS[@]:?}" || return
+  readarray -t $fpa_vname <<< "$(for target in "${REFS[@]}"
+    do
+      [[ "${target:0:1}" =~ ^${BUILD_FSYM_RE:?}$ ]] && {
+        # FIXME: sym=$(build-sym "${target:?}") &&
+        declare name_ type_ comptab
+        comptab=$(build_rule_fetch "$target") &&
+        read_data name_ type_ args_ <<< "$comptab"
+        case "$type_" in
+            # FIXME: what about file path names with spaces
+          ( expand )
+              eval "echo $args_"
+              #eval "printf %s $args_"
+            ;;
+          ( expand-eval ) eval "$args_" ;;
+          ( expand-all|* )
+              stderr_ "FIXME: merge recipe handlers" 1
+            ;;
+        esac
+        #stderr_ "file-arr: '$target' is '$args_' is '$(eval "echo $args_")'"
+      } ||
+        echo "$target"
+    done)"
 }
 
 # Helper for rule-part directives. Returns non-zero for empty sequence but
@@ -795,6 +836,10 @@ build_target_name__function ()
   declare fun=${1:-${BUILD_TARGET:?}}
   # Strip './' prefix
   ! ${BUILD_STRIP_LF:-true} || fun=${1/.\/}
+  # Or Strip special prefix XXX: BUILD_SPECIAL_RE is not set
+  # XXX: hidden file prefix gets stripped as well, but do'nt mind this
+  #! [[ "${fun:0:1}" =~ ^$BUILD_SPECIAL_RE$ ]] || fun=${fun:1}
+  [[ "${fun:0:1}" =~ ^[A-Za-z]$ ]] || fun=${fun:1}
   fun=${fun//:/__}
   # Replace non-alphanumeric, but don't squeeze and keep 1:1 strlen
   fun=${fun//[^[:alnum:]_]/_}
@@ -1097,41 +1142,16 @@ build_target__from__exec () # ~ <Command...>
 # XXX: These can be brace-expansions, variables or even subshells.
 build_target__from__expand () # ~ <Target-expressions...>
 {
+  local self="build-target:from:expand"
   #shellcheck disable=2046
   set -- $(eval "echo $*")
-
+  test 0 -lt $# || {
+    $LOG warn ":$self($BUILD_TARGET)" "Expanded to empty set"
+    return
+  }
   # XXX: build-always
   #shellcheck disable=2124
   TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
-}
-
-# Pick word at index from each line
-build_target__from__lines_word () # ~ <Nr> <List-ref>
-{
-  build-ifchange :if-fun:build_target__from__lines_word || return
-  test "${2:0:1}" != "&" || { # XXX: symbol target special char prefix
-    build-ifchange "${2:?}" || return
-    declare name="${2:?}" name_ type_ comptab
-    comptab=$(build_rule_fetch "$name") &&
-    read_data name_ type_ args_ <<<"$comptab"
-    set -- $1 $(eval "echo $args_")
-  }
-  test -s "${2:?}" || {
-    test -e "${2:?}" || {
-      stderr_ "! $0[$$]: build-target:from:lines-word: No such file E$?" || return
-    }
-  }
-  cut -f${1:?} -d' ' < ${2:?} >| "${BUILD_TARGET_TMP:?}"
-  build-ifchange < "${BUILD_TARGET_TMP:?}"
-}
-
-# Take rule from symbolic target and run that for current target
-build_target__from__symbol () # ~ <Symbol>
-{
-  build-ifchange :if-fun:build_target__from__symbol || return
-  declare name="${1:?}"
-  shift
-  build_from_rule_for "${name}:\\*"
 }
 
 # Take list of values and generate targets from pattern.
@@ -1142,7 +1162,8 @@ build_target__from__symbol () # ~ <Symbol>
 # FIXME: another function/cmd to do cat on such targets would be handy
 build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
 {
-  local stdp="! $0: build-target:from:expand-all:"
+  local self="build-target:from:expand-all" stdp
+  stdp="! $0: $self:"
   declare -a source_cmd=()
   while argv_has_next "$@"
   do
@@ -1152,8 +1173,7 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   argv_is_seq "$@" || return
   shift
   test 0 -gt ${#source_cmd[*]} || {
-    stderr_ "$stdp Expected executable, filepath(s), or symbol(s): '${source_cmd[*]@Q}" ||
-      return
+    stderr_ "$stdp Expected executable, filepath(s), or symbol(s)" || return
   }
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
@@ -1190,6 +1210,17 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   }
 }
 
+build_target__from__expand_eval ()
+{
+  local self="build-target:from:expand-eval" stdp
+  set -- $(eval "$@")
+  test 0 -lt $# || {
+    $LOG warn ":$self($BUILD_TARGET)" "Expanded to empty set"
+    return
+  }
+  TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
+}
+
 # Function target: invoke function with build-args.
 # If function is '-' then it is set to `mkvid build_$BUILD_TARGET`. A special
 # case is made for '*' type, which is identical to '-' but uses  BUILD_NAME_NS
@@ -1208,7 +1239,7 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   test $# -gt 0 && lk=":fun($#)" || lk=:fun
 
   test "${fun:-"-"}" != "-" || {
-    fun=${BUILD_HPREF:-build_}$(build_target_name__function "$name")
+    fun=${BUILD_HPREF:-build__}$(build_target_name__function "$name")
   }
 
   test "${fun:-"-"}" != "*" ||
@@ -1236,7 +1267,7 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   }
 
   $LOG info "${lk}(${BUILD_TARGET//%/%%})" "Calling function" "$fun"
-  $fun "$BUILD_TARGET" "$@"
+  $fun "$@"
 }
 
 # Compose: build file from given function(s)
@@ -1303,6 +1334,28 @@ build_target__from__compose__resolve_function__tagsfile ()
   build_targets_ "$tsrc"
 }
 
+# Pick word at index from each line. List references must be files or symbols,
+# and a build-ifchange dependency is made for each. This does not check if a
+# list file exists (because the build could create one), but instead only treats
+#
+build_target__from__lines_word () # ~ <Nr> <List-refs...>
+{
+  build-ifchange :if-fun:build_target__from__lines_word || return
+  local nr=${1:?}
+  shift
+  build_file_arr LREFS FILES "$@" || return
+  for file in "${FILES[@]}"
+  do
+    test -s "${file:?}" || {
+      test -e "${file:?}" || {
+        stderr_ "! $0[$$]: build-target:from:lines-word: No such file E$?" || return
+      }
+    }
+    cut -f$nr -d' ' < "${file:?}"
+  done >| "${BUILD_TARGET_TMP:?}"
+  build-ifchange < "${BUILD_TARGET_TMP:?}"
+}
+
 # Generic target recipe using looked up parts. Without arguments, runs
 # 'if <part> -- source-do <part>' rule. If a method is given, the part and all
 # remaining parameters are passed to a rule with that name
@@ -1318,6 +1371,7 @@ build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
   case "${1:--}" in
     # Encode target as filename, replacing ext and dir separators
     ( "-" ) read -r pn <<< "$(build_target_name__filename "$pn")"
+    #shellcheck disable=SC2211 # XXX: This is valid 'in' syntax.
     ( * ) ;; # Use part-name as-is
   esac
   $LOG debug ::from:part "Trying part lookup" "${pn//%/%%}"
@@ -1329,15 +1383,19 @@ build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
   }
   $LOG info ::from:part "Found recipe part" "${part//%/%%}"
 
+  test $# -ge 2 && declare method=${2:?}
   test $# -gt 2 && {
-    shift 2
-    argv_is_seq "${1:-}" && {
-      build_target_rule if "$part" "$@" || return
-    } || {
-      declare method=${1:?}
-      shift
+    test "--" = "${3:-}" && {
+      shift 3
       build_target_rule "$method" "$part" -- "$@" || return
+    } || {
+      $LOG error : "Surplus arguments" "$*"
+      return 1
     }
+  }
+
+  test $# -eq 2 && {
+    build_target_rule "$method" "$part" || return
   } || {
     build_target_rule if "$part" -- source-do "$part" || return
   }
@@ -1373,6 +1431,15 @@ build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
     shift
   }
   $func "$@"
+}
+
+# Take rule from symbolic target and run that for current target
+build_target__from__symbol () # ~ <Symbol>
+{
+  build-ifchange :if-fun:build_target__from__symbol || return
+  declare name="${1:?}"
+  shift
+  build_from_rule_for "${name}:\\*"
 }
 
 # Symlinks: create each dest, linking to srcs
@@ -1429,6 +1496,7 @@ build_dep_seq () # ~ <Var-name> <Prerequisites> -- <...>
   declare vname=${1:?}
   shift
   build_arr_seq "$vname" "$@" || {
+    # XXX: definition should exist at least.
     sh_null declare -p $vname || return
   }
   eval "declare depcnt=\${#${vname}[@]}"
@@ -1540,6 +1608,7 @@ build_target__seq__if_dest () # ~ <Symlinks...>  -- <Rule <...>>
 build_target__seq__if_fun () # ~ <Fun <..>> [ -- <Rule <...>> ]
 {
   build_arr_seq IF_FUN "$@" || return
+  #shellcheck disable=2316 # Var is indeed called 'typeset'
   declare typeset
   typeset="$( for fun in "${IF_FUN[@]}"
     do
@@ -1627,6 +1696,7 @@ build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
   build-ifchange :if-lines:"$script" || return
   shift
   build_arr_seq IF_FUN "$@" || return
+  #shellcheck disable=2316 # Var is indeed called 'typeset'
   declare typeset
   typeset="$( for fun in "${IF_FUN[@]}"
     do

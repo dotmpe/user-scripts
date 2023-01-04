@@ -1,7 +1,23 @@
-bin/u-s: - @dev
+.gitflow.tab: - @dev
+CHANGELOG.md: - @dev
+COPYING: - @dev
+Makefile: - @dev
+README.md: - @dev
+Sitefile.yaml: - @dev
+
+bin/u-s: FIXME: should be separate .sh file for scanning @dev
 build.txt: - @dev
 default.do: - @dev
+build-lib.sh: - @dev
 commands/u_s: - @dev
+commands/u_s-basher.lib.sh: - @dev
+commands/u_s-dckr.lib.sh: - @dev
+commands/u_s-git.lib.sh: - @dev
+commands/u_s-ledge.lib.sh: - @dev
+commands/u_s-man.lib.sh: - @dev
+commands/u_s-stats.lib.sh: - @dev
+commands/u_s-travis.lib.sh: - @dev
+commands/u_s-user.lib.sh: - @dev
 tools/sh/init.sh: - @dev
 tools/sh/init-from.sh: - @dev
 tools/sh/init-gh.sh: - @dev
@@ -16,7 +32,6 @@ tools/sh/parts/lib_util.sh: - @dev
 &function-context - context-lib src-htd-lib
 &context-local - context-lib src-htd-lib
 
-build-lib.sh: -
 contexts/ctx-us-build.lib.sh: -
 src/sh/lib/build.lib.sh: -
 

@@ -147,6 +147,93 @@ build_target__from__cache_web ()
 }
 # /U-S:build-target:from: cache-web
 
+# U-S:build-target:from: index-tagged <Tag> [ <Array> | <Source-lists...> ] -- <Indices...>
+#
+# For every (content) line of all Source-lists, an entry must exist in any of
+# the indices.
+# Source-lists can be empty, to use DEPS (from 'if' rule handler) or but also
+# another array name to use those as input values.
+# XXX: the problem is while this accepts multiple index files, it does not know
+# where to look, so it checks all and also when it does the source path has to
+# be verbatim. Should want more direction and use of patterns or groups
+# somehow.
+# XXX: what about default tags value
+build_target__from__index_tagged ()
+{
+  sh_mode strict dev
+
+  local self="build:meta-cache-source-dev-list" stdp tag=${1:?} srca
+  stdp="! $0: $self"
+  shift
+  # Use array name if given, or array 'DEPS' if empty source-sequence is passed.
+  argv_is_seq "${1:?}" && {
+    srca=DEPS
+  } || {
+    fnmatch "*a*" "$(declare -p "${1:?}")" && {
+      srca=$1
+      shift
+    }
+  }
+  test -n "${srca:-}" && {
+    argv_is_seq "${1:?}" || {
+      $LOG error :$self "Only one array for source argument expected"
+      return 1
+    }
+    # Resolve given array entries to filepaths if symbols are given
+    build_fsym_arr $srca sourcelists || return
+  } || {
+    # Resolve sources to filepath when symbols are given
+    build_file_arr SREFS sourcelists "$@" || return
+    test 0 -lt ${#sourcelists[*]} || {
+      stderr_ "$stdp: Expected source list(s)" || return
+    }
+    shift ${#sourcelists[@]} || return
+  }
+  shift || return
+  # Resolve indices to filepath when symbols are given
+  build_file_arr IREFS indices "$@" || return
+  test 0 -lt ${#indices[*]} || {
+    stderr_ "$stdp: Expected index file(s)" || return
+  }
+  shift ${#indices[@]} || return
+  ! argv_is_seq "$@" || shift
+  test $# -eq 0 || {
+    $LOG error ":$self" "Surplus arguments in rule"
+  }
+
+  # Re-run if function or any listings or indices change
+  build-ifchange \
+    :if-scr-fun:${U_S:?}/build-lib.sh:build_target__from__index_tagged \
+    "${indices[@]}" || return
+  $LOG notice ":$self" "Starting filter"
+  declare list src idx count=0
+  for list in "${sourcelists[@]}"
+  do while read -r src
+    do
+      entry= found=false
+      for idx in "${indices[@]}"
+      do
+        ! entry=$(grep -F "$src: " "$idx") || break
+      done
+      test -n "$entry" -o -n "${index_tagged_default:-}" || {
+        #$LOG warn ":$self" "ignored unindexed" "$src"
+        continue
+      }
+      # TODO: clean up by tags, start by selecting everything with dev
+      echo "${entry:-"$src: $index_tagged_default"}" |
+      grep -q " $tag\\($\\| \\)" || {
+        #$LOG warn :$self "ignored non-dev" "$src"
+        continue
+      }
+      count=$(( count + 1 ))
+      echo "$src"
+    done < "$list"
+  done
+  test $count -gt 0 &&
+    $LOG notice ":$self($BUILD_TARGET)" "Filter done" "$count" ||
+    $LOG warn ":$self($BUILD_TARGET)" "No entries"
+}
+
 
 
 ## Target handlers
@@ -208,64 +295,6 @@ build__build_env ()
 # C-Inc:build: :update-index:<...>
 # Consolidate cache, see :index
 # /C-Inc:build: :update-index:
-
-# U-S:build :meta-cache-source-dev-list
-# XXX: it would be nice to have a build-if that returns non-zero if nothing was
-# changed. Not sure if that is possible, many targets may still run but the
-# conclusion may be that nothing had to be done.
-# So, for example for configuration nothing needs to be reloaded.
-# Of course can always build a target to do it...
-# Source-dev: helper to reduce large source sets based on not-index @dev.
-# XXX: Targets not present in index are ignored.
-# If the target is listed, it must have @dev tag to be listed by this target.
-build__meta_cache_source_dev_list ()
-{
-  sh_mode strict dev
-  build-ifchange \
-    :if-scr-fun:${U_S:?}/build-lib.sh:build__meta_cache_source_dev_list \
-    "${2:?}" "${BUILD_BASE:?}/index.list" || return
-  declare sym src
-  # Get filename for list and check for antries at dev
-  sym=.meta/cache/source.list
-  # FIXME: sym=$(build-sym "${1:?}") &&
-  while read -r src
-  do
-    grep -qF "$src: " "${BUILD_BASE:?}/index.list" || {
-      # $LOG warn ignored unindexed
-      continue
-    }
-
-    grep -F "$src: " "${BUILD_BASE:?}/index.list" | grep -vq ' @dev' && {
-      # $LOG warn ignored @dev
-      continue
-    }
-
-    echo "$src"
-  done < "$sym"
-}
-# /U-S:build :meta-cache-source-dev-list
-
-# U-S:build :meta-cache-source-dev-sh-list
-build__meta_cache_source_dev_sh_list ()
-{
-  sh_mode strict dev
-  build-ifchange \
-    :if-scr-fun:${U_S:?}/build-lib.sh:build__meta_cache_source_dev_sh_list \
-    "${2:?}" "$REDO_BASE/index.list" || return
-  declare sym src
-  sym=.meta/cache/source-sh.list
-  # FIXME: sym=$(build-sym "${1:?}") &&
-  while read -r src
-  do
-    grep -qF "$src: " "$REDO_BASE/index.list" || continue
-
-    grep -F "$src: " "$REDO_BASE/index.list" | grep -q ' @dev' &&
-      continue
-
-    echo "$src"
-  done < "$sym"
-}
-# /U-S:build :meta-cache-source-dev-sh-list
 
 # U-S:build :usage-help
 build__usage_help ()

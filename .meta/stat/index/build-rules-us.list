@@ -44,8 +44,11 @@
 &context-local expand ${PROJECT_CACHE:?}/context-local.list
 &current alias .meta/cache/ledges.list
 &git-index expand ${PROJECT_CACHE:?}/index.git.scm
+#&indices expand {,**/}index.list
+# XXX: Alt. use Git to list indices bc. expand glob support needs work
+&indices expand-eval git ls-files {,**/}index.list
 *lint expand \&{tags,shellcheck}-lint
-&sh-dev-list expand ${PROJECT_CACHE:?}/source-dev-sh.list
+&sh-dev-list expand ${PROJECT_CACHE:?}/source-sh-dev.list
 &sh-list expand ${PROJECT_CACHE:?}/source-sh.list
 &shellcheck-lint expand ${PROJECT_CACHE:?}/lint-shellcheck.list
 &source-dev-list expand ${PROJECT_CACHE:?}/source-dev.list
@@ -64,9 +67,10 @@
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
 %func-lists expand-all us_shlibs_list -- .meta/src/functions/%*-lib.func-list
-&sh-dev-list:* function - &sh-list
-&sh-list:* if &git-index -- eval git ls-files '*.sh' 'sh-*' '*.do' '*.bats'
+&sh-dev-list:* if &sh-list -- index-tagged @dev -- &indices
+&sh-list:* if &git-index -- eval git ls-files '**.sh' '**.bash' '**.inc' '**.do'
 &shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
+&source-dev-list:* if &source-list -- index-tagged @dev -- &indices
 &source-list:* if &git-index -- exec git ls-files
 &tags-lint:* if &source-dev-list -- part lint-tags source-do
 
@@ -92,7 +96,7 @@
 ./.meta/cache/source.list symbol &source-list
 ./.meta/cache/source-dev.list symbol &source-dev-list
 ./.meta/cache/source-sh.list symbol &sh-list
-./.meta/cache/source-dev-sh.list symbol &sh-dev-list
+./.meta/cache/source-sh-dev.list symbol &sh-dev-list
 
 
-# Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less.txt:
+# Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less-txt:
