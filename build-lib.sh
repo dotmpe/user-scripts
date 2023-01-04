@@ -78,6 +78,16 @@ build_summary ()
 # C-Inc: inc-names
 # Get include filenames from &compo-index
 
+# U-S:shlibs-list
+us_shlibs_list ()
+{
+  build-ifchange ${PROJECT_CACHE:?}/sh-libs.list &&
+  cut -d ' ' -f 4 ${PROJECT_CACHE:?}/sh-libs.list | while read -r p
+  do
+    basename "$p" .lib.sh
+  done
+}
+
 # U-S: test-same-dir () # ~ <Dir-path-1> <Dir-path-2>
 test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 {

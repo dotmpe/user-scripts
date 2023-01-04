@@ -1164,22 +1164,24 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
 {
   local self="build-target:from:expand-all" stdp
   stdp="! $0: $self:"
+  stderr_ "$stdp '$*'"
   declare -a source_cmd=()
   while argv_has_next "$@"
   do
     source_cmd+=( "$1" )
     shift
   done
+  stderr_ "$stdp '$*': ${source_cmd[*]}"
   argv_is_seq "$@" || return
   shift
-  test 0 -gt ${#source_cmd[*]} || {
+  test 0 -lt ${#source_cmd[*]} || {
     stderr_ "$stdp Expected executable, filepath(s), or symbol(s)" || return
   }
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
   } || {
     read -t source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
-    test 0 -gt ${#source_files[*]} || {
+    test 0 -lt ${#source_files[*]} || {
       stderr_ "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
         return
     }
@@ -2262,16 +2264,6 @@ build_which__special ()
     c=${#c}
     echo "$p$(while test $(( d - 1 )) -ge $c; do printf '%s' ":%"; d=$(( d - 1 )); done)"
     test $d -eq $c || echo "$p:"
-  done
-}
-
-
-us_shlibs_list ()
-{
-  build-ifchange ${PROJECT_CACHE:?}/sh-libs.list &&
-  cut -d ' ' -f 4 ${PROJECT_CACHE:?}/sh-libs.list | while read -r p
-  do
-    basename "$p" .lib.sh
   done
 }
 
