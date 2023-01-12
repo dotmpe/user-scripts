@@ -20,7 +20,7 @@ sh_mode ()
                 # Hash location, inherit DBG/RET traps and set -e
                 set -hET &&
                 shopt -s extdebug &&
-                . "${U_C}"/script/bash-uc.lib.sh &&
+                . "${U_C:?}"/script/bash-uc.lib.sh &&
                 trap 'bash_uc_errexit' ERR || return
               ;;
           ( strict ) set -euo pipefail || return ;;
