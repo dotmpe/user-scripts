@@ -1,7 +1,7 @@
 .gitflow.tab: - @dev
-CHANGELOG.md: - @dev
 COPYING: - @dev
 Makefile: - @dev
+CHANGELOG.md: - @dev
 README.md: - @dev
 Sitefile.yaml: - @dev
 

@@ -12,6 +12,7 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
   declare script errors
   script="${BUILD_TARGET:${#BUILD_SPEC}}"
   errors=${PROJECT_CACHE:?}/lint-shellcheck-${script//\//-}.errors
+  # TODO: parameterize sh/bash mode (others?) and RC file locations
   build-ifchange "$script" ~/.shellcheckrc ${BUILD_BASE:?}/.shellcheckrc || return
   # Do not need to fail here and keep rebuilding this target because of the exit
   # state. Instead check for error lines in other target and fail appropiately
@@ -22,10 +23,13 @@ test "${BUILD_SPEC:?}" = :lint:shellcheck: && {
   test -s "$errors" || rm "$errors"
   return
 }
+self=lint-shellcheck.do
 
+$LOG debug ":$self" "Processing parameters"
 test "unset" = "${DEPS[@]-unset}" && {
   true "${LINT_SC_SRC_SPEC:="&lint-shellcheck:file-list"}"
-  $LOG warn ":lint-shellcheck.do" "Could not use If-Deps to get list symbol, using '$LINT_SC_SRC_SPEC'"
+  $LOG warn ":$self" \
+    "Could not use If-Deps to get list symbol, using '$LINT_SC_SRC_SPEC'"
   build-ifchange "${LINT_SC_SRC_SPEC:?}" || return
 } ||
   LINT_SC_SRC_SPEC=${DEPS[0]}
@@ -34,14 +38,15 @@ test "unset" = "${DEPS[@]-unset}" && {
 build_fsym_arr DEPS FILES
 sh_list=${FILES[0]}
 test -s "$sh_list" || {
-  $LOG error :lint-shellcheck "No such file" "$sh_list"
+  $LOG error ":$self" "No such file" "$sh_list"
   return 1
 }
 test -s "$sh_list" || {
-  $LOG warn :lint-shellcheck "Lint check finished bc there is nothing to check"
+  $LOG warn :$self "Lint check finished bc there is nothing to check"
   return
 }
 
+$LOG info ":$self" "Reading..." "$PWD:$sh_list"
 declare -a shck
 mapfile -t shck <<< "$({
     while read -r x
@@ -50,9 +55,9 @@ mapfile -t shck <<< "$({
       echo ":lint:shellcheck:$x"
     done
   } < "$sh_list")"
+test 0 -lt ${#shck[@]} &&
 redo-ifchange "${shck[@]}" ||
-  $LOG error :lint-shellcheck "Lint check aborted" "E$?" $? || return
-#build-always
+    $LOG error :$self "Lint check aborted" "${#shck[@]}:E$?" $? || return
 
 declare errors=${PROJECT_CACHE:?}/lint-shellcheck.errors
 shopt -s nullglob
@@ -74,7 +79,7 @@ test -s "$BUILD_TARGET_TMP" && {
 
 test "${cnt:-0}" -eq 0 || {
   stderr_ "Lint (shellcheck): $cnt"
-  $LOG warn :lint-shellcheck "Files containing 'shellcheck' lint" "$cnt" $?
+  $LOG warn :$self "Files containing 'shellcheck' lint" "$cnt" $?
 }
 
-# Derive: lint-tags
+# Derive: lint-tags.do

@@ -67,10 +67,10 @@
 # TODO: benchmarks
 &context-local:* defer-sequence uconf-deps context-local
 %func-lists expand-all us_shlibs_list -- .meta/src/functions/%*-lib.func-list
-&sh-dev-list:* if &sh-list -- index-tagged @dev -- &indices
+&sh-dev-list:* if &sh-list -- list-filter filter_by_manifest -- @dev &indices
 &sh-list:* if &git-index -- eval git ls-files '**.sh' '**.bash' '**.inc' '**.do'
 &shellcheck-lint:* if &sh-dev-list -- part lint-shellcheck source-do
-&source-dev-list:* if &source-list -- index-tagged @dev -- &indices
+&source-dev-list:* if &source-list -- list-filter filter_by_manifest -- @dev &indices
 &source-list:* if &git-index -- exec git ls-files
 &tags-lint:* if &source-dev-list -- part lint-tags source-do
 

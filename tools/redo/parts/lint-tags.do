@@ -36,10 +36,12 @@ test "${BUILD_SPEC:?}" = :lint:tags: && {
   test -s "$errors" || rm "$errors"
   return
 }
+self=lint-tags.do
 
+$LOG debug ":$self" "Processing parameters"
 test "unset" = "${DEPS[@]-unset}" && {
   true "${LINT_TAGS_SRC_SPEC:="&lint-tags:file-list"}"
-  $LOG warn ":lint-tags.do" \
+  $LOG warn ":$self" \
     "Could not use Deps to get list symbol, using '$LINT_TAGS_SRC_SPEC'"
   build-ifchange "${LINT_TAGS_SRC_SPEC:?}" || return
 } ||
@@ -49,16 +51,15 @@ test "unset" = "${DEPS[@]-unset}" && {
 build_fsym_arr DEPS SOURCES
 source_list=${SOURCES[0]}
 test -s "$source_list" || {
-  $LOG error :lint-tags "No such file" "$source_list"
+  $LOG error ":$self" "No such file" "$sh_list"
   return 1
 }
 test -s "$source_list" || {
-  $LOG warn :lint-tags "Lint check finished bc there is nothing to check"
+  $LOG warn :$self "Lint check finished bc there is nothing to check"
   return
 }
 
-stderr_ "source: $source_list $(wc -l "$source_list")"
-
+$LOG info ":$self" "Reading..." "$PWD:$source_list"
 declare -a tags
 mapfile -t tags <<< "$({
     while read -r x
@@ -67,8 +68,9 @@ mapfile -t tags <<< "$({
       echo ":lint:tags:$x"
     done
   } < "$source_list")"
+test 0 -lt ${#tags[@]} &&
 redo-ifchange "${tags[@]}" ||
-    $LOG warn :lint-tags "Lint check aborted" "E$?" $? || return
+    $LOG error :$self "Lint check aborted" "${#tags[@]}:E$?" $? || return
 
 declare errors=${PROJECT_CACHE:?}/lint-tags.errors
 shopt -s nullglob
@@ -90,7 +92,7 @@ test -s "$BUILD_TARGET_TMP" && {
 
 test "${cnt:-0}" -eq 0 || {
   stderr_ "Lint (tags): $cnt"
-  $LOG warn :lint-tags "Files containing 'tags' lint" "$cnt" $?
+  $LOG warn :$self "Files containing 'tags' lint" "$cnt" $?
 }
 
-# ID: lint-tags
+# ID: lint-tags.do

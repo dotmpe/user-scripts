@@ -132,9 +132,11 @@ build_file_arr ()
 
 build_fsym_arr ()
 {
-  declare ref REFS=${!1} fpa_vname=${2:?}
-  build-ifchange "${REFS[@]:?}" || return
-  readarray -t $fpa_vname <<< "$(for target in "${REFS[@]}"
+  declare ref refa_vname=${1:?} refa fpa_vname=${2:?}
+  refa=${!refa_vname}
+  build-ifchange "${refa[@]:?}" || return
+  eval "declare -ga $fpa_vname=()" || return
+  readarray -t $fpa_vname <<< "$(for target in "${refa[@]}"
     do
       [[ "${target:0:1}" =~ ^${BUILD_FSYM_RE:?}$ ]] && {
         # FIXME: sym=$(build-sym "${target:?}") &&
@@ -1164,14 +1166,12 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
 {
   local self="build-target:from:expand-all" stdp
   stdp="! $0: $self:"
-  stderr_ "$stdp '$*'"
   declare -a source_cmd=()
   while argv_has_next "$@"
   do
     source_cmd+=( "$1" )
     shift
   done
-  stderr_ "$stdp '$*': ${source_cmd[*]}"
   argv_is_seq "$@" || return
   shift
   test 0 -lt ${#source_cmd[*]} || {

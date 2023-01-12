@@ -168,18 +168,30 @@ build_target__from__cache_web ()
 # be verbatim. Should want more direction and use of patterns or groups
 # somehow.
 # XXX: what about default tags value
-build_target__from__index_tagged ()
+#
+build_target__from__index_tagged () # ~ <Tag> [ <Array> | <Source-lists...> ] -- <Indices...>
 {
   sh_mode strict dev
-
-  local self="build:meta-cache-source-dev-list" stdp tag=${1:?} srca
+  local self="build-target:from:index-tagged" stdp tag=${1:?} srca
   stdp="! $0: $self"
   shift
+
+}
+
+#
+build_target__seq__list_filter () # ~ <Function> [ <Source-arr> | <Source-lists...> ] [ -- <Filter-args...> [ -- <Rule...> ] ]
+{
+  sh_mode strict dev
+  local self="build-target:from:list-filter" ffun=${1:?}
+  shift
+  build-ifchange \
+    :if-scr-fun:${U_S:?}/build-lib.sh:build_target__seq__list_filter \
+
   # Use array name if given, or array 'DEPS' if empty source-sequence is passed.
   argv_is_seq "${1:?}" && {
     srca=DEPS
   } || {
-    fnmatch "*a*" "$(declare -p "${1:?}")" && {
+    ! fnmatch "*a*" "$(declare -p "${1:?}")" || {
       srca=$1
       shift
     }
@@ -190,31 +202,58 @@ build_target__from__index_tagged ()
       return 1
     }
     # Resolve given array entries to filepaths if symbols are given
-    build_fsym_arr $srca sourcelists || return
+    build_fsym_arr ${srca:?} sourcelists || {
+      stderr_ "$stdp: build-fsym-arr $srca sourcelists: E$?" $? || return
+    }
   } || {
     # Resolve sources to filepath when symbols are given
-    build_file_arr SREFS sourcelists "$@" || return
+    build_file_arr SREFS sourcelists "$@" || {
+      stderr_ "$stdp: build-file-arr REFS sourcelists: E$?" $? || return
+    }
     test 0 -lt ${#sourcelists[*]} || {
       stderr_ "$stdp: Expected source list(s)" || return
     }
-    shift ${#sourcelists[@]} || return
+    shift ${#SREFS[@]} || return
   }
-  shift || return
-  # Resolve indices to filepath when symbols are given
-  build_file_arr IREFS indices "$@" || return
+  test "${1:?}" = -- && shift || return
+
+  # Read next sequence as argument for filter, and call function or command
+  build_arr_seq FILTERARG "$@" || return
+  shift "${#FILTERARG[*]}" || return
+  filtered=$($ffun "${FILTERARG[@]}") || return
+
+  test $# -gt 1 -a "${1:-}" = -- && {
+    test -z "$filtered" &&
+      declare -ga FILTERED=() || read -a FILTERED <<< "$filtered"
+    shift
+    build_target_rule "$@"
+  } || {
+    test -z "$filtered" || echo "$filtered"
+  }
+}
+
+filter_by_manifest () # ~ <Tag> <Indices...>
+{
+  local tag=${1:?}
+  shift
+  # Resolve index files if symbols are given
+  build_file_arr IREFS indices "$@" || {
+    stderr_ "$stdp: build-file-arr IREFS indices: E$?" $? || return
+  }
   test 0 -lt ${#indices[*]} || {
     stderr_ "$stdp: Expected index file(s)" || return
   }
-  shift ${#indices[@]} || return
-  ! argv_is_seq "$@" || shift
+  shift ${#IREFS[@]} || return
+  ! argv_trail_seq "$@" || shift
   test $# -eq 0 || {
-    $LOG error ":$self" "Surplus arguments in rule"
+    $LOG error ":$self" "Surplus arguments in rule" "$*"
   }
 
   # Re-run if function or any listings or indices change
   build-ifchange \
-    :if-scr-fun:${U_S:?}/build-lib.sh:build_target__from__index_tagged \
+    :if-scr-fun:${U_S:?}/build-lib.sh:filter_by_manifest \
     "${indices[@]}" || return
+
   $LOG notice ":$self" "Starting filter"
   declare list src idx count=0
   for list in "${sourcelists[@]}"
@@ -243,7 +282,6 @@ build_target__from__index_tagged ()
     $LOG notice ":$self($BUILD_TARGET)" "Filter done" "$count" ||
     $LOG warn ":$self($BUILD_TARGET)" "No entries"
 }
-
 
 
 ## Target handlers
