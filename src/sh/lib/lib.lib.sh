@@ -20,7 +20,7 @@ lib_lib_init()
 # Verify lib was loaded or bail out
 lib_assert() # Libs...
 {
-  local log_key=$scriptname/$$:u-s:lib:assert
+  local log_key=${scriptname:-$0}/$$:u-s:lib:assert
   test $# -gt 0 || return 98
   while test $# -gt 0
   do
@@ -102,7 +102,7 @@ lib_grep() # grep_f=-Hni ~ Regex [Name-Glob [Path-Var-Name]]
 lib_init () # ~ [<Lib-names...>]
 {
   test $# -gt 0 || set -- $lib_loaded
-  local log_key=$scriptname/$$:u-s:lib:init
+  local log_key=${scriptname:-$0}/$$:u-s:lib:init
   log_key=$log_key $lib_lib_log info "" "Init libs '$*'" ""
 
   # TODO: init only once, set <libid>_lib_init=...
@@ -182,7 +182,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
   test -n "${1-}" || return 190
   test -n "${lib_lib_log-}" || return 108 # NOTE: sanity
 
-  local log_key=$scriptname/$$:u-s:lib:load
+  local log_key=${scriptname:-$0}/$$:u-s:lib:load
 
   log_key=$log_key $lib_lib_log debug "" "Loading lib(s)" "$*"
 
@@ -253,7 +253,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
         eval "LIB_SRC=\"${LIB_SRC-} $f_lib_path\""
         lib_loaded="${lib_loaded-} $1"
         # FIXME sep. profile/front-end for shell vs user-scripts
-        # $lib_lib_log info "$scriptname:lib" "Finished loading ${lib_id}: OK"
+        # $lib_lib_log info "${scriptname:-$0}:lib" "Finished loading ${lib_id}: OK"
         unset lib_id
     }
     shift
@@ -266,7 +266,7 @@ lib_unload() # [Libs...]
 {
   test $# -gt 0 || set -- $lib_loaded
 
-  local log_key=$scriptname/$$:u-s:lib:unload
+  local log_key=${scriptname:-$0}/$$:u-s:lib:unload
   log_key=$log_key $lib_lib_log debug "" "Unloading lib(s)" "$*"
 
   local lib_id r
@@ -292,7 +292,7 @@ lib_reload() # [Libs...]
 {
   test $# -gt 0 || set -- $lib_loaded
 
-  local log_key=$scriptname/$$:u-s:lib:reload
+  local log_key=${scriptname:-$0}/$$:u-s:lib:reload
   log_key=$log_key $lib_lib_log debug "" "Reloading lib(s)" "$*"
 
   unset  $( while test $# -gt 0
