@@ -81,7 +81,7 @@ cmd_exists()
 {
   test -n "${1-}" || return
 
-  set -- "$1" "$(which "$1")" || return
+  set -- "$1" "$(command -v "$1")" || return
 
   test -n "$2" -a -x "$2"
 }

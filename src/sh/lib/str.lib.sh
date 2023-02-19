@@ -35,7 +35,7 @@ str_lib_load()
 
 str_lib_init()
 {
-  test -x "$(which php)" && bin_php=1 || bin_php=0
+  test -x "$(command -v php)" && bin_php=1 || bin_php=0
 }
 
 

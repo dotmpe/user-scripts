@@ -3,7 +3,7 @@
 functions_lib_load ()
 {
   # XXX: use coffeescript/NPM bash-parser package?
-  #which -s "coffee" && {
+  #command -v "coffee" && {
   #  # Use NPM bash-parser to try and get command/function calls from src
   #  sh_list_calls="coffee $(lookup_path PATH sh.coffee | head -n1)"
   #} ||
@@ -98,11 +98,11 @@ functions_execs () # SRC...
 {
   list_sh_calls_foreach "$@" | sort -u | while read -r script cmd
     do
-      which "$cmd" >/dev/null 2>&1 || {
+      command -v "$cmd" >/dev/null 2>&1 || {
           $LOG "error" "" "Unable to find exec name" "$script:$cmd"
           continue
       }
-      echo "$(realpath "$(which "$cmd")") $script"
+      echo "$(realpath "$(command -v "$cmd")") $script"
     done | join_lines
 }
 

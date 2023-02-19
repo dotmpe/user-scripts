@@ -12,7 +12,7 @@ abort() { usage && exit 2; } # XXX: see CI/c-bail also
 
 init-git()
 {
-  test -x "$(which git)" || return
+  test -x "$(command -v git)" || return
   init-git-hooks || return
   init-git-submodules || return
 }
@@ -34,7 +34,7 @@ init-git-submodules()
 
 check-git()
 {
-  test -x "$(which git)" || return
+  test -x "$(command -v git)" || return
   test -h .git/hooks/pre-commit &&
   test -d .git/modules
 }
@@ -58,7 +58,7 @@ init-redo()
 check-redo()
 {
   local r=''
-  test -x "$(which redo)" || return
+  test -x "$(command -v redo)" || return
   redo -h 2>/dev/null || r=$?
   test "$r" = "97" || init-err "redo:-h:err:$r"
   # Must not be in parent dir, or targets become mixed with other projects, and harder to track
@@ -93,7 +93,7 @@ init-bats()
 check-bats()
 {
   local bats_version="$(bats --version)" || return
-  { test -x "$(which bats)" && fnmatch "Bats 1.1.*" "$bats_version"
+  { test -x "$(command -v bats)" && fnmatch "Bats 1.1.*" "$bats_version"
   } || {
     $INIT_LOG warn "" "Found $bats_version, getting 1.1..."
     PREFIX=$HOME/.local init-bats || return
@@ -234,14 +234,14 @@ all()
 {
   init-git || init-err $_ $?
 
-  # XXX which github-release >/dev/null || {
-  test -x "$(which github-release)" || {
+  # XXX command -v github-release >/dev/null || {
+  test -x "$(command -v github-release)" || {
     init-github-release || init-err init:all:$_ $?
   }
-  test -x "$(which basher)" || {
+  test -x "$(command -v basher)" || {
     init-basher || init-err init:all:$_ $?
   }
-  test -x "$(which redo)" || {
+  test -x "$(command -v redo)" || {
     init-redo || init-err init:all:$_ $?
   }
 

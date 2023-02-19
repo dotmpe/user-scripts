@@ -17,7 +17,7 @@ log_lib_init () # ~ [<Name=us>]
     test -n "${LOG-}" || return
     test \( \
         "$(type -t "$LOG")" = "function" -o \
-        -x "$LOG" -o -x "$(which "$LOG")" \
+        -x "$LOG" -o -x "$(command -v "$LOG")" \
       \) || return
 
     #declare -g $lv="$LOG"

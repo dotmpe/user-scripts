@@ -11,7 +11,7 @@ bash_ac_lib_load()
     . /etc/bash_completion
   fi
 
-  if [ -x "$(which grunt)" ]
+  if [ -x "$(command -v grunt)" ]
   then
   # Tab completion for Gruntfiles
     eval "$(grunt --completion=bash)"

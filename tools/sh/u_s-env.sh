@@ -27,7 +27,7 @@ true "${verbosity:=${v:-3}}"
 : "${sh_tools:="$CWD/tools/sh"}"
 . "$sh_tools/env.sh" || return
 
-{ test -x "$(which basher 2>/dev/null)" &&
+{ test -x "$(command -v basher 2>/dev/null)" &&
   test "$(basher package-path "$U_S_REPO")" = "$U_S"
 } && U_S_TYPE=basher
 

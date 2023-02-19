@@ -260,7 +260,7 @@ sh_execinfo_() # echo shell symbol type code ~ CMD
   sh_is_type_sbi "$1" && eval echo \"sbi$i\"
   sh_is_type_bi "$1" &&  eval echo \"bi$i\"
   sh_is_type_a "$1" &&   eval echo \"a$i:"\$(sh_aliasinfo "$1")"\"
-  sh_is_type_bin "$1" && eval echo \"bin$i:"\$(which "$1")"\"
+  sh_is_type_bin "$1" && eval echo \"bin$i:"\$(command -v "$1")"\"
   true
 }
 
