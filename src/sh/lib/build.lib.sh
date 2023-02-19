@@ -1180,13 +1180,13 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
   } || {
-    read -t source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
+    read -a source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
     test 0 -lt ${#source_files[*]} || {
       stderr_ "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
         return
     }
     source_cmd=( "cat" )
-    source_cmd+=$source_files
+    source_cmd+=( "${source_files[@]}}" )
   }
   targets=$( "${source_cmd[@]}" | while read -r nameparts
     do
@@ -2647,14 +2647,14 @@ is_target ()
 
 is_ood ()
 {
-	declare target
-	for target in "${ood_arr[@]}"
-	do
-	  if [ "$target" = "${1:?}" ] ; then
-			return
-	  fi
-	done
-	return 1
+  declare target
+  for target in "${ood_arr[@]}"
+  do
+    if [ "$target" = "${1:?}" ] ; then
+      return
+    fi
+  done
+  return 1
 }
 
 build_sources ()
