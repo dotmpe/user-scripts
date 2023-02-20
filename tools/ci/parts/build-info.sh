@@ -4,7 +4,7 @@
 du -hs $B/reports
 wc -l $B/reports/*/*.tap || true
 wc -l "$results_log" "$builds_log"
-find ~/.statusdir -type f || true
+find ${STATUSDIR_ROOT:?} -type f || true
 
 echo OK $( grep -i '^OK' $B/reports/*/*.tap | wc -l || true )
 echo NOT OK $( grep -i '^NOT OK' $B/reports/*/*.tap | wc -l || true )

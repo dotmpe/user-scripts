@@ -23,7 +23,7 @@ u_s_ledge__man_1='
   ledge-sumlogs
   ledge-fetchlogs
   ledge-refreshlogs
-  ledge-pushlogs - Build new image from ~/.statusdir and publish
+  ledge-pushlogs - Build new image from ~/.local/statusdir and publish
   ledge-lastbuilds
 
   ledge-* - See Script.mpe:build#logging docs
@@ -31,7 +31,7 @@ u_s_ledge__man_1='
 
 u_s_ledge_lib_load()
 {
-  true "${sd_logdir:="$HOME/.statusdir/log"}"
+  true "${sd_logdir:="${STATUSDIR_ROOT:-$HOME/.local/statusdir/}log"}"
   sh_include env-docker-cache || return
 }
 
@@ -264,9 +264,9 @@ ledge_pushlogs()
   # Rebuild ledge (for this repo/branch)
   ${dckr_pref-}docker rmi -f dotmpe/ledge:$ledge_tag >/dev/null
 
-  cp tools/docker/ledge/Dockerfile ~/.statusdir
+  cp tools/docker/ledge/Dockerfile ${STATUSDIR_ROOT:?} || return
 
-  ${dckr_pref-}docker build -qt dotmpe/ledge:$ledge_tag ~/.statusdir && {
+  ${dckr_pref-}docker build -qt dotmpe/ledge:$ledge_tag ${STATUSDIR_ROOT:?} && {
     print_yellow "" "Pushing new image... <$ledge_tag>"
 
     # Push new image
@@ -274,7 +274,7 @@ ledge_pushlogs()
       print_green "" "Pushed announce/results logs onto ledge <$ledge_tag>" ||
       print_red "" "Failed pushing logs <$ledge_tag>"
   }
-  rm ~/.statusdir/Dockerfile
+  rm ${STATUSDIR_ROOT:?}Dockerfile
 }
 
 ledge_buildlog_echo()
@@ -288,15 +288,15 @@ ledge_buildlog_echo()
         continue
     }
 
-    grep -m1 '^#' ~/.statusdir/log/builds-$PROJ_LBL.list
-    grep "${job_nr:-$build_id}" ~/.statusdir/log/builds-$PROJ_LBL.list || continue
+    grep -m1 '^#' ${STATUSDIR_ROOT:?}log/builds-$PROJ_LBL.list
+    grep "${job_nr:-$build_id}" ${STATUSDIR_ROOT:?}log/builds-$PROJ_LBL.list || continue
   done
 }
 
 ledge_lastbuilds () # [PROJ_LBL] ~ [NUM=3]
 {
   local n=${1:-3}
-  read_nix_style_file ~/.statusdir/log/travis-$PROJ_LBL.list |
+  read_nix_style_file ${STATUSDIR_ROOT:?}log/travis-$PROJ_LBL.list |
     tail -n$n |
     ledge_buildlog_echo
 }

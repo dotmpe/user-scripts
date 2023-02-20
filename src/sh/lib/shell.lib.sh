@@ -3,7 +3,7 @@
 shell_lib_load()
 {
   # Dir to record env-keys snapshots:SD-Shell-Dir
-  test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="$HOME/.statusdir/shell"
+  test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="${STATUSDIR_ROOT:-$HOME/.local/statusdir/}shell"
 
   # Set defaults for required vars
   #test -n "$ENV_NAME" || ENV_NAME=development

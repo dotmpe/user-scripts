@@ -21,7 +21,7 @@ test "$BUILD_PRE_INIT_CACHE_CLEAR" = "0" || {
          $HOME/.npm \
          $HOME/.composer \
          $HOME/.rvm/ \
-         $HOME/.statusdir/ \
+         $HOME/.local/statusdir/ \
          $HOME/build/apenwarr \
          $HOME/build/ztombol \
          $deps \

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-for d in ~/.statusdir ~/.statusdir/log ~/.statusdir/cache ~/.statusdir/tree ~/.statusdir/shell ~/.statusdir/index
-do test -d $d || mkdir "$d"
-done
+mkdir -p ${STATUSDIR_ROOT:?}{log,cache,tree,shell,index}
 
 # Id: U-S:
