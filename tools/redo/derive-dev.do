@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-## A basic main project redo script deriving from +U-s std.do @dev
+## A basic main project redo script (root default.do) deriving from +U-s std.do @dev
 
 # Created: 2022-11-30
 

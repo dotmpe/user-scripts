@@ -101,6 +101,11 @@ git_author_date() # <Commit-ish>
   git show -s --format=%aI "$1"
 }
 
+git_commit_start ()
+{
+  git log --format='%aI %at' $f --diff-filter=A -- "$@"
+}
+
 # Select first and last date from found commit/author dates for path
 git_commit_range_file() # <Path>
 {

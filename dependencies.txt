@@ -19,4 +19,4 @@ git ztombol/bats-file
 git ztombol/bats-support
 git ztombol/bats-assert
 
-# Id: user-scripts/0.0.2-dev dependencies.txt vim:ft=lesst-txt:
+# Id: user-scripts/0.0.2-dev dependencies.txt ex:ft=lest-txt:

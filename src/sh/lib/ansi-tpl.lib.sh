@@ -14,11 +14,16 @@ ansi_tpl_lib_load ()
 
   test -n "${CS-}" || CS=dark
 
-  test "$COLORIZE" -eq 1 || ansi_tpl_env_def
+  test "${COLORIZE:-0}" -eq 1 || ansi_uc_env_def
 }
 
 ansi_tpl_env_def ()
 {
+  local changed=false
+
+  # test a few...
+  test -n "${BLACK:-}" -a -n "${NORMAL:-}" -a -z "${BOLD:-}" || changed=true
+
   #shellcheck disable=1007
   declare -g \
     _f0= BLACK=   _b0= BG_BLACK= \
@@ -31,12 +36,13 @@ ansi_tpl_env_def ()
     _f7= WHITE=   _b7= BG_WHITE= \
     BOLD= REVERSE= NORMAL=
 
-  ${INIT_LOG:?} debug ":ansi:tpl" "Defaulted markup to none" "c:$COLORIZE TERM:$TERM ncolors:$ncolors" 7
+  ! ${changed:-} ||
+  ${INIT_LOG:-${LOG:?}} debug ":uc:ansi-tpl" "Defaulted markup to none" "TERM:$TERM ncolors:$ncolors"
 }
 
 ansi_tpl_lib_init ()
 {
-  test "${COLORIZE:-1}" -eq 1 || {
+  test ${COLORIZE:-1} -eq 1 || {
     # Declare empty if required (if not found yet)
     declare -p _f0 >/dev/null 2>&1 || ansi_tpl_env_def
     return

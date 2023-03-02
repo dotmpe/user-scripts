@@ -24,12 +24,12 @@ sh_include_path_subdirs()
 }
 
 # Default sh-include path basedirs
-sh_include_path_basedirs ()
+sh_include_path_basedirs () # ~
 {
   test "$CWD" = "$(cd $U_S && pwd -P)" && echo "$CWD" || echo "$CWD $U_S"
 }
 
-sh_include_path_dirs () # sh_include_path_subdirs ~ Base-Dirs...
+sh_include_path_dirs () # (sh-include:) ~ <Basedirs...> # Output sh-include lookup path list
 {
   local basedir subdir
 
@@ -50,7 +50,7 @@ sh_include_path_dirs () # sh_include_path_subdirs ~ Base-Dirs...
 
 # Include file by name-id from from $PWD/tools and other tools directories.
 # By default sets sh_include_suites=ci,sh and sh_include_path=$PWD,$U_S.
-sh_include () # Source first existing ~ Parts...
+sh_include () # ~ <Partnames...> # Source first existing
 {
   test $# -gt 0 || return 64
 
@@ -94,7 +94,7 @@ sh_include () # Source first existing ~ Parts...
   done
 }
 
-sh_require ()
+sh_require () # ~ <Partnames...> # ~ Test each part was sourced with zero-status
 {
   test $# -gt 0 || return 64
 
