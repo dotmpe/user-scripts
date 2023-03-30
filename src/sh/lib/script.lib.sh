@@ -36,18 +36,18 @@ scripts_init()
 # TODO: add more sh-include-path options, consolidate with other tooling
 script_init() # ( SCR-PATH | BOOT-NAME )
 {
-  test -n "$script_log" || script_lib_init_
-  test -f "$1" && {
+  test -f "${1:?}" && {
 
-    $script_log info "script" "Bootstrapping from '$1'"
+    ${script_log:?} info "script" "Bootstrapping from '$1'"
     . "$1" || return
 
   } || {
 
+    # Source first part copy on path
     sh_include_path=$U_S/tools/sh/boot sh_include "$1" || {
 
       unset sh_include_path
-      $script_log error "script" "failed boot '$1' at <$sh_tools>" "" 107 || return
+      ${script_log:?} error "script" "failed boot '$1' at <$sh_tools>" "" 107 || return
     }
     unset sh_include_path
   }

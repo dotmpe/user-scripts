@@ -111,6 +111,9 @@ env__define__build ()
 env__define__build_action ()
 {
   case "${BUILD_ACTION:?}" in
+    ( bg )         set -- \
+        from-local build-parts build-rules \
+        fifo-server ;;
     ( env )        set -- from-dist ;;
     ( info ) ;;
     ( ood ) ;;
@@ -390,6 +393,11 @@ env__define__env_path ()
   }
 
   build_add_setting "ENV_PATH"
+}
+
+env__define__fifo_server ()
+{
+  source "${US_BIN:?}/bg.lib.sh"
 }
 
 env__define__from_dist ()

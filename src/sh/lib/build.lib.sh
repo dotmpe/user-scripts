@@ -1186,7 +1186,7 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
         return
     }
     source_cmd=( "cat" )
-    source_cmd+=( "${source_files[@]}}" )
+    source_cmd+=( "${source_files[@]}" )
   }
   targets=$( "${source_cmd[@]}" | while read -r nameparts
     do
@@ -2682,6 +2682,13 @@ build_sources ()
 ## Wrappers for Redo commands and additional build frontend handlers
 
 
+build_bg ()
+{
+  mkfifo /tmp/build.fifo &&
+  bg_recv_blocking /tmp/build.fifo &&
+  rm /tmp/build.fifo
+}
+
 build_rule_target ()
 {
   ${BUILD_NS_:?}$1
@@ -2943,16 +2950,6 @@ build_ () # ~ <Build-action> <Argv <...>>
 
   $LOG debug "" "Finished script '$BUILD_ACTION'" "E${ret:-0}:$*"
 
-  # XXX: When finished, add all env parts used during bootstrap to dependencies
-  #test -z "${BUILD_ID-}" &&
-  #  $LOG warn "" "No build ID" ||
-  #    test ${BUILD_ACTION:?} != env-build ||
-  #      test ${ret:-0} -ne 0 || {
-  #        build_set_dependencies || ret=$?
-  #        test 0 -eq ${#BUILD_DEPS[*]} ||
-  #          $LOG warn ":[${BUILD_TARGET//%/%%}]" "Added dependencies" "E${ret:-0}:${BUILD_DEPS[*]}"
-  #      }
-
   test ${ret:-0} -eq ${_E_break:-197} && exit
   return ${ret:-0}
 }
@@ -2969,7 +2966,7 @@ test -n "${__lib_load-}" || {
       ;;
 
     ( "build-"* )
-        BUILD_ACTION=${BUILD_SCRIPT:6} build_ "" "$@"
+        build_ "${BUILD_SCRIPT:6}" "$@"
       ;;
 
     ( "build" )
