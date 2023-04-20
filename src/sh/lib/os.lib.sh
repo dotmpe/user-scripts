@@ -380,7 +380,7 @@ foreach () # [(s)] ~ ['-' | <Arg...>]
 
 # Extend rows by mapping each value line using act, add result tab-separated
 # to line. See foreach-do for other details.
-foreach_addcol () #
+foreach_addcol () # ~ [ - | <Arg...> ]
 {
   test -n "${p-}" || local p= # Prefix string
   test -n "${s-}" || local s= # Suffix string
@@ -393,7 +393,7 @@ foreach_addcol () #
 # Read `foreach` lines and act, default is echo ie. same result as `foreach`
 # but with p(refix) and s(uffix) wrapped around each item produced. The
 # unwrapped loop-var is _S.
-foreach_do ()
+foreach_do () # ~ [ - | <Arg...> ]
 {
   test -n "${p-}" || local p= # Prefix string
   test -n "${s-}" || local s= # Suffix string
@@ -570,6 +570,11 @@ normalize_relative()
 not ()
 {
   ! "$@"
+}
+
+os_pids () # ~ <Cmd-name>
+{
+  ps -C "${1:?}" -o pid:1=
 }
 
 # Combined dirname/basename to remove .ext(s) but return path
