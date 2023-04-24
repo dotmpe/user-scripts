@@ -498,10 +498,10 @@ default_env() # VAR-NAME DEFAULT-VALUE [Level]
   }
 }
 
-rnd_passwd()
+rnd_str () # ~ <Len> # Generate ASCII string with urandom data
 {
-  test -n "$1" || set -- 11
-  cat /dev/urandom | LC_ALL=ascii tr -cd 'a-z0-9' | head -c $1
+  test -n "${1:-}" || set -- 11
+  cat /dev/urandom | LC_ALL=ascii tr -cd 'a-z0-9' | head -c ${1:?}
 }
 
 # Capture cmd/func output in file, return status. Set out_file to provide path.
@@ -614,6 +614,21 @@ env_var_mapping_update ()
       eval "${to}=\"$(echo ${!from})\""
     }
   done
+}
+
+std_noerr ()
+{
+  "$@" 2>/dev/null
+}
+
+std_noout ()
+{
+  "$@" >/dev/null
+}
+
+std_quiet ()
+{
+  "$@" >/dev/null 2>&1
 }
 
 # Sync: BIN:

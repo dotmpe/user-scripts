@@ -643,6 +643,14 @@ read_blocks () # ~ <Match> <Value-glob>
   done
 }
 
+# Prefix/suffix lines with fixed value string
+read_concat () # ~ [<Prefix-str>] [<Suffix-str>] # Concat value to lines
+{
+  local _S
+  while ${read:-read -r} _S
+  do echo "${1:-}${_S}${2:-}"; done
+}
+
 # Read only data, trimming whitespace but leaving '\' as-is.
 # See read-escaped and read-literal for other modes/impl.
 read_data () # (s) ~ <Read-argv...> # Read into variables, ignoring escapes and collapsing whitespacek
