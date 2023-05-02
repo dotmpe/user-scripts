@@ -4,7 +4,7 @@ true "${US_BIN:="$HOME/bin"}"
 
 # XXX: move to uconf
 declare -g -A BUILD_NS_DIR=(
-    [compo]=${C_INC:?}
+    [compo]=${C_INC:-$HOME/.l/c}
     [uconf]=${UCONF:?}
     [bin]=${US_BIN:?}
     [us]=${U_S:?}
