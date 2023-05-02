@@ -4,6 +4,8 @@
 
 # Load other libraries from SCRIPTPATH, and execute hooks on-load and init.
 
+# TODO: consolidate +User-conf lib-load scripts
+
 
 lib_lib_load()
 {
@@ -127,56 +129,6 @@ lib_list () # ~ [<Path-Var-name>] [<Format-key>]
   lib_glob "*" "${1:-"SCRIPTPATH"}" "${2:-"names-list"}"
 }
 
-lib_loaded () # ~ [<Lib-ids...>] # Check wether given are loaded or list loaded
-{
-  test $# -gt 0 && {
-    # Check given
-    lib_loaded_env_ids "$@"
-    return $?
-  }
-  # List all
-  foreach $lib_loaded
-}
-
-# Check if loaded or list all loaded libs
-lib_loaded_env_ids() # [Check-Libs...]
-{
-  test $# -gt 0 && {
-
-    while test $# -gt 0
-    do
-      lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
-
-      test "$1" = "$(eval echo \${${lib_id}_lib_loaded-})" || return
-      shift
-    done
-    return
-
-  } || {
-    # List all
-    sh_genv '[a-z][a-z0-9_]*_lib_loaded' | sed 's/_lib_loaded=0$//'
-  }
-}
-
-lib_lookup () # ~ <Lib-name> # Echo only first result for lib_path
-{
-  lookup_first=true lib_path "$1"
-}
-
-# Echo every occurence of *.lib.sh on SCRIPTPATH
-lib_path () # ~ <Local-name> [<Path-Var-name>]
-{
-  test $# -le 2 || return 98
-  test -n "${2-}" || set -- "$1" SCRIPTPATH
-  lookup_test=${lookup_test:-"lib_exists"} \
-  lookup_first=${lookup_first:-false} lookup_path $2 "${1:?}"
-}
-
-lib_paths () # (s?) ~ [<Lib-names...>]
-{
-  act=lib_path foreach_do "$@"
-}
-
 lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
 {
   test -n "${1-}" || return 190
@@ -258,6 +210,56 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
     }
     shift
   done
+}
+
+lib_loaded () # ~ [<Lib-ids...>] # Check wether given are loaded or list loaded
+{
+  test $# -gt 0 && {
+    # Check given
+    lib_loaded_env_ids "$@"
+    return $?
+  }
+  # List all
+  foreach $lib_loaded
+}
+
+# Check if loaded or list all loaded libs
+lib_loaded_env_ids() # [Check-Libs...]
+{
+  test $# -gt 0 && {
+
+    while test $# -gt 0
+    do
+      lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
+
+      test "$1" = "$(eval echo \${${lib_id}_lib_loaded-})" || return
+      shift
+    done
+    return
+
+  } || {
+    # List all
+    sh_genv '[a-z][a-z0-9_]*_lib_loaded' | sed 's/_lib_loaded=0$//'
+  }
+}
+
+lib_lookup () # ~ <Lib-name> # Echo only first result for lib_path
+{
+  lookup_first=true lib_path "$1"
+}
+
+# Echo every occurence of *.lib.sh on SCRIPTPATH
+lib_path () # ~ <Local-name> [<Path-Var-name>]
+{
+  test $# -le 2 || return 98
+  test -n "${2-}" || set -- "$1" SCRIPTPATH
+  lookup_test=${lookup_test:-"lib_exists"} \
+  lookup_first=${lookup_first:-false} lookup_path $2 "${1:?}"
+}
+
+lib_paths () # (s?) ~ [<Lib-names...>]
+{
+  act=lib_path foreach_do "$@"
 }
 
 # TODO: Call *_lib_unload and unset loaded var. See also reload. #lib-unload
