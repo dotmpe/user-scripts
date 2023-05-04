@@ -2,7 +2,7 @@
 
 
 # Set env for str.lib.sh
-str_lib_load()
+str_lib__load()
 {
   test "${str_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
@@ -33,7 +33,7 @@ str_lib_load()
   }
 }
 
-str_lib_init()
+str_lib__init()
 {
   test -x "$(command -v php)" && bin_php=1 || bin_php=0
 }
@@ -164,3 +164,22 @@ expr_substr()
       * ) error "unable to substr $expr" 1
   esac
 }
+str_quote ()
+{
+  case "$1" in
+    ( "" ) printf '""' ;;
+    ( *" "* | *[\[\]\<\>$]* )
+      case "$1" in
+          ( *"'"* ) printf '"%s"' "$1" ;;
+          ( * ) printf "'%s'" "$1" ;;
+      esac ;;
+    ( * ) printf '%s' "$1" ;;
+  esac
+}
+
+str_quote_var ()
+{
+  echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
+}
+
+

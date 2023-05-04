@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-ctx_lib_load ()
+ctx_lib__load ()
 {
   true "${CTX:=""}"
   true "${CTX_P:=""}"
 }
 
-ctx_lib_init ()
+ctx_lib__init ()
 {
   true
 }

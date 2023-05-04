@@ -5,12 +5,12 @@
 # Deal with lines of (shell script) formatted source-code and other file-based
 # content.
 
-src_lib_load()
+src_lib__load()
 {
   true
 }
 
-src_lib_init()
+src_lib__init()
 {
   test "${src_lib_init-}" = "0" || {
     lib_assert log match || return

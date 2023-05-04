@@ -3,7 +3,7 @@
 ## Docker shell tools
 
 
-docker_sh_lib_load()
+docker_sh_lib__load()
 {
   test -n "${dckr_pref-}" || dckr_pref= # Allow for sudo or custom wrapper exec
 }

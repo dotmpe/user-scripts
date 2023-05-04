@@ -3,7 +3,7 @@
 ## Oil Shell
 
 
-oil_lib_load ()
+oil_lib__load ()
 {
   OIL_CONTAINER=u-s-oil-treebox
   OIL_IMAGE=dotmpe/treebox:dev

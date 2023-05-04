@@ -94,7 +94,7 @@ Test3 done'
 
 
   lib_load redo
-  #redo_lib_load
+  #redo_lib__load
 
   run redo_deps "my/first.test1"
   { test_ok_nonempty 3 && test_lines \

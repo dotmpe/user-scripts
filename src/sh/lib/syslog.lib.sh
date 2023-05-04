@@ -5,8 +5,8 @@
 ##
 
 #
-syslog_lib_load () { true; }
-syslog_lib_init () { true; }
+syslog_lib__load () { true; }
+syslog_lib__init () { true; }
 
 
 # These mappings are take from LOGGER(1). See also

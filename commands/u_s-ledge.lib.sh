@@ -29,7 +29,7 @@ u_s_ledge__man_1='
   ledge-* - See Script.mpe:build#logging docs
 '
 
-u_s_ledge_lib_load()
+u_s_ledge_lib__load()
 {
   true "${sd_logdir:="${STATUSDIR_ROOT:-$HOME/.local/statusdir/}log"}"
   sh_include env-docker-cache || return

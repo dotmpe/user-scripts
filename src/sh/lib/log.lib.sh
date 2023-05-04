@@ -2,12 +2,12 @@
 
 ## Log helper module
 
-log_lib_load ()
+log_lib__load ()
 {
   test -n "${LOG-}" || LOG=${U_S}/tools/sh/log.sh
 }
 
-log_lib_init () # ~ [<Name=us>]
+log_lib__init () # ~ [<Name=us>]
 {
   test $# -le 1 || return 193
   test -n "${1:-}" || set -- us
@@ -36,5 +36,5 @@ req_log ()
 
 req_init_log ()
 {
-  log_lib_init "$@" && req_log "$@"
+  log_lib__init "$@" && req_log "$@"
 }

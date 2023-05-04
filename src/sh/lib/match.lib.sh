@@ -2,7 +2,7 @@
 
 ## RegEx strings
 
-match_lib_init()
+match_lib__init()
 {
   test "${match_lib_init-}" = "0" || {
     test -n "${INIT_LOG-}" || return 109

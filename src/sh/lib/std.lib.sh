@@ -3,7 +3,7 @@
 # std: logging and dealing with the shell's stdio decriptors
 
 
-std_lib_load ()
+std_lib__load ()
 {
   # The deeper get within subshells, the more likely stdio is re-routed from
   # tty. This test should be performed in the scripts main.
@@ -20,7 +20,7 @@ std_lib_load ()
   $INIT_LOG debug "" "Loaded std-uc.lib" "$0"
 }
 
-std_lib_init ()
+std_lib__init ()
 {
   test -n "${INIT_LOG-}" || return 109
   test -x "$(command -v readlink)" || error "readlink util required for stdio-type" 1

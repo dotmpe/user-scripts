@@ -2,7 +2,7 @@
 
 ## Sys: dealing with vars, functions, env.
 
-sys_lib_load()
+sys_lib__load()
 {
   test -n "${LOG-}" || return 102
   test -n "${uname-}" || export uname="$(uname -s)"
@@ -10,7 +10,7 @@ sys_lib_load()
   test -n "${HOST-}" || HOST=$hostname
 }
 
-sys_lib_init()
+sys_lib__init()
 {
   test "${sys_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \

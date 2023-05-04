@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-vc_lib_init()
+vc_lib__init()
 {
   test "${vc_lib_init-}" = "0" && return
   test -n "${INIT_LOG-}" || return 109

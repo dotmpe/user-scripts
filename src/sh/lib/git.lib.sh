@@ -1,6 +1,6 @@
 #!/bin/sh
 
-git_lib_load()
+git_lib__load()
 {
   true "${SRC_DIR:="/src"}"
   true "${SCM_VND:="github.com"}"
@@ -18,7 +18,7 @@ git_lib_load()
   }
 }
 
-git_lib_init()
+git_lib__init()
 {
   test -d "${SRC_DIR:-}" &&
   test -d "${VND_GH_SRC:-}" &&

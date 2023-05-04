@@ -27,8 +27,8 @@ test ! -e "${U_C:=/srv/project-local/user-conf-dev}" && {
 
   { test ${COLORIZE:-0} -eq 0 || {
       . ${U_C}/script/ansi-uc.lib.sh &&
-      ansi_uc_lib_load &&
-      ansi_uc_lib_init
+      ansi_uc_lib__load &&
+      ansi_uc_lib__init
     }
   } &&
     . ${U_C}/script/bash-uc.lib.sh &&

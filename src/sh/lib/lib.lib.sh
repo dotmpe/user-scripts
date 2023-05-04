@@ -7,12 +7,12 @@
 # TODO: consolidate +User-conf lib-load scripts
 
 
-lib_lib_load()
+lib_lib__load()
 {
   test -n "${default_lib-}" || default_lib="os sys str src shell"
 }
 
-lib_lib_init()
+lib_lib__init()
 {
   init_lib_log lib_lib  || return
   $lib_lib_log info ":lib-init" "Loaded lib.lib" "$0"
@@ -103,7 +103,7 @@ lib_grep() # grep_f=-Hni ~ Regex [Name-Glob [Path-Var-Name]]
 # After load, execute <lib-id>_lib_init() if defined for each lib in load seq.
 lib_init () # ~ [<Lib-names...>]
 {
-  test $# -gt 0 || set -- $lib_loaded
+  test $# -gt 0 || set -- ${lib_loaded:?}
   local log_key=${scriptname:-$0}/$$:u-s:lib:init
   log_key=$log_key $lib_lib_log info "" "Init libs '$*'" ""
 
@@ -111,8 +111,8 @@ lib_init () # ~ [<Lib-names...>]
   while test $# -gt 0
   do
     lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
-    type ${lib_id}_lib_init 2> /dev/null 1> /dev/null && {
-      ${lib_id}_lib_init || { r=$?
+    type ${lib_id}_lib__init 2> /dev/null 1> /dev/null && {
+      ${lib_id}_lib__init || { r=$?
         log_key=$log_key $lib_lib_log error "" "in lib-init $1 ($r)" "" 1
         return $r
       }
@@ -191,9 +191,9 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
         }
 
         # like func_exists is in sys.lib.sh. But inline here:
-        type ${lib_id}_lib_load  2> /dev/null 1> /dev/null && {
+        type ${lib_id}_lib__load  2> /dev/null 1> /dev/null && {
 
-          ${lib_id}_lib_load || { r=$?;
+          ${lib_id}_lib__load || { r=$?;
             eval ${lib_id}_lib_loaded=$r
             log_key=$log_key \
               $lib_lib_log error "" "in lib-load $1 ($r)" "$f_lib_path"

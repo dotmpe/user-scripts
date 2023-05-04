@@ -3,7 +3,7 @@
 # A wrapper for builtin stderr logger to be used within user script libs.
 # To run as profile or service script libs should depend on $LOG.
 
-logger_std_lib_load()
+logger_std_lib__load()
 {
   lib_load logger logger-theme log
 }

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-functions_lib_load ()
+functions_lib__load ()
 {
   # XXX: use coffeescript/NPM bash-parser package?
   #command -v "coffee" && {

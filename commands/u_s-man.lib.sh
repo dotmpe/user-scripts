@@ -3,7 +3,7 @@
 ## User-Scripts man routines
 # Assemble, convert or access User-Scripts man pages
 
-#u_s_man_lib_load ()
+#u_s_man_lib__load ()
 #{
 # XXX: see tools/sh/env.sh
   : "${U_S_MAN:="$U_S/src/md/manuals.list"}"

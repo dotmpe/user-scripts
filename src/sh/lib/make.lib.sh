@@ -10,7 +10,7 @@
 # with that
 
 
-make_lib_load()
+make_lib__load()
 {
   test -n "${ggrep-}" || ggrep=ggrep
   test -n "${make_op_fd-}" || make_op_fd=4

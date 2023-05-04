@@ -2,7 +2,7 @@
 
 ### Colored and styled prompt, terminal escape codes
 
-ansi_tpl_lib_load ()
+ansi_tpl_lib__load ()
 {
   # Ask terminal about possible colors if we can
   test "${TERM:-dumb}" = "dumb" && true "${ncolors:=0}" || {
@@ -40,7 +40,7 @@ ansi_tpl_env_def ()
   ${INIT_LOG:-${LOG:?}} debug ":uc:ansi-tpl" "Defaulted markup to none" "TERM:$TERM ncolors:$ncolors"
 }
 
-ansi_tpl_lib_init ()
+ansi_tpl_lib__init ()
 {
   test ${COLORIZE:-1} -eq 1 || {
     # Declare empty if required (if not found yet)

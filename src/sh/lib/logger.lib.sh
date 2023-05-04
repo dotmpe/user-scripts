@@ -2,7 +2,7 @@
 
 # Module to provide basic LOG routine. This merges old mkdocs log and script std.lib
 
-logger_lib_load()
+logger_lib__load()
 {
   test -n "${logger_log_hooks-}" || logger_log_hooks=stderr
 

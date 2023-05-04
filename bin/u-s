@@ -243,7 +243,7 @@ case "$0" in
       print_err "error" "" "Loading parts" "$? $x" $?
   done
   unset x
-  u_s_ledge_lib_load
+  u_s_ledge_lib__load
 
   set -euETo pipefail
   main "$@"

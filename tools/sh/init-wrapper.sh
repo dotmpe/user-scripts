@@ -47,7 +47,7 @@ case "$0" in
       # Or either start given mode
       case "$util_mode" in
         boot|lib )
-            lib_lib_load || return
+            lib_lib__load || return
 
       # Or return errstat on first unmatched case (or errors per step).
       esac || return
@@ -59,7 +59,7 @@ case "$0" in
 
       case "$util_mode" in
         boot|lib )
-            lib_lib_init || return
+            lib_lib__init || return
             lib_load $default_lib || return ;;
       esac
 

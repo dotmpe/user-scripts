@@ -1,11 +1,11 @@
 #!/bin/sh
 
-util_lib_load()
+util_lib__load()
 {
   true
 }
 
-util_lib_init()
+util_lib__init()
 {
   test -n "${LOG-}" || return 102
 }

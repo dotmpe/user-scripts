@@ -3,7 +3,7 @@
 ### Build.lib: Frontends and shell toolkit for build system
 
 
-build_lib_load ()
+build_lib__load ()
 {
   true "${BUILD_TOOL:=null}"
 
@@ -27,7 +27,7 @@ build_lib_load ()
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
 }
 
-build_lib_init () # ~
+build_lib__init () # ~
 {
   return 0
 
@@ -953,11 +953,11 @@ build_source ()
     $LOG error :build:source "Error loading source" "$1:E$?" ; return 1
   }
   $LOG debug :build:source "Loading build source" "$1"
-  ! sh_fun build__lib_load && return
-  build__lib_load || bll=$?
+  ! sh_fun build__lib__load && return
+  build__lib__load || bll=$?
   # XXX: may be keep this per-source path but dont need it anyway..
-  #build_source_[]=$(typeset -f build__lib_load)
-  unset -f build__lib_load
+  #build_source_[]=$(typeset -f build__lib__load)
+  unset -f build__lib__load
   return ${bll:-0}
 }
 

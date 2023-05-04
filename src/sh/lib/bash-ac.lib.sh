@@ -2,7 +2,7 @@
 
 ## Bash Auto-completion
 
-bash_ac_lib_load()
+bash_ac_lib__load()
 {
   # enable programmable completion features (you don't need to enable
   # this, if it's already enabled in /etc/bash.bashrc and /etc/profile

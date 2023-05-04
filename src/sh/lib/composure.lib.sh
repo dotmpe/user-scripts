@@ -1,12 +1,12 @@
 #!/bin/sh
 
 
-composure_lib_load()
+composure_lib__load()
 {
   true "${COMPOSURE:=$HOME/.local/composure}"
 }
 
-composure_lib_init()
+composure_lib__init()
 {
   true "${COMPOSURE:?"Expected Composure user dir setting"}" &&
   test -d "$COMPOSURE" || false "${Error:?"Expected Composure user dir"}"

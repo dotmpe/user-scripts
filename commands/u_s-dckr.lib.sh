@@ -6,7 +6,7 @@
 
 
 # Load lib: set vars to default values
-dckr_lib_load()
+dckr_lib__load()
 {
   : "${docker_name:="u-s-dckr"}"
   : "${docker_image:="dotmpe/sandbox:dev"}"
@@ -19,7 +19,7 @@ dckr_load()
 {
   test -n "$LOG" -a -x "$LOG" && dckr_log=$LOG || dckr_log=print_err
 
-  dckr_lib_load && # NOTE: Because this is not loaded as a real lib. +U_s
+  dckr_lib__load && # NOTE: Because this is not loaded as a real lib. +U_s
   lib_require docker-sh-htd && lib_init docker-sh-htd
 }
 

@@ -86,7 +86,7 @@ setup()
   . ./tools/sh/init.sh
   load ../helper/stdtest
   lib_load shell
-  shell_lib_init
+  shell_lib__init
 
   _r() {
     shopt -s expand_aliases

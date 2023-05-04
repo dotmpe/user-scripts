@@ -6,7 +6,7 @@ init_lib_log () # ~ NAME
     && declare -g ${1}_log="$LOG" || declare -g ${1}_log="$INIT_LOG"
 }
 
-lib_util_lib_load()
+lib_util_lib__load()
 {
   case "$uname" in Darwin ) default_lib="$default_lib Darwin" ;; esac
 

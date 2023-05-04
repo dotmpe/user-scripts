@@ -3,7 +3,7 @@
 ### Initial script to cache shell output
 
 
-shell_cache_lib_load()
+shell_cache_lib__load()
 {
   true "${shell_cache_id:=}"
   declare -g -A shell_cached

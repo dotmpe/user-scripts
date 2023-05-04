@@ -2,7 +2,7 @@
 
 ## Color vars for log
 
-logger_theme_lib_load()
+logger_theme_lib__load()
 {
   case "${TERM:="dumb"}" in
 

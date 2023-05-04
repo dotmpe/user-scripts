@@ -3,12 +3,12 @@
 ## OS - files, paths
 
 
-os_lib_load ()
+os_lib__load ()
 {
   : "${uname:="$(uname -s)"}"
 }
 
-os_lib_init ()
+os_lib__init ()
 {
   test "${os_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
@@ -343,11 +343,20 @@ filter_empty_lines () # (s) ~ # Remove empty lines from stream
   grep -v '^\s*$'
 }
 
-# Strip comments, including line-continuations.
+# Strip line comments, including line-continuations and comments at the end of
+# lines and indented comments.
 # See line-comment-conts-collapse to transform them.
-filter_line_comments () # (s) ~ [<Marker>]
+filter_line_comments () # (s) ~ [<Marker-bre>]
 {
-  sed ':a; N; $!ba; s/'"${1:-"#"}"'[^\\\n]*\(\\\n[^\\\n]*\)*\n//g'
+  # Remove non-contination line-end comments first.
+  # Then substitute contineous blocks and lines together with their newline
+  # (ie. remove lines completely). And one more to remove comment on last
+  # line in file.
+  sed ' :a; N; $!ba;
+      s/ * '"${1:-"#"}"'[^\n]*[^\\]\n/\n/g
+      s/[\t ]*'"${1:-"#"}"'[^\\\n]*\(\\\n[^\\\n]*\)*\n//g
+      s/\n[\t ]*'"${1:-"#"}"'.*$//
+    '
 }
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the

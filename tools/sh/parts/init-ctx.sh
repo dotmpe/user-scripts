@@ -5,6 +5,6 @@
 # from UserScript.Build
 
 . ${U_S:-$CWD}/contexts/ctx-ctx.lib.sh &&
-ctx_lib_load
+ctx_lib__load
 
 # Id: U-S:

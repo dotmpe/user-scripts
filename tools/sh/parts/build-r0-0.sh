@@ -143,7 +143,7 @@ env__define__build_core ()
 " $(sh_fun_for_pref "build_target")"\
 " $(sh_fun_for_pref "build_for_target")"\
 " build_env_sh build_env_vars build_sh"\
-" build_boot build_lib_load build_env_sources"\
+" build_boot build__lib__load build_env_sources"\
 " build_source"\
 " build_resolver"\
 " sh_lookup"\
@@ -235,7 +235,7 @@ env__define__build_envs ()
   build_add_setting "ENV_BUILD_ENV"
   test -n "${ENV_BUILD_ENV:-}" && return
   test -n "${sh_exts:-}" -a -n "${build_envs_defnames:-}" ||
-    build_lib_load || return
+    build__lib__load || return
 
   # To aid during bootstrap phase, find and source any helper profile
   ENV_BUILD_ENV=$(sh_path=. any=true none=true first=true \
@@ -282,21 +282,21 @@ env__define__build_init ()
   } || {
     env_require build-${BUILD_TOOL:?} || return
   }
-  build_lib_load && # XXX: can use build_lib_init here at some point?
+  build__lib__load && # XXX: can use build_lib_init here at some point?
   build_define_commands || return
 }
 
 env__define__build_lib ()
 {
   source "${U_S:?}/src/sh/lib/${BUILD_TOOL:?}.lib.sh" &&
-    ${BUILD_TOOL:?}_lib_load
+    ${BUILD_TOOL:?}_lib__load
 }
 
 env__define__build_lib_local ()
 {
   source "$CWD/build-lib.sh" &&
-    build__lib_load &&
-    unset -f build__lib_load
+    build__lib__load &&
+    unset -f build__lib__load
 }
 
 env__define__build_libs ()
@@ -304,7 +304,7 @@ env__define__build_libs ()
   build_add_setting "ENV_BUILD_LIBS"
   test -n "${ENV_BUILD_LIBS:-}" && return
   test -n "${sh_exts:-}" -a -n "${build_libs_defnames:-}" ||
-    build_lib_load || return
+    build__lib__load || return
 
   # Inject any local env scripts
   ENV_BUILD_LIBS=$(sh_path=${BUILD_PATH:?} none=true any=true first=false \

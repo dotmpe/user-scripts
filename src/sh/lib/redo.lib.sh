@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-redo_lib_load()
+redo_lib__load()
 {
   redo_commands=redo\ \
 redo-always\ \
@@ -19,7 +19,7 @@ redo-keep-going
   true "${redo_opts:="-j4"}"
 }
 
-redo_lib_init()
+redo_lib__init()
 {
   test -n "${redo_db-}" || {
     test -e ".redo/db.sqlite3" && redo_db=.redo/db.sqlite3

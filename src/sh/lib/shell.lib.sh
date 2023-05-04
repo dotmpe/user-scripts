@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-shell_lib_load()
+shell_lib__load()
 {
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="${STATUSDIR_ROOT:-$HOME/.local/statusdir/}shell"
@@ -33,7 +33,7 @@ shell_lib_load()
 #
 # See shell-check, shell-test-sh and sh-env-init,
 # and also <doc/shell-builtins.tab>
-shell_lib_init()
+shell_lib__init()
 {
   lib_assert os sys str log || return
 

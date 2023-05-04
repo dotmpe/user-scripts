@@ -2,12 +2,12 @@
 
 # Initial tools to help boot env for a project (tooling) or other set of scripts
 
-script_lib_load()
+script_lib__load()
 {
   test -n "${sh_tools-}" || sh_tools=$(pwd -P)/tools/sh
 }
 
-script_lib_init()
+script_lib__init()
 {
   test "${script_lib_init-}" = "0" && return
   test -n "$LOG" || return 102
@@ -19,7 +19,7 @@ script_lib_init_()
 {
   #shellcheck disable=2154
   set -- "$scriptname" "Delayed script-log init, check lib-init!"
-  script_lib_init && $script_log warn "$@"
+  script_lib__init && $script_log warn "$@"
 }
 
 scripts_init()

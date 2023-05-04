@@ -3,7 +3,7 @@
 # Deal with checksumming, and file manifests with checksums
 
 
-ck_lib_load()
+ck_lib__load()
 {
   empty_md5=d41d8cd98f00b204e9800998ecf8427e
   empty_sha1=da39a3ee5e6b4b0d3255bfef95601890afd80709

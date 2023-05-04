@@ -1,6 +1,6 @@
 #!/bin/sh
 
-user_env_lib_load()
+user_env_lib__load()
 {
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="${STATUSDIR_ROOT:-$$HOME/.local/statusdir/}shell"

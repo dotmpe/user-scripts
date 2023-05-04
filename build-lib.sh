@@ -4,7 +4,7 @@
 # normally compiled into bootstrap/default.do
 
 
-build__lib_load ()
+build_lib__load ()
 {
   return 0
 
