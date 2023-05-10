@@ -20,7 +20,7 @@ case "$0" in "-"* ) ;; * )
 
   test -n "$scriptname" || scriptname="$(basename -- "$0" .sh)"
   test -n "$verbosity" || verbosity=5
-  test -z "$__load_lib" && lib_util_act="$1" || lib_util_act="load-ext"
+  test -z "$lib_load" && lib_util_act="$1" || lib_util_act="load-ext"
   case "$lib_util_act" in
 
     load-ext ) ;; # External include, do nothing

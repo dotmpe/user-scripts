@@ -140,8 +140,8 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
 
   local lib_id f_lib_loaded f_lib_path r lookup_test=${lookup_test:-"lib_exists"}
 
-  # __load_lib: true if inside util.sh:lib-load
-  test -n "${__load_lib-}" || local __load_lib=1
+  # lib_load: true if inside util.sh:lib-load
+  test -n "${lib_load-}" || local lib_load=1
   while test $# -gt 0
   do
     lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
@@ -322,15 +322,15 @@ lib_loaded_cleanup () # [Sort-Opts]
 }
 
 # Load given libs and keep loading libs in LIB-REQ until empty
-lib_require() # Libs...
+lib_require () # ~ <Libs...>
 {
-  test $# -gt 0 || return 98
-  test -z "${__load_lib-}" || {
+  test $# -gt 0 || return ${_E_MA:-194}
+  test -z "${load_lib-}" || {
     LIB_REQ="${LIB_REQ:-}$* "
     return
   }
   lib_load "$@" || return
-  test -n "${LIB_REQ-}" || return 0
+  test -z "${LIB_REQ-}" && return
   until test -z "${LIB_REQ-}"
   do
     set -- $LIB_REQ ; unset LIB_REQ

@@ -4,13 +4,13 @@
 
 sys_lib__load()
 {
-  test -n "${LOG-}" || return 102
-  test -n "${uname-}" || export uname="$(uname -s)"
-  test -n "${hostname-}" || hostname="$(hostname -s | tr '[:upper:]' '[:lower:]')"
-  test -n "${HOST-}" || HOST=$hostname
+  : "${LOG:?"No LOG env"}"
+  : "${uname:=$(uname -s)}"
+  : "${HOST:=$(hostname -s)}"
+  : "${hostname:=$(hostname -s | tr '[:upper:]' '[:lower:]')}"
 }
 
-sys_lib__init()
+sys_lib__init ()
 {
   test "${sys_lib_init-}" = "0" || {
     test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
