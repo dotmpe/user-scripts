@@ -387,6 +387,22 @@ cwd_lookup_path () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking fo
   }
 }
 
+user_lookup_path ()
+{
+  declare -a user_paths
+  while test "${1:?}" != "--"
+  do
+    user_paths+=( "$1" )
+    shift
+    test $# -gt 0 || break
+  done
+  shift
+  # FIXME: remove pipeline
+  { out_fmt=list cwd_lookup_path "$@"
+    printf '%s\n' "${user_paths[@]}"
+  } | remove_dupes
+}
+
 init_user_env()
 {
   local key= value=
