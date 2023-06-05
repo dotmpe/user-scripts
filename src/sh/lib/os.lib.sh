@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## OS - files, paths
+## OS - system toolkit/programs, files, paths.
 
 
 os_lib__load ()
@@ -144,6 +144,29 @@ dirname_ ()
   echo "$2"
 }
 
+# Perform action for first path existing as directory
+dir_exists () # ~ <Action> <Paths...>
+{
+  os_do_exists "test -d" "$@"
+}
+
+# Perform action for first path from inputs that passes test.
+os_do_exists () # ~ <Test> <Action=echo> <Paths...>
+{
+  local test_ test=${1:?} act=${2:-echo}
+  shift 2
+  test "${test:0:1}" = '!' && test_='test ! -'${test:1} ||
+    test "${#test}" = '1' &&
+      test_='test -'${test} || test_=$test
+  while test $# -gt 0
+  do
+    $test_ "${1:?}" && break
+    shift; continue
+  done
+  test $# -gt 0 || return
+  $act "$1"
+}
+
 dotname () # ~ Path [Ext-to-Strip]
 {
   echo "$(dirname -- "$1")/.$(basename -- "$1" "${2-}")"
@@ -217,11 +240,11 @@ filectime() # File
 {
   while test $# -gt 0
   do
-    case "$uname" in
-      Darwin )
+    case "${uname,,}" in
+      darwin )
           stat -L -f '%c' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filectime: $uname?" "" 1 ;;
@@ -233,12 +256,7 @@ filectime() # File
 fileformat ()
 {
   local flags= ; file_tool_flags
-  case "$uname" in
-    Darwin | Linux )
-        file -"${flags}" "$1" || return 1
-      ;;
-    * ) error "fileformat: $uname?" 1 ;;
-  esac
+  file -"${flags}" "$1"
 }
 
 # Check wether name has extension, return 0 or 1
@@ -259,13 +277,13 @@ filemtime() # File
   local flags=- ; file_stat_flags
   while test $# -gt 0
   do
-    case "$uname" in
-      Darwin )
-          trueish "${file_names-}" && pat='%N %m' || pat='%m'
+    case "${uname,,}" in
+      darwin )
+          "${file_names:-false}" && pat='%N %m' || pat='%m'
           stat -f "$pat" $flags "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
-          trueish "${file_names-}" && pat='%N %Y' || pat='%Y'
+      linux | cygwin_nt-6.1 )
+          "${file_names:-false}" && pat='%N %Y' || pat='%Y'
           stat -c "$pat" $flags "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filemtime: $uname?" "" 1 ;;
@@ -277,11 +295,11 @@ filemtime() # File
 filemtype () # File..
 {
   local flags= ; file_tool_flags
-  case "$uname" in
-    Darwin )
+  case "${uname,,}" in
+    darwin )
         file -"${flags}"I "$1" || return 1
       ;;
-    Linux )
+    linux )
         file -"${flags}"i "$1" || return 1
       ;;
     * ) error "filemtype: $uname?" 1 ;;
@@ -310,11 +328,11 @@ filesize () # File
   local flags=- ; file_stat_flags
   while test $# -gt 0
   do
-    case "$uname" in
-      Darwin )
+    case "${uname,,}" in
+      darwin )
           stat -L -f '%z' "$1" || return 1
         ;;
-      Linux | CYGWIN_NT-6.1 )
+      linux | cygwin_nt-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
       * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
@@ -357,6 +375,17 @@ filter_line_comments () # (s) ~ [<Marker-bre>]
       s/[\t ]*'"${1:-"#"}"'[^\\\n]*\(\\\n[^\\\n]*\)*\n//g
       s/\n[\t ]*'"${1:-"#"}"'.*$//
     '
+}
+
+# Each line is passed as last argument to given command, only those giving zero
+# status are echo'ed.
+filter_lines () # ~ <Cmd...> # Remove lines for which command returns non-zero
+{
+  local line
+  while read -r line
+  do "$@" "$line" || continue
+    echo "$line"
+  done
 }
 
 # Go over arguments and echo. If no arguments given, or on argument '-' the
@@ -460,10 +489,22 @@ go_to_dir_with () # ~ <Local-Name>
   test -e "$1" || return 1
 }
 
-ignore_sigpipe ()
+# An (almost) no-op that does pass previous status back, usable as an
+# alternative to 'true' (or ':') for use to store a value as last argument ('$_').
+# If such value comes from an invocation, its status will always be masked with
+# 0 by 'true'. Alternatively 'test -{n,z}' would be usable e.g. for commands
+# that do not return any non-zero status on failures, but otherwise it would
+# override any status just the same (besides adding an extra assumption about
+# the value).
+if_ok () # (?) ~ <...> # No-op, but return previous status
+{
+  return
+}
+
+ignore_sigpipe () # (?) ~ <...> # Status OK if SIG:PIPE
 {
   local r=$?
-  test $r -eq 141 # For bash: 128+signal where signal=SIGPIPE=13
+  test $r -eq 141 # For linux/bash: 128+signal where signal=SIGPIPE=13
 }
 
 # Little wrapper to use lines-while to read line-continuations to lines
@@ -575,7 +616,7 @@ normalize_relative()
   esac
 }
 
-# Because '!' does not work with "$@"
+# XXX: Because '!' does not work with "$@"
 not ()
 {
   ! "$@"
@@ -781,9 +822,15 @@ realpaths ()
 
 # Sort into lookup table (with Awk) to remove duplicate lines.
 # Removes duplicate lines (unlike uniq -u) without sorting.
-remove_dupes () # ~
+remove_dupes () # ~ <Awk-argv...>
 {
   awk '!a[$0]++' "$@"
+}
+
+# Same as remove-dupes but leave comments/preproc-lines alone.
+remove_dupes_nix () # ~ <Awk-argv...>
+{
+  awk '( substr($1,1,1) == "#" || !a[$0]++ )' "$@"
 }
 
 # Sort paths by mtime. Uses foreach-addcol to add mtime column, sort on and then

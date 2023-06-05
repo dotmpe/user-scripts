@@ -10,6 +10,9 @@
 lib_lib__load()
 {
   test -n "${default_lib-}" || default_lib="os sys str src shell"
+  #lib_groups \
+  #  base/lib-{path,load,init} \
+  #  core/{:base,lib-{assert,require}}
 }
 
 lib_lib__init()
@@ -17,6 +20,9 @@ lib_lib__init()
   init_lib_log lib_lib  || return
   $lib_lib_log info ":lib-init" "Loaded lib.lib" "$0"
 }
+
+lib_lib__group__base={lib-{path,load,init}}
+lib_lib__group__core={:base,lib-{assert,require}}
 
 
 # Verify lib was loaded or bail out
@@ -54,7 +60,7 @@ lib_exists () # [lookup_first=true] ~ <Lib-name> [<Dirs...>]
 {
   local name="$1" r=1
   shift
-  test $# -gt 0 || -- $(echo "$SCRIPTPATH" | tr ':' '\n')
+  test $# -gt 0 || set -- $(echo "$SCRIPTPATH" | tr ':' '\n')
   while test $# -gt 0
   do
     test -e "$1/$name.lib.sh" && {
@@ -321,8 +327,17 @@ lib_loaded_cleanup () # [Sort-Opts]
   }
 }
 
-# Load given libs and keep loading libs in LIB-REQ until empty
-lib_require () # ~ <Libs...>
+# Load given libs or put in LIB_REQ if called from lib-load already. If put in
+# a lib load hook this does not recurse a call to lib-load but appends to a
+# global variable
+# It then keep loading libs until LIB-REQ is empty.
+#
+# FIXME: return pending error status
+# TODO: run over lib-require within lib init hook the same way, or define any
+# sequence of hooks to run if present as well.
+# TODO: lib-require str/fnmatch sys/core subgroups... and alternatives?
+#
+lib_require () # ~ <Libs...> # Load all libs, including those from lib-require in load
 {
   test $# -gt 0 || return ${_E_MA:-194}
   test -z "${load_lib-}" || {

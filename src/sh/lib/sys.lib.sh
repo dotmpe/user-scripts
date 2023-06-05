@@ -2,7 +2,10 @@
 
 ## Sys: dealing with vars, functions, env.
 
-sys_lib__load()
+# XXX: sys currently is a helpers/util collection for user-scripts.
+# shouldnt this just deal with actual system?
+
+sys_lib__load ()
 {
   : "${LOG:?"No LOG env"}"
   : "${uname:=$(uname -s)}"
@@ -28,7 +31,7 @@ incr() # VAR [AMOUNT=1]
   local v incr_amount
   test -n "${2-}" && incr_amount=$2 || incr_amount=1
   v=$(eval echo \$$1)
-  eval $1=$(( $v + $incr_amount ))
+  eval $1=$(( v + incr_amount ))
 }
 
 getidx()
@@ -105,12 +108,11 @@ try_exec_func()
 }
 
 # TODO: redesign @Dsgn
-try_var()
+try_var () # ~ <Var-name>
 {
-  local value=
-  eval "value=\"\$$1\"" >/dev/null 2>/dev/null
-  test -n "$value" || return 1
-  echo $value
+  : "${!1:-}"
+  test -n "$_" || return
+  echo "$_"
 }
 
 # Get echo-local output, and return 1 on empty value. See echo-local spec.
@@ -367,7 +369,8 @@ lookup_path_shadows() # VAR-NAME LOCAL
   return $r
 }
 
-cwd_lookup_path () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking for file(s) or path(s)
+
+cwd_lookup_paths () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking for file(s) or path(s)
 {
   local cwd=$PWD sub
   until test $cwd = /
@@ -377,14 +380,23 @@ cwd_lookup_path () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking fo
     } ||
       echo "$cwd"
     cwd="$(dirname "$cwd")"
-  done | {
-    case "${out_fmt:-path}" in
-      one ) head -n 1 ;;
-      path ) tr '\n' ':' | head -c -1 ;;
-      list ) cat ;;
-      * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;
-    esac
-  }
+  done | sys_path_fmt
+}
+
+#
+sys_path () # ~ <>
+{
+  false | sys_path_fmt
+}
+
+sys_path_fmt ()
+{
+  case "${out_fmt:-path}" in
+    one ) head -n 1 ;;
+    path ) tr '\n' ':' | head -c -1 ;;
+    list ) cat ;;
+    * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;
+  esac
 }
 
 user_lookup_path ()
