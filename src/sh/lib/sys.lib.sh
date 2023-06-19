@@ -7,10 +7,12 @@
 
 sys_lib__load ()
 {
+  lib_require os || return
+
   : "${LOG:?"No LOG env"}"
-  : "${uname:=$(uname -s)}"
-  : "${HOST:=$(hostname -s)}"
-  : "${hostname:=$(hostname -s | tr '[:upper:]' '[:lower:]')}"
+  if_ok "${uname:=$(uname -s)}" &&
+  if_ok "${HOST:=$(hostname -s)}" || return
+  : "${hostname:=${HOST,,}}"
 }
 
 sys_lib__init ()
