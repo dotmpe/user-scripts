@@ -386,7 +386,7 @@ cwd_lookup_paths () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking f
 }
 
 #
-sys_path () # ~ <>
+sys_path () # ~ <> # TODO
 {
   false | sys_path_fmt
 }
@@ -401,7 +401,7 @@ sys_path_fmt ()
   esac
 }
 
-user_lookup_path ()
+user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
 {
   declare -a user_paths
   while test "${1:?}" != "--"
@@ -412,7 +412,7 @@ user_lookup_path ()
   done
   shift
   # FIXME: remove pipeline
-  { out_fmt=list cwd_lookup_path "$@"
+  { out_fmt=list cwd_lookup_paths "$@"
     printf '%s\n' "${user_paths[@]}"
   } | remove_dupes
 }

@@ -1,7 +1,15 @@
+LOG_error_handler ()
+{
+  local r=$? lastarg=$_
+  $LOG error ":on-error" "In command '${0}' ($lastarg)" "E$r"
+  exit $r
+}
+# Copy: LOG-error-handler
+
 sh_mode ()
 {
   test $# -eq 0 && {
-    # XXX: sh-mode summary
+    # XXX: sh-mode summary: flags and list traps
     echo "$0: sh-mode: $-" >&2
     trap >&2
   } || {
@@ -9,21 +17,49 @@ sh_mode ()
     for opt in "${@:?}"
     do
       case "${opt:?}" in
+
           ( build )
-                sh_mode_exc $opt dev "$@"
+                sh_mode_exclusive $opt dev "$@"
                 # Noclobber, inherit DBG/RET traps and set -e
                 set -CET &&
                 trap "build_error_handler" ERR || return
               ;;
+
           ( dev )
-                sh_mode_exc $opt build "$@"
+                sh_mode_exclusive $opt "$@"
                 # Hash location, inherit DBG/RET traps and set -e
                 set -hET &&
                 shopt -s extdebug &&
                 . "${U_C:?}"/script/bash-uc.lib.sh &&
                 trap 'bash_uc_errexit' ERR || return
               ;;
-          ( strict ) set -euo pipefail || return ;;
+
+          ( logger )
+                eval "$(log.sh bg get-logger)"
+              ;;
+
+          ( log-error )
+                sh_mode_exclusive $opt dev "$@"
+                set -CET &&
+                trap "LOG_error_handler" ERR || return
+              ;;
+
+          ( mod )
+                  sh_mode strict log-error &&
+                  shopt -s expand_aliases
+              ;;
+
+          ( strict )
+                  set -euo pipefail -o noclobber
+              ;;
+
+          ( isleep ) # Setup interruptable, verbose sleep command (for batch scripting)
+
+                  trap '{ return $?; }' INT
+                  # Override sleep with function
+                  fun_def sleep stderr_sleep_int \"\$@\"\;
+              ;;
+
           ( * ) stderr_ "! $0: sh-mode: Unknown mode '$opt'" 1 || return ;;
       esac
     done
@@ -31,7 +67,7 @@ sh_mode ()
 }
 # Copy: sh-mode
 
-sh_mode_exc ()
+sh_mode_exclusive ()
 {
   test $# -gt 0 || return
   declare this=${1:?} other=${2:?}

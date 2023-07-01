@@ -2,6 +2,12 @@
 ### Build-r0.0 env parts
 
 
+build__lib__load ()
+{
+  true "${GITDIR:=$(git rev-parse --git-dir)}"
+}
+
+
 env__build__attributes ()
 {
   build_targets_ "$attributes" || return
@@ -235,7 +241,7 @@ env__define__build_envs ()
   build_add_setting "ENV_BUILD_ENV"
   test -n "${ENV_BUILD_ENV:-}" && return
   test -n "${sh_exts:-}" -a -n "${build_envs_defnames:-}" ||
-    build__lib__load || return
+    build_lib__load || return
 
   # To aid during bootstrap phase, find and source any helper profile
   ENV_BUILD_ENV=$(sh_path=. any=true none=true first=true \
