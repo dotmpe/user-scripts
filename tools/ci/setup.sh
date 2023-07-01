@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export STATUSDIR_ROOT=$HOME/.local/share/statusdir/
+
 { cat <<EOM
 export TERM=xterm-256color
 export U_S=\$PWD
