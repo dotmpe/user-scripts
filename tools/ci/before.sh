@@ -2,9 +2,6 @@
 
 # CI suite stage 3.
 
-pwd
-ls -la
-
 export_stage before-script before && announce_stage
 
 suite_run "${build_txt}" $SUITE 3
