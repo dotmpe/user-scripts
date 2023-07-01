@@ -1,13 +1,12 @@
 #!/bin/sh
 
-export STATUSDIR_ROOT=$HOME/.local/share/statusdir/
-
 { cat <<EOM
 export TERM=xterm-256color
 export U_S=\$PWD
 export ENV_DEV=1
 export SCRIPT_SHELL=bash
 export CS=dark
+export STATUSDIR_ROOT=$HOME/.local/share/statusdir/
 EOM
 } > ~/.profile
 
