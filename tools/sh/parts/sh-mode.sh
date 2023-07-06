@@ -42,18 +42,15 @@ sh_mode ()
                 eval "$(log.sh bg get-logger)"
               ;;
 
-          ( log-init ) sh_mode log-uc-init
-              ;;
-
           ( log-error )
                 sh_mode_exclusive $opt dev "$@"
                 set -CET &&
                 trap "LOG_error_handler" ERR || return
               ;;
 
-          ( log-uc-init )
+          ( log-init )
                 # Temporary setting if no LOG is configured
-                test -n "${LOG:-}" && INIT_LOG=$LOG || sh_mode log-uc-tmp || return
+                test -n "${LOG:-}" && INIT_LOG=$LOG || sh_mode log-tmp || return
               ;;
 
           ( log-uc-start )
@@ -66,7 +63,7 @@ sh_mode ()
                 $LOG "info" ":sh-mode" "U-c log started" "-:\$-"
               ;;
 
-          ( log-uc-tmp )
+          ( log-tmp )
                 # LOG setup with no deps
                 stderr () { "$@" >&2; }
                 init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
