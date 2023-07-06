@@ -6,6 +6,7 @@ LOG_error_handler ()
 }
 # Copy: LOG-error-handler
 
+# Some packaged routines to prepare shell, use in profile, rc or user scripts
 sh_mode ()
 {
   test $# -eq 0 && {
@@ -20,22 +21,33 @@ sh_mode ()
 
           ( build )
                 sh_mode_exclusive $opt dev "$@"
-                # Noclobber, inherit DBG/RET traps and set -e
-                set -CET &&
+                # noundef, noclobber, inherit DBG/RET traps and exitonerror
+                set -uCETeo pipefail
                 trap "build_error_handler" ERR || return
               ;;
 
-          ( dev )
+          ( dev-uc )
                 sh_mode_exclusive $opt "$@"
-                # Hash location, inherit DBG/RET traps and set -e
-                set -hET &&
+                # Hash location, inherit DBG/RET traps and exitonerror
+                set -hETe &&
                 shopt -s extdebug &&
                 . "${U_C:?}"/script/bash-uc.lib.sh &&
                 trap 'bash_uc_errexit' ERR || return
               ;;
 
+          ( dev ) sh_mode dev-uc
+              ;;
+
           ( logger )
                 eval "$(log.sh bg get-logger)"
+              ;;
+
+          ( log-init )
+                stderr () { "$@" >&2; }
+                init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
+                { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
+                export -f stderr init_log
+                export INIT_LOG=init_log LOG=init_log
               ;;
 
           ( log-error )
@@ -60,7 +72,7 @@ sh_mode ()
                   fun_def sleep stderr_sleep_int \"\$@\"\;
               ;;
 
-          ( * ) stderr_ "! $0: sh-mode: Unknown mode '$opt'" 1 || return ;;
+          ( * ) stderr echo "! $0: sh-mode: Unknown mode '$opt'"; return 1 ;;
       esac
     done
   }
