@@ -14,9 +14,16 @@ jobs:
     - run:
         name: Setup
         command: |
+          # XXX: not sure if these commands are executing in login-shell
           . ~/.profile
+          # Prepare .test-env.sh file and overwrite ~/.profile
           . ./tools/ci/setup.sh
-          echo export scriptname=Circle-CI >> ~/.profile
+          { echo "# Added by $0:Setup on $(date --iso=min)"
+            echo export scriptname=Circle-CI
+          } >> ~/.profile
+          # Log-profile needs a bit of special attention, check here
+          #set -x
+          . ./.test-env.sh
 
     #- run:
     #    name: Move checkout

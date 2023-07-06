@@ -57,14 +57,17 @@ sh_mode ()
               ;;
 
           ( log-uc-start )
-                . ${U_C:?}/tools/sh/log.sh &&
-                uc_log_init &&
+                # Requires lib helpers to be ready
+                . ${U_C:?}/tools/sh/log.sh && uc_log_init &&
+                # Unexport again, tools/sh/log.sh exec should be usable at this stage
                 unset INIT_LOG LOG &&
+                # Use logger function instead of sub-shell
                 LOG=uc_log &&
                 $LOG "info" ":sh-mode" "U-c log started" "-:\$-"
               ;;
 
           ( log-uc-tmp )
+                # LOG setup with no deps
                 stderr () { "$@" >&2; }
                 init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
                 { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
