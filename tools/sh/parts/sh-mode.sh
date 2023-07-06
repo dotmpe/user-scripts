@@ -54,7 +54,9 @@ sh_mode ()
           ( log-uc-init )
                 # Temporary setting if no LOG is configured
                 test -n "${LOG:-}" && INIT_LOG=$LOG || sh_mode log-uc-tmp || return
+              ;;
 
+          ( log-uc-start )
                 . ${U_C:?}/tools/sh/log.sh &&
                 uc_log_init &&
                 LOG=uc_log &&
