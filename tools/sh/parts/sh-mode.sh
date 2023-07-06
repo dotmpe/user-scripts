@@ -69,7 +69,7 @@ sh_mode ()
               ;;
 
           ( log-tmp )
-                # LOG setup with no deps
+                # "LOG" setup with no deps
                 stderr () { "$@" >&2; }
                 init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
                 { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
