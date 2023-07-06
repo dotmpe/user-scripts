@@ -35,7 +35,12 @@ sh_mode ()
                 trap 'bash_uc_errexit' ERR || return
               ;;
 
-          ( dev ) sh_mode dev-uc
+          ( dev )
+                test -n "${U_C:-}" && {
+                  sh_mode dev-uc
+                  return
+                }
+                sh_mode build
               ;;
 
           ( logger )
