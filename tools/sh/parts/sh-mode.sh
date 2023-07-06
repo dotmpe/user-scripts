@@ -19,7 +19,7 @@ sh_mode ()
     do
       case "${opt:?}" in
 
-          ( build )
+          ( build ) # Handler for build.lib
                 sh_mode_exclusive $opt dev "$@"
                 # noundef, noclobber, inherit DBG/RET traps and exitonerror
                 set -uCETeo pipefail
@@ -42,18 +42,31 @@ sh_mode ()
                 eval "$(log.sh bg get-logger)"
               ;;
 
-          ( log-init )
-                stderr () { "$@" >&2; }
-                init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
-                { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
-                export -f stderr init_log
-                export INIT_LOG=init_log LOG=init_log
+          ( log-init ) sh_mode log-uc-init
               ;;
 
           ( log-error )
                 sh_mode_exclusive $opt dev "$@"
                 set -CET &&
                 trap "LOG_error_handler" ERR || return
+              ;;
+
+          ( log-uc-init )
+                # Temporary setting if no LOG is configured
+                test -n "$LOG" && INIT_LOG=$LOG || sh_mode log-uc-tmp || return
+
+                . ${U_C:?}/tools/sh/log.sh &&
+                uc_log_init &&
+                LOG=uc_log &&
+                $LOG "info" ":sh-mode" "U-c log started" "-:\$-"
+              ;;
+
+          ( log-uc-tmp )
+                stderr () { "$@" >&2; }
+                init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
+                { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
+                export -f stderr init_log
+                export INIT_LOG=init_log LOG=init_log
               ;;
 
           ( mod )
