@@ -59,6 +59,7 @@ sh_mode ()
           ( log-uc-start )
                 . ${U_C:?}/tools/sh/log.sh &&
                 uc_log_init &&
+                unset INIT_LOG LOG &&
                 LOG=uc_log &&
                 $LOG "info" ":sh-mode" "U-c log started" "-:\$-"
               ;;
