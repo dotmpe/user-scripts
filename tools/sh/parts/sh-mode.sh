@@ -65,7 +65,7 @@ sh_mode ()
                 unset INIT_LOG LOG &&
                 # Use logger function instead of sub-shell
                 LOG=uc_log &&
-                $LOG "info" ":sh-mode" "U-c log started" "-:\$-"
+                $LOG "info" ":sh-mode" "U-c log started" "-:$-"
               ;;
 
           ( log-tmp )
