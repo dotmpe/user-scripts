@@ -191,7 +191,7 @@ log_256()
 log()
 {
   test -n "${log_key:-}" || log_src_id_var
-  printf -- "%s[%s] %s %s\n" "$bb" "$bk$(log_src_id)$bb" "${norm-}" "$1"
+  printf -- "%s[%s] %s %s\n" "${bb:-}" "${bk:-}$(log_src_id)${bb:-}" "${norm:-}" "$1"
 }
 
 err()

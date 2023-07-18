@@ -10,4 +10,7 @@ fnmatch ()
   esac
 }
 
+# XXX:
+export -f fnmatch
+
 # Id: U-S:

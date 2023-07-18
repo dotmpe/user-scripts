@@ -21,7 +21,7 @@ Don't fear the Unix chainsaw <https://github.com/erichs/composure>
 A community Bash framework <https://github.com/Bash-it/bash-it> @Also
 git hooks manager <https://github.com/git-hooks/git-hooks> @Also
 
-2020-09-09 TODO: rewrite .meta/src/*.do to tools/redo/parts, and targets to .meta/cache.
+2020-09-09 TODO: rewrite .meta/src/*.do to tools/redo/recipes, and targets to .meta/cache.
 
 Also come up with scheme to merge in data from statusdir
 

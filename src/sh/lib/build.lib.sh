@@ -29,12 +29,10 @@ build_lib__load ()
 
 build_lib__init () # ~
 {
-  return 0
-
   #shellcheck disable=2086
   # build_env_reset
   build_env_init &&
-  build_boot ${BUILD_ENV:?Missing build env boot load arguments} || return
+  #build_boot ${BUILD_ENV:?Missing build env boot load arguments} || return
 
   #env__define__from_package || return
 
@@ -106,7 +104,7 @@ build_alias_part ()
     true "${part:?Aliased build with tools part needs path to recipe}"
     declare pnals alsp
     pnals=$(echo "${BUILD_TARGET:?}" | tr './' '_')
-    alsp="${REDO_STARTDIR:?}/tools/redo/parts/$pnals.do"
+    alsp="${REDO_STARTDIR:?}/tools/redo/recipes/$pnals.do"
     ! test -h "$alsp" || {
       test -e "$alsp" || {
         rm "$alsp" || return
@@ -965,6 +963,13 @@ build_source ()
 # Start build for target sequence
 build_run () # ~ <Target <...>>
 {
+  test 0 = "${build_lib_init:-}" || {
+    #lib_init lib-uc &&
+    build_lib_loaded=0
+    lib_loaded=$lib_loaded\ build
+    lib_require ${BUILD_TOOL:?} &&
+    lib_init build || return
+  }
   build_targets_ "${@:?}"
 }
 
@@ -2514,12 +2519,6 @@ sh_clear ()
   done
 }
 
-sh_fun ()
-{
-  test "$(type -t "${1:?}")" = "function"
-}
-# Copy
-
 sh_fun_for_pref ()
 {
   compgen -A function | grep '^'"${1:?}"
@@ -2959,7 +2958,7 @@ build_ () # ~ <Build-action> <Argv <...>>
 test -n "${__lib_load-}" || {
 
   # Safe script's entry point name as BUILD_SCRIPT, or re-use SCRIPTNAME
-  BUILD_SCRIPT=${SCRIPTNAME:-$(basename -- "$0" )}
+  BUILD_SCRIPT=${SCRIPTNAME:-$(basename "$(basename -- "$0" .lib.sh )" .sh)}
   case "$BUILD_SCRIPT" in
 
     ( "build-" )

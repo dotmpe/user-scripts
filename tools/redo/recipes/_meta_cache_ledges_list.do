@@ -7,4 +7,4 @@
 ./bin/u-s pullall && ./bin/u-s listfiles
 
 redo-stamp
-# Id: U-S:tools/redo/parts/_meta_cache_ledges.list.do              ex:ft=bash:
+# Id: U-S:tools/redo/recipes/_meta_cache_ledges.list.do              ex:ft=bash:

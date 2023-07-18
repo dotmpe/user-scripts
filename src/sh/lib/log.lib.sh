@@ -4,7 +4,8 @@
 
 log_lib__load ()
 {
-  test -n "${LOG-}" || LOG=${U_S}/tools/sh/log.sh
+  lib_require stdlog-uc date date-htd || return
+  : "${LOG:=${U_S}/tools/sh/log.sh}"
 }
 
 log_lib__init () # ~ [<Name=us>]

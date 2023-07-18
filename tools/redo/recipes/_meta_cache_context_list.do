@@ -22,4 +22,4 @@ test ! -e $context_local || cat $context_local
 
 redo-stamp
 
-# Id: U-S:tools/redo/parts/_meta_cache_context.list.do             ex:ft=bash:
+# Id: U-S:tools/redo/recipes/_meta_cache_context.list.do             ex:ft=bash:

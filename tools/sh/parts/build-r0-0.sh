@@ -35,8 +35,9 @@ env__build__package ()
 
 env__build__rule_params ()
 {
-  build_rules || return
-  build_targets_ "${BUILD_RULES:?}" || return
+  build_rules &&
+  build_targets_ "${BUILD_RULES:?}" ||
+    $LOG error : "Failed to build targets table" "E$?:$BUILD_RULES" $? || return
   params_sh "${BUILD_RULES:?}" >| "${BUILD_TARGET_TMP:?}" || return
   build-stamp < "${BUILD_TARGET_TMP:?}"
 }
@@ -571,7 +572,8 @@ env__define__rule_params ()
   # Built-in recipe for cache file with params extracted from annotations
   params_sh="${PROJECT_CACHE:?}/params.sh"
   test "${BUILD_TARGET:?}" = "$params_sh" && {
-    env__build__rule_params || return
+    env__build__rule_params ||
+      $LOG error : "Failed to build params from targets" "E$?:$params_sh" $? || return
     return ${_E_stop:-197}
   }
 

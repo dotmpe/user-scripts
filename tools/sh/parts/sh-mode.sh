@@ -128,4 +128,8 @@ build_error_handler ()
   $LOG error ":on-error" "In recipe for '${BUILD_TARGET//%/%%}' ($lastarg)" "E$r"
   exit $r
 }
+
 # XXX:
+export -f sh_mode{,_exclusive} LOG_error_handler build_error_handler
+
+# Id: U-S:sh-mode

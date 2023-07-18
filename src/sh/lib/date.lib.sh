@@ -126,7 +126,7 @@ date_fmt() # Date-Ref Str-Time-Fmt
   } || {
     # NOTE patching for GNU date
     test -e "$1" && tags="@$(filemtime "$1")" ||
-        tags=$( echo "$1" | bsd_date_tag )
+        tags=$( echo "$1" | bsd_date_tag ) # XXX: date-htd.lib
   }
   $gdate ${date_flags:-} -d "$tags" +"$2"
 }
