@@ -11,6 +11,9 @@ sh_mode strict build
 
 lib_require us-build log &&
 
+# XXX:
+##resolve fun sh-exception
+##resolve fun sh-error
 unset -f sh_{fun,error,exception}
 . ./tools/sh/parts/sh-fun.sh
 

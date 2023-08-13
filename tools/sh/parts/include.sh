@@ -111,12 +111,17 @@ sh_require () # ~ <Partnames...> # ~ Test each part was sourced with zero-status
   done || $stat 1
 }
 
-# XXX: sh-include-run
+# XXX: sh-include-run <Cmd-fun-name> [<Part-name>]
 sh_run ()
 {
   local vid; mkvid "$1";
-  func_exists "$vid" || { sh_include "${2:-$1}" || return; }
-  "$vid"
+  func_exists "$vid" || { sh_include "${2:-$1}" ||
+    $LOG error :sh-run:$vid "Failed to find impl" "E127($?):$1" 127 || return
+  }
+  func_exists "$vid" ||
+    $LOG error :sh-run:$vid "Failed to get Sh impl" "E3:$1" 3 || return
+  "$vid" ||
+    $LOG :sh-run:$vid "Non-zero sh-run status" "E$?:$1" $?
 }
 
 # Id: U-S:

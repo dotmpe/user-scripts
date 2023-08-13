@@ -343,7 +343,8 @@ env__define__build_rules ()
   build_add_setting "BUILD_RULES"
   test -n "${BUILD_RULES:-}" && return
   BUILD_RULES="$(sh_exts="" sh_path=. any=true sh_lookup \
-      ${build_rules_defnames:?})" || return
+      ${build_rules_defnames:?})" ||
+        $LOG warn : "No build-rules" "E$?" $? || return
 
   #test "$BUILD_TARGET" = "${build_at_build_env_targets:-@build-env}" || {
   #  build-ifchange "$BUILD_RULES"

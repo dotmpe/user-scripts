@@ -300,21 +300,41 @@ lookup_path_list () # VAR-NAME
   eval echo \"\$$1\" | tr ':' '\n'
 }
 
-# Translate Lookup path element and given/local name to filesystempath,
-# or return err-stat.
-lookup_exists () # NAME DIRS...
+# Find first or every existing Local-path in Dirs, or fail.
+# Default <lookup-first=true>. List one result per line.
+lookup_exists () # ~ <Local-path> <Dirs...>
 {
-  local name="${1:?}" r=1
+  local name="${1:?}"
   shift
-  while test $# -gt 0
+  while test 0 -lt $#
   do
     test -e "${1:?}/$name" && {
       echo "$1/$name"
-      ${lookup_first:-true} && return || r=0
+      "${lookup_first:-true}" && return
     }
     shift
   done
-  return $r
+  # Cannot reach this unless lookup-first=false and no results found
+  ! "${lookup_first:-true}"
+}
+
+lookup_expand () # ~ <Glob-pattern> <Dirs...>
+{
+  local glob="${1:?}" match
+  shift
+  while test 0 -lt $#
+  do
+    for match in $(sys_evals "${1:?}/$glob")
+    do
+      test -e "$match" && {
+        echo "$match"
+        "${lookup_first:-true}" && return
+      }
+    done
+    shift
+  done
+  # Cannot reach this unless lookup-first=false and no results found
+  ! "${lookup_first:-true}"
 }
 
 # lookup-path List existing local paths, or fail if second arg is not listed
@@ -332,7 +352,7 @@ lookup_path () # ~ VAR-NAME LOCAL-PATH
   local path ; for path in $( lookup_path_list $1 )
     do
       eval $lookup_test \""$2"\" \""$path"\" && {
-        ${lookup_first:-true} && break || continue
+        "${lookup_first:-true}" && break || continue
       } || continue
     done
 }
@@ -346,7 +366,7 @@ lookup_paths () # Var-Name Local-Paths...
       for path in "$@"
       do
         eval $lookup_test \""$path"\" \""$base"\" && {
-          ${lookup_first:-true} && break 2 || continue
+          "${lookup_first:-true}" && break 2 || continue
         } || continue
       done
     done
@@ -371,10 +391,20 @@ lookup_path_shadows() # VAR-NAME LOCAL
   return $r
 }
 
-
-cwd_lookup_paths () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking for file(s) or path(s)
+std_lookup_path ()
 {
-  local cwd=$PWD sub
+  std_read_path
+}
+
+cwd_lookup_path ()
+{
+  cwd_lookup_paths | std_lookup_path "$@"
+}
+
+# Find specific files and other paths, or build a lookup path.
+cwd_lookup_paths () # (cwd) ~ [ <Local-Paths...> ] # Look rootward for path(s)
+{
+  local cwd=${cwd:-$PWD} sub
   until test $cwd = /
   do
     test $# -gt 0 && {
@@ -382,23 +412,13 @@ cwd_lookup_paths () # ~ [ <Local-Paths...> ] # Go up from current PWD, looking f
     } ||
       echo "$cwd"
     cwd="$(dirname "$cwd")"
-  done | sys_path_fmt
+  done
+  #| sys_path_fmt
 }
 
-#
-sys_path () # ~ <> # TODO
+cwd_lookup_globs () # (cwd) ~ <Glob-patterns...>
 {
-  false | sys_path_fmt
-}
-
-sys_path_fmt ()
-{
-  case "${out_fmt:-path}" in
-    one ) head -n 1 ;;
-    path ) tr '\n' ':' | head -c -1 ;;
-    list ) cat ;;
-    * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;
-  esac
+  TODO
 }
 
 user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
@@ -415,6 +435,25 @@ user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
   { out_fmt=list cwd_lookup_paths "$@"
     printf '%s\n' "${user_paths[@]}"
   } | remove_dupes
+}
+
+#
+sys_path () # ~ <Cmd...> # TODO
+{
+  "$@" | sys_path_fmt
+}
+
+sys_path_fmt ()
+{
+  case "${out_fmt:-path}" in
+    one|first ) head -n 1 ;;
+    last ) tail -n 1 ;;
+    head ) head -n +2 ;;
+    tail ) tail -n +2 ;;
+    path ) tr '\n' ':' ;;
+    list ) cat ;;
+    * ) error "cwd-lookup-path: out-fmt: ${out_fmt:-}?" 1 ;;
+  esac
 }
 
 init_user_env()

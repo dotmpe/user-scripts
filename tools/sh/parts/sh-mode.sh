@@ -106,7 +106,7 @@ sh_mode_exclusive ()
   declare this=${1:?} other=${2:?}
   shift 2
   # TODO: store current mode
-  ! fnmatch "* $other *" " $* " || {
+  ! str_globmatch " $* " "* $other *" || {
     $LOG warn :sh-mode "Should not set both $this and $other mode"
   }
 }

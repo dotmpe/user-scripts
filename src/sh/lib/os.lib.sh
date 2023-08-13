@@ -827,8 +827,14 @@ remove_dupes () # ~ <Awk-argv...>
   awk '!a[$0]++' "$@"
 }
 
-# Same as remove-dupes but leave comments/preproc-lines alone.
+# Same as remove-dupes but strip comments/preproc-lines
 remove_dupes_nix () # ~ <Awk-argv...>
+{
+  awk '( substr($1,1,1) != "#" && !a[$0]++ )' "$@"
+}
+
+# Same as remove-dupes but leave comments/preproc-lines alone.
+remove_dupes_nix_data () # ~ <Awk-argv...>
 {
   awk '( substr($1,1,1) == "#" || !a[$0]++ )' "$@"
 }
