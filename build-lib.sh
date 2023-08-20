@@ -298,7 +298,10 @@ build__all ()
 # '@build-env' finished handler with info
 build__build_env ()
 {
-  ctx=ENV=${ENV:-}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
+  : "${SHMODE:=}"
+  : "${ENV:=}"
+  : "${CTX:=}"
+  ctx=SHMODE=${SHMODE// /,}:ENV=${ENV// /,}:CTX=${CTX// /,}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
   build-stamp <<< "$ctx"
   $LOG warn ":(@build-env)" Finished "$ctx+v=${v:-}"
 }

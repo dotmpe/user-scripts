@@ -1,7 +1,11 @@
 #!/bin/sh
 
-# File archives in plain shell vars
+### File archives in plain shell vars
 
+# This allows to define a file and directory tree as a set of plain shell
+# variables (the 'template').
+
+# TODO: rename fs-tpl.lib.sh
 
 # Base-Var-Id should include trailing _ btw, see basevar
 

@@ -1,0 +1,12 @@
+#define ctx1 "${U_S:?}/tools/sh/parts"
+#define ctx2 "${U_S:?}/tools/redo/parts"
+#define ctx3 "${U_S:?}/tools/us/parts"
+##define ctx0 "${U_S:?}/tools/build/parts"
+
+#resolve scr sh-util $ctx3
+
+#resolve scr build-r0.0 $ctx1
+
+#resolve scr default-do $ctx2
+
+#modeline ex:ft=lest-txt:

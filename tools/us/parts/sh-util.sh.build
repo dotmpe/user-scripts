@@ -1,0 +1,12 @@
+#define ctx1 "${U_S:?}/tools/sh/parts"
+
+#resolve fun sh-fun $ctx1
+
+#resolve if-fun fnmatch $ctx1
+
+##resolve scr-if-fun sh-mode $ctx1
+#resolve scr sh-mode $ctx1
+
+#resolve if-fun sh-error $ctx1
+
+#modeline ex:ft=lest-txt:

@@ -25,8 +25,9 @@
 # @at.manual: :manuals
 
 
-# These are hard-wired by parts run during build-env,
-# these are caches included in ~, and a complete build-env cache file
+# XXX: These are hard-wired by parts run during build-env, but build gets
+# confused if they are not actual rules.
+# These are caches included in ~, and a complete build-env cache file
 *caches expand ${PROJECT_CACHE:?}/{params,redo-env}.sh
 
 # With working symbol frontend could ask for above. Until then a particular

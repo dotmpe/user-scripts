@@ -1,3 +1,7 @@
+### Shell mode helper part
+
+##
+
 LOG_error_handler ()
 {
   local r=$? lastarg=$_
@@ -6,7 +10,7 @@ LOG_error_handler ()
 }
 # Copy: LOG-error-handler
 
-# Some packaged routines to prepare shell, use in profile, rc or user scripts
+# Packaged routines to prep shell.  Un profile, rc or user scripts
 sh_mode ()
 {
   test $# -eq 0 && {
@@ -14,6 +18,9 @@ sh_mode ()
     echo "$0: sh-mode: $-" >&2
     trap >&2
   } || {
+    # FIXME: check for conflicts with existing SHMODE, and skip existing modes
+    SHMODE=${SHMODE:--$-}
+    SHMODE="$SHMODE $*"
     declare opt
     for opt in "${@:?}"
     do
@@ -26,6 +33,19 @@ sh_mode ()
                 trap "build_error_handler" ERR || return
               ;;
 
+          ( defs )
+                  # XXX: for interactive and some particular batch or build modes
+                  declare -ga env_updates=()
+                  declare -ga env_defs=()
+                  #declare -ga env_decl=()
+              ;;
+
+          ( dev-us )
+                test -n "${U_C:-}" && {
+                  sh_mode dev-uc || return
+                }
+              ;;
+
           ( dev-uc )
                 sh_mode_exclusive $opt "$@"
                 # Hash location, inherit DBG/RET traps and exitonerror
@@ -36,14 +56,17 @@ sh_mode ()
               ;;
 
           ( dev )
-                test -n "${U_C:-}" && {
-                  sh_mode dev-uc
+                sh_fun stderr || stderr () { "$@" >&2; }
+                stderr echo "Development mode enabled"
+                test -n "${U_S:-}" && {
+                  sh_mode dev-us
                   return
-                }
-                sh_mode build
+                } ||
+                  sh_mode build
               ;;
 
           ( logger )
+                # FIXME: bg logger
                 eval "$(log.sh bg get-logger)"
               ;;
 
@@ -125,7 +148,9 @@ build_error_handler ()
   local r=$? lastarg=$_
   #! sh_fun stderr_ ||
   #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r" 0
-  $LOG error ":on-error" "In recipe for '${BUILD_TARGET//%/%%}' ($lastarg)" "E$r"
+  : "${BUILD_TARGET:-(unset)}"
+  : "${_//%/%%}"
+  $LOG error ":on-error" "In recipe for '$_' ($lastarg)" "E$r"
   exit $r
 }
 
