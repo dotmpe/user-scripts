@@ -301,8 +301,9 @@ build__build_env ()
   : "${SHMODE:=}"
   : "${ENV:=}"
   : "${CTX:=}"
-  ctx=SHMODE=${SHMODE// /,}:ENV=${ENV// /,}:CTX=${CTX// /,}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
+  ctx=:SHMODE=${SHMODE// /,}:ENV=${ENV// /,}:CTX=${CTX// /,}:${XDG_SESSION_TYPE:-}:${UC_PROFILE_TP:-}:@${HOST:-}+${HOSTTYPE:-}
   build-stamp <<< "$ctx"
+  stderr echo ctx=$ctx
   $LOG warn ":(@build-env)" Finished "$ctx+v=${v:-}"
 }
 

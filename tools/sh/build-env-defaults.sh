@@ -50,11 +50,12 @@ declare -g -A BUILD_TARGET_DECO=(
   [:]=special
   [/]=filepath
   [.]=filepath
-  [-]=prefix-alias [+]=prefix-alias
-  ["?"]=prefix-alias
+  [-]=prefix-alias [+]=prefix-alias ["?"]=prefix-alias
   ["@"]=prefix-alias ["&"]=prefix-alias [%]=prefix-alias ["*"]=prefix-alias
+  #[$]=prefix-alias
 )
 declare -g -A BUILD_TARGET_ALIAS=(
+  #["$"]=${BUILD_NS_:?}....
   ["&"]=${BUILD_NS_:?}file:
   ["*"]=${BUILD_NS_:?}group:
   ["%"]=${BUILD_NS_:?}pattern:

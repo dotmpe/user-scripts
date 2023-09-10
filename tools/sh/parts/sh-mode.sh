@@ -19,7 +19,7 @@ sh_mode ()
     trap >&2
   } || {
     # FIXME: check for conflicts with existing SHMODE, and skip existing modes
-    SHMODE=${SHMODE:--$-}
+    SHMODE=${SHMODE:-$-}
     SHMODE="$SHMODE $*"
     declare opt
     for opt in "${@:?}"

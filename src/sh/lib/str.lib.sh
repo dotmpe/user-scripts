@@ -164,6 +164,21 @@ expr_substr()
       * ) error "unable to substr $expr" 1
   esac
 }
+
+str_globmatch () # ~ <String> <Glob-pattern>
+{
+  test 2 -eq $# || return ${_E_GAE:-193}
+  case "${1:?}" in ${2:?} ) ;; ( * ) false ;; esac
+}
+
+str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
+{
+  test 2 -le $# || return ${_E_GAE:-193}
+  case " ${*:2} " in
+    ( *" ${1:?} "*) ;; #  | *" ${1:?} " | " ${1:?} "*) ;;
+    ( * ) false ; esac
+}
+
 str_quote ()
 {
   case "$1" in

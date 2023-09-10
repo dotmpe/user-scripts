@@ -140,7 +140,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
   test -n "${1-}" || return 190
   test -n "${lib_lib_log-}" || return 108 # NOTE: sanity
 
-  local log_key=${scriptname:-$0}/$$:u-s:lib:load
+  local lib_loading=true log_key=${scriptname:-$0}/$$:u-s:lib:load
 
   log_key=$log_key $lib_lib_log debug "" "Loading lib(s)" "$*"
 

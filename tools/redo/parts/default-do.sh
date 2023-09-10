@@ -72,17 +72,14 @@ default_do_main ()
   BUILD_TARGET_BASE=$2
   BUILD_TARGET_TMP=$3
 
-  # XXX: Not making this configurable (yet), parts will first have to be build
-  # build_ do-session shell-mode
-  sh_mode ${BUILD_MODE:-strict build} || return
-
   #build_ do-env ||
   #  default_do_ error \$do-env "Error getting %%.do env" "E$?" $?
 
   # Perform a standard ENV_BUILD build (with ENV_BUILD_ENV) if needed, and
   # source profile.
   default_do_env ||
-    default_do_ error \$~do-env "Error getting %%.do env" "E$?" $?
+    $LOG error :default.do "Loading env" "E$?" $? || return
+    #default_do_ error \$~do-env "Error getting %%.do env" "E$?" $?
 
   # Its possible to keep short build sequences in this file (below in the
   # case/easc). But to prevent unnecessary rebuilds after changing any other
@@ -135,6 +132,8 @@ default_do_main ()
         #
         # env_require ${BUILD_TARGET_METHODS// /builder} || return
         # env_require ${BUILD_TARGET_HANDLERS:?} || return
+        #stderr echo default.do build_ target
+        us_debuglog "Kicking off target build"
         build_ target
       ;;
 
@@ -144,7 +143,13 @@ default_do_main ()
   exit $?
 }
 
-test -z "${REDO_RUNID:-}" ||
-    default_do_main "$@"
+test -z "${REDO_RUNID:-}" || {
+
+  sh_mode strict build || return
+
+  ! "${US_DEBUG:-false}" || $LOG info :default.do:main "Entering build script" \
+      "build-id:$REDO_RUNID $0:($#) $*"
+  default_do_main "$@"
+}
 
 # Id: U-S::default-do

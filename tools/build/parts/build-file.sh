@@ -1,27 +1,32 @@
 ## Build (and execute) file from (preproc) template
 
 : "${0%%.sh}"
-case "$0" in
+: "${_##*/}"
+stderr echo running $_
+case "$_" in
   ( build-* )
+      script="${_#build-}"
       base=build:
       run=false
-      : "${_#build-}"
     ;;
   ( run-* )
+      script="${_#run-}"
       base=run:
       run=true
-      : "${_#run-}"
     ;;
   * ) stderr echo "! $0: Expected {build,run}-* frontend"; exit 1
 esac
-script=$_
 export UC_LOG_BASE=$base$script
+
+stderr echo running script=$script
 
 sh_mode dev
 
 . ./tools/sh/parts/sh-fun.sh &&
 lib_require us-build log &&
 lib_init us-build
+
+base=u-s
 
 : "${_E_GAE:=193}" # Generic Argument Error
 

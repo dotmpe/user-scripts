@@ -693,6 +693,7 @@ build_for_target__with__rules ()
 build_from_rules () # ~ <Name>
 {
   declare comptab lk btf
+  #stderr echo "build-from-rules BUILD_TARGET='$BUILD_TARGET' name='${1:-}' rest='$*'"
   lk=":from-rules(${1//%/%%})"
   btf=${BUILD_TARGET//%/%%}
 
@@ -700,26 +701,23 @@ build_from_rules () # ~ <Name>
     test -n "$comptab" || {
       $LOG error "$lk" "No such symbolic rule" "$btf" ; return 1
     }
-  $LOG debug "$lk" "Building rule for target" "$btf"
 
   declare name="${1:?}" name_ type_ args_ rf
   shift
   read_data name_ type_ args_ <<<"$comptab"
-  test -n "$type_" || {
-    $LOG error "$lk" "Empty directive for rule" "symbol=$name" ; return 1
-  }
-
+  test -n "$type_" ||
+    $LOG error "$lk" "Empty directive for rule" "symbol=$name" $? || return
   rf=${args_// -- /::}
   rf=${rf/ /:}
-  $LOG notice "$lk" "Building rule for target" "$btf:$type_:$rf"
 
-  # Rules have to expand globs by themselves.
+  # XXX: Rules can have globs too, but handler has to expand those, not here
+  # should read array in the first place probably
   set -o noglob; set -- $type_ $args_; set +o noglob
-  $LOG debug "$lk" "Building as '$type_:$name_' rule" "($#):$*"
+  $LOG debug "$lk" "Building as '$type_:$name_' rule" "($#) $*"
 
-  ${quiet:-false} || test -n "${BUILD_ID:-}" ||
+  "${quiet:-false}" || test -n "${BUILD_ID:-}" ||
     echo "# build:rule: $name_ $type_ ($#) '$args_'"
-
+  $LOG notice "$lk" "Building rule for target..." "$btf:$type_:$rf"
   build_target_rule "$@"
 }
 
@@ -733,7 +731,7 @@ build_from_rule_for ()
   }
   read_data name_ type_ args_ <<<"$comptab"
   set -o noglob; set -- $type_ $args_; set +o noglob
-  $LOG info "" "Deferring to build-target-rule" "$*"
+  $LOG info ":from-rule-for" "Deferring to build-target-rule" "$*"
   build_target_rule "$@"
 }
 
@@ -851,12 +849,22 @@ build_target_name__function ()
 # return E:continue if resolution failed.
 build_resolver ()
 {
-  declare method r hpref=${1:?Handler name prefix expected} br_handler brhref
-  shift
+  declare method r br_handler brhref \
+    hpref=${1:?Handler name prefix expected} \
+    lk="${lk:-build}:resolver[${BUILD_TARGET//%/%%}]"
+  declare -a specs
   declare -g BUILD_HANDLER=
+  shift
   test $# -gt 0 || set -- ${BUILD_TARGET_METHODS:-env parts rules}
-  $LOG debug ":build:resolve[${BUILD_TARGET//%/%%}]" "Starting lookup for target" "$*"
-  mapfile -t specs <<< $(build_which)
+  $LOG debug "$lk" "Starting lookup for target" "$*"
+  mapfile -t specs <<< $(build_which) &&
+  test "${#specs[@]}" -gt 0 && test -n "${specs[0]:-}" && {
+    ! "${BUILD_LOOKUP_DEBUG:-false}" ||
+      $LOG info "$lk" "Going over specs" "(${#specs}):${specs[*]//%/%%}"
+  } || {
+    $LOG info "$lk" "No specs on symbol" "" ${_E_failure:-195} || return
+    specs=( "${BUILD_TARGET:?}" )
+  }
   for BUILD_SPEC in "${specs[@]}"
   do
     test "$BUILD_SPEC" = "$BUILD_TARGET" &&
@@ -866,22 +874,26 @@ build_resolver ()
     do
       br_handler=${hpref:?}${method}
       # @debug @lookup
-      ! ${BUILD_LOOKUP_DEBUG:-false} ||
-        $LOG debug ":build:resolve" "Checking with $br_handler" "${BUILD_SPEC//%/%%}"
+      ! "${BUILD_LOOKUP_DEBUG:-false}" ||
+        $LOG debug ":build:resolve" "Checking with '$method' ($br_handler)" "${BUILD_SPEC//%/%%}"
       $br_handler "${BUILD_SPEC:?}" && {
         brhref=$br_handler
         brhref=${brhref//--/__}
         brhref=${brhref//__/:}
         brhref=${brhref//_/-}
         BUILD_HANDLER=$brhref
-        $LOG debug ":build:resolve" "Target handled at ${brhref} '${BUILD_SPEC//%/%%}'" >&2
+        #! "${BUILD_LOOKUP_DEBUG:-false}" ||
+        #  $LOG debug ":build:resolve" "Target handled at ${brhref} '${BUILD_SPEC//%/%%}'" >&2
         ${show_recipe:-false} && return
         exit 0
       } || { r=$?
-        test $r = "${_E_next:-196}" && continue
+        test $r = "${_E_next:-196}" && {
+          #! "${BUILD_LOOKUP_DEBUG:-false}" ||
+          #  $LOG info : "Lookup failed with '$method' (${br_handler}), trying next" "${BUILD_SPEC//%/%%}"
+          continue
+        }
         $LOG error "" "Failed at $method" "${BUILD_SPEC//%/%%}: E$r"
-        ${show_recipe:-false} && return $r
-        exit $r
+        ${show_recipe:-false} && return $r || exit $r
       }
     done
   done
@@ -1180,14 +1192,14 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   argv_is_seq "$@" || return
   shift
   test 0 -lt ${#source_cmd[*]} || {
-    stderr_ "$stdp Expected executable, filepath(s), or symbol(s)" || return
+    std_v "$stdp Expected executable, filepath(s), or symbol(s)" || return
   }
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
   } || {
     read -a source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
     test 0 -lt ${#source_files[*]} || {
-      stderr_ "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
+      std_v "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
         return
     }
     source_cmd=( "cat" )
@@ -1240,20 +1252,19 @@ build_target__from__expand_eval ()
 #shellcheck disable=2059
 build_target__from__function () # ~ [<Function>] [<Args>]
 {
-  declare name=${BUILD_SPEC:-${BUILD_TARGET:?}} fun=${1:--}
+  declare target=${BUILD_SPEC:-${BUILD_TARGET:?}} fref=${1:--} fun
   shift
-  declare lk
-  test $# -gt 0 && lk=":fun($#)" || lk=:fun
+  declare lk="${lk:-:build}::from:function(${BUILD_TARGET//%/%%})"
+  #test $# -gt 0 && lk=":fun($#)" || lk=:fun
 
-  test "${fun:-"-"}" != "-" || {
-    fun=${BUILD_HPREF:-build__}$(build_target_name__function "$name")
-  }
+  test "${fref:-"-"}" != "-" || fref="$target"
+  fun=${BUILD_HPREF:-build__}$(build_target_name__function "$fref")
 
-  test "${fun:-"-"}" != "*" ||
-    fun="build_$(mkvid "$name" && printf -- "$vid")"
+  #test "${fun:-"-"}" != "*" ||
+  #  fun="build_$(mkvid "$target" && printf -- "$vid")"
 
-  test "${fun:-"-"}" != ":" ||
-    fun="build_$(mkvid "$name" && printf -- "$vid")"
+  #test "${fun:-"-"}" != ":" ||
+  #  fun="build_$(mkvid "$target" && printf -- "$vid")"
 
   # XXX: function argv?
   #test $# -eq 0 || {
@@ -1268,12 +1279,12 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   #  test "${1:-}" != "--" || shift
   #}
   sh_fun "$fun" || {
-    $LOG info "::from:function(${BUILD_TARGET:?})" \
-      "Skipping missing routine" "$fun:${BUILD_SPEC:-}"
-    return ${_E_continue:-196}
+    $LOG info "$lk" \
+      "Skipping missing routine" "fun=$fun:ref=$fref" ${_E_continue:-196} ||
+      return
   }
 
-  $LOG info "${lk}(${BUILD_TARGET//%/%%})" "Calling function" "$fun"
+  $LOG info "$lk" "Calling function" "$fun"
   $fun "$@"
 }
 
@@ -1881,12 +1892,10 @@ build_target_recipe__expand_all ()
 
 build_target_rule ()
 {
-  $LOG debug ":target-rule" "Trying rule" "${*//%/%%}"
-
   declare type=${1:?}
   shift
 
-  ! ${show_recipe:-false} || stderr_ "FIXME"
+  ! ${show_recipe:-false} || TODO "FIXME"
 
   #  sh_fun build_target_recipe__${type_//-/_} && {
   #    build_target_recipe__${type_//-/_} "$@"
@@ -1896,6 +1905,9 @@ build_target_rule ()
   #  sh_fun_body build_target__from__${type//-/_} | sed 's/^    //'
   #  return
   #} || {
+  $LOG debug ":build:target-rule" "Resolving type handler" \
+    "build_target__seq__${type//-/_}"
+
   sh_fun build_target__seq__${type//-/_} && {
     build_target__seq__${type//-/_} "$@" || return
   } || {
@@ -2140,22 +2152,25 @@ build_which () # ~ [<Target>]
 #
 build_target_lookup ()
 {
-  declare target=${1:?} methods method
-  [[ "${target:0:1}" =~ ^${BUILD_SPECIAL_RE:?}$ ]] && {
-    test "${BUILD_TARGET_DECO[${target:0:1}]-isset}" != isset || {
-      $LOG error ":build-which" \
-        "Missing handler for special character prefix" \
-        "${target//%/%%}"
-      return
-    }
-    methods=${BUILD_TARGET_DECO[${target:0:1}]}
-  } || methods=filepath
-  for method in $methods
+  declare target=${1:?} method lk=${lk:-:build}-target-lookup
+  for method in $(build_target_lookup_methods "$1")
   do
     ! ${BUILD_LOOKUP_DEBUG:-false} ||
-      $LOG debug :build-which "Using '$method' handler for lookup" "${target//%/%%}"
+      $LOG debug "$lk" "Trying '$method' handler for lookup" "${target//%/%%}"
     build_which__"${method//-/_}" "$target"
   done
+}
+
+build_target_lookup_methods ()
+{
+  declare target=${1:?}
+  : "${!BUILD_TARGET_DECO[*]}"
+  : "$(printf '\%s' $_)"
+  : "[${_// }]"
+  [[ "${target:0:1}" =~ ^$_$ ]] && {
+    echo ${BUILD_TARGET_DECO[${target:0:1}]}
+  } ||
+    echo filepath
 }
 
 build_which__file_name ()
@@ -2259,14 +2274,18 @@ build_which__prefix_alias ()
 build_which__special ()
 {
   declare p=${1:?} d=${1//[^:]} c
+  test 0 -lt "${#d}" || {
+    echo "$p"
+    return
+  }
   d=${#d}
   while test -n "$p"
   do
     echo "$p"
     # Assemble lookup pattern
     p=${p%:*}
-    c=${p//[^:]}
-    c=${#c}
+    : "${p//[^:]}"
+    c=${#_}
     echo "$p$(while test $(( d - 1 )) -ge $c; do printf '%s' ":%"; d=$(( d - 1 )); done)"
     test $d -eq $c || echo "$p:"
   done
@@ -2919,6 +2938,9 @@ build_ () # ~ <Build-action> <Argv <...>>
   declare BUILD_ACTION=${1:-${BUILD_ACTION:?}} build_action_handler r
   test $# -eq 0 || shift
 
+  # FIXME:
+  lib_load std-uc
+
   # build-* handlers override exists else defer execution to build_<action>
   build_action_handler=build-"$BUILD_ACTION"
   sh_fun "$build_action_handler" && {
@@ -2947,15 +2969,14 @@ build_ () # ~ <Build-action> <Argv <...>>
   # Execute build-action
 
   "${build_action_handler}" "$@" || ret=$?
-
   $LOG debug "" "Finished script '$BUILD_ACTION'" "E${ret:-0}:$*"
 
   test ${ret:-0} -eq ${_E_break:-197} && exit
+  #stderr echo "build_ returns.. ${ret:-0}: $BUILD_SCRIPT"
   return ${ret:-0}
 }
 
-
-test -n "${__lib_load-}" || {
+test -n "${lib_loading-}" || {
 
   # Safe script's entry point name as BUILD_SCRIPT, or re-use SCRIPTNAME
   BUILD_SCRIPT=${SCRIPTNAME:-$(basename "$(basename -- "$0" .lib.sh )" .sh)}
@@ -2972,11 +2993,22 @@ test -n "${__lib_load-}" || {
     ( "build" )
         build_ run "$@"
       ;;
+  esac
+
+  # XXX: most scripts should not return to root,
+  $LOG info :build.lib:main "Returned to root (E$?)" "$BUILD_SCRIPT"
+
+  case "$BUILD_SCRIPT" in
+    ( build-|build-*|build )
+        $LOG notice :build.lib:main "Main returned OK, continueing root script" "$BUILD_SCRIPT"
+      ;;
 
     ( "-"* )
+        $LOG notice :build.lib:main "Ignored script command" "$BUILD_SCRIPT"
       ;;
 
     ( * )
+        $LOG notice :build.lib:main "Unknown script command" "$BUILD_SCRIPT"
       ;;
   esac
 }
