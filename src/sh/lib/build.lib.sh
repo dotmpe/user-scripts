@@ -14,7 +14,7 @@ build_lib__load ()
 
   # A bunch of names for sh files to inject, if found for cold bootstraps
   # Hidden first, then normal, generic local first, then more specifc, or shared
-  true "${build_envs_defnames:=$(echo {.,}{attributes,package,env,params,build-env})}"
+  true "${build_envs_defnames:=$(echo {.,}{properties,package,env,params,build-env})}"
   #shellcheck disable=SC1083 # Yes, these are literal braces patterns, expanded
   # by echo
   true "${build_libs_defnames:=$(echo {.,}lib {.,}build-lib tools/{${build_tools_src_specs}}/lib)}"
@@ -177,6 +177,7 @@ build_arr_seq () # ~ <Var-name> [ <Items <...>> ] [ -- <...> ]
 #
 build_boot () # (Build-Action) ~ <Argv...>
 {
+  $LOG info :build-boot Boot "$*"
   test "$PWD" != "/" || {
     $LOG error ":build-boot:${BUILD_ACTION:?}" "! Build cannot do that" "root"
     return 1
@@ -318,7 +319,7 @@ build_env () # ~ [<Handler-tags...>]
 build_env_build ()
 {
   mkdir -vp ${PROJECT_CACHE:?} >&2 || return
-  test -e .attributes && set -- attributes
+  test -e .properties && set -- properties
   test -e ${BUILD_RULES:?} && set -- "$@" rule-params
 
   declare r
@@ -966,7 +967,7 @@ build_source ()
   ! sh_fun build__lib__load && return
   build__lib__load || bll=$?
   # XXX: may be keep this per-source path but dont need it anyway..
-  #build_source_[]=$(typeset -f build__lib__load)
+  #build_source_[]=$(declare -f build__lib__load)
   unset -f build__lib__load
   return ${bll:-0}
 }
@@ -1173,6 +1174,13 @@ build_target__from__expand () # ~ <Target-expressions...>
   TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
 }
 
+build_target__from__cache ()
+{
+  #local self="build-target:from:cache"
+  set -- "${PROJECT_CACHE:?}/${1:?}"
+  TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
+}
+
 # Take list of values and generate targets from pattern.
 # The initial source argument can be a function or executable and the entire
 # source-sequences is invoked as is, and else the source arguments are treated
@@ -1305,7 +1313,7 @@ build_target__from__compose_names () # ~ <Composed...>
     build_target__from__compose__resolve "$fun" || return
   done
   build-stamp < "${BUILD_TARGET_TMP:?}"
-  typeset build_target__from__compose | build-stamp
+  declare build_target__from__compose | build-stamp
 }
 
 build_target__from__compose__resolve ()
@@ -1442,7 +1450,7 @@ build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
         source "${U_S:?}/src/sh/lib/lib.lib.sh" || return
       }
       declare lp
-      lp="$(lib_path "$1")" || return
+      lp="$(lib_path "${1:?}")" || return
       build_targets_ "${lp:?}" &&
       lib_require "$1" || return
     }
@@ -1603,7 +1611,6 @@ build_target__seq__ifa () # ~ <Array-name> [ -- <Rule <...>> ]
   declare vname=${1:?}
   shift
   eval "build_targets_ \"\${${vname}[@]}\"" || return
-  ! argv_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1630,7 +1637,7 @@ build_target__seq__if_fun () # ~ <Fun <..>> [ -- <Rule <...>> ]
   declare typeset
   typeset="$( for fun in "${IF_FUN[@]}"
     do
-      typeset -f "$fun"
+      declare -f "$fun"
     done )" || return
   ${BUILD_TOOL:?}-stamp <<< "$typeset"
   ${BUILD_TOOL:?}-always
@@ -1718,7 +1725,7 @@ build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
   declare typeset
   typeset="$( for fun in "${IF_FUN[@]}"
     do
-      typeset -f "$fun"
+      declare -f "$fun"
     done )" || return
   ${BUILD_TOOL:?}-stamp <<< "$typeset"
   $LOG info ::if-scr-fun "Script function check done" "$script:${IF_FUN[*]}"
@@ -2314,7 +2321,7 @@ build_which__special ()
 . "${U_S:?}/tools/sh/parts/sh-mode.sh"
 
 
-attributes_sh ()
+properties_sh ()
 {
   grep -Ev '^\s*(#.*|\s*)$' "$@" |
   awk '{ st = index($0,":") ;
@@ -2525,10 +2532,10 @@ read_escaped ()
 sh_clear ()
 {
   true "${@:?}"
-  typeset vardecl exectype
+  declare vardecl exectype
   while test $# -gt 0
   do
-    vardecl=$(typeset -p "${1:?}") && {
+    vardecl=$(declare -p "${1:?}") && {
       sh_unset "$1" || return
 
     } || {
@@ -2550,7 +2557,7 @@ sh_fun_body ()
 
 sh_fun_type ()
 {
-  typeset -f "${1:?}"
+  declare -f "${1:?}"
   #type "${1:?}" | tail -n +2
 }
 
@@ -2629,7 +2636,7 @@ sh_unset () # ~ <Var-name>
 sh_unset_ifset () # ~ <Sym <...>>
 {
   true "${@:?}"
-  typeset vardecl
+  declare vardecl
   while test $# -gt 0
   do
     vardecl=$(declare -p "${1:?}" 2>/dev/null ) && {

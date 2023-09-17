@@ -8,6 +8,7 @@ build_lib__load ()
 {
   return 0
 
+  # XXX:
   build_install_parts \
       concat-rules .list "&build-rules"
 }
@@ -298,6 +299,7 @@ build__all ()
 # '@build-env' finished handler with info
 build__build_env ()
 {
+  stderr echo build-env
   : "${SHMODE:=}"
   : "${ENV:=}"
   : "${CTX:=}"

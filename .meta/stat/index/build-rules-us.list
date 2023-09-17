@@ -12,7 +12,7 @@
 # @at.configure: @build-env
 # @at.check: @lint
 # @at.build: %func-lists @check &context-local &current src-sh manual
-# @at.test: %bats-baseline %bats-unit
+# @at.test: &test-report
 
 # XXX:
 # @at.env: all @configure @check
@@ -33,7 +33,7 @@
 # With working symbol frontend could ask for above. Until then a particular
 # path is given, to be used to configure parent target for all build-env parts:
 
-@build-env function -
+@build-env function build__build_env
 
 @configured ifdone @configure
 
@@ -55,12 +55,15 @@
 &source-dev-list expand ${PROJECT_CACHE:?}/source-dev.list
 &source-list expand ${PROJECT_CACHE:?}/source.list
 &tags-lint expand ${PROJECT_CACHE:?}/lint-tags.list
+&test-report expand ${PROJECT_CACHE:?}/test-report.txt
 
+%bash-suites cache bash-suites.list
 
-## Other aliases for parts and simple rules
+## Rules with recipes or for file sets (%)
 
 &build-rules:* defer concat-rules
 # TODO: install-deps check
+%bash-suites simpleglob .build/test/bash-*.txt test/bash/%.bash
 # Baseline describes third-party components, dependencies, host.hk
 # For host/env prerequisites and checks see init and init-checks targets.
 %bats-baseline simpleglob .build/tests/baseline-*.tap test/baseline/%.bats
@@ -74,6 +77,7 @@
 &source-dev-list:* if &source-list -- list-filter filter_by_manifest -- @dev &indices
 &source-list:* if &git-index -- exec git ls-files
 &tags-lint:* if &source-dev-list -- part lint-tags source-do
+&test-report:* if %bats-baseline %bats-unit %bash-suites -- part test-report
 
 
 ## Function handlers
@@ -100,4 +104,4 @@
 ./.meta/cache/source-sh-dev.list symbol &sh-dev-list
 
 
-# Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=lest-txt:
+# Id: User-scripts/0.0.2-dev .meta/stat/index/build-rules-us.list [2022] ex:ft=less.txt:

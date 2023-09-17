@@ -8,10 +8,10 @@ build__lib__load ()
 }
 
 
-env__build__attributes ()
+env__build__properties ()
 {
-  build_targets_ "$attributes" || return
-  attributes_sh "$attributes" >| "${BUILD_TARGET_TMP:?}" || return
+  build_targets_ "$properties" || return
+  properties_sh "$properties" >| "${BUILD_TARGET_TMP:?}" || return
   build-stamp < "${BUILD_TARGET_TMP:?}"
 }
 
@@ -49,19 +49,19 @@ env__define__argv ()
   source "${U_C:?}/script/argv-uc.lib.sh"
 }
 
-env__define__attributes ()
+env__define__properties ()
 {
-  test -n "${attributes:-}" || {
-    test -e ".meta/attributes" && attributes=.meta/attributes
-    test -e ".attributes" && attributes=.attributes
+  test -n "${properties:-}" || {
+    test -e ".meta/properties" && properties=.meta/properties
+    test -e ".properties" && properties=.properties
   }
-  test -e "${attributes:-}" ||
-    $LOG error ::attributes "None found" "" 1 || return
+  test -e "${properties:-}" ||
+    $LOG error ::properties "None found" "" 1 || return
 
-  attributes_sh="${PROJECT_CACHE:?}/attributes.sh"
+  properties_sh="${PROJECT_CACHE:?}/properties.sh"
   # On build
-  test "${BUILD_TARGET:?}" = "$attributes_sh" && {
-    env__build__attributes || return
+  test "${BUILD_TARGET:?}" = "$properties_sh" && {
+    env__build__properties || return
     return ${_E_break:-197}
   }
   # On load: can handle env dependency in two ways:
@@ -71,37 +71,37 @@ env__define__attributes ()
   #    To allow the target to build, one or more special targets need to be
   #    specified on which an exception can be made here.
 
-  #echo "attributes: ${build_at_build_env_targets:-@build-env}" >&2
+  #echo "properties: ${build_at_build_env_targets:-@build-env}" >&2
   # XXX: still need to export from profile and load through parent
   { test "$BUILD_TARGET" = "${build_at_build_env_targets:-@build-env}"
   #{ build_target_group build-env || {
   #    test -n "${build_at_env_targets:-}" && build_env_target
   #  }
   } && {
-    $LOG info ::attributes "Building and loading attributes" "$BUILD_TARGET"
-    build_targets_ "${attributes_sh:?}" || return
+    $LOG info ::properties "Building and loading properties" "$BUILD_TARGET"
+    build_targets_ "${properties_sh:?}" || return
   } || {
     ${BUILD_UNRECURSE:-false} && {
-      $LOG info ::attributes "Starting isolated build for attributes" "$BUILD_TARGET"
-      _unredo "${attributes_sh:?}" || return
+      $LOG info ::properties "Starting isolated build for properties" "$BUILD_TARGET"
+      _unredo "${properties_sh:?}" || return
     } || {
-      $LOG info ::attributes "Checking to load attributes" "$BUILD_TARGET"
+      $LOG info ::properties "Checking to load properties" "$BUILD_TARGET"
       env_require ifdone || return
-      build-ifdone "${attributes_sh:?}" || return ${_E_OOB:-199}
+      build-ifdone "${properties_sh:?}" || return ${_E_OOB:-199}
     }
   }
-  source "$attributes_sh" ||
-    $LOG error "" "Sourcing attributes cache" "E$?:$attributes_sh" $? || return
+  source "$properties_sh" ||
+    $LOG error "" "Sourcing properties cache" "E$?:$properties_sh" $? || return
 
   test "${BUILD_ACTION:-}" != "env-build" && return
-  build_add_cache "$attributes_sh" &&
-  build_add_source "$attributes" &&
-  build_add_setting "attributes attributes_sh"
+  build_add_cache "$properties_sh" &&
+  build_add_source "$properties" &&
+  build_add_setting "properties properties_sh"
 }
 
-env__define__attributes_cache ()
+env__define__properties_cache ()
 {
-  . "$attributes_sh"
+  . "$properties_sh"
 }
 
 env__define__build ()
@@ -440,7 +440,7 @@ env__define__from_local ()
   env_require build-envs build-libs build-init from-dist || return
   env_require ${BUILD_ENV:-} || return
   build_add_setting "BUILD_ENV"
-  #env_autoconfig attributes build-rules build-params
+  #env_autoconfig properties build-rules build-params
 }
 
 env__define__log_key ()
@@ -449,8 +449,10 @@ env__define__log_key ()
     declare -x log_key=BUILD[$$]
   } || {
     fnmatch "*\[$$\]*" "${log_key:-}" && {
-      # How can PID be already in log prefix?
-      $LOG error "" "Nested build_${BUILD_ACTION:?} call?" "${BUILD_TARGET:-}"
+      # XXX: How can PID be already in log prefix?
+      #$LOG error "" "Nested build_${BUILD_ACTION:?} call?" "${BUILD_TARGET:-}"
+      true
+
     } || {
 
       case "${log_key:-}" in ( *":%%.do"* )

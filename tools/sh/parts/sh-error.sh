@@ -1,6 +1,8 @@
-sh_error ()
+sh_error () # ~
 {
+  exit 202
   STATUS=${?:-0}
+
   test $# -eq 0 && {
     return ${STATUS:?}
   } || {
@@ -12,4 +14,4 @@ sh_error ()
     return 0
   }
 }
-# Copy:
+# Copy: INC:

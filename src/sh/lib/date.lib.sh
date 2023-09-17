@@ -25,6 +25,9 @@ date_lib__load()
   export _1DAY=86400
   export _1WEEK=604800
 
+  : "${DT_ISO_FULL:=%Y-%m-%dT%H:%M:%S%z}"
+  export DT_ISO_FULL
+
   # Note: what are the proper lengths for month and year? It does not matter that
   # much if below is only used for fmtdate-relative.
   export _1MONTH=$(( 31 * $_1DAY ))

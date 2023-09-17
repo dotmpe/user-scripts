@@ -5,19 +5,19 @@
 # Deal with lines of (shell script) formatted source-code and other file-based
 # content.
 
-src_lib__load()
+src_lib__load ()
 {
   true
 }
 
-src_lib__init()
+src_lib__init ()
 {
-  test "${src_lib_init-}" = "0" || {
-    lib_assert log match || return
+  test -z "${src_lib_init-}" || return $_
 
-    local us_log=; req_init_log || return
-    $us_log info "" "Loaded src.lib" "$0"
-  }
+  lib_require match log || return
+
+  local us_log=; req_init_log || return
+  $us_log info "" "Loaded src.lib" "$0"
 }
 
 

@@ -4,12 +4,13 @@
 
 log_lib__load ()
 {
-  lib_require stdlog-uc date date-htd || return
   : "${LOG:=${U_S}/tools/sh/log.sh}"
 }
 
 log_lib__init () # ~ [<Name=us>]
 {
+  test -z "${log_lib_init-}" || return $_
+  lib_require stdlog-uc date date-htd || return
   test $# -le 1 || return 193
   test -n "${1:-}" || set -- us
 

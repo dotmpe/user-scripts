@@ -410,13 +410,16 @@ us_run () # ~ <Target> [<Args...>]
       us_notice "*** NOACT ***: Source target" "$target"
       return
     }
+    us_notice "Sourcing script target" "$targetref"
     . "$target"
+    us_notice "Returned from target" "E$?:$targetref" $?
     return
   }
   test -x "$target" &&
     set -- "$target" "$@" ||
     set -- bash -a "$base" "$target" "$@"
-  "${NOACT:-false}" &&  {
+  us_notice "Forking to target" "$*"
+  "${NOACT:-false}" && {
     llk=:exec
     us_notice "*** NOACT ***: Exec target" "$target"
     return

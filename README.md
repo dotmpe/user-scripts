@@ -61,15 +61,33 @@ Released `lib_load` and some other routines for testing in the field.
   ``lib_load`` works and some libs may.
 - Secondary objectives regard shell/project tooling. See dev docs.
 
+No post-checkout setup is needed to use the project and the intent is for that
+to stay like that.
+
 Release: 0.0
 Version: 0.0.2-dev
+
+### Plan
+
+- Organize one or more ways to run/build scripts with frontends
+- But as parts to load for certain batch or interactive shell profiles as well
+- Emphasis on ``~/bin`` and ``~/.conf`` directories for shared user-scripts and
+  private scripts and dotfiles; see also
+  [User-Conf project](/user-tools/user-conf) and
+  the [Composure project fork](/user-tools/composure).
+  XXX: add projects to org, test links
+  [User-Conf project](~/user-conf)
+  [Composure project fork](~/composure).
+
+Notes on ongoing in [dev docs](/doc/dev/main.md).
 
 * [AGPL-3.0](COPYING)
 
 ### Sections
 
-- [Docs](doc) ([Wiki](https://github.com/dotmpe/user-scripts/wiki))
-- [Dev-Docs](wiki/dev/main)
+- [Docs](doc/main.md)
+- [Dev-Docs](doc/dev/main.md)
+- XXX: [Wiki](~/user-scripts/wiki)
 - [ChangeLog](CHANGELOG.md)
 
 ### Hacking

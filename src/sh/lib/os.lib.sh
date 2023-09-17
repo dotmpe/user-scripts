@@ -34,6 +34,7 @@ awk_line_select () # (s) ~ <Awk-If-Expr> [<Out>]
 }
 
 # Cumulative dirname, return the root directory of the path
+# XXX: make basedirs, cons w cwd-lookup-path
 basedir ()
 {
   # Recursively. FIXME: a string op. may be faster
