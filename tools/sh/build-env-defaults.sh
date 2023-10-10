@@ -52,8 +52,8 @@ declare -g -A BUILD_TARGET_DECO=(
   [.]=filepath
   [-]=prefix-alias [+]=prefix-alias ["?"]=prefix-alias
   ["@"]=prefix-alias ["&"]=prefix-alias [%]=prefix-alias ["*"]=prefix-alias
-  #[$]=prefix-alias
 )
+##[$]=prefix-alias
 declare -g -A BUILD_TARGET_ALIAS=(
   #["$"]=${BUILD_NS_:?}....
   ["&"]=${BUILD_NS_:?}file:
@@ -67,6 +67,8 @@ declare -g -A BUILD_TARGET_ALIAS=(
 
 # XXX: Example value, should mvoe some stuff to personal user-conf
 true "${BUILD_BASES:=${C_INC:?} ${UCONF:?} ${US_BIN:?} ${U_S:?} ${U_C:?} ${HTDIR:?}}"
+str_wordmatch "${BUILD_BASE:?}" $BUILD_BASES ||
+  BUILD_BASES="$BUILD_BASE $BUILD_BASES"
 
 true "${BUILD_TOOL:="redo"}"
 

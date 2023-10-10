@@ -325,13 +325,19 @@ env__define__build_libs ()
   }
 }
 
-env__define__build_parts ()
+# Set final path where all build recipe parts are to be found
+env__define__build_parts () #
 {
   build_add_setting "BUILD_PARTS"
   test -n "${BUILD_PARTS:-}" && return
 
+  ! sh_arr BUILD_PART_PREFS ||
+  test 0 -lt "${#BUILD_PART_PREFS[*]}" || set -- "${BUILD_PART_PREFS[@]}"
+  test $# -gt 0 || set -- \
+          tools/{sh,ci,build,${BUILD_TOOL:?}}/{boot,build,parts,recipes}
+
   { BUILD_PARTS=$(sh_exts="" sh_path=${BUILD_BASES:?} any=true first=false \
-        sh_lookup tools/${BUILD_TOOL:?}/parts
+        sh_lookup "$@"
     ) && test -n "$BUILD_PARTS" && BUILD_PARTS=${BUILD_PARTS//$'\n'/:}
   } &&
     $LOG debug ::build-parts "Setting parts-path" "$BUILD_PARTS" ||

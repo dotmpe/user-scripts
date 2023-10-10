@@ -1057,7 +1057,14 @@ build_target__from__alias () # <Targets...>
   # properly. May be test such later...
   #eval "set -- $(echo $* | lines_printf '"%s"')"
   #shellcheck disable=2124
-  TARGET_PARENT="${BUILD_TARGET:?}}" TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
+  TARGET_PARENT="${BUILD_TARGET:?}" TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
+}
+
+build_target__from__cache () # ~ <Target>
+{
+  #local self="build-target:from:cache"
+  set -- "${PROJECT_CACHE:?}/${1:?}"
+  TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP=${@@Q} build_targets_ "${@:?}"
 }
 
 # Defer execution: build a (single) target by invoking another command
@@ -1171,13 +1178,6 @@ build_target__from__expand () # ~ <Target-expressions...>
   }
   # XXX: build-always
   #shellcheck disable=2124
-  TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
-}
-
-build_target__from__cache ()
-{
-  #local self="build-target:from:cache"
-  set -- "${PROJECT_CACHE:?}/${1:?}"
   TARGET_PARENT=${BUILD_TARGET:?} TARGET_GROUP="${@@Q}" build_targets_ "${@:?}"
 }
 
@@ -1382,37 +1382,40 @@ build_target__from__lines_word () # ~ <Nr> <List-refs...>
   build-ifchange < "${BUILD_TARGET_TMP:?}"
 }
 
-# Generic target recipe using looked up parts. Without arguments, runs
-# 'if <part> -- source-do <part>' rule. If a method is given, the part and all
-# remaining parameters are passed to a rule with that name
-# ('<method> <part> -- <...>'), and if a new
-# sequence is given that is run after 'if <part>'.
+# Generic target recipe using looked up parts. Without arguments, sets and runs
+# 'if <part> -- source-do <part>'. When a method is given, the part name and
+# all remaining parameters are passed to a rule with that name
+# ('<method> <part> -- <...>'),
+# if a new sequence is given that is run after 'if <part>'.
 #
 build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
 {
-  declare pn=${1:--} part
-  test -z "${TARGET_ALIAS:-}" || pn=$TARGET_ALIAS
-  test "-" != "$pn" || pn=${BUILD_TARGET:?}
+  declare pn=${1:--} part method
+  shift
 
-  case "${1:--}" in
-    # Encode target as filename, replacing ext and dir separators
-    ( "-" ) read -r pn <<< "$(build_target_name__filename "$pn")"
-    #shellcheck disable=SC2211 # XXX: This is valid 'in' syntax.
-    ( * ) ;; # Use part-name as-is
-  esac
+  # Encode target as filename, replacing ext and dir separators
+  test "-" != "$pn" || {
+    : "${TARGET_ALIAS:-${BUILD_TARGET:?}}"
+    pn="$(build_target_name__filename "$_")" || return
+  }
   $LOG debug ::from:part "Trying part lookup" "${pn//%/%%}"
 
   # Lookup actual path for part name from all parts locations
   #shellcheck disable=2086
-  part=$(sh_exts=.do sh_path=${BUILD_PARTS:?} sh_lookup "$pn") || {
+  part=$(sh_exts=.do\ .sh sh_path=${BUILD_PARTS:?} sh_lookup "$pn") || {
     return ${_E_continue:-196}
   }
   $LOG info ::from:part "Found recipe part" "${part//%/%%}"
 
-  test $# -ge 2 && declare method=${2:?}
-  test $# -gt 2 && {
-    test "--" = "${3:-}" && {
+  test $# -ge 2 -a "$1" != -- && {
+    method=${1:?}
+    shift
+  }
+
+  test $# -gt 0 && {
+    test "--" = "${1:-}" && {
       shift 3
+      stderr echo 1. build_target_rule "$method" "$part" -- "$@"
       build_target_rule "$method" "$part" -- "$@" || return
     } || {
       $LOG error : "Surplus arguments" "$*"
@@ -1421,8 +1424,10 @@ build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
   }
 
   test $# -eq 2 && {
+    stderr echo 2. build_target_rule "$method" "$part"
     build_target_rule "$method" "$part" || return
   } || {
+    stderr echo 3. build_target_rule if "$part" -- source-do $part
     build_target_rule if "$part" -- source-do "$part" || return
   }
 }
@@ -1784,7 +1789,7 @@ build_target__seq__if_src_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
   build_target_rule if-source "$script" -- if-fun "$@"
 }
 
-# Build SRC array from sequence and source files without making ifchange
+# Build SRC array from sequence and source files, without making ifchange
 # dependency. See 'if-source'.
 build_target__seq__source () # ~ <Source-scripts...> [ -- <...> ]
 {
@@ -1833,6 +1838,7 @@ build_target__seq__source_do () # ~ <Redo-file <...>> [-- <...>]
       "Sourcing from PATH, use relative path or set BUILD_SOURCE_PATH=1 (see ... XXX)" "$src"
     source "$src" || return
   done
+  # Return when done, else continue with rule
   test 0 -lt "${#args[@]}" || return 0
   build_target_rule "${args[@]}"
 }
@@ -1876,6 +1882,7 @@ build_target_recipe__dir_index () # <Name> <Dirs...>
   echo "TARGET_PARENT=\"${target}\" TARGET_GROUP=\"${@@Q}\" TARGET_ALIAS=os-dir-index build-ifchange ${@@Q}"
 }
 
+# Show recipe for build-target:from:expand
 build_target_recipe__expand () # <Name> <Targets...>
 {
   ${list_sources:-false} && {
@@ -1912,14 +1919,16 @@ build_target_rule ()
   #  sh_fun_body build_target__from__${type//-/_} | sed 's/^    //'
   #  return
   #} || {
-  $LOG debug ":build:target-rule" "Resolving type handler" \
-    "build_target__seq__${type//-/_}"
-
   sh_fun build_target__seq__${type//-/_} && {
+    $LOG debug ":build:target-rule" "Resolved type handler" \
+      "build-target:seq:$type"
+
     build_target__seq__${type//-/_} "$@" || return
   } || {
     sh_fun build_target__from__${type//-/_} || return ${_E_continue:-196}
 
+    $LOG debug ":build:target-rule" "Resolved type handler" \
+      "build-target:from:$type"
     build_target__from__${type//-/_} "$@" || return
   }
 }
@@ -2170,12 +2179,11 @@ build_target_lookup ()
 
 build_target_lookup_methods ()
 {
-  declare target=${1:?}
-  : "${!BUILD_TARGET_DECO[*]}"
-  : "$(printf '\%s' $_)"
-  : "[${_// }]"
-  [[ "${target:0:1}" =~ ^$_$ ]] && {
-    echo ${BUILD_TARGET_DECO[${target:0:1}]}
+  declare target=${1:?} deco_re
+  lib_require match &&
+  deco_re=$(match_re_argsor ${!BUILD_TARGET_DECO[*]}) || return
+  [[ "${target:0:1}" =~ ^$deco_re$ ]] && {
+    echo ${BUILD_TARGET_DECO[${target:0:1}]:?"Expected for '$target' because '$deco_re'"}
   } ||
     echo filepath
 }
@@ -2502,11 +2510,15 @@ match_grep () # String
 # V-Id encoded for indexing and access.
 params_sh ()
 {
+  # Extract build-target aliases in the form of '# @<...>: <...>'
   grep -Po '^#  *@\K[A-Za-z_-][A-Za-z0-9:\./\\_-]*:.*' "$@" |
   awk '{ st = index($0,":") ;
       key = substr($0,0,st-1) ;
       gsub(/[^A-Za-z0-9_]/,"_",key) ;
       print "build_" key "_targets=\"" substr($0,st+2) "\"" }'
+
+  # Extract build-target in the form of '# &<id>:<handler> <args>'
+
 }
 
 
@@ -2573,7 +2585,7 @@ sh_lookup () # ~ <Paths...> # Lookup paths at PATH.
   for n in "${@:?}"
   do
     found=false
-    for bd in $(echo "$sh_path" | tr ':' '\n')
+    for bd in ${sh_path//:/ }
     do
       for e in ${sh_exts:-""}
       do
@@ -2955,8 +2967,6 @@ build_ () # ~ <Build-action> <Argv <...>>
     return
   }
 
-  build_action_handler=build_$(build_target_name__function "${BUILD_ACTION:?}")
-
   declare ret
   build_boot ${BUILD_BOOT-env-path log-key build-action} || { ret=$?
       test $ret -eq ${_E_break:-197} && exit
@@ -2967,6 +2977,7 @@ build_ () # ~ <Build-action> <Argv <...>>
   declare -a ENV_BOOT=( "${!ENV_DEF[@]}" )
   $LOG info "" "@@@ Bootstrap for '${BUILD_ACTION:?}' done" "${ENV_BOOT[*]}"
 
+  build_action_handler=build_$(build_target_name__function "${BUILD_ACTION:?}")
   sh_fun "$build_action_handler" || { ret=$?
     $LOG error "" "No such entrypoint" "$build_action_handler" $ret
     exit $ret

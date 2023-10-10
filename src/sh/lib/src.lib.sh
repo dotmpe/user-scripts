@@ -7,16 +7,15 @@
 
 src_lib__load ()
 {
-  true
+  true # lib_require match log || return
 }
 
 src_lib__init ()
 {
   test -z "${src_lib_init-}" || return $_
-
   lib_require match log || return
 
-  local us_log=; req_init_log || return
+  req_init_log || return
   $us_log info "" "Loaded src.lib" "$0"
 }
 

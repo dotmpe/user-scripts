@@ -43,7 +43,8 @@ date_lib__load()
 
 date_lib__init()
 {
-  test "${date_lib_init-}" = "0" && return
+  test -z "${date_lib_init-}" || return $_
+  lib_require log || return
   # XXX: test -z "${date_lib_init:-}" || return ${date_lib_init:-}
 
   test -n "${gdate-}" || case "$uname" in
@@ -61,9 +62,8 @@ date_lib__init()
 
   export gdate
 
-  # FIXME:
-  #local us_log=; req_init_log || return
-  #$us_log info "" "Loaded date.lib" "$0"
+  req_init_log || return
+  $us_log info "" "Loaded date.lib" "$0"
   $LOG info "" "Loaded date.lib" "$0"
 }
 

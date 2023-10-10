@@ -11,29 +11,31 @@ log_lib__init () # ~ [<Name=us>]
 {
   test -z "${log_lib_init-}" || return $_
   lib_require stdlog-uc date date-htd || return
-  test $# -le 1 || return 193
+  test $# -le 1 || return ${_E_GAE:-193}
   test -n "${1:-}" || set -- us
 
   local lv=${1}_log
   test -n "${!lv-}" || {
     test -n "${LOG-}" || return
     test \( \
-        "$(type -t "$LOG")" = "function" -o \
-        -x "$LOG" -o -x "$(command -v "$LOG")" \
+        "$(type -t "$LOG")" = "function" \
+        -o -x "$LOG" \
+        -o -x "$(command -v "$LOG")" \
       \) || return
 
-    #declare -g $lv="$LOG"
-    eval $lv="$LOG"
+    declare -g $lv="$LOG"
+    #eval $lv="$LOG"
   }
 }
 
 req_log ()
 {
-  test $# -le 1 || return 193
+  test $# -le 1 || return ${_E_GAE:-193}
   test -n "${1:-}" || set -- us
 
   local lv=${1}_log
-  test -n "${!lv}" || return 111 # NOTE: sanity
+  #true "${!lv:?"Require '$1' log failed"}"
+  test -n "${!lv-}" || return 112
 }
 
 req_init_log ()

@@ -2,6 +2,8 @@
 
 shell_lib__load()
 {
+  lib_require os sys str log || return
+
   # Dir to record env-keys snapshots:SD-Shell-Dir
   test -n "${SD_SHELL_DIR-}" || SD_SHELL_DIR="${STATUSDIR_ROOT:-$HOME/.local/statusdir/}shell"
 
@@ -35,11 +37,12 @@ shell_lib__load()
 # and also <doc/shell-builtins.tab>
 shell_lib__init()
 {
-  lib_assert os sys str log || return
+  test -z "${shell_lib_init-}" || return $_
+  #lib_assert os sys str log || return
 
   test -n "${SH_SID-}" || SH_SID=$(get_uuid) || return
 
-  shell_init_mode
+  shell_init_mode || return
 
   req_init_log us || return
   local log_key="$scriptname/$$":u-s:shell:lib:init
@@ -135,7 +138,7 @@ shell_detect_sh ()
 # Define sh-env. to get plain env var name/value list, including local vars
 shell_def ()
 {
-  local us_log=; req_init_log || return
+  req_init_log || return
 
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
@@ -295,7 +298,7 @@ env_keys()
 
 record_env_diff_keys()
 {
-  local us_log=; req_init_log || return
+  req_init_log || return
 
   test -n "$1" || set -- "$(ls "$SD_SHELL_DIR" | head -n 1)" "$2"
   test -n "$2" || set -- "$1" "$(ls "$SD_SHELL_DIR" | tail -n 1)"

@@ -27,9 +27,26 @@ match_lib__init()
 }
 
 
+match_bre_str ()
+{
+  local old_lc_collate=$LC_COLLATE
+  LC_COLLATE=C
+
+  local length="${#1}"
+  for (( i = 0; i < length; i++ )); do
+    local c="${1:$i:1}"
+    case $c in
+      ( [\\^.$*\[\]] ) printf '\%s' "$c" ;;
+      ( * ) printf '%s' "$c" ;;
+    esac
+  done
+
+  LC_COLLATE=$old_lc_collate
+}
+
 # Take any string and return a Regex to match that exact string, see
 # match-grep-pattern-test.
-match_grep () # ~ <String>
+match_grep () # ~ <String> <...>
 {
   local old_lc_collate=$LC_COLLATE
   LC_COLLATE=C
@@ -61,6 +78,36 @@ match_grep_pattern_test ()
     error "cannot build regex for $1: $p_"
     return 1
   }
+}
+
+match_re_argsor () # ~ <Strings...> # Build 'or' match group from literal string arguments
+{
+  declare -a choices
+  while test 0 -lt $#
+  do
+    if_ok "$(match_re_str "${1:-}")" || return
+    choices+=( "$_" )
+    shift
+  done
+  : "${choices[*]}"
+  echo "(${_// /|})"
+}
+
+match_re_str () # ~ <String> <...>
+{
+  local old_lc_collate=$LC_COLLATE
+  LC_COLLATE=C
+
+  local length="${#1}"
+  for (( i = 0; i < length; i++ )); do
+    local c="${1:$i:1}"
+    case $c in
+      ( [\\^.$*?+\[\]\{\}\(\)] ) printf '\%s' "$c" ;;
+      ( * ) printf '%s' "$c" ;;
+    esac
+  done
+
+  LC_COLLATE=$old_lc_collate
 }
 
 #

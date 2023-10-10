@@ -196,7 +196,7 @@ log()
 
 err()
 {
-  warn "err() is deprecated, see stderr()"
+  warn "err() is deprecated, see stdemsg ()"
   # TODO: turn this on and fix tests warn "err() is deprecated, see stderr()"
   log "$1" 1>&2
   test -z "${2-}" || exit $2
@@ -210,7 +210,8 @@ _stderr()
   esac
 }
 # FIXME: move all highlighting elsewhere / or transform/strip for specific log-TERM
-stderr() # level msg exit
+# was 'stderr'
+stdemsg () # level msg exit
 {
   test $# -le 3 || {
     echo "Surplus arguments '$4'" >&2
@@ -280,43 +281,43 @@ std_exit () # [exit-at-level]
 emerg()
 {
   local log=; req_init_log
-  std_v 1 && stderr "Emerg" "$1" ${2-}
+  std_v 1 && stdemsg "Emerg" "$1" ${2-}
   std_exit ${2-}
 }
 crit()
 {
   local log=; req_init_log
-  std_v 2 && stderr "Crit" "$1" ${2-}
+  std_v 2 && stdemsg "Crit" "$1" ${2-}
   std_exit ${2-}
 }
 error()
 {
   local log=; req_init_log
-  std_v 3 && stderr "Error" "$1" ${2-}
+  std_v 3 && stdemsg "Error" "$1" ${2-}
   std_exit ${2-}
 }
 warn()
 {
   local log=; req_init_log
-  std_v 4 && stderr "Warning" "$1" ${2-}
+  std_v 4 && stdemsg "Warning" "$1" ${2-}
   std_exit ${2-}
 }
 note()
 {
   local log=; req_init_log
-  std_v 5 && stderr "Notice" "$1" ${2-}
+  std_v 5 && stdemsg "Notice" "$1" ${2-}
   std_exit ${2-}
 }
 std_info()
 {
   local log=; req_init_log
-  std_v 6 && stderr "Info" "$1" ${2-}
+  std_v 6 && stdemsg "Info" "$1" ${2-}
   std_exit ${2-}
 }
 debug()
 {
   local log=; req_init_log
-  std_v 7 && stderr "Debug" "$1" ${2-}
+  std_v 7 && stdemsg "Debug" "$1" ${2-}
   std_exit ${2-}
 }
 
