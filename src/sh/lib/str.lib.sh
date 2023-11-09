@@ -165,10 +165,28 @@ expr_substr()
   esac
 }
 
-str_globmatch () # ~ <String> <Glob-pattern>
+str_globmatch () # ~ <String> <Glob-patterns...>
 {
-  test 2 -eq $# || return ${_E_GAE:-193}
-  case "${1:?}" in ${2:?} ) ;; ( * ) false ;; esac
+  test 2 -le $# || return ${_E_GAE:-193}
+  local str=${1:?}
+  shift
+  while test $# -gt 0
+  do
+    case "$str" in ( ${1:?} ) return ;; * ) ${any:-true} || return 1 ;; esac
+    shift
+  done
+  return 1
+}
+
+# String-strip based on glob. Removes all matching characters at the left.
+str_globstripcl () # ~ <Str> [<Glob-c>]
+{
+  local prefc=${2:-"[ ]"} str="${1:?}"
+  while str_globmatch "$str" "$prefc*"
+  do
+    str="${str#$prefc}"
+  done
+  echo "$str"
 }
 
 str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears

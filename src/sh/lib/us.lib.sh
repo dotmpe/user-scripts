@@ -1,6 +1,6 @@
 
 # us-log-v-warn: if v is too low for normal interactive mode
-us_log_v_warn () # ~ [<Expected-level=6>] [Message] [Message-level=warn]
+us_log_v_warn () # ~ [<Expected-level=6>] [<Message>] [<Message-level=warn>]
 {
   ${user_script_novwarn:-false} && return
   local ev=${1:-6} msg

@@ -27,14 +27,6 @@ sys_lib__init ()
   }
 }
 
-# Sh var-based increment
-incr() # VAR [AMOUNT=1]
-{
-  local v incr_amount
-  test -n "${2-}" && incr_amount=$2 || incr_amount=1
-  v=$(eval echo \$$1)
-  eval $1=$(( v + incr_amount ))
-}
 
 getidx()
 {
@@ -44,6 +36,15 @@ getidx()
   local idx=$2
   set -- $1
   eval echo \$$idx
+}
+
+# Sh var-based increment
+incr() # VAR [AMOUNT=1]
+{
+  local v incr_amount
+  test -n "${2-}" && incr_amount=$2 || incr_amount=1
+  v=$(eval echo \$$1)
+  eval $1=$(( v + incr_amount ))
 }
 
 # Error unless non-empty and true-ish value
@@ -337,39 +338,49 @@ lookup_expand () # ~ <Glob-pattern> <Dirs...>
   ! "${lookup_first:-true}"
 }
 
-# lookup-path List existing local paths, or fail if second arg is not listed
+# lookup-path List existing local paths, or fail on missing arguments,
+# lookup-test handler or if no existing paths was found.
 # lookup-test: command to test equality with, default test_exists
 # lookup-first: boolean setting to stop after first success
-lookup_path () # ~ VAR-NAME LOCAL-PATH
+lookup_path () # (lt:=lookup-exists) ~ <Var-name> <Local-path>
 {
-  test $# -eq 2 || return 64
+  test $# -eq 2 || return ${_E_GAE:-193}
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
   func_exists "$lookup_test" || {
     $LOG error "" "No lookup-test handler" "$lookup_test"
-    return 1
+    return 2
   }
 
-  local path ; for path in $( lookup_path_list $1 )
+  local path found=false
+  for path in $( lookup_path_list ${1:?} )
     do
-      eval $lookup_test \""$2"\" \""$path"\" && {
+      eval $lookup_test \""${2:?}"\" \""${path:?}"\" && {
+        found=true
         "${lookup_first:-true}" && break || continue
       } || continue
     done
+  "$found"
 }
 
-lookup_paths () # Var-Name Local-Paths...
+# Same implementation as lookup-path except combine any local-path with any
+# basedir from lookup sequence. This may sometimes be usefull, but this still
+# only returns one path on lookup-first even if multiple local paths are given.
+lookup_paths () # (lt:lookup-exists) ~ <Var-name> <Local-paths...>
 {
-  test $# -ge 2 || return 64
+  test $# -eq 2 || return ${_E_GAE:-193}
   test -n "${lookup_test-}" || local lookup_test="lookup_exists"
-  local varname=$1 base path ; shift ; for base in $( lookup_path_list $varname )
+  local varname=$1 base path found=false
+  shift ; for base in $( lookup_path_list $varname )
     do
       for path in "$@"
       do
         eval $lookup_test \""$path"\" \""$base"\" && {
+          found=true
           "${lookup_first:-true}" && break 2 || continue
         } || continue
       done
     done
+  "${found}"
 }
 
 # Test if local path/name is overruled. Lists paths for hidden LOCAL instances.

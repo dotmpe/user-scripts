@@ -186,6 +186,18 @@ file_backup () # ~ <Name> [<.Ext>]
   action="cp -v" file_number "${@:?}"
 }
 
+# XXX: Determine
+file_format_reader () # ~ <File-path>
+{
+  tab
+}
+
+file_modeline ()
+{
+  if_ok "$(grep -iPo -m1 "^# id: \K.*" "$@")" &&
+  read -r fileversion fileid filemode <<< "$_"
+}
+
 file_modification_age ()
 {
   fmtdate_relative "$(filemtime "$1")" "" ""
@@ -208,6 +220,22 @@ file_number () # [action=mv] ~ <Name> [<.Ext>]
 
   local action="${action:-echo}"
   $action "$1" "$dest"
+}
+
+# determine fr-spec,
+# this may refer to a function or some sort of symbol
+file_reader () # (<?,fr-ctx:,:fr-{p,b,spec}) ~ [<File> <...>]
+{
+  local fr_ctx=${fr_ctx:-modeline} fr_argc fr_init
+
+  ${fr_ctx:?}_file_path "$@" || return
+  test -z "${fr_argc-}" || shift $_
+
+  ${fr_ctx:?}_file_reader "$@" || fr_init=$?
+  test -z "${fr_init-}" ||
+    $LOG alert :file-reader "Unable to set file-reader context" \
+      "${fr_ctx:-}:E${fr_init:-?}:$*" ${fr_init:-$?}
+  test -n "${fr_spec-}" || return ${_E_NF:-124}
 }
 
 # rename to numbered file, see number-file
@@ -339,6 +367,34 @@ filesize () # File
       * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
     esac; shift
   done
+}
+
+bytesize_orders=(
+  "B bytes"       # 1 = 8b
+  "KB Kilobytes"  # 10^3
+  "MB Megabytes"  # 10^6
+  "GB Gigabytes"  # 10^9
+  "TB Terabytes"  # 10^12
+  "PB Petabytes"  # 10^15
+  "EB Exabyte"    # 10^18
+  #ZB Zettabyte  # 10^21
+  #YB Yottabyte  # 10^24
+  #RB Ronnabyte  # 10^27
+  #QB Quettabyte # 10^30
+)
+
+# human-readable-bytesize
+readable_bytesize () # ~ <Size>
+{
+  local bo_idx=0 bo=1 bs=${1:?}
+  while true
+  do
+    bs="$(echo "scale=3; $bs / 1000" | ${c_bc:-bc})" || return
+    bo=$(( bo + 3 ))
+    bo_idx=$(( bo_idx + 1 ))
+    awk -v a="$bs" -v b="$(( 10 ** $bo ))" 'BEGIN{ if (a<=b) exit 1 }' || break
+  done
+  echo "$bs${bytesize_orders[$bo_idx]// *}"
 }
 
 # Return basename for one file, using filenamext to extract extension.
@@ -554,6 +610,15 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
   }
 }
 
+lines_vars () # ~ <Varnames...> # Read lines on stdin, one for each var
+{
+  local __varname
+  for __varname in "$@"
+  do
+    read -r $__varname || return
+  done
+}
+
 # See read-while, but echo every line after command has tested it.
 lines_while () # ~ <Cmd <argv...>>
 {
@@ -574,6 +639,44 @@ lines_count_while_eval () # CMD
     line_number=$(( line_number + 1 ))
   done
   test $line_number -gt 0 || return
+}
+
+# TODO: introduce fr_file vs fr_reader context and rename to
+# file_reader_path
+modeline_file_path ()
+{
+  test $# -gt 0 && {
+    test ! -e "$1" || {
+      fr_p=${1:?} fr_b=false fr_argc=1
+    } ||
+      fr_p=
+  }
+  test -n "${fr_p-}" || {
+    test -t 0 || {
+      # buffer stdin at ramfs file location
+      fr_p="${RAM_TMPDIR:?}/$(uuidgen).$$.stdin" &&
+      cat > "$fp" ||
+        $LOG alert :file-reader "Failed to read input into file" "E$?:$fp" $? ||
+          return
+      fr_b=true
+    }
+  }
+  test -n "${fr_p-}" || return ${_E_GAE:-193}
+  test -e "${fr_p-}" || return ${_E_NF:-124}
+  test -s "${fr_p-}" || return ${_E_E:-193}
+}
+
+modeline_file_reader ()
+{
+  ! file_modeline "$fp" || {
+    #str_globmatch "$filemode" "*[ ]reader:*" "reader:*" && {
+    str_wordmatch "reader:*" $filemode && {
+      : "${filemode#* reader:}"
+      : "${_#reader:}"
+      : "${_%% *}"
+      fr_spec="$_"
+    }
+  }
 }
 
 normalize_relative()

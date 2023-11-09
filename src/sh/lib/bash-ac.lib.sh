@@ -2,7 +2,9 @@
 
 ## Bash Auto-completion
 
-bash_ac_lib__load()
+# See also @Dev+Shell+Completion
+
+bash_ac_lib__load() # FIXME: move this to user-conf setup
 {
   # enable programmable completion features (you don't need to enable
   # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -35,4 +37,9 @@ bash_ac_lib__load()
     # $(brew --prefix)/share/bash-completion/completions
 
   fi
+}
+
+bash_ac_list () # ~ # List autocomplete declarations
+{
+  complete -p
 }
