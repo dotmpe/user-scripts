@@ -83,6 +83,10 @@ std_uc_env_def ()
 
   : "${_E_GAE:=193}" # Generic Argument Error. Value error, unspecific.
   : "${_E_MA:=194}" # Missing arguments. Syntax error. Was 64 in places.
+  # See std-uc.lib
+  : "${_E_continue:=195}" # error but may continue steps/batch
+  : "${_E_next:=196}" # failure try next
+  : "${_E_done:=200}"
 }
 
 # TODO: probably also deprecate, see stderr. Maybe other tuil for this func.

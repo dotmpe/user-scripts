@@ -48,7 +48,7 @@ incr() # VAR [AMOUNT=1]
 }
 
 # Error unless non-empty and true-ish value
-trueish() # Str
+trueish () # Str
 {
   test $# -eq 1 -a -n "${1-}" || return
   case "$1" in [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1) return 0;;
@@ -282,25 +282,6 @@ add_env_path_lookup() # Var-Name Prepend-Value Append-Value
   }
 }
 
-remove_env_path_lookup()
-{
-  local newval="$( eval echo \"\$$1\" | tr ':' '\n' | while read oneval
-    do
-      test "$2" = "$oneval" -o "$(realpath "$2")" = "$(realpath "$oneval")" &&
-        continue ;
-      echo "$oneval" ;
-    done | tr '\n' ':' | strip_last_nchars 1 )"
-
-  export $1="$newval"
-}
-
-# List individual entries/paths in lookup path env-var (ie. PATH or CLASSPATH)
-lookup_path_list () # VAR-NAME
-{
-  test $# -eq 1 -a -n "${1-}" || error "lookup-path varname expected" 1
-  eval echo \"\$$1\" | tr ':' '\n'
-}
-
 # Find first or every existing Local-path in Dirs, or fail.
 # Default <lookup-first=true>. List one result per line.
 lookup_exists () # ~ <Local-path> <Dirs...>
@@ -338,9 +319,9 @@ lookup_expand () # ~ <Glob-pattern> <Dirs...>
   ! "${lookup_first:-true}"
 }
 
-# lookup-path List existing local paths, or fail on missing arguments,
-# lookup-test handler or if no existing paths was found.
-# lookup-test: command to test equality with, default test_exists
+# lookup-path List existing <local-path>, fail on missing arguments or
+# lookup-test handler, and if no existing paths was found.
+# lookup-test: command to test equality with [default: test_exists]
 # lookup-first: boolean setting to stop after first success
 lookup_path () # (lt:=lookup-exists) ~ <Var-name> <Local-path>
 {
@@ -354,12 +335,19 @@ lookup_path () # (lt:=lookup-exists) ~ <Var-name> <Local-path>
   local path found=false
   for path in $( lookup_path_list ${1:?} )
     do
-      eval $lookup_test \""${2:?}"\" \""${path:?}"\" && {
+      eval "$lookup_test \"${2:?}\" \"${path:?}\"" && {
         found=true
         "${lookup_first:-true}" && break || continue
       } || continue
     done
   "$found"
+}
+
+# List individual entries/paths in lookup path env-var (ie. PATH or CLASSPATH)
+lookup_path_list () # VAR-NAME
+{
+  test $# -eq 1 -a -n "${1-}" || error "lookup-path varname expected" 1
+  eval echo \"\$$1\" | tr ':' '\n'
 }
 
 # Same implementation as lookup-path except combine any local-path with any
@@ -694,6 +682,18 @@ env_var_mapping_update ()
       eval "${to}=\"$(echo ${!from})\""
     }
   done
+}
+
+remove_env_path_lookup ()
+{
+  local newval="$( eval echo \"\$$1\" | tr ':' '\n' | while read oneval
+    do
+      test "$2" = "$oneval" -o "$(realpath "$2")" = "$(realpath "$oneval")" &&
+        continue ;
+      echo "$oneval" ;
+    done | tr '\n' ':' | strip_last_nchars 1 )"
+
+  export $1="$newval"
 }
 
 std_noerr ()

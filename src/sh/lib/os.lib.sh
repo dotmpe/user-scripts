@@ -189,10 +189,10 @@ file_backup () # ~ <Name> [<.Ext>]
 # XXX: Determine
 file_format_reader () # ~ <File-path>
 {
-  tab
+  TODO "Determine file format for reader"
 }
 
-file_modeline ()
+file_modeline () # :file{version,id,mode} ~ <File>
 {
   if_ok "$(grep -iPo -m1 "^# id: \K.*" "$@")" &&
   read -r fileversion fileid filemode <<< "$_"
@@ -231,7 +231,8 @@ file_reader () # (<?,fr-ctx:,:fr-{p,b,spec}) ~ [<File> <...>]
   ${fr_ctx:?}_file_path "$@" || return
   test -z "${fr_argc-}" || shift $_
 
-  ${fr_ctx:?}_file_reader "$@" || fr_init=$?
+  stderr echo file_reader "$@" fr_p=$fr_p
+  ${fr_ctx:?}_file_reader "${fr_p:?}" || fr_init=$?
   test -z "${fr_init-}" ||
     $LOG alert :file-reader "Unable to set file-reader context" \
       "${fr_ctx:-}:E${fr_init:-?}:$*" ${fr_init:-$?}
@@ -407,6 +408,35 @@ filestripext () # ~ <Name>
   basename -- "$@"
 }
 
+filter ()
+{
+  local value
+  while read -r value
+  do
+    "${1:?}" "$value" || {
+      test ${_E_next:?} -eq $? && continue
+      return $_
+    }
+    echo "$value"
+  done
+}
+
+filter_args ()
+{
+  local value test=${1:?}
+  shift
+  for value in "$@"
+  do
+    "${test}" "$value" || {
+      continue
+      # TODO: make test functions discern between error and failure
+      #test ${_E_next:?} -eq $? && continue
+      #return $_
+    }
+    echo "$value"
+  done
+}
+
 # Strip comments lines, including pre-proc directives and empty lines.
 filter_content_lines () # (s) ~ [<Marker-Regex>] # Remove marked or empty lines from stream
 {
@@ -457,10 +487,10 @@ filter_lines () # ~ <Cmd...> # Remove lines for which command returns non-zero
 foreach () # [(s)] ~ ['-' | <Arg...>]
 {
   {
-    test -n "$*" && {
-      while test $# -gt 0
+    test 0 -lt $# && {
+      while test 0 -lt $#
       do
-        test "$1" = "-" && {
+        [[ "$1" = "-" ]] && {
           # XXX: echo foreach_stdin=1
           cat -
           # XXX: echo foreach_stdin=0
@@ -493,14 +523,14 @@ foreach_do () # ~ [ - | <Arg...> ]
   test -n "${p-}" || local p= # Prefix string
   test -n "${s-}" || local s= # Suffix string
   test -n "${act-}" || local act="echo"
-  foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" ; done
+  foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" || return ; done
 }
 
 foreach_eval ()
 {
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
+  local p="${p-}" # Prefix string
+  local s="${s-}" # Suffix string
+  local act=${act:-"echo"}
   foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
 }
 
@@ -547,21 +577,20 @@ go_to_dir_with () # ~ <Local-Name>
 }
 
 # An (almost) no-op that does pass previous status back, usable as an
-# alternative to 'true' (or ':') for use to store a value as last argument ('$_').
-# If such value comes from an invocation, its status will always be masked with
-# 0 by 'true'. Alternatively 'test -{n,z}' would be usable e.g. for commands
-# that do not return any non-zero status on failures, but otherwise it would
-# override any status just the same (besides adding an extra assumption about
-# the value).
-if_ok () # (?) ~ <...> # No-op, but return previous status
+# alternative to putting arguments after 'true' (or ':'), ie to do string
+# expressions or subshells and store at last argument ('$_'). If such value
+# comes from an subshell, true will always mask status by 0. Alternatively 'test
+# -{n,z}' would be usable e.g. for commands that do not return any non-zero
+# status on failures, but otherwise that would mask any subshell state just the
+# same.
+if_ok () # (?) ~ <...> # No-op, except pass (return) previous status
 {
   return
 }
 
 ignore_sigpipe () # (?) ~ <...> # Status OK if SIG:PIPE
 {
-  local r=$?
-  test $r -eq 141 # For linux/bash: 128+signal where signal=SIGPIPE=13
+  test $? -eq 141 # For linux/bash: 128+signal where signal=SIGPIPE=13
 }
 
 # Little wrapper to use lines-while to read line-continuations to lines
@@ -655,8 +684,8 @@ modeline_file_path ()
     test -t 0 || {
       # buffer stdin at ramfs file location
       fr_p="${RAM_TMPDIR:?}/$(uuidgen).$$.stdin" &&
-      cat > "$fp" ||
-        $LOG alert :file-reader "Failed to read input into file" "E$?:$fp" $? ||
+      cat > "$fr_p" ||
+        $LOG alert :file-reader "Failed to read input into file" "E$?:$fr_p" $? ||
           return
       fr_b=true
     }
@@ -668,7 +697,7 @@ modeline_file_path ()
 
 modeline_file_reader ()
 {
-  ! file_modeline "$fp" || {
+  ! file_modeline "${1:?Filename expected}" || {
     #str_globmatch "$filemode" "*[ ]reader:*" "reader:*" && {
     str_wordmatch "reader:*" $filemode && {
       : "${filemode#* reader:}"

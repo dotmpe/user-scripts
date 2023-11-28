@@ -260,7 +260,8 @@ lib_path () # ~ <Local-name> [<Path-Var-name>]
   test $# -le 2 || return 98
   test -n "${2-}" || set -- "$1" SCRIPTPATH
   lookup_test=${lookup_test:-"lib_exists"} \
-  lookup_first=${lookup_first:-false} lookup_path $2 "${1:?}"
+  lookup_first=${lookup_first:-false} \
+    lookup_path $2 "${1:?}"
 }
 
 lib_paths () # (s?) ~ [<Lib-names...>]
