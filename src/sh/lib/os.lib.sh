@@ -403,12 +403,12 @@ readable_bytesize () # ~ <Size>
 # elements for name.
 filestripext () # ~ <Name>
 {
-  ext="$(filenamext "$1")"
+  ext="$(filenamext "$1")" || return
   test -n "$ext" && set -- "$1" ".$ext"
   basename -- "$@"
 }
 
-filter ()
+filter () # (Std:0:) ~ <Test-handler>
 {
   local value
   while read -r value
@@ -421,7 +421,7 @@ filter ()
   done
 }
 
-filter_args ()
+filter_args () # ~ <Test-handler> <Args...>
 {
   local value test=${1:?}
   shift
@@ -475,6 +475,7 @@ filter_lines () # ~ <Cmd...> # Remove lines for which command returns non-zero
   done
 }
 
+# XXX: rename to for-lines or something
 # Go over arguments and echo. If no arguments given, or on argument '-' the
 # standard input is cat instead or in-place respectively. Strips empty lines.
 # (Does not open filenames and read from files). Multiple '-' arguments are
@@ -501,6 +502,13 @@ foreach () # [(s)] ~ ['-' | <Arg...>]
       done
     } || cat -
   } | grep -v '^$'
+}
+
+foreach2 ()
+{
+  while read -r line
+  do "$@" "$line" || return
+  done
 }
 
 # Extend rows by mapping each value line using act, add result tab-separated
@@ -977,6 +985,32 @@ remove_dupes_nix_data () # ~ <Awk-argv...>
 sort_mtimes ()
 {
   act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
+}
+
+# XXX: see argv.lib test_ funs as well
+
+test_isdir () # ~ <Name>
+{
+  test -d "${1:?}" ||
+    $LOG warn :isdir "No such dir" "E$?:name=$1" ${_E_fail:?}
+}
+
+test_isfile () # ~ <Name>
+{
+  test -f "${1:?}" ||
+    $LOG warn :isfile "No such file" "E$?:name=$1" ${_E_fail:?}
+}
+
+test_isnonempty () # ~ <Name>
+{
+  test -s "${1:?}" ||
+    $LOG warn :isnonempty "No such path or empty" "E$?:name=$1" ${_E_fail:?}
+}
+
+test_ispath () # ~ <Name>
+{
+  test -e "${1:?}" ||
+    $LOG warn :ispath "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 # Ziplists on lines from files. XXX: Each file should be same length.

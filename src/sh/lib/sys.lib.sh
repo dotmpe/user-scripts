@@ -437,9 +437,9 @@ user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
 }
 
 #
-sys_path () # ~ <Cmd...> # TODO
+sys_path () # ~ <Cmd...> # TODO??
 {
-  "$@" | sys_path_fmt
+  echo "${PATH//:/$'\n'}" | sys_path_fmt
 }
 
 sys_path_fmt ()

@@ -863,7 +863,7 @@ build_resolver ()
     ! "${BUILD_LOOKUP_DEBUG:-false}" ||
       $LOG info "$lk" "Going over specs" "(${#specs}):${specs[*]//%/%%}"
   } || {
-    $LOG info "$lk" "No specs on symbol" "" ${_E_failure:-195} || return
+    $LOG info "$lk" "No specs on symbol" "" ${_E_fail:?} || return
     specs=( "${BUILD_TARGET:?}" )
   }
   for BUILD_SPEC in "${specs[@]}"
@@ -900,7 +900,7 @@ build_resolver ()
   done
   $LOG "error" ":build-target" "Unknown or unexpected target, see '$BUILD_TOOL ${HELP_TARGET:-help}'" \
     "${BUILD_TARGET//%/%%}"
-  return ${_E_failure:-195}
+  return ${_E_fail:?}
 }
 
 # Do a quiet build-rule-fetch to check wether tehre is a rule for target
