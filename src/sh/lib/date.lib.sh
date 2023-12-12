@@ -64,7 +64,7 @@ date_lib__init()
 
   req_init_log || return
   $us_log info "" "Loaded date.lib" "$0"
-  $LOG info "" "Loaded date.lib" "$0"
+  #$LOG info "" "Loaded date.lib" "$0"
 }
 
 
