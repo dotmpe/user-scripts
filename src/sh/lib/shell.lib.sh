@@ -143,23 +143,6 @@ shell_def ()
   # XXX: test other shells.. etc. etc.
   test $IS_BASH -eq 1 && {
     $us_log info shell.lib "Choosing bash sh-env-init"
-    sh_env() # sh:no-stat
-    {
-      {
-        set | grep '^[_A-Za-z][A-Za-z0-9_]*=.*$'
-        env
-      } | sort -u
-    }
-
-    sh_isset() # sh:no-stat
-    {
-      test "${!1-unset}" != "unset"
-    }
-
-    sh_fun() # Is name of shell funtion # sh:no-stat
-    {
-      test "$(type -t "$1")" = "function"
-    }
 
     sh_als() # Is name of shell alias # sh:no-stat
     {
@@ -171,9 +154,38 @@ shell_def ()
       test "$(type -t "$1")" = "builtin"
     }
 
+    sh_env() # sh:no-stat
+    {
+      {
+        set | grep '^[_A-Za-z][A-Za-z0-9_]*=.*$'
+        env
+      } | sort -u
+    }
+
+    sh_fun() # Is name of shell funtion # sh:no-stat
+    {
+      test "$(type -t "$1")" = "function"
+    }
+
+    sh_isset() # sh:no-stat
+    {
+      test "${!1-unset}" != "unset"
+    }
+
     sh_kw()
     {
       test "$(type -t "$1")" = "keyword"
+    }
+
+    sh_normalize_ws ()
+    {
+      declare line repl=${1:-[$'\t\n']} sub=${2:-" "}
+      while read -r line
+      do
+        if_ok "$(str_glob_replace "$line" "$repl" "$sub" )" &&
+        str_collapse "$_" "$sub" ||
+          return
+      done
     }
 
   } || {

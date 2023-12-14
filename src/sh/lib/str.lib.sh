@@ -165,10 +165,16 @@ expr_substr()
   esac
 }
 
+str_collapse ()
+{
+  declare char=${2:?}
+  str_glob_replace "${1:?}" "$char$char" "$char"
+}
+
 str_globmatch () # ~ <String> <Glob-patterns...>
 {
   test 2 -le $# || return ${_E_GAE:-193}
-  local str=${1:?}
+  declare str=${1:?}
   shift
   while test $# -gt 0
   do
@@ -178,7 +184,19 @@ str_globmatch () # ~ <String> <Glob-patterns...>
   return 1
 }
 
-# String-strip based on glob. Removes all matching characters at the left.
+str_glob_replace ()
+{
+  declare str=${1:?} glob="${2:?}" sub=${3:?}
+  while str_globmatch "$str" "*$glob*"
+  do
+    str="${str//$glob/$sub}"
+  done
+  echo "$str"
+}
+
+# String-strip based on glob. Removes all matching characters at the left. This
+# is useful because the standard parameter expansions only do shortest and
+# longest match but not repeated matches.
 str_globstripcl () # ~ <Str> [<Glob-c>]
 {
   local prefc=${2:-"[ ]"} str="${1:?}"
