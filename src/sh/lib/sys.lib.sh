@@ -696,6 +696,13 @@ remove_env_path_lookup ()
   export $1="$newval"
 }
 
+stdin_from_nonempty () # ~ <File>
+{
+  test -n "${1-}" &&
+  test -s "$_" &&
+  exec < "$_"
+}
+
 std_noerr ()
 {
   "$@" 2>/dev/null
@@ -709,6 +716,15 @@ std_noout ()
 std_quiet ()
 {
   "$@" >/dev/null 2>&1
+}
+
+var_update () # ~ <Var-name-ref> <Value> # Reset local:<var> or <var> to <val>
+{
+  local var=${1:?} val=${2-}
+  case "$var" in
+    ( local:* ) eval "${var:6}=\"$val\"" ;;
+      * ) declare -g $var="$val"
+  esac
 }
 
 # Sync: BIN:

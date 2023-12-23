@@ -192,10 +192,73 @@ file_format_reader () # ~ <File-path>
   TODO "Determine file format for reader"
 }
 
+# Modelines are regulary used to provide editor and file format settings.
+# XXX: would want to select modepart for specific editor if specified as well
 file_modeline () # :file{version,id,mode} ~ <File>
 {
-  if_ok "$(grep -iPo -m1 "^# id: \K.*" "$@")" &&
-  read -r fileversion fileid filemode <<< "$_"
+  declare fml_lvar=${fml_lvar:-false} vpk
+  "$fml_lvar" && vpk=local:file_ml_ || vpk=file_ml_
+
+  fileversion="" fileid="" filemode=""
+
+  file_ml_src=${1:--}
+  if_ok "$(file_id_modeline_grep "$@"|normalize_ws)" && {
+    line_number_raw "$_" $vpk ":" &&
+    file_ml_raw=$(str_trim1 "${file_ml_raw}") || return
+    # XXX: only uses last part of line, how about specified editors?
+    declare rest rest_
+    filemode=${file_ml_raw##* }; rest_=${file_ml_raw% *}
+    test "${#rest_}" -lt "${#file_ml_raw}" || return 0
+    rest=$rest_; fileid=${rest##* }; rest_=${rest% *}
+    test "${#rest}" -gt "${#rest_}" || return 0
+    rest=$rest_; fileversion=${rest##* }; rest_=${rest% *}
+    test "${#rest}" -ge "${#rest_}" || {
+      : "rest=$rest_ file:$file_ml_src"
+      : "$_${fileid:+:id=$fileid}"
+      : "$_${fileversion:+:ver=$fileversion}"
+      : "$_${filemode:+:mode=$filemode}"
+      : "$_:'$file_ml_raw'"
+      $LOG warn "" "Too many fields in Id (ignored)" "$_"
+    }
+  } || {
+    if_ok "$(file_pp_modeline_grep "$@"|normalize_ws)" && {
+      line_number_raw "$_" $vpk ":" &&
+      file_ml_raw=$(str_trim1 "${file_ml_raw}") || return
+      filemode=${file_ml_raw##* }
+      # XXX: only uses last part of line, how about specified editors?
+
+    } || {
+        set --
+        for fml_editor in ${fml_editors:-ex vim}
+        do
+          : "${file_ml_src:?}"
+          if_ok "$(file_editor_mode_grep "$_"|normalize_ws)" || continue
+          set -- "$_"
+          break
+        done
+        test $# -gt 0 &&
+        line_number_raw "$1" $vpk ":" &&
+        file_ml_raw=:$(str_trim1 "${file_ml_raw}") || return
+        filemode=${file_ml_raw%% *}
+      # ||
+        # $LOG error "" "No modefile for input" "${1--}" ${_E_nsk}
+    }
+  }
+}
+
+file_editor_mode_grep ()
+{
+  grep -niPo -m1 "^#.* ${fml_editor:-ex}:\K.*" "$@"
+}
+
+file_id_modeline_grep ()
+{
+  grep -niPo -m1 "^#  *${fml_idk:-id}:? *\K.*" "$@"
+}
+
+file_pp_modeline_grep ()
+{
+  grep -niPo -m1 "^#${fml_mlpd:-modeline}  *\K.*" "$@"
 }
 
 file_modification_age ()
@@ -621,6 +684,14 @@ line_count () # FILE
   declare lc
   lc=$(wc -l "$1" | awk '{print $1}')
   echo "$lc"
+}
+
+line_number_raw () # ~ <Line-str> <Var-pk> <Num-sep> # Extract line number prefix
+{
+  local str=${1--} vpk=${2:-line_} nsep=${3:- }
+
+  var_update ${vpk}ln "${str%%$nsep*}" &&
+  var_update ${vpk}raw "${str#*$nsep}"
 }
 
 # Offset content from input/file to line-based window.

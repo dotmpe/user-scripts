@@ -207,12 +207,14 @@ str_globstripcl () # ~ <Str> [<Glob-c>]
   echo "$str"
 }
 
-str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
+str_globstripcr () # ~ <Str> [<Glob-c>]
 {
-  test 2 -le $# || return ${_E_GAE:-193}
-  case " ${*:2} " in
-    ( *" ${1:?} "*) ;; #  | *" ${1:?} " | " ${1:?} "*) ;;
-    ( * ) false ; esac
+  local prefc=${2:-"[ ]"} str="${1:?}"
+  while str_globmatch "$str" "*$prefc"
+  do
+    str="${str%$prefc}"
+  done
+  echo "$str"
 }
 
 str_quote ()
@@ -233,4 +235,53 @@ str_quote_var ()
   echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
 }
 
+str_trim1 ()
+{
+  test 0 -lt $# || return ${_E_MA:-194}
+  declare str_sws=${str_sws:-"[\n\t ]"}
+  while test 0 -lt $#
+  do
+    : "${1#$str_sws}" &&
+    : "${_%$str_sws}" &&
+    echo "$_" && shift || return
+  done
+}
 
+str_trim ()
+{
+  test 0 -lt $# || return ${_E_MA:-194}
+  declare str_sws=${str_sws:-"[\n\t ]"}
+  while test 0 -lt $#
+  do
+    if_ok "$(str_globstripcl "$1" "$str_sws")" &&
+    if_ok "$(str_globstripcr "$_" "$str_sws")" &&
+    echo "$_" && shift || return
+  done
+}
+
+str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
+{
+  test 0 -lt $# || return ${_E_MA:-194}
+  test 2 -le $# || return ${_E_GAE:-193}
+  local str_fs=${str_fs:- } words="${*:2}"
+  test "$str_fs" = " " || words=${words// /$str_fs}
+  case "$str_fs$words$str_fs" in
+    ( *"$str_fs${1:?}$str_fs"*) ;;
+      * ) false ; esac
+}
+
+str_wordsmatch () # ~ <String> <Words...> #
+{
+  test 0 -lt $# || return ${_E_MA:-194}
+  test 2 -le $# || return ${_E_GAE:-193}
+  local str_fs=${str_fs:- } word
+  for word in "${@:2}"
+  do
+    case "$str_fs${1:?}$str_fs" in
+      ( *"$str_fs${word:?}$str_fs"*) return ;;
+        * ) continue ; esac
+  done
+  false
+}
+
+#
