@@ -696,7 +696,14 @@ remove_env_path_lookup ()
   export $1="$newval"
 }
 
-stdin_from_nonempty () # ~ <File>
+stdin_from_ () # ~ <Cmd...>
+{
+  declare str
+  if_ok "${str:=$("$@")}" || ignore_sigpipe || return
+  exec <<< "$str"
+}
+
+stdin_from_nonempty () # ~ [<File>]
 {
   test -n "${1-}" &&
   test -s "$_" &&
