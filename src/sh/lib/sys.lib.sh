@@ -698,8 +698,8 @@ remove_env_path_lookup ()
 
 stdin_from_ () # ~ <Cmd...>
 {
-  declare str
-  if_ok "${str:=$("$@")}" || ignore_sigpipe || return
+  typeset str
+  str=$("$@") || ignore_sigpipe || return
   exec <<< "$str"
 }
 
