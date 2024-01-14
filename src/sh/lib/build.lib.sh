@@ -2337,7 +2337,7 @@ properties_sh ()
       gsub(/[^A-Za-z0-9]/,"_",key) ;
       print toupper(key) "=\"" substr($0,st+2) "\"" }'
 }
-# Derive: read_lines, meta-attributes-sh
+# Derive: read-lines, asis-to-vars
 
 
 expand_format () # ~ <Format> <Name-Parts>

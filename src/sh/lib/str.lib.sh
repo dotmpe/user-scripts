@@ -230,6 +230,15 @@ str_quote ()
   esac
 }
 
+str_quote_kvpairs () # ~ [<Src-asgn-sep>]
+{
+  while IFS=${1:-=}$'\n' read -r key value
+  do
+    if_ok "$(str_quote "$value")" &&
+    printf '%s=%s\n' "$key" "$_" || return
+  done
+}
+
 str_quote_var ()
 {
   echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
