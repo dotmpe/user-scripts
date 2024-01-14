@@ -110,4 +110,14 @@ match_re_str () # ~ <String> <...>
   LC_COLLATE=$old_lc_collate
 }
 
+match_stdin () # (stdin) ~ <Regex> <Match-group> # Match lines on stdin
+{
+  declare line
+  while read -r line
+  do
+    [[ "$line" =~ ${1:?} ]] || continue
+    echo "${BASH_REMATCH[${2:-0}]}"
+  done
+}
+
 #

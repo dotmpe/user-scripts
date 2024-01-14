@@ -639,6 +639,25 @@ capture_var() # CMD [RET-VAR=ret_var] [OUT-VAR=out_var] [ARGS...]
     }
 }
 
+capture_vars () # ~ <Varkey> <Command...>
+{
+  test $# -ge 2 || return ${_E_MA:?}
+  test -n "$1" || return ${_E_GAE:?}
+  local out stat stderr_fp
+  : "${*:2}"
+  test -n "$_" || return ${_E_GAE:?}
+  : "${_//\//-}"
+  : "${_//./__}"
+  : "${_// /_}"
+  stderr_fp=${RAM_TMPDIR:?}/$_.stderr
+  out=$("${@:2}" 2>${stderr_fp})
+  stat=$?
+  var_update "${1}stdout" "$out"
+  var_update "${1}stderr" "$(<"${stderr_fp}")"
+  rm "$stderr_fp"
+  return ${stat}
+}
+
 # Turn '--' seperated argument seq. into lines
 exec_arg_lines()
 {
