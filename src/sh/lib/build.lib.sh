@@ -978,7 +978,7 @@ build_run () # ~ <Target <...>>
 {
   test 0 = "${build_lib_init:-}" || {
     #lib_init lib-uc &&
-    build_lib_loaded=0
+    build_lib_load=0
     lib_loaded=$lib_loaded\ build
     lib_require ${BUILD_TOOL:?} &&
     lib_init build || return

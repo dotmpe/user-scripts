@@ -33,7 +33,7 @@ lib_assert() # Libs...
   while test $# -gt 0
   do
     mkvid "$1"
-    test "$(eval "echo \$${vid}_lib_loaded" 2>/dev/null )" = "0" || {
+    test "$(eval "echo \$${vid}_lib_load" 2>/dev/null )" = "0" || {
       log_key=$log_key $lib_lib_log error "" "Assert loaded '$1'" "" 1
       return 1
     }
@@ -44,7 +44,7 @@ lib_assert() # Libs...
 lib_errors ()
 {
   local r=0
-  set -- $(sh_env | grep '_lib_loaded=[^0]' | sed 's/_lib_loaded=.*//' )
+  set -- $(sh_env | grep '_lib_load=[^0]' | sed 's/_lib_load=.*//' )
   test -z "$*" || {
       $LOG warn "" "Lib-load problems" "$*"; r=1
   }
@@ -155,7 +155,7 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
       log_key=$log_key \
         $lib_lib_log error "" "err: lib_id=$lib_id" "" 1 || return
     }
-    f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_loaded-}\")
+    f_lib_loaded=$(eval printf -- \"\${${lib_id}_lib_load-}\")
 
     test "$f_lib_loaded" = "0" && {
       log_key=$log_key $lib_lib_log debug "" "Skipped loaded lib '$1'" ""
@@ -200,14 +200,14 @@ lib_load () # ~ <Lib-names...> # Lookup and load sh-lib on SCRIPTPATH
         type ${lib_id}_lib__load  2> /dev/null 1> /dev/null && {
 
           ${lib_id}_lib__load || { r=$?;
-            eval ${lib_id}_lib_loaded=$r
+            eval ${lib_id}_lib_load=$r
             log_key=$log_key \
               $lib_lib_log error "" "in lib-load $1 ($r)" "$f_lib_path"
             return $r
           }
         } || true
 
-        eval ${lib_id}_lib_loaded=0
+        eval ${lib_id}_lib_load=0
         eval "LIB_SRC=\"${LIB_SRC-}${LIB_SRC:+ }$f_lib_path\""
         lib_loaded="${lib_loaded-}${lib_loaded:+ }$1"
         # FIXME sep. profile/front-end for shell vs user-scripts
@@ -238,14 +238,14 @@ lib_loaded_env_ids() # [Check-Libs...]
     do
       lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
 
-      test "$1" = "$(eval echo \${${lib_id}_lib_loaded-})" || return
+      test "$1" = "$(eval echo \${${lib_id}_lib_load-})" || return
       shift
     done
     return
 
   } || {
     # List all
-    sh_genv '[a-z][a-z0-9_]*_lib_loaded' | sed 's/_lib_loaded=0$//'
+    sh_genv '[a-z][a-z0-9_]*_lib_load' | sed 's/_lib_load=0$//'
   }
 }
 
@@ -289,7 +289,7 @@ lib_unload() # [Libs...]
           return $r
         }
       } || true
-      unset ${lib_id}_lib_loaded
+      unset ${lib_id}_lib_load
       shift
     done
 }
@@ -306,7 +306,7 @@ lib_reload() # [Libs...]
 
   unset  $( while test $# -gt 0
     do lib_id=$(printf -- "${1}" | tr -Cs '[:alnum:]_' '_')
-      echo ${lib_id}_lib_loaded
+      echo ${lib_id}_lib_load
       shift
     done )
 

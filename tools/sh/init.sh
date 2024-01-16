@@ -41,7 +41,7 @@ test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
 test -z "${US_DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
 {
   . $u_s_lib/lib.lib.sh || return $?
-  lib_lib__load && lib_lib_loaded=0 || return $?
+  lib_lib__load && lib_lib_load=0 || return $?
   lib_lib__init
 } ||
   $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1

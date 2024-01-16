@@ -46,7 +46,7 @@ type sh_include >/dev/null 2>&1 || {
 test -z "${DEBUG-}" || echo . $U_S$sh_src_base/lib.lib.sh >&2
 {
   . $U_S$sh_src_base/lib.lib.sh || $status $?
-  lib_lib__load && lib_lib_loaded=0 || $status $?
+  lib_lib__load && lib_lib_load=0 || $status $?
   lib_lib__init
 } ||
   $INIT_LOG "error" "$scriptname:init.sh" "Failed at lib.lib $?" "" 1

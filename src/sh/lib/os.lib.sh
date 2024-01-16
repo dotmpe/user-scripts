@@ -484,13 +484,13 @@ filter () # (Std:0:) ~ <Test-handler>
   done
 }
 
-filter_args () # ~ <Test-handler> <Args...>
+filter_args () # ~ <Test-cmd> <Args...> # Print args for which test pass
 {
   local value test=${1:?}
   shift
   for value in "$@"
   do
-    "${test}" "$value" || {
+    ${test} "$value" || {
       continue
       # TODO: make test functions discern between error and failure
       #test ${_E_next:?} -eq $? && continue
