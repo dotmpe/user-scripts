@@ -652,8 +652,8 @@ capture_vars () # ~ <Varkey> <Command...>
   stderr_fp=${RAM_TMPDIR:?}/$_.stderr
   out=$("${@:2}" 2>${stderr_fp})
   stat=$?
-  var_update "${1}stdout" "$out"
-  var_update "${1}stderr" "$(<"${stderr_fp}")"
+  var_set "${1}stdout" "$out"
+  var_set "${1}stderr" "$(<"${stderr_fp}")"
   rm "$stderr_fp"
   return ${stat}
 }
@@ -744,13 +744,16 @@ std_quiet ()
   "$@" >/dev/null 2>&1
 }
 
-var_update () # ~ <Var-name-ref> <Value> # Reset local:<var> or <var> to <val>
+var_set () # ~ <Var-name-ref> <Value> # Reset local:<var> or <var> to <val>
 {
   local var=${1:?} val=${2-}
   case "$var" in
     ( local:* ) eval "${var:6}=\"$val\"" ;;
       * ) declare -g $var="$val"
   esac
+  # NOTE: above global declaration would not work for typeset vars, and Bash<=5.0
+  # cannot tell wether $var already is declared typeset in an outter function
+  # scope. Even more typeset or set are/seem useless, so its eval to the rescue.
 }
 
 # Sync: BIN:

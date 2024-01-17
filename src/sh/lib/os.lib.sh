@@ -202,7 +202,8 @@ file_modeline () # :file{version,id,mode} ~ <File>
   fileversion="" fileid="" filemode=""
 
   file_ml_src=${1:--}
-  if_ok "$(file_id_modeline_grep "$@"|normalize_ws)" && {
+  if_ok "$(file_id_modeline_grep "$@")" && {
+    : "$(<<< "$_" normalize_ws)"
     line_number_raw "$_" $vpk ":" &&
     file_ml_raw=$(str_trim1 "${file_ml_raw}") || return
     # XXX: only uses last part of line, how about specified editors?
@@ -221,18 +222,19 @@ file_modeline () # :file{version,id,mode} ~ <File>
       $LOG warn "" "Too many fields in Id (ignored)" "$_"
     }
   } || {
-    if_ok "$(file_pp_modeline_grep "$@"|normalize_ws)" && {
+    if_ok "$(file_pp_modeline_grep "$@")" && {
+      : "$(<<< "$_" normalize_ws)"
       line_number_raw "$_" $vpk ":" &&
       file_ml_raw=$(str_trim1 "${file_ml_raw}") || return
       filemode=${file_ml_raw##* }
       # XXX: only uses last part of line, how about specified editors?
-
     } || {
         set --
         for fml_editor in ${fml_editors:-ex vim}
         do
           : "${file_ml_src:?}"
-          if_ok "$(file_editor_mode_grep "$_"|normalize_ws)" || continue
+          if_ok "$(file_editor_mode_grep "$_")" || continue
+          : "$(<<< "$_" normalize_ws)"
           set -- "$_"
           break
         done
@@ -690,8 +692,8 @@ line_number_raw () # ~ <Line-str> <Var-pk> <Num-sep> # Extract line number prefi
 {
   local str=${1--} vpk=${2:-line_} nsep=${3:- }
 
-  var_update ${vpk}ln "${str%%$nsep*}" &&
-  var_update ${vpk}raw "${str#*$nsep}"
+  var_set ${vpk}ln "${str%%$nsep*}" &&
+  var_set ${vpk}raw "${str#*$nsep}"
 }
 
 # Offset content from input/file to line-based window.
