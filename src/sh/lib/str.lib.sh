@@ -95,6 +95,7 @@ fnmatch() # PATTERN STRING
 {
   case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
 }
+# Derive: str-globmatch
 
 fnmatch_any () # STRING... -- PATTERNS...
 {
@@ -171,6 +172,16 @@ str_collapse ()
   str_glob_replace "${1:?}" "$char$char" "$char"
 }
 
+str_glob_replace ()
+{
+  declare str=${1:?} glob="${2:?}" sub=${3:?}
+  while str_globmatch "$str" "*$glob*"
+  do
+    str="${str//$glob/$sub}"
+  done
+  echo "$str"
+}
+
 str_globmatch () # ~ <String> <Glob-patterns...>
 {
   test 2 -le $# || return ${_E_GAE:-193}
@@ -182,16 +193,6 @@ str_globmatch () # ~ <String> <Glob-patterns...>
     shift
   done
   return 1
-}
-
-str_glob_replace ()
-{
-  declare str=${1:?} glob="${2:?}" sub=${3:?}
-  while str_globmatch "$str" "*$glob*"
-  do
-    str="${str//$glob/$sub}"
-  done
-  echo "$str"
 }
 
 # String-strip based on glob. Removes all matching characters at the left. This
@@ -244,18 +245,6 @@ str_quote_var ()
   echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
 }
 
-str_trim1 ()
-{
-  test 0 -lt $# || return ${_E_MA:-194}
-  declare str_sws=${str_sws:-"[\n\t ]"}
-  while test 0 -lt $#
-  do
-    : "${1#$str_sws}" &&
-    : "${_%$str_sws}" &&
-    echo "$_" && shift || return
-  done
-}
-
 str_trim ()
 {
   test 0 -lt $# || return ${_E_MA:-194}
@@ -264,6 +253,18 @@ str_trim ()
   do
     if_ok "$(str_globstripcl "$1" "$str_sws")" &&
     if_ok "$(str_globstripcr "$_" "$str_sws")" &&
+    echo "$_" && shift || return
+  done
+}
+
+str_trim1 ()
+{
+  test 0 -lt $# || return ${_E_MA:-194}
+  declare str_sws=${str_sws:-"[\n\t ]"}
+  while test 0 -lt $#
+  do
+    : "${1#$str_sws}" &&
+    : "${_%$str_sws}" &&
     echo "$_" && shift || return
   done
 }

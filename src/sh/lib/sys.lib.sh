@@ -561,6 +561,21 @@ std_utf8_en()
     export LC_ALL=
 }
 
+stdin_first () # (s) ~ <Var> <Test...>
+{
+  test 1 -le $# || return ${_E_MA:?}
+  typeset var=${1:?stdin-first: Variable name expected} part
+  shift
+  test 0 -lt $# || set -- test -n
+  while read -r part
+  do ! "$@" "$part" || {
+      var_set "$var" "$part"
+      return
+    }
+  done
+  false
+}
+
 stdin_from_ () # ~ <Cmd...>
 {
   typeset str

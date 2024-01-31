@@ -30,7 +30,8 @@ absdir ()
 # AWK print value if AWK expression evaluates true.
 awk_line_select () # (s) ~ <Awk-If-Expr> [<Out>]
 {
-  awk '{ if ( '"${1:?"An expression is required"}"' ) { print '"${2:-"\$0"}"' } }'
+  : "${1:?awk-line-select: An expression is required}"
+  awk '{ if ( '"$_"' ) { print '"${2:-"\$0"}"' } }'
 }
 
 # Cumulative dirname, return the root directory of the path
@@ -836,6 +837,15 @@ not ()
   ! "$@"
 }
 
+os_path_first () # (s) ~ <Var> <Test...>
+{
+  test 1 -le $# || return ${_E_MA:?}
+  typeset var=${1:?os-path-first: Variable name expected} fp
+  shift
+  test 0 -lt $# || set -- test -e
+  stdin_first "$var" "$@"
+}
+
 os_pids () # ~ <Cmd-name>
 {
   ps -C "${1:?}" -o pid:1=
@@ -1061,29 +1071,55 @@ sort_mtimes ()
 }
 
 # XXX: see argv.lib test_ funs as well
+# for (user log) verbose functions, see assert.lib
+
+test_isblock () # ~ <Name>
+{
+  : "${1:?test-isblock: Path name expected}"
+  test -b "$_"
+}
+
+test_ischar () # ~ <Name>
+{
+  : "${1:?test-ischar: Path name expected}"
+  test -c "$_"
+}
 
 test_isdir () # ~ <Name>
 {
-  test -d "${1:?}" ||
-    $LOG warn :isdir "No such dir" "E$?:name=$1" ${_E_fail:?}
+  : "${1:?test-isdir: Path name expected}"
+  test -d "$_"
 }
 
 test_isfile () # ~ <Name>
 {
-  test -f "${1:?}" ||
-    $LOG warn :isfile "No such file" "E$?:name=$1" ${_E_fail:?}
+  : "${1:?test-isfile: Path name expected}"
+  test -f "$_"
 }
 
 test_isnonempty () # ~ <Name>
 {
-  test -s "${1:?}" ||
-    $LOG warn :isnonempty "No such path or empty" "E$?:name=$1" ${_E_fail:?}
+  : "${1:?test-isnonempty: Path name expected}"
+  test -s "$_"
 }
 
+# test -e (XXX: same as test -a?)
 test_ispath () # ~ <Name>
 {
-  test -e "${1:?}" ||
-    $LOG warn :ispath "No such path" "E$?:name=$1" ${_E_fail:?}
+  : "${1:?test-ispath: Path name expected}"
+  test -e "$_"
+}
+
+unique_args () # ~ <Args...>
+{
+  declare -A tab
+  declare arg
+  for arg
+  do test -n "${tab[$arg]+set}" || {
+      tab[$arg]=
+      echo "$arg"
+    }
+  done
 }
 
 # Ziplists on lines from files. XXX: Each file should be same length.
