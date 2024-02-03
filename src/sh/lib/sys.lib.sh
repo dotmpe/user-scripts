@@ -590,6 +590,14 @@ stdin_from_nonempty () # ~ [<File>]
   exec < "$_"
 }
 
+sys_arr () # ~ <Var-name> <Cmd...> # Read stdout (lines) into array
+{
+  local vn=${1:?}
+  shift
+  if_ok "$("$@")" &&
+  <<< "$_" mapfile ${mapfile_f:--t} "$vn"
+}
+
 # Check for RAM-fs or regular temporary directory, or set to given
 # directory which must also exist. Normally, TMPDIR will be set on Unix and
 # POSIX systems. If it does not exist then TMPDIR will be set to whatever
