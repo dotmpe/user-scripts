@@ -16,8 +16,8 @@ us_fail () # ~ STATUS [...] -- COMMAND-LINE...
   shift 1
 
   # Reserve all arguments up until next '--'
-  argv_is_seq "$1" && shift || {
-    argv_more "$@" && shift $more_argc || return 64
+  args_is_seq "$1" && shift || {
+    args_more "$@" && shift $more_argc || return 64
   }
 
   "$@"

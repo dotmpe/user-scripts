@@ -36,7 +36,7 @@ build_lib__init () # ~
 
   #env__define__from_package || return
 
-  #lib_require argv date match "$BUILD_TOOL" || return
+  #lib_require args date match "$BUILD_TOOL" || return
 
   build_define_commands || return
 
@@ -165,7 +165,7 @@ build_arr_seq () # ~ <Var-name> [ <Items <...>> ] [ -- <...> ]
   declare vname=${1:?}
   shift
   eval "declare -ga $vname=()" || return
-  while argv_has_next "$@"
+  while args_has_next "$@"
   do
     eval "$vname+=( \"\$1\" )"
     shift
@@ -565,11 +565,11 @@ build_fetch_expand_all_rules () # ~ <Target> <Cmd...> -- <Tpl-Pattern...>
   declare group=$1 source_cmd=
   shift
 
-  while argv_has_next "$@"
+  while args_has_next "$@"
   do source_cmd="$source_cmd $1";
     shift
   done
-  argv_is_seq "$@" || return
+  args_is_seq "$@" || return
   shift
 
   for a in $( $source_cmd | while read nameparts
@@ -1192,12 +1192,12 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   local self="build-target:from:expand-all" stdp
   stdp="! $0: $self:"
   declare -a source_cmd=()
-  while argv_has_next "$@"
+  while args_has_next "$@"
   do
     source_cmd+=( "$1" )
     shift
   done
-  argv_is_seq "$@" || return
+  args_is_seq "$@" || return
   shift
   test 0 -lt ${#source_cmd[*]} || {
     std_v "$stdp Expected executable, filepath(s), or symbol(s)" || return
@@ -1546,7 +1546,7 @@ build_target_dep_seq () # ~ <Var-name> <Prerequisites> -- <...>
   shift
   build_dep_seq $vname "$@" &&
   shift "${!lvname:?}" || return
-  argv_is_seq "$@" || {
+  args_is_seq "$@" || {
     $LOG error "" "No next sequence after if-$vname" "${!lvname:?}:$#:$*"
     return 1
   }
@@ -1568,7 +1568,7 @@ build_target__seq__do () # ~ <Redo-file <...>>
 {
   build_dep_seq DO "$@" || return
   shift "${#DO[*]}"
-  ! argv_is_seq "$@" || shift
+  ! args_is_seq "$@" || shift
   declare lk
   test ${#} -gt 0 && lk=":do(${#})" || lk=:do
   test $# -eq 0 ||
@@ -1595,7 +1595,7 @@ build_target__seq__expression () # ~ <Command...> [ -- <Rule <...>> ]
   "${EXPRESSION[@]:?}" || return
   $LOG info "::if-lines" "Expression finished" "${EXPRESSION[*]}"
   shift "${EXPRESSION_LEN:?}"
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1648,7 +1648,7 @@ build_target__seq__if_fun () # ~ <Fun <..>> [ -- <Rule <...>> ]
   ${BUILD_TOOL:?}-always
   $LOG info "::if-fun" "Function check done" "${IF_FUN[*]}"
   shift ${#IF_FUN[@]}
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1664,8 +1664,8 @@ build_target__seq__if_line_key () # ~ <File> <Key> [<Prefix>] [<Suffix>] \
   shift 2
   build_targets_ "$file" || return
   test $# -eq 0 || {
-    argv_is_seq "$@" || { l=${1:-}; shift; }
-    argv_is_seq "$@" || { r=${1:?}; shift; }
+    args_is_seq "$@" || { l=${1:-}; shift; }
+    args_is_seq "$@" || { r=${1:?}; shift; }
   }
   declare line keyre
   read -r keyre <<< "$(
@@ -1677,7 +1677,7 @@ build_target__seq__if_line_key () # ~ <File> <Key> [<Prefix>] [<Suffix>] \
     return 1
   }
   build-stamp <<< "$line"
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1687,7 +1687,7 @@ build_target__seq__if_line_key () # ~ <File> <Key> [<Prefix>] [<Suffix>] \
 build_target__seq__if_lines () # ~ <File <...>> [ -- <Rule <...>> ]
 {
   declare -ga IF_LINES=()
-  while argv_has_next "$@"
+  while args_has_next "$@"
   do
     IF_LINES+=( "$1" )
     shift
@@ -1697,7 +1697,7 @@ build_target__seq__if_lines () # ~ <File <...>> [ -- <Rule <...>> ]
   lines="$(grep -Ev '^\s*\(#.*|\s*)$' "${IF_LINES[@]:?}")" || return
   ${BUILD_TOOL:?}-stamp <<< "$lines"
   $LOG info "::if-lines" "File lines check done" "${IF_LINES[*]}"
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1734,7 +1734,7 @@ build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
     done )" || return
   ${BUILD_TOOL:?}-stamp <<< "$typeset"
   $LOG info ::if-scr-fun "Script function check done" "$script:${IF_FUN[*]}"
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1742,7 +1742,7 @@ build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
 build_target__seq__ifdone ()
 {
   declare -ga IFDONE=()
-  while argv_has_next "$@"
+  while args_has_next "$@"
   do
     IFDONE+=( "$1" )
     shift
@@ -1750,7 +1750,7 @@ build_target__seq__ifdone ()
   build-ifdone "${IFDONE[@]}" || return
   ${BUILD_TOOL:?}-stamp <<< "${IFDONE[@]}"
   $LOG info ::ifdone "Ifdone-check done" "${IFDONE[*]}"
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1771,7 +1771,7 @@ build_target__seq__if_source () # ~ <Source-scripts...> [ -- <...> ]
     }
   done
   shift ${#DEPS[*]}
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1802,7 +1802,7 @@ build_target__seq__source () # ~ <Source-scripts...> [ -- <...> ]
     }
   done
   shift ${#SRC[*]}
-  ! argv_is_seq "$@" && return
+  ! args_is_seq "$@" && return
   shift
   build_target_rule "$@"
 }
@@ -1822,7 +1822,7 @@ build_target__seq__source_do () # ~ <Redo-file <...>> [-- <...>]
   build_dep_seq DO "$@" || return
   shift "${#DO[*]}"
   declare -a args=()
-  ! argv_is_seq "$@" || {
+  ! args_is_seq "$@" || {
     shift
     args=( "$@" )
   }
@@ -2322,7 +2322,7 @@ build_which__special ()
 # XXX: some old, mostly copies to-be compiled into final build.lib or prereqs
 # elsewhere
 
-. "${US_BIN:=$HOME/bin}/argv.lib.sh"
+. "${US_BIN:=$HOME/bin}/args.lib.sh"
 
 . "${U_S:?}/tools/sh/parts/fnmatch.sh"
 . "${U_S:?}/tools/sh/parts/str-id.sh"

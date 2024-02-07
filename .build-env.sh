@@ -5,7 +5,7 @@ sh_mode strict dev
 # XXX: build
 
 true "${SUITE:="Main"}"
-#true "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist argv}"
+#true "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist args}"
 #true "${BUILD_ENV_STATIC:=log-key build-env-cache}"
 
 true "${PROJECT_CACHE:=".meta/cache"}"

@@ -592,10 +592,20 @@ stdin_from_nonempty () # ~ [<File>]
 
 sys_arr () # ~ <Var-name> <Cmd...> # Read stdout (lines) into array
 {
-  local vn=${1:?}
-  shift
-  if_ok "$("$@")" &&
-  <<< "$_" mapfile ${mapfile_f:--t} "$vn"
+  if_ok "$("${@:2}")" &&
+  <<< "$_" mapfile ${mapfile_f:--t} "${1:?}"
+}
+
+sys_arr_def () # ~ <Var-name> <Defaults...>
+{
+  declare -n v=${1:?}
+  test 0 -lt ${#v[@]} || sys_arr_set "$@"
+}
+
+sys_arr_set () # ~ <Var-name> <Elements...>
+{
+  # XXX: didnt manage to find a way to use declare (like var-set)
+  eval "$1=( \"\${@:2}\" )"
 }
 
 # Check for RAM-fs or regular temporary directory, or set to given

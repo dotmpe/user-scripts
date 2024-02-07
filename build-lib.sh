@@ -189,7 +189,7 @@ build_target__seq__list_filter () # ~ <Function> [ <Source-arr> | <Source-lists.
     :if-scr-fun:${U_S:?}/build-lib.sh:build_target__seq__list_filter \
 
   # Use array name if given, or array 'DEPS' if empty source-sequence is passed.
-  argv_is_seq "${1:?}" && {
+  args_is_seq "${1:?}" && {
     srca=DEPS
   } || {
     ! fnmatch "*a*" "$(declare -p "${1:?}")" || {
@@ -198,7 +198,7 @@ build_target__seq__list_filter () # ~ <Function> [ <Source-arr> | <Source-lists.
     }
   }
   test -n "${srca:-}" && {
-    argv_is_seq "${1:?}" || {
+    args_is_seq "${1:?}" || {
       $LOG error :$self "Only one array for source argument expected"
       return 1
     }
@@ -245,7 +245,7 @@ filter_by_manifest () # ~ <Tag> <Indices...>
     stderr_ "$stdp: Expected index file(s)" || return
   }
   shift ${#IREFS[@]} || return
-  ! argv_trail_seq "$@" || shift
+  ! args_trail_seq "$@" || shift
   test $# -eq 0 || {
     $LOG error ":$self" "Surplus arguments in rule" "$*"
   }

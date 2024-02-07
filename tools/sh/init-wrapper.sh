@@ -4,12 +4,13 @@ test -n "${U_S-}" -a -d "${U_S-}" || source "$(dirname -- "$0")/parts/env-0-u_s.
 test -d "$U_S" || return
 
 
-# Dev-Module for lib_loadXXX: cli wrapper, see init.sh
-. $U_S/src/sh/lib/lib.lib.sh
-
+test function = "$(type -t lib_load)" || {
+  # Dev-Module for lib_loadXXX: cli wrapper, see init.sh
+  . $U_S/src/sh/lib/lib.lib.sh
+}
 
 test -n "${default_lib-}" ||
-  default_lib="os std sys str log shell stdio src main argv match vc std-ht"
+  default_lib="os std sys str log shell stdio src main args match vc std-ht"
 
 . $U_S/tools/sh/parts/lib_util.sh
 

@@ -99,7 +99,7 @@ fnmatch() # PATTERN STRING
 
 fnmatch_any () # STRING... -- PATTERNS...
 {
-  local str=; while argv_has_next "$@"; do str="${str:-}${str:+" "}$1"; shift;
+  local str=; while args_has_next "$@"; do str="${str:-}${str:+" "}$1"; shift;
   done; shift
   while test $# -gt 0
   do
