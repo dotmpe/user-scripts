@@ -608,6 +608,45 @@ sys_arr_set () # ~ <Var-name> <Elements...>
   eval "$1=( \"\${@:2}\" )"
 }
 
+# Execute commands from arguments in sequence, reading into array one segment at
+# a time. Empty sequence can be used to break-off current sys-cmd-seq run, and
+# pass entire rest of arguments to sys-csd. sys-csp is the prefix put before
+# each command.
+sys_cmd_seq () # ~ <cmd> <args...> [ -- <cmd> <args...> ]
+{
+  declare cmd=()
+  while ${sys_csa:-argv_seq} cmd "$@"
+  do
+    test 0 -lt "${#cmd[*]}" && shift $_ || {
+      test 0 -eq $# && return
+      "${sys_cse:-false}" && cmd=( "${sys_csd:---}" ) || return
+    }
+    : "${sys_csp-}${sys_csp+ }"
+    : "$_${cmd[*]}"
+    $LOG info "${lk-}" "Calling command" "${_//%/%%}"
+    ${sys_csp-} "${cmd[@]:?}" || return
+    argv_is_seq "$@" && { shift || return; }
+    test 0 -lt $# || break
+    cmd=()
+  done
+}
+
+sys_eval_seq () # ~ <script...> [ -- <script...> ]
+{
+  declare cmd=()
+  while argv_seq cmd "$@"
+  do
+    test 0 -lt "${#cmd[*]}" &&
+    shift $_ &&
+    : "${cmd[*]}" &&
+    $LOG info "${lk-}" "Evaluating script" "${_//%/%%}" &&
+    eval "${cmd[*]}" || return
+    argv_is_seq "$@" && shift && test 0 -lt $# ||
+      break
+    cmd=()
+  done
+}
+
 # Check for RAM-fs or regular temporary directory, or set to given
 # directory which must also exist. Normally, TMPDIR will be set on Unix and
 # POSIX systems. If it does not exist then TMPDIR will be set to whatever

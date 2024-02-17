@@ -82,9 +82,11 @@ ck_sum () # ~ [<File>] [<Checksum>]
   test -n "${abbrev-}" || local abbrev=7
   # XXX: not every command may need output cleanup (or have options to output
   # which does not need cleanup), but cleaning is harmless.
+  # Actual generation
   if_ok "$("${cksum_cmd[@]:?}" "${1:--}")" || return
   : "${_/  *}"
   cksum="$_"
+  # Handling of result output
   test -n "$cksum" || return
   test -n "${2-}" && {
     test ${#2} -eq ${#cksum} || {

@@ -39,6 +39,34 @@ str_lib__init()
 }
 
 
+str_vawords () # ~ <Var-names...>
+{
+  typeset var
+  for var
+  do str_vword $var
+  done
+}
+
+str_vword () # ~ <Var-name>
+{
+  typeset -n v=${1:?}
+  v="${v//[^A-Za-z0-9_]/_}"
+}
+
+str_word () # ~ <Str>
+{
+  echo "${1//[^A-Za-z0-9_]/_}"
+}
+
+str_words () # ~ <Strings...>
+{
+  typeset str
+  for str
+  do
+    echo "${str//[^A-Za-z0-9_]/_}"
+  done
+}
+
 # ID for simple strings without special characters
 mkid() # Str Extra-Chars Substitute-Char
 {
@@ -216,6 +244,27 @@ str_globstripcr () # ~ <Str> [<Glob-c>]
     str="${str%$prefc}"
   done
   echo "$str"
+}
+
+# Combine all Strings, using Concat as separation string
+str_join () # ~ <Concat> <Strings...>
+{
+  typeset c=${1:?} s=${2-} && shift 2 &&
+  : "$s" &&
+  for s
+  do : "$_$c$s"
+  done &&
+  echo "$_"
+}
+
+# Like str-join but ignore empty Strings during concatenation
+str_ejoin () # ~ <Concat> <Strings...>
+{
+  typeset c=${1:?} s && shift && : "" &&
+  for s
+  do : "${_:+$_${s:+$c}}$s"
+  done &&
+  echo "$_"
 }
 
 str_quote ()

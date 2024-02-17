@@ -2,6 +2,7 @@
 
 ### Initial script to cache shell output
 
+# TODO: replace mkvid with str-vid : ...
 
 shell_cache_lib__load()
 {

@@ -19,11 +19,16 @@ os_lib__init ()
 }
 
 
-absdir ()
+# Ensure path is absolute, and clean up '/'.
+absdir () # ~ <Path> [<Basedir>]
 {
   # NOTE: somehow my Linux pwd makes a symbolic path to root into //bin,
   # using tr to collapse all sequences to one
-  ( cd "$1" && pwd -P | tr -s '/' '/' )
+  #( cd "$1" && pwd -P | tr -s '/' '/' )
+  test "${1:0:1}" = "/" && echo "$1" || {
+    : "${2:-$PWD}/$1"
+    echo "${_//\/\//\/}"
+  }
 }
 
 # A simple, useful wrapper for awk prints entire line, one column or other
