@@ -5,7 +5,7 @@ us_vardef_class__load ()
 
 class_Us_Vardef__load ()
 {
-  us_class_declare Us/Vardef ParameterizedClass --hooks vars
+  uc_class_declare Us/Vardef ParameterizedClass --hooks vars
 }
 
 class_Us_Vardef_ ()

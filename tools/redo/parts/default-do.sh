@@ -91,7 +91,7 @@ default_do_main ()
   test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" &&
     unset BUILD_SELECT_SH || {
       . "${BUILD_SELECT_SH:?}" && STATUS=0 ||
-        sh_error E_BS -eq "${_E_next:-196}" && return $_E_next
+        sh_error E_BS -eq "${_E_next:-196}" || return $E_BS
     }
 
   test 0 -eq ${STATUS:-1} || case "${1:?}" in

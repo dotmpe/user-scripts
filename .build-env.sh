@@ -1,21 +1,20 @@
 # Build properties. See .package.sh for main project data/settings, and
 # README for main version, BUILD_RULES file.
 
-sh_mode strict dev
-# XXX: build
+sh_mode strict dev build
 
-true "${SUITE:="Main"}"
-#true "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist args}"
-#true "${BUILD_ENV_STATIC:=log-key build-env-cache}"
+: "${SUITE:="Main"}"
 
-true "${PROJECT_CACHE:=".meta/cache"}"
-true "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
-true "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"
-#true "${BUILD_ENV_STATIC:=build-boot}"
-#true "${BUILD_TARGET_METHODS:=env context}"
-BUILD_ENV="build-rules rule-params stderr- argv"
+: "${PROJECT_CACHE:=".meta/cache"}"
+: "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
+: "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"
+#: "${BUILD_ENV_STATIC:=build-boot}"
+#: "${BUILD_TARGET_METHODS:=env context}"
+BUILD_ENV="build-rules rule-params from-local stderr- argv"
+#: "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist args}"
+#: "${BUILD_ENV_STATIC:=log-key build-env-cache}"
 #BUILD_UNRECURSE=true
-true "${redo_opts:="-j4 --debug-pids"}"
+: "${redo_opts:="-j4 --debug-pids"}"
 
 # XXX: for part:.meta/cache/components.list
 BUILD_ENV_FUN=build_copy_changed

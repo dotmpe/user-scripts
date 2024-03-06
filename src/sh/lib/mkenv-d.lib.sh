@@ -1,8 +1,16 @@
 #!/bin/sh
 
-env_d_boot() # Setup camp.
+# XXX: exploiting make to do dep mngmnt for env parts
+# see also user-env.lib
+
+mkenv_d_lib__load ()
 {
-  env_d_mk="$(cat <<EOM
+  lib_require make
+}
+
+mkenv_d_boot() # Setup camp.
+{
+  mkenv_d_mk="$(cat <<EOM
 
   XXX_VAR           =
   ENV_ETC_LOCAL    ?= .local/etc/
@@ -33,16 +41,15 @@ make_lookup_path='$(wildcard
 
   ENVPATH="$ENV_ETC/env.d/*. $HOME/.env.d /etc/env.d"
 
-
   test -e "$UCONF/etc/env.d"
 }
 
-env_d_append()
+mkenv_d_append()
 {
-  env_d_mk="$env_d_mk.$(cat)"
+  mkenv_d_mk="$mkenv_d_mk.$(cat)"
 }
 
-env_d_lwalk()
+mkenv_d_lwalk()
 {
   local cwd=$PWD
   until test "$cwd" = "/" -o "$cwd" = "$HOME"
@@ -56,26 +63,26 @@ env_d_lwalk()
   done
 }
 
-env_d_src() # Lock the tent.
+mkenv_d_src() # Lock the tent.
 {
-  for env_d_mk_l in $(env_d_lwalk) $ENVPATH
+  for mkenv_d_mk_l in $(mkenv_d_lwalk) $ENVPATH
   do
     true
   done
 }
 
-env_d_complete() # Lock the tent.
+mkenv_d_complete() # Lock the tent.
 {
-  #for env_d_mk_src in $(env_d_src)
-  for env_d_mk_src in $(echo "$make_lookup_path" | make_op )
+  #for mkenv_d_mk_src in $(mkenv_d_src)
+  for mkenv_d_mk_src in $(echo "$make_lookup_path" | make_op )
   do
-    $env_d_match "$env_d_mk_src" && {
-      echo matched $env_d_match_env $env_d_mk_src >&2
-      env_d_append < "$env_d_mk_src"
+    $mkenv_d_match "$mkenv_d_mk_src" && {
+      echo matched $mkenv_d_match_env $mkenv_d_mk_src >&2
+      mkenv_d_append < "$mkenv_d_mk_src"
     }
   done
 
-  echo "end: $env_d_mk" >&2
+  echo "end: $mkenv_d_mk" >&2
 
-  unset env_d_mk_src
+  unset mkenv_d_mk_src
 }

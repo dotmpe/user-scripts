@@ -4,10 +4,11 @@
 # Set env for str.lib.sh
 str_lib__load()
 {
-  test "${str_lib_init-}" = "0" || {
-    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+  if [[ "${str_lib_init-}" = "0" ]]
+  then
+    [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
-    test -n "$str_lib_log" || return 108
+    [[ "$str_lib_log" ]] || return 108
 
     case "$uname" in
         Darwin ) expr=bash-substr ;;
@@ -15,52 +16,59 @@ str_lib__load()
         * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
     esac
 
-    test -n "${ext_groupglob-}" || {
-      test "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" \
+    [[ "${ext_groupglob-}" ]] || {
+      [[ "$(echo {foo,bar}-{el,baz})" != "{foo,bar}-{el,baz}" ]] \
             && ext_groupglob=1 \
             || ext_groupglob=0
       # FIXME: part of [vc.bash:ps1] so need to fix/disable verbosity
       #debug "Initialized ext_groupglob=$ext_groupglob"
     }
 
-    test -n "${ext_sh_sub-}" || ext_sh_sub=0
+    [[ "${ext_sh_sub-}" ]] || ext_sh_sub=0
 
     # XXX:
   #      echo "${1/$2/$3}" ... =
   #        && ext_sh_sub=1 \
   #        || ext_sh_sub=0
   #  #debug "Initialized ext_sh_sub=$ext_sh_sub"
-  }
+  fi
 }
 
 str_lib__init()
 {
-  test -x "$(command -v php)" && bin_php=1 || bin_php=0
+  [[ -x "$(command -v php)" ]] && bin_php=1 || bin_php=0
 }
 
 
-str_vawords () # ~ <Var-names...>
+str_append () # ~ <Var-name> <Value> ...
 {
-  typeset var
-  for var
-  do str_vword $var
+  declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
+  ref="${ref-}${ref:+${str_fs- }}${2:?}"
+}
+
+str_vawords () # ~ <Variables...> # Transform strings to words
+{
+  declare -n v
+  for v
+  do v="${v//[^A-Za-z0-9_]/_}"
   done
 }
 
-str_vword () # ~ <Var-name>
+str_vword () # ~ <Variable> # Transform string to word
 {
-  typeset -n v=${1:?}
+  declare -n v=${1:?}
   v="${v//[^A-Za-z0-9_]/_}"
 }
 
-str_word () # ~ <Str>
+# Restrict used characters to 'word' class (alpha numeric and underscore)
+str_word () # ~ <String> # Transform string to word
 {
   echo "${1//[^A-Za-z0-9_]/_}"
 }
 
-str_words () # ~ <Strings...>
+str_words () # ~ <Strings...> # Transform strings to words
 {
-  typeset str
+  declare str
   for str
   do
     echo "${str//[^A-Za-z0-9_]/_}"
@@ -72,9 +80,9 @@ mkid() # Str Extra-Chars Substitute-Char
 {
   local s="${2-}" c="${3-}"
   # Use empty c if given explicitly, else default
-  test $# -gt 2 || c='\.\\\/:_'
-  test -n "$s" || s=-
-  test -n "${upper-}" && {
+  [[ $# -gt 2 ]] || c='\.\\\/:_'
+  [[ "$s" ]] || s=-
+  [[ "${upper-}" ]] && {
     trueish "${upper-}" && {
       id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr '[:lower:]' '[:upper:]')
     } || {
@@ -89,7 +97,7 @@ mkid() # Str Extra-Chars Substitute-Char
 mkvid () # STR
 {
   true "${1:?}"
-  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]+$ ]] && test -z "${upper:-}" && {
+  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]+$ && -z "${upper:-}" ]] && {
     vid="$1"
     return
   }
@@ -129,7 +137,7 @@ fnmatch_any () # STRING... -- PATTERNS...
 {
   local str=; while args_has_next "$@"; do str="${str:-}${str:+" "}$1"; shift;
   done; shift
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     fnmatch "$1" "$str" && return
     shift
@@ -141,14 +149,14 @@ fnmatch_any () # STRING... -- PATTERNS...
 # Insert tab-character at x position (awk)
 awk_insert_char() # Char Line-Chars-Offset
 {
-  test $# -eq 2 || return 99
+  [[ $# -eq 2 ]] || return 99
   awk -vFS="" -vOFS="" '{$'"$2"'=$'"$2"'"'"$1"'"}1'
 }
 
 # Insert tab-character at x position (sed)
 sed_insert_char() # Char Line-Chars-Offset
 {
-  test $# -eq 2 || return 99
+  [[ $# -eq 2 ]] || return 99
   sed 's/./&'"$1"'/'"$3"
 }
 
@@ -162,9 +170,9 @@ strip_last_nchars() # Num
 # See https://unix.stackexchange.com/questions/193748/join-lines-of-text-with-repeated-beginning
 join_lines() # [Src] [Delim]
 {
-  test -n "${1-}" || set -- "-" "${2-}"
-  test -n "${2-}" || set -- "$1" " "
-  test "-" = "$1" -o -e "$1" || error "join-lines: file expected '$1'" 1
+  [[ "${1-}" ]] || set -- "-" "${2-}"
+  [[ "${2-}" ]] || set -- "$1" " "
+  [[ "-" = "$1" || -e "$1" ]] || error "join-lines: file expected '$1'" 1
 
   # use awk to build array of paths, for basename
   awk '{
@@ -184,7 +192,7 @@ join_lines() # [Src] [Delim]
 
 expr_substr()
 {
-  test -n "$expr" || error "expr init req" 1
+  [[ "$expr" ]] || error "expr init req" 1
   case "$expr" in
       sh-substr )
           expr substr "$1" "$2" "$3" ;;
@@ -210,12 +218,13 @@ str_glob_replace ()
   echo "$str"
 }
 
+# see also fnmatch and wordmatch
 str_globmatch () # ~ <String> <Glob-patterns...>
 {
-  test 2 -le $# || return ${_E_GAE:-193}
-  declare str=${1:?}
+  [[ 2 -le $# ]] || return ${_E_GAE:-193}
+  declare str=${1:?"$(sys_exc str-globmatch:str@_1 "String expected")"}
   shift
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     case "$str" in ( ${1:?} ) return ;; * ) ${any:-true} || return 1 ;; esac
     shift
@@ -232,6 +241,7 @@ str_globstripcl () # ~ <Str> [<Glob-c>]
   while str_globmatch "$str" "$prefc*"
   do
     str="${str#$prefc}"
+    [[ "$str" ]] || break
   done
   echo "$str"
 }
@@ -242,14 +252,24 @@ str_globstripcr () # ~ <Str> [<Glob-c>]
   while str_globmatch "$str" "*$prefc"
   do
     str="${str%$prefc}"
+    [[ "$str" ]] || break
   done
   echo "$str"
 }
 
-# Combine all Strings, using Concat as separation string
+str_indent () # (s) ~ [<Indentation>]
+{
+  local str indent=${1:-  }
+  while read -r str
+  do echo "${indent}${str}"
+  done
+}
+
+# Combine all Strings, using Concat as separation string. Concat or any string
+# can be left empty (an empty concat or string will be concatenated).
 str_join () # ~ <Concat> <Strings...>
 {
-  typeset c=${1:?} s=${2-} && shift 2 &&
+  declare c=${1?} s=${2-} && shift 2 &&
   : "$s" &&
   for s
   do : "$_$c$s"
@@ -257,10 +277,11 @@ str_join () # ~ <Concat> <Strings...>
   echo "$_"
 }
 
-# Like str-join but ignore empty Strings during concatenation
-str_ejoin () # ~ <Concat> <Strings...>
+# Like str-join but ignore empty Strings during concatenation (concat can
+# still be empty).
+str_nejoin () # ~ <Concat> <Strings...>
 {
-  typeset c=${1:?} s && shift && : "" &&
+  declare c=${1?} s && shift && : "" &&
   for s
   do : "${_:+$_${s:+$c}}$s"
   done &&
@@ -296,9 +317,9 @@ str_quote_var ()
 
 str_trim ()
 {
-  test 0 -lt $# || return ${_E_MA:-194}
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
   declare str_sws=${str_sws:-"[\n\t ]"}
-  while test 0 -lt $#
+  while [[ 0 -lt $# ]]
   do
     if_ok "$(str_globstripcl "$1" "$str_sws")" &&
     if_ok "$(str_globstripcr "$_" "$str_sws")" &&
@@ -308,9 +329,9 @@ str_trim ()
 
 str_trim1 ()
 {
-  test 0 -lt $# || return ${_E_MA:-194}
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
   declare str_sws=${str_sws:-"[\n\t ]"}
-  while test 0 -lt $#
+  while [[ 0 -lt $# ]]
   do
     : "${1#$str_sws}" &&
     : "${_%$str_sws}" &&
@@ -318,12 +339,13 @@ str_trim1 ()
   done
 }
 
+# XXX: str-fs is used to set element separator
 str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
 {
-  test 0 -lt $# || return ${_E_MA:-194}
-  test 2 -le $# || return ${_E_GAE:-193}
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  [[ 2 -le $# ]] || return ${_E_GAE:-193}
   local str_fs=${str_fs:- } words="${*:2}"
-  test "$str_fs" = " " || words=${words// /$str_fs}
+  [[ "$str_fs" = " " ]] || words=${words// /$str_fs}
   case "$str_fs$words$str_fs" in
     ( *"$str_fs${1:?}$str_fs"*) ;;
       * ) false ; esac
@@ -331,8 +353,8 @@ str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
 
 str_wordsmatch () # ~ <String> <Words...> #
 {
-  test 0 -lt $# || return ${_E_MA:-194}
-  test 2 -le $# || return ${_E_GAE:-193}
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  [[ 2 -le $# ]] || return ${_E_GAE:-193}
   local str_fs=${str_fs:- } word
   for word in "${@:2}"
   do

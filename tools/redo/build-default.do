@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-! "${US_DEV:-false}" || {
+! "${DEV_US:-false}" || {
 
   build-ifdone "${BUILD_CACHE:-${U_S:?}/.meta/cache}/us-profile.sh" &&
   . "$_"
@@ -24,8 +24,8 @@ lib_init us-build
 ##resolve fun sh-error
 #XXX: unset -f sh_{fun,error,exception}
 . ./tools/sh/parts/sh-fun.sh
+: "${_E_fail:=1}"
 : "${_E_GAE:=193}" # Generic Argument Error
-
 : "${_E_ok:=195}" # Explicit OK (finished step, continue batch)
 : "${_E_next:=196}" # Try next (unfinished: missing alt or partial batch)
 #: "${_E_break:=197}" # success; last step, finish batch, ie. stop loop now and wrap-up

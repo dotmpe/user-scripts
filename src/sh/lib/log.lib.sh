@@ -9,7 +9,7 @@ log_lib__load ()
 
 log_lib__init () # ~ [<Name=us>]
 {
-  test -z "${log_lib_init-}" || return $_
+  test -z "${log_lib_init-}" || return $log_lib_init
   lib_require stdlog-uc date date-htd || return
   test $# -le 1 || return ${_E_GAE:-193}
   test -n "${1:-}" || set -- us

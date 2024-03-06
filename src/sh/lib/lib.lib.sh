@@ -9,7 +9,7 @@
 
 lib_lib__load()
 {
-  stderr echo lib.lib:load: Deprecated $(caller): $(caller 1)
+  #echo "lib.lib:load: Deprecated $(caller): $(caller 1)" >&2
   test -n "${default_lib-}" || default_lib="os sys str src shell"
   #lib_groups \
   #  base/lib-{path,load,init} \

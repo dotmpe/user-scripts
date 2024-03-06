@@ -5,7 +5,7 @@ us_cache_class__load ()
 
 class_Us_Cache__load ()
 {
-  us_class_declare Us/Cache Us/Vardef --hooks us-cache --vars keys
+  uc_class_declare Us/Cache Us/Vardef --hooks us-cache --vars keys
   #--globals std:cache
 }
 
@@ -14,6 +14,7 @@ class_Us_Cache_ ()
   case "${call:?}" in
 
       --us-cache )
+          local vk=$(class.Vardef --var keys)
         ;;
 
     ( * ) return ${_E_next:?}

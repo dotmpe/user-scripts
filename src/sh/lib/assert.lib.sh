@@ -6,49 +6,49 @@ assert_lib__load ()
 
 assert_isblock () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-isblock
+  declare lk=${lk:-}:assert-isblock
   : "${1:?$lk: Path name expected}"
-  test_isblock "$_" ||
+  os_isblock "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 assert_ischar () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-ischar
+  declare lk=${lk:-}:assert-ischar
   : "${1:?$lk: Path name expected}"
-  test_ischar "$_" ||
+  os_ischar "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 assert_isdir () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-isdir
+  declare lk=${lk:-}:assert-isdir
   : "${1:?$lk: Path name expected}"
-  test_isdir "$_" ||
+  os_isdir "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 assert_isfile () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-isfile
+  declare lk=${lk:-}:assert-isfile
   : "${1:?$lk: Path name expected}"
-  test_isfile "$_" ||
+  os_isfile "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 assert_isnonempty () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-isnonempty
+  declare lk=${lk:-}:assert-isnonempty
   : "${1:?$lk: Path name expected}"
-  test_isnonempty "$_" ||
+  os_isnonempty "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
 assert_ispath () # ~ <Name>
 {
-  typeset lk=${lk:-}:assert-ispath
+  declare lk=${lk:-}:assert-ispath
   : "${1:?$lk: Path name expected}"
-  test_ispath "$_" ||
+  os_ispath "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 

@@ -2,6 +2,9 @@
 
 ## Sys: dealing with vars, functions, env.
 
+# Some of these are essential helpers, others are examples of standard ways
+# to do things but which could easily be done in-line.
+
 # XXX: sys currently is a helpers/util collection for user-scripts.
 # shouldnt this just deal with actual system?
 
@@ -17,29 +20,16 @@ sys_lib__load ()
 
 sys_lib__init ()
 {
-  test "${sys_lib_init-}" = "0" || {
-    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+  [[ "${sys_lib_init-}" = "0" ]] || {
+    [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
-    test -n "$sys_lib_log" || return 108
+    [[ "$sys_lib_log" ]] || return 108
 
     sys_tmp_init &&
     $sys_lib_log debug "" "Initialized sys.lib" "$0"
   }
 }
 
-
-activate()
-{
-  local update=false
-  test -e "$HOME/.pyvenv/$1/bin/activate" && { update=true
-
-    {  . "$HOME/.pyvenv/$1/bin/activate" &&
-      export PYVENV=$HOME/.pyvenv/$1
-    } || return $?
-  }
-
-  if $update ; then update_env ; fi
-}
 
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
@@ -86,6 +76,39 @@ add_env_path_lookup() # Var-Name Prepend-Value Append-Value
       esac
     }
   }
+}
+
+# Merge all associative arrays into first. Last index takes preference.
+assoc_concat () # ~ <To-array> <From-arrays...>
+{
+  declare -n dest=${1:?} src
+  shift
+  declare k
+  for src
+  do
+    for k in "${!src[@]}"
+    do
+      dest[$k]=${src[$k]}
+    done
+  done
+}
+
+# Merge all associative arrays into first, but do not overwrite existing
+# indices. Ie. first index takes preference.
+assoc_merge () # ~ <To-array> <From-arrays...>
+{
+  #shellcheck disable=SC2178 # shellcheck does not recognize -n
+  declare -n dest=${1:?} src
+  shift
+  declare k
+  for src
+  do
+    for k in "${!src[@]}"
+    do
+      test "unset" = "${dest[$k]-unset}" || continue
+      dest[$k]=${src[$k]}
+    done
+  done
 }
 
 # Capture cmd/func output in file, return status. Set out_file to provide path.
@@ -168,18 +191,15 @@ capture_vars () # ~ <Varkey> <Command...>
   stderr_fp=${RAM_TMPDIR:?}/$_.stderr
   out=$("${@:2}" 2>${stderr_fp})
   stat=$?
-  var_set "${1}stdout" "$out"
-  var_set "${1}stderr" "$(<"${stderr_fp}")"
+  sys_var "${1}stdout" "$out"
+  sys_var "${1}stderr" "$(<"${stderr_fp}")"
   rm "$stderr_fp"
   return ${stat}
 }
 
 cmd_exists()
 {
-  test -n "${1-}" || return
-
-  set -- "$1" "$(command -v "$1")" || return
-
+  set -- "${1:?}" "$(command -v "$1")" &&
   test -n "$2" -a -x "$2"
 }
 
@@ -298,11 +318,11 @@ func_exists()
   return 0
 }
 
-getidx()
+getidx() # ~ <Array> <Key>
 {
   test 2 -eq $# || return ${_E_GAE:?}
   set -- "${1:?}[${2:?}]"
-  var_get "$@"
+  sys_get "$@"
 }
 
 init_user_env()
@@ -336,11 +356,11 @@ init_uconfdir_path()
 }
 
 # Sh var-based increment
-incr () # ~ <Var-name> [<Amount=1>]
+incr () # ~ <Var-name> [<Amount=1>] [<Default=0>]
 {
-  local v incr_amount=${2:-1}
-  v=$(var_get "${1:?incr: Variable ref expected}") &&
-  var_set $1 $(( v + incr_amount ))
+  local incr_amount=${2:-1}
+  declare -n curval=${1:?"$(sys_exc sys:incr "Variable ref expected")"}
+  curval=$(( ${curval-${3-0}} + incr_amount ))
 }
 
 # Find first or every existing Local-path in Dirs, or fail.
@@ -529,6 +549,12 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
   echo "$3/$2$1"
 }
 
+# fixed indentation
+std_findent () # ~ <Indentation> <Cmd ...>
+{
+  "${@:2}" | str_indent "${1:?}"
+}
+
 std_lookup_path ()
 {
   std_read_path
@@ -564,12 +590,12 @@ std_utf8_en()
 stdin_first () # (s) ~ <Var> <Test...>
 {
   test 1 -le $# || return ${_E_MA:?}
-  typeset var=${1:?stdin-first: Variable name expected} part
+  declare var=${1:?stdin-first: Variable name expected} part
   shift
   test 0 -lt $# || set -- test -n
   while read -r part
   do ! "$@" "$part" || {
-      var_set "$var" "$part"
+      sys_set_var "$var" "$part"
       return
     }
   done
@@ -578,7 +604,7 @@ stdin_first () # (s) ~ <Var> <Test...>
 
 stdin_from_ () # ~ <Cmd...>
 {
-  typeset str
+  declare str
   str=$("$@") || ignore_sigpipe || return
   exec <<< "$str"
 }
@@ -590,22 +616,86 @@ stdin_from_nonempty () # ~ [<File>]
   exec < "$_"
 }
 
-sys_arr () # ~ <Var-name> <Cmd...> # Read stdout (lines) into array
+# Store variables (name and current value) at associative array
+assoc_from_env () # ~ <Array> <Vars...>
+{
+  declare -n arr=${1:?} var
+  shift
+  for var
+  do arr["${!var}"]=$var
+  done
+}
+
+# Read stdout of given command into array, if command returns zero status.
+sys_arr () # ~ <Array> <Cmd...> # Read stdout (lines) into array
 {
   if_ok "$("${@:2}")" &&
   <<< "$_" mapfile ${mapfile_f:--t} "${1:?}"
 }
 
+# XXX:
 sys_arr_def () # ~ <Var-name> <Defaults...>
 {
-  declare -n v=${1:?}
-  test 0 -lt ${#v[@]} || sys_arr_set "$@"
+  declare -n arr=${1:?}
+  test 0 -lt ${#arr[@]} || sys_arr_set "$@"
 }
 
+# (Re)set array to given arguments
 sys_arr_set () # ~ <Var-name> <Elements...>
 {
-  # XXX: didnt manage to find a way to use declare (like var-set)
-  eval "$1=( \"\${@:2}\" )"
+  declare -n arr=${1:?}
+  arr=("${@:2}")
+}
+
+# Ensure variable is set without using inspection, simply declare using current
+# or given value but else fail.
+sys_assert () # ~ <Var-name> [<Value>] ...
+{
+  declare -n ref
+  ref=${1:?"$(sys_exc sys:assert-var:ref@_1 "Variable name expected")"}
+  ref="${ref-${2?"$(sys_exc sys:assert "Empty or value expected")"}}"
+}
+
+# As sys-assert but current or given must be non-empty as well
+sys_assert_nz () # ~ <Var-name> <Value> ...
+{
+  declare -n ref
+  ref=${1:?"$(sys_exc sys:assert-var:ref@_1 "Variable name expected")"}
+  ref="${ref:-${2:?"$(sys_exc sys:assert-nz "Non-empty value expected")"}}"
+}
+
+# Return function call stack
+sys_callers () # ~ [<Frame>]
+{
+  local i
+  for (( i=${1-0}; 1; i++ ))
+  do caller $i || break
+  done
+}
+
+sys_cd () # ~ <Dir> <Cmd...>
+{
+  cd "${1:?}" &&
+  "${@:2}"
+}
+
+# Reduce arguments at offset to a single string (collapse IFS), and then invoke
+# command with that. Using '$*' can be usefull from a user perspective, (as
+# during processing globstars or braces it may expand a single string expression
+# into multiple string values). However it makes the functions signature less
+# specific (and it always collapses IFS for the values). To call such function
+# the user needs to expand arguments in a subshell, or use another additional
+# function (such as this one) to wrap such call:
+# $ funfoo "$(echo ...)"
+# $ sys_cmd_apop 1 funfoo ...
+# Where '...' can be any string expression (with variables, globs or braces).
+# The offset (which is ofcourse 0-index based, and which) must be >0 since a
+# command name can never contain spaces.
+sys_cmd_apop () # ~ <Offset> <Cmd> [ <Arguments...> ]
+{
+  local o=${1:?"$(sys_exc sys.lib:cmd-apop:offset@_1 "Offset expected")"}
+  [[ $o -ge 1 ]] || return 2
+  "${@:1:$o}" "${*:$(( o + 1 ))}"
 }
 
 # Execute commands from arguments in sequence, reading into array one segment at
@@ -618,11 +708,10 @@ sys_cmd_seq () # ~ <cmd> <args...> [ -- <cmd> <args...> ]
   while ${sys_csa:-argv_seq} cmd "$@"
   do
     test 0 -lt "${#cmd[*]}" && shift $_ || {
-      test 0 -eq $# && return
+      #test 0 -eq $# && return
       "${sys_cse:-false}" && cmd=( "${sys_csd:---}" ) || return
     }
-    : "${sys_csp-}${sys_csp+ }"
-    : "$_${cmd[*]}"
+    : "${sys_csp-}${sys_csp+ }${cmd[*]}"
     $LOG info "${lk-}" "Calling command" "${_//%/%%}"
     ${sys_csp-} "${cmd[@]:?}" || return
     argv_is_seq "$@" && { shift || return; }
@@ -631,10 +720,46 @@ sys_cmd_seq () # ~ <cmd> <args...> [ -- <cmd> <args...> ]
   done
 }
 
+# sys-confirm PROMPT
+sys_confirm()
+{
+  local choice_confirm=
+  sys_prompt "$1" choice_confirm
+  trueish "$choice_confirm"
+}
+
+sys_debug () # ~ [<...>]
+{
+  # TODO:
+  echo false
+}
+
+# Ensure variable is set or use argument(s) as value
+sys_default () # ~ <Name> <Value> ...
+{
+  declare -n ref=${1:?"$(sys_exc sys:default:ref@_1 "Variable name expected")"}
+  [[ "set" = "${ref+set}" ]] || ref=${2-}
+}
+
+# A helper for inside ${var?...} expressions
+sys_exc () # Format exception-id and message
+{
+  ! "${DEBUG:-$(sys_debug exceptions)}" && echo "$1: $2" ||
+    # TODO: use localenv for params
+    "${sys_on_exc:-sys_exc_trc}" "$1" "$2" 3 "${@:3}"
+}
+
+# system-exception-trace: Helper to format callers list including custom head.
+sys_exc_trc () # ~ [<Head>] [<Msg>] [<Offset=2>] ...
+{
+  echo "${1:-Source:}${2+ }${2}"
+  std_findent "  - " sys_callers "${3-2}"
+}
+
 sys_eval_seq () # ~ <script...> [ -- <script...> ]
 {
   declare cmd=()
-  while argv_seq cmd "$@"
+  while ${sys_cesa:-argv_seq} cmd "$@"
   do
     test 0 -lt "${#cmd[*]}" &&
     shift $_ &&
@@ -645,46 +770,6 @@ sys_eval_seq () # ~ <script...> [ -- <script...> ]
       break
     cmd=()
   done
-}
-
-# Check for RAM-fs or regular temporary directory, or set to given
-# directory which must also exist. Normally, TMPDIR will be set on Unix and
-# POSIX systems. If it does not exist then TMPDIR will be set to whatever
-# is given here or whichever exists of /dev/shm/tmp or $RAM_TMPDIR. But the
-# directory will not be created.
-sys_tmp_init () # DIR
-{
-  local tag=:sys.lib:tmp-init
-  test -n "${RAM_TMPDIR:-}" || {
-    # Set to Linux ramfs path
-    test -d "/dev/shm" && {
-      RAM_TMPDIR=/dev/shm/tmp
-    }
-  }
-
-  test -z "${RAM_TMPDIR:-}" || {
-    # XXX: find existing parent dir
-    _RAM_TMPDIR="$(set -- $RAM_TMPDIR; while test ! -e "$1"; do set -- $(dirname "$1"); done; echo "$1")"
-    test -w "$_RAM_TMPDIR" && {
-      test -d "$RAM_TMPDIR" || mkdir $RAM_TMPDIR
-    } || {
-      test -d "$RAM_TMPDIR" && {
-        $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"
-      } ||
-        $sys_lib_log warn $tag "Cannot prepare RAM-TmpDir" "$RAM_TMPDIR"
-    }
-    unset _RAM_TMPDIR
-  }
-
-  test -e "${1-}" -o -z "${RAM_TMPDIR-}" || set -- "$RAM_TMPDIR"
-  test -e "${1-}" -o -z "${TMPDIR-}" || set -- "$TMPDIR"
-  test -n "${1-}" && {
-    test -n "${TMPDIR-}" || export TMPDIR=$1
-  }
-  test -d "$1" || {
-    $sys_lib_log warn $tag "No RAM tmpdir/No tmpdir found" "" 1
-  }
-  sys_tmp="$1"
 }
 
 #
@@ -706,6 +791,49 @@ sys_path_fmt ()
   esac
 }
 
+# system-paths-depthfirst
+sys_paths_df ()
+{
+  local path depth maxdepth seqidx
+  declare -A depths
+  # Sort
+  while read -r path
+  do
+    [[ ${path:0:1} = / ]] && path=${path:0:1}
+    [[ ${path:$(( ${#path} - 1 ))} = / ]] && path=${path%/}
+    : "${path//[^\/]}"
+    depth=${#_}
+    #sys_default "depths[$depth]" 0
+    incr "depths[$depth]" 1
+    seqidx=${depths["$depth"]}
+    depths["$depth.$seqidx"]=$path
+    [[ $depth -lt $maxdepth ]] || maxdepth=$depth
+  done
+  # Output
+  for (( depth=$maxdepth; depth>=0; depth-- ))
+  do
+    for (( seqidx=${depths["$depth"]}; seqidx>0; seqidx-- ))
+    do
+      echo "${depths["$depth.$seqidx"]}"
+    done
+  done
+}
+
+sys_paths_maxdepth ()
+{
+  local path depth maxdepth
+  declare -A depths
+  while read -r path
+  do
+    [[ ${path:0:1} = / ]] && path=${path:0:1}
+    [[ ${path:$(( ${#path} - 1 ))} = / ]] && path=${path%/}
+    : "${path//[^\/]}"
+    depth=${#_}
+    [[ $depth -lt $maxdepth ]] || maxdepth=$depth
+  done
+  echo $maxdepth
+}
+
 # sys-prompt PROMPT [VAR=choice_confirm]
 sys_prompt()
 {
@@ -716,18 +844,93 @@ sys_prompt()
   read -n 1 $2
 }
 
-# sys-confirm PROMPT
-sys_confirm()
+sys_get ()
 {
-  local choice_confirm=
-  sys_prompt "$1" choice_confirm
-  trueish "$choice_confirm"
+  : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
+  echo "${!_:?}"
+}
+
+# Set variable to value, creates new global variable if name is undeclared.
+sys_set () # ~ <Var-name> [<Value>] ...
+{
+  local var val=${2-} &&
+  var=${1:?"$(sys_exc sys:set-var:var@_1 "Variable name expected")"} &&
+  declare -n ref=$var &&
+  ref=$val
+}
+
+# XXX: like set-var but require non-zero string as well
+sys_set_ne () # ~ <Var-name> <Value> ...
+{
+  local var val &&
+  var=${1:?"$(sys_exc sys:set-var-ne:var@_1 "Variable name expected")"} &&
+  val=${2:?"$(sys_exc sys:set-var-ne:val@_2 "Value expected")"} &&
+  declare -n ref=$var &&
+  ref=$val
+}
+
+# XXX: new function: ignore last status if test succeeds, or return it
+sys_stat ()
+{
+  local stat=$?
+  while [[ $# -gt 0 ]]
+  do
+    test $stat "$1" "$2" || return $stat
+    shift 2
+  done
+}
+
+# Check for RAM-fs or regular temporary directory, or set to given
+# directory which must also exist. Normally, TMPDIR will be set on Unix and
+# POSIX systems. If it does not exist then TMPDIR will be set to whatever
+# is given here or whichever exists of /dev/shm/tmp or $RAM_TMPDIR. But the
+# directory will not be created.
+sys_tmp_init () # DIR
+{
+  local tag=:sys.lib:tmp-init
+  [[ "${RAM_TMPDIR-}" ]] || {
+    # Set to Linux ramfs path
+    [[ -d "/dev/shm" ]] && {
+      RAM_TMPDIR=/dev/shm/tmp
+    }
+  }
+
+  [[ "${RAM_TMPDIR-}" ]] || {
+    # XXX: find existing parent dir
+    _RAM_TMPDIR="$(set -- $RAM_TMPDIR; while [[ ! -e "$1" ]]; do set -- $(dirname "$1"); done; echo "$1")"
+    [[ -w "$_RAM_TMPDIR" ]] && {
+      [[ -d "$RAM_TMPDIR" ]] || mkdir $RAM_TMPDIR
+    } || {
+      [[ -d "$RAM_TMPDIR" ]] && {
+        $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"
+      } ||
+        $sys_lib_log warn $tag "Cannot prepare RAM-TmpDir" "$RAM_TMPDIR"
+    }
+    unset _RAM_TMPDIR
+  }
+
+  [[ -e "${1-}" && -z "${RAM_TMPDIR-}" ]] || set -- "$RAM_TMPDIR"
+  [[ -e "${1-}" && -z "${TMPDIR-}" ]] || set -- "$TMPDIR"
+  [[ "${1-}" ]] && {
+    [[ "${TMPDIR-}" ]] || export TMPDIR=$1
+  }
+  [[ -d "$1" ]] || {
+    $sys_lib_log warn $tag "No RAM tmpdir/No tmpdir found" "" 1
+  }
+  sys_tmp="$1"
+}
+
+source_all ()
+{
+  while [[ $# -gt 0 ]]
+  do . "${1:?}" || return
+  done
 }
 
 # Error unless non-empty and true-ish value
 trueish () # ~ <String>
 {
-  test $# -eq 1 -a -n "${1-}" || return
+  [[ $# -eq 1 && -n "${1-}" ]] || return
   case "$1" in [Oo]n|[Tt]rue|[Yyj]|[Yy]es|1) return 0;;
     * ) return 1;;
   esac
@@ -736,8 +939,8 @@ trueish () # ~ <String>
 
 try_exec_func()
 {
-  test -n "${1-}" || return 97
-  test -n "$sys_lib_log" || return 108
+  [[ "${1-}" ]] || return 97
+  [[ "${sys_lib_log-}" ]] || return 108
   $sys_lib_log debug "sys" "try-exec-func '$1'"
   func_exists "$1" || return
   local func=$1
@@ -749,12 +952,12 @@ try_exec_func()
 try_value()
 {
   local value=
-  test $# -gt 1 && {
+  [[ $# -gt 1 ]] && {
     value="$(eval echo "\"\${$(echo_local "$@")-}\"" || return )"
   } || {
     value="$(eval echo \"\${${1-}-}\" || return )"
   }
-  test -n "$value" || return 1
+  [[ "$value" ]] || return 1
   echo "$value"
 }
 
@@ -762,26 +965,18 @@ try_value()
 try_var () # ~ <Var-name>
 {
   : "${!1:-}"
-  test -n "$_" || return
+  [[ "$_" ]] &&
   echo "$_"
-}
-
-update_env()
-{
-  test -n "${PYVENV-}" || {
-    PYVENV=$(htd ispyvenv) || PYVENV=0
-    export PYVENV
-  }
 }
 
 user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
 {
   declare -a user_paths
-  while test "${1:?}" != "--"
+  while [[ "${1:?}" != "--" ]]
   do
     user_paths+=( "$1" )
     shift
-    test $# -gt 0 || break
+    [[ $# -gt 0 ]] || break
   done
   shift
   # FIXME: remove pipeline
@@ -798,42 +993,18 @@ user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
 work_env()
 {
   # Get name for shell profile
-  test -z "$ENV_NAME" && {
-    test -n "$hostname" || exit 110
+  [[ -z "$ENV_NAME" ]] && {
+    [[ -n "$hostname" ]] || exit 110
     LENV="$hostname"
   } || {
     LENV="$ENV_NAME"
   }
 
   # Check for python v-env
-  test "0" = "$PYVENV" || {
+  [[ "0" = "$PYVENV" ]] || {
     LENV="$LENV,pyvenv"
   }
   printf -- "$LENV"
-}
-
-var_get ()
-{
-  : "${1:?var-get: Variable name expected}"
-  echo "${!_:?}"
-}
-
-var_get_sh ()
-{
-  : "${1:?var-get-sh: Variable name expected}"
-  eval echo \"\$$_\"
-}
-
-var_set () # ~ <Var-name-ref> <Value> # Reset local:<var> or <var> to <val>
-{
-  local var=${1:?var-set: Variable name expected} val=${2-}
-  test local: = "${var:0:6}" && {
-    eval "${var:6}=\"$val\"" || return
-  } ||
-    declare -g "$var=$val"
-  # NOTE: above global declaration would not work for typeset vars, and Bash<=5.0
-  # cannot tell wether $var already is declared typeset in an outter function
-  # scope. Even more typeset or set are/seem useless, so its eval to the rescue.
 }
 
 # Sync: BIN:

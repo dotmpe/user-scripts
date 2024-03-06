@@ -74,5 +74,8 @@ true "${BUILD_TOOL:="redo"}"
 
 true "${PROJECT_CACHE:=".meta/cache"}"
 
+: "${BUILD_RULES:=build-rules.list}"
+: "${BUILD_RULES_BUILD:=}"
+
 true "${build_main_targets:="all help build test"}"
 true "${build_all_targets:="build test"}"

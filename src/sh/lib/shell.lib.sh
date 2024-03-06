@@ -53,10 +53,10 @@ shell_lib__init()
   log_key=$log_key $us_log info "" "Loaded shell.lib" "$0"
 }
 
-# is-bash check, expect no typeset (ksh) TODO: zshell bi table.
+# is-bash check, expect no declare (ksh) TODO: zshell bi table.
 shell_check () #
 {
-  type typeset >/dev/null 2>&1 && {
+  type declare >/dev/null 2>&1 && {
     test 1 -eq "${K_SHELL:?}" \
       -o 1 -eq "${Z_SHELL:?}" \
       -o 1 -eq "${DA_SHELL:?}" \
@@ -64,10 +64,10 @@ shell_check () #
 
       # Not spent much time outside GNU, busybox or BSD 'sh' & Bash.
       {
-        echo "Found typeset cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
+        echo "Found declare cmd, expected Bash or Z-Sh ($0: $SHELL_NAME)" >&2
         shell_bin=$(command -v -- "$SHELL_NAME")
         test ! -e "$shell_bin" || ls -la $shell_bin
-        type typeset
+        type declare
         echo SHELL:$SHELL
         echo END
       } >&2

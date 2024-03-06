@@ -10,11 +10,11 @@ os_lib__load ()
 
 os_lib__init ()
 {
-  test "${os_lib_init-}" = "0" || {
-    test -n "$LOG" -a \( -x "$LOG" -o "$(type -t "$LOG")" = "function" \) \
+  [[ "${os_lib_init-}" = "0" ]] || {
+    [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
-    test -n "$os_lib_log" || return 108
-    $os_lib_log debug "" "Initialized os.lib" "$0"
+    [[ "$os_lib_log" ]] || return 108
+    $os_lib_log debug "" "Initialized os.lib"
   }
 }
 
@@ -25,7 +25,7 @@ absdir () # ~ <Path> [<Basedir>]
   # NOTE: somehow my Linux pwd makes a symbolic path to root into //bin,
   # using tr to collapse all sequences to one
   #( cd "$1" && pwd -P | tr -s '/' '/' )
-  test "${1:0:1}" = "/" && echo "$1" || {
+  [[ "${1:0:1}" = "/" ]] && echo "$1" || {
     : "${2:-$PWD}/$1"
     echo "${_//\/\//\/}"
   }
@@ -47,7 +47,7 @@ basedir ()
   while fnmatch "*/*" "$1"
   do
     set -- "$(dirname "$1")"
-    test "$1" != "/" || break
+    [[ "$1" != "/" ]] || break
   done
   echo "$1"
 }
@@ -58,11 +58,11 @@ basedir ()
 # and starts with a period '.' it is used as the value for exts.
 basenames () # [exts=] ~ [ .EXTS ] PATH...
 {
-  test -n "${exts-}" || {
+  [[ "${exts-}" ]] || {
     fnmatch ".*" "$1" || return
     exts="$1"; shift
   }
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     name="$1"
     shift
@@ -85,11 +85,11 @@ count_char () # ~ <Char>
 # Count every character
 count_chars () # ~ [<File> | -]...
 {
-  test "${1:-"-"}" = "-" && {
+  [[ "${1:-"-"}" = "-" ]] && {
     wc -w | awk '{print $1}'
     return
   } || {
-    while test $# -gt 0
+    while [[ $# -gt 0 ]]
     do
       wc -c "$1" | awk '{print $1}'
       shift
@@ -100,8 +100,8 @@ count_chars () # ~ [<File> | -]...
 # Count tab-separated columns on first line. One line for each file.
 count_cols ()
 {
-  test $# -gt 0 && {
-    while test $# -gt 0
+  [[ $# -gt 0 ]] && {
+    while [[ $# -gt 0 ]]
     do
       { printf '\t'; head -n 1 "$1"; } | count_char '\t'
       shift
@@ -114,11 +114,11 @@ count_cols ()
 # Count lines with wc (no EOF termination correction)
 count_lines ()
 {
-  test "${1-"-"}" = "-" && {
+  [[ "${1-"-"}" = "-" ]] && {
     wc -l | awk '{print $1}'
     return
   } || {
-    while test $# -gt 0
+    while [[ $# -gt 0 ]]
     do
       wc -l "$1" | awk '{print $1}'
       shift
@@ -129,11 +129,11 @@ count_lines ()
 # Count words
 count_words () # [FILE | -]...
 {
-  test "${1:-"-"}" = "-" && {
+  [[ "${1:-"-"}" = "-" ]] && {
     wc -w | awk '{print $1}'
     return
   } || {
-    while test $# -gt 0
+    while [[ $# -gt 0 ]]
     do
       wc -w "$1" | awk '{print $1}'
       shift
@@ -143,7 +143,7 @@ count_words () # [FILE | -]...
 
 dirname_ ()
 {
-  while test "$1" -gt 0
+  while [[ "$1" -gt 0 ]]
     do
       set -- $(( $1 - 1 ))
       set -- "$1" "$(dirname "$2")"
@@ -162,15 +162,15 @@ os_do_exists () # ~ <Test> <Action=echo> <Paths...>
 {
   local test_ test=${1:?} act=${2:-echo}
   shift 2
-  test "${test:0:1}" = '!' && test_='test ! -'${test:1} ||
-    test "${#test}" = '1' &&
+  [[ "${test:0:1}" = '!' ]] && test_='test ! -'${test:1} ||
+    [[ "${#test}" = '1' ]] &&
       test_='test -'${test} || test_=$test
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     $test_ "${1:?}" && break
     shift; continue
   done
-  test $# -gt 0 || return
+  [[ $# -gt 0 ]] || return
   $act "$1"
 }
 
@@ -188,7 +188,7 @@ enum_nix_style_file ()
 # make numbered copy, see number-file
 file_backup () # ~ <Name> [<.Ext>]
 {
-  test -s "${1:?}" || return
+  [[ -s "${1:?}" ]] || return
   action="cp -v" file_number "${@:?}"
 }
 
@@ -215,11 +215,11 @@ file_modeline () # :file{version,id,mode} ~ <File>
     # XXX: only uses last part of line, how about specified editors?
     declare rest rest_
     filemode=${file_ml_raw##* }; rest_=${file_ml_raw% *}
-    test "${#rest_}" -lt "${#file_ml_raw}" || return 0
+    [[ "${#rest_}" -lt "${#file_ml_raw}" ]] || return 0
     rest=$rest_; fileid=${rest##* }; rest_=${rest% *}
-    test "${#rest}" -gt "${#rest_}" || return 0
+    [[ "${#rest}" -gt "${#rest_}" ]] || return 0
     rest=$rest_; fileversion=${rest##* }; rest_=${rest% *}
-    test "${#rest}" -ge "${#rest_}" || {
+    [[ "${#rest}" -ge "${#rest_}" ]] || {
       : "rest=$rest_ file:$file_ml_src"
       : "$_${fileid:+:id=$fileid}"
       : "$_${fileversion:+:ver=$fileversion}"
@@ -244,7 +244,7 @@ file_modeline () # :file{version,id,mode} ~ <File>
           set -- "$_"
           break
         done
-        test $# -gt 0 &&
+        [[ $# -gt 0 ]] &&
         line_number_raw "$1" $vpk ":" &&
         file_ml_raw=:$(str_trim1 "${file_ml_raw}") || return
         filemode=${file_ml_raw%% *}
@@ -285,7 +285,7 @@ file_number () # [action=mv] ~ <Name> [<.Ext>]
   while true
   do
     dest=$dir/$base-$cnt${2-}
-    test -e "$dest" || break
+    [[ -e "$dest" ]] || break
     cnt=$(( cnt + 1 ))
   done
 
@@ -300,29 +300,27 @@ file_reader () # (<?,fr-ctx:,:fr-{p,b,spec}) ~ [<File> <...>]
   local fr_ctx=${fr_ctx:-modeline} fr_argc fr_init
 
   ${fr_ctx:?}_file_path "$@" || return
-  test -z "${fr_argc-}" || shift $_
+  [[ -z "${fr_argc-}" ]] || shift $_
 
   stderr echo file_reader "$@" fr_p=$fr_p
   ${fr_ctx:?}_file_reader "${fr_p:?}" || fr_init=$?
-  test -z "${fr_init-}" ||
+  [[ -z "${fr_init-}" ]] ||
     $LOG alert :file-reader "Unable to set file-reader context" \
       "${fr_ctx:-}:E${fr_init:-?}:$*" ${fr_init:-$?}
-  test -n "${fr_spec-}" || return ${_E_NF:-124}
+  [[ "${fr_spec-}" ]] || return ${_E_NF:-124}
 }
 
 # rename to numbered file, see number-file
 file_rotate () # ~ <Name> [<.Ext>]
 {
-  test -s "${1:?}" || return
+  [[ -s "${1:?}" ]] || return
   action="mv -v" file_number "${@:?}"
 }
 
 # FIXME: file-deref=0?
 file_stat_flags()
 {
-  test -n "$flags" || flags=-
-  test "${file_deref:-0}" -eq 0 || flags=${flags}L
-  test "$flags" != "-" || flags=
+  [[ "${file_deref:-0}" -eq 0 ]] || flags=${flags:--}L
 }
 
 file_tool_flags()
@@ -339,7 +337,7 @@ file_update_age ()
 # Use `stat` to get inode change time (in epoch seconds)
 filectime() # File
 {
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     case "${uname,,}" in
       darwin )
@@ -364,10 +362,10 @@ fileformat ()
 fileisext() # Name Exts..
 {
   local f="$1" ext="" ; ext=$(filenamext "$1") || return ; shift
-  test -n "$*" || return
-  test -n "$ext" || return
+  [[ "$*" ]] || return
+  [[ "$ext" ]] || return
   for mext in "$@"
-  do test ".$ext" = "$mext" && return 0
+  do [[ ".$ext" = "$mext" ]] && return 0
   done
   return 1
 }
@@ -376,7 +374,7 @@ fileisext() # Name Exts..
 filemtime() # File
 {
   local flags=- ; file_stat_flags
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     case "${uname,,}" in
       darwin )
@@ -427,7 +425,7 @@ filenamext () # ~ <Name..>
 filesize () # File
 {
   local flags=- ; file_stat_flags
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     case "${uname,,}" in
       darwin )
@@ -475,7 +473,7 @@ readable_bytesize () # ~ <Size>
 filestripext () # ~ <Name>
 {
   ext="$(filenamext "$1")" || return
-  test -n "$ext" && set -- "$1" ".$ext"
+  [[ "$ext" ]] && set -- "$1" ".$ext"
   basename -- "$@"
 }
 
@@ -484,8 +482,8 @@ filter () # (Std:0:) ~ <Test-handler>
   local value
   while read -r value
   do
-    "${1:?}" "$value" || {
-      test ${_E_next:?} -eq $? && continue
+    "${@:?}" "$value" || {
+      [[ ${_E_next:?} -eq $? ]] && continue
       return $_
     }
     echo "$value"
@@ -495,12 +493,11 @@ filter () # (Std:0:) ~ <Test-handler>
 filter_args () # ~ <Test-cmd> <Args...> # Print args for which test pass
 {
   local value test=${1:?}
-  shift
-  for value in "$@"
+  for value in "${@:2}"
   do
-    ${test} "$value" || {
+    $test "$value" || {
       continue
-      # TODO: make test functions discern between error and failure
+      # TODO: make test functions discern between error and test failure/pass
       #test ${_E_next:?} -eq $? && continue
       #return $_
     }
@@ -559,8 +556,8 @@ filter_lines () # ~ <Cmd...> # Remove lines for which command returns non-zero
 foreach () # [(s)] ~ ['-' | <Arg...>]
 {
   {
-    test 0 -lt $# && {
-      while test 0 -lt $#
+    [[ 0 -lt $# ]] && {
+      while [[ 0 -lt $# ]]
       do
         [[ "$1" = "-" ]] && {
           # XXX: echo foreach_stdin=1
@@ -586,9 +583,9 @@ foreach2 ()
 # to line. See foreach-do for other details.
 foreach_addcol () # ~ [ - | <Arg...> ]
 {
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test "${act-unset}" != unset || local act="echo"
+  [[ "${p-}" ]] || local p= # Prefix string
+  [[ "${s-}" ]] || local s= # Suffix string
+  [[ "${act-unset}" != unset ]] || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$S" "$($act "$S")" ; done
 }
@@ -599,9 +596,9 @@ foreach_addcol () # ~ [ - | <Arg...> ]
 # unwrapped loop-var is _S.
 foreach_do () # ~ [ - | <Arg...> ]
 {
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
+  [[ "${p-}" ]] || local p= # Prefix string
+  [[ "${s-}" ]] || local s= # Suffix string
+  [[ "${act-}" ]] || local act="echo"
   foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" || return ; done
 }
 
@@ -616,16 +613,16 @@ foreach_eval ()
 # See -addcol and -do.
 foreach_inscol ()
 {
-  test -n "${p-}" || local p= # Prefix string
-  test -n "${s-}" || local s= # Suffix string
-  test -n "${act-}" || local act="echo"
+  [[ "${p-}" ]] || local p= # Prefix string
+  [[ "${s-}" ]] || local s= # Suffix string
+  [[ "${act-}" ]] || local act="echo"
   foreach "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
 }
 
 get_uuid ()
 {
-  test -e /proc/sys/kernel/random/uuid && {
+  [[ -e /proc/sys/kernel/random/uuid ]] && {
     cat /proc/sys/kernel/random/uuid
     return 0
   }
@@ -640,19 +637,19 @@ get_uuid ()
 # Change cwd to parent dir with existing local path element (dir/file/..) $1, leave go_to_before var in env.
 go_to_dir_with () # ~ <Local-Name>
 {
-  test -n "$1" || error "go-to-dir: Missing filename arg" 1
+  [[ "${1-}" ]] || error "go-to-dir: Missing filename arg" 1
 
   # Find dir with metafile
   go_to_before=.
   while true
   do
-    test -e "$1" && break
-    go_to_before=$(basename -- "$(pwd)")/$go_to_before
-    test "$(pwd)" = "/" && break
+    [[ -e "$1" ]] && break
+    go_to_before=$(basename -- "$PWD")/$go_to_before
+    [[ "$PWD" = "/" ]] && break
     cd ..
   done
 
-  test -e "$1" || return 1
+  [[ -e "$1" ]] || return 1
 }
 
 # An (almost) no-op that does pass previous status back, usable as an
@@ -669,7 +666,7 @@ if_ok () # (?) ~ <...> # No-op, except pass (return) previous status
 
 ignore_sigpipe () # (?) ~ <...> # Status OK if SIG:PIPE
 {
-  test $? -eq 141 # For linux/bash: 128+signal where signal=SIGPIPE=13
+  [[ $? -eq 141 ]] # For linux/bash: 128+signal where signal=SIGPIPE=13
 }
 
 # Little wrapper to use lines-while to read line-continuations to lines
@@ -681,8 +678,8 @@ lines () #
 # Wrap wc but correct files with or w.o. trailing posix line-end
 line_count () # FILE
 {
-  test -s "${1-}" || return 42
-  test "$(filesize "$1")" -gt 0 || return 43
+  [[ -s "${1-}" ]] || return 42
+  [[ "$(filesize "$1")" -gt 0 ]] || return 43
   #shellcheck disable=2005,2046
   lc="$(echo $(od -An -tc -j "$(( $(filesize "$1") - 1 ))" "$1"))"
   case "$lc" in "\n" ) ;;
@@ -698,17 +695,17 @@ line_number_raw () # ~ <Line-str> <Var-pk> <Num-sep> # Extract line number prefi
 {
   local str=${1--} vpk=${2:-line_} nsep=${3:- }
 
-  var_set ${vpk}ln "${str%%$nsep*}" &&
-  var_set ${vpk}raw "${str#*$nsep}"
+  sys_set_var ${vpk}ln "${str%%$nsep*}" &&
+  sys_set_var ${vpk}raw "${str#*$nsep}"
 }
 
 # Offset content from input/file to line-based window.
 lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 {
-  test -n "${3-}" || error "File-Path expected" 1
-  test "$3" = "-" && set -- "$1" "$2"
-  test -n "$1" && {
-    test -n "$2" && { # Start - End: tail + head
+  [[ "${3-}" ]] || error "File-Path expected" 1
+  [[ "$3" = "-" ]] && set -- "$1" "$2"
+  [[ "$1" ]] && {
+    [[ "$2" ]] && { # Start - End: tail + head
       tail -n "+$1" "$3" | head -n $(( $2 - $1 + 1 ))
       return $?
     } || { # Start - ... : tail
@@ -717,7 +714,7 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
     }
 
   } || {
-    test -n "$2" && { # ... - End : head
+    [[ "$2" ]] && { # ... - End : head
       head -n "$2" "$3"
       return $?
     } || { # Otherwise cat
@@ -746,7 +743,7 @@ lines_while () # ~ <Cmd <argv...>>
 # is broken.
 lines_count_while_eval () # CMD
 {
-  test $# -gt 0 || return
+  [[ $# -gt 0 ]] || return ${_E_MA:?}
 
   line_number=0
   while ${read:-read_with_flags} line
@@ -754,21 +751,21 @@ lines_count_while_eval () # CMD
     eval "$*" || break
     line_number=$(( line_number + 1 ))
   done
-  test $line_number -gt 0 || return
+  [[ $line_number -gt 0 ]] || return
 }
 
 # TODO: introduce fr_file vs fr_reader context and rename to
 # file_reader_path
 modeline_file_path ()
 {
-  test $# -gt 0 && {
-    test ! -e "$1" || {
+  [[ $# -gt 0 ]] && {
+    [[ ! -e "$1" ]] || {
       fr_p=${1:?} fr_b=false fr_argc=1
     } ||
       fr_p=
   }
-  test -n "${fr_p-}" || {
-    test -t 0 || {
+  [[ "${fr_p-}" ]] || {
+    [[ -t 0 ]] || {
       # buffer stdin at ramfs file location
       fr_p="${RAM_TMPDIR:?}/$(uuidgen).$$.stdin" &&
       cat > "$fr_p" ||
@@ -777,9 +774,9 @@ modeline_file_path ()
       fr_b=true
     }
   }
-  test -n "${fr_p-}" || return ${_E_GAE:-193}
-  test -e "${fr_p-}" || return ${_E_NF:-124}
-  test -s "${fr_p-}" || return ${_E_E:-193}
+  [[ "${fr_p-}" ]] || return ${_E_GAE:-193}
+  [[ -e "${fr_p-}" ]] || return ${_E_NF:-124}
+  [[ -s "${fr_p-}" ]] || return ${_E_E:-193}
 }
 
 modeline_file_reader ()
@@ -819,7 +816,7 @@ normalize_relative()
     fi
   done
   IFS=$OIFS
-  test -n "$NORMALIZED" \
+  [[ "$NORMALIZED" ]] \
     && {
       case "$1" in
         /* ) ;;
@@ -844,10 +841,10 @@ not ()
 
 os_path_first () # (s) ~ <Var> <Test...>
 {
-  test 1 -le $# || return ${_E_MA:?}
-  typeset var=${1:?os-path-first: Variable name expected} fp
+  [[ 1 -le $# ]] || return ${_E_MA:?}
+  declare var=${1:?os-path-first: Variable name expected} fp
   shift
-  test 0 -lt $# || set -- test -e
+  [[ 0 -lt $# ]] || set -- test -e
   stdin_first "$var" "$@"
 }
 
@@ -868,7 +865,7 @@ pathname() # PATH EXT...
     name="$(basename -- "$name" "$ext")"
   done
   #shellcheck disable=2059
-  test -n "$dirname" -a "$dirname" != "." && {
+  [[ "$dirname" && "$dirname" != "." ]] && {
     printf -- "$dirname/$name\\n"
   } || {
     printf -- "$name\\n"
@@ -880,9 +877,9 @@ pathname() # PATH EXT...
 # Simple iterator over pathname
 pathnames () # exts=... [ - | PATHS ]
 {
-  test -n "${exts-}" || exit 40
+  [[ "${exts-}" ]] || exit 40
   #shellcheck disable=2086
-  test "${1--}" != "-" && {
+  [[ "${1--}" != "-" ]] && {
     for path in "$@"
     do
       pathname "$path" $exts
@@ -959,7 +956,7 @@ read_head_blocks () # ~ <Head> <Values>
     echo=false read_while not grep -q "^$1" || break
     section=$( echo "$line" | sed "s#^$1##" | awk '{ print $1 }' )
     read -r _ || break
-    test $# -gt 2 && {
+    [[ $# -gt 2 ]] && {
       fnmatch "* $section *" " $* " && echo=true || echo=false
     } || {
       echo=true
@@ -974,7 +971,7 @@ read_head_blocks () # ~ <Head> <Values>
 # Test for file or return before read
 read_if_exists ()
 {
-  test -n "${1-}" || return 1
+  [[ "${1-}" ]] || return 1
   read_nix_style_file "$@" 2>/dev/null || return 1
 }
 
@@ -987,9 +984,9 @@ read_if_exists ()
 #
 read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
 {
-  test -n "${1-}" || error "Argument expected (1)" 1
-  test -f "$1" || error "Not a filename argument: '$1'" 1
-  test -n "${2-}" -a $# -le 4 || return
+  [[ "${1-}" ]] || error "Argument expected (1)" 1
+  [[ -f "$1" ]] || error "Not a filename argument: '$1'" 1
+  [[ "${2-}" && $# -le 4 ]] || return
   local stat=''
 
   read_lines_while_inner() # sh:no-stat
@@ -999,7 +996,7 @@ read_lines_while() # File-Path While-Eval [First-Line] [Last-Line]
         lines_count_while_eval "$2" || r=$? ; echo "$r $line_number"; }
   }
   stat="$(read_lines_while_inner "$@")"
-  test -n "$stat" || return
+  [[ "$stat" ]] || return
   line_number=$(echo "$stat" | cut -f2 -d' ')
   return "$(echo "$stat" | cut -f1 -d' ')"
 }
@@ -1014,10 +1011,10 @@ read_literal () # (s) ~ <Read-argv...> # Read as-is, with escapes and whitespace
 # XXX: this one support leading whitespace but others in ~/bin/*.sh do not
 read_nix_style_file () # [cat_f=] ~ File [Grep-Filter]
 {
-  test $# -le 2 -a "${1:-"-"}" = - -o -e "${1-}" || return 98
-  test -n "${1-}" || set -- "-" "${2-}"
-  test -n "${2-}" || set -- "$1" '^\s*(#.*|\s*)$'
-  test -z "${cat_f-}" && {
+  [[ $# -le 2 && "${1:-"-"}" = - || -e "${1-}" ]] || return 98
+  [[ "${1-}" ]] || set -- "-" "${2-}"
+  [[ "${2-}" ]] || set -- "$1" '^\s*(#.*|\s*)$'
+  [[ -z "${cat_f-}" ]] && {
     grep -Ev "$2" "$1" || return $?
   } || {
     #shellcheck disable=2086
@@ -1078,41 +1075,41 @@ sort_mtimes ()
 # XXX: see argv.lib test_ funs as well
 # for (user log) verbose functions, see assert.lib
 
-test_isblock () # ~ <Name>
+os_isblock () # ~ <Name>
 {
   : "${1:?test-isblock: Path name expected}"
-  test -b "$_"
+  [[ -b "$_" ]]
 }
 
-test_ischar () # ~ <Name>
+os_ischar () # ~ <Name>
 {
   : "${1:?test-ischar: Path name expected}"
-  test -c "$_"
+  [[ -c "$_" ]]
 }
 
-test_isdir () # ~ <Name>
+os_isdir () # ~ <Name>
 {
   : "${1:?test-isdir: Path name expected}"
-  test -d "$_"
+  [[ -d "$_" ]]
 }
 
-test_isfile () # ~ <Name>
+os_isfile () # ~ <Name>
 {
   : "${1:?test-isfile: Path name expected}"
-  test -f "$_"
+  [[ -f "$_" ]]
 }
 
-test_isnonempty () # ~ <Name>
+os_isnonempty () # ~ <Name>
 {
   : "${1:?test-isnonempty: Path name expected}"
-  test -s "$_"
+  [[ -s "$_" ]]
 }
 
 # test -e (XXX: same as test -a?)
-test_ispath () # ~ <Name>
+os_ispath () # ~ <Name>
 {
   : "${1:?test-ispath: Path name expected}"
-  test -e "$_"
+  [[ -e "$_" ]]
 }
 
 unique_args () # ~ <Args...>
@@ -1120,7 +1117,7 @@ unique_args () # ~ <Args...>
   declare -A tab
   declare arg
   for arg
-  do test -n "${tab[$arg]+set}" || {
+  do [[ "${tab[$arg]+set}" ]] || {
       tab[$arg]=
       echo "$arg"
     }
@@ -1142,7 +1139,7 @@ zipfiles ()
 ziplists () # [SEP=\t] Rows
 {
   local col=0 row=0
-  test -n "$SEP" || SEP='\t'
+  [[ "$SEP" ]] || SEP='\t'
   while true
   do
     col=$(( col + 1 )) ;
@@ -1158,7 +1155,7 @@ ziplists () # [SEP=\t] Rows
     do
       eval "printf \"%s\" \"\$row${r}_col${c}\""
       #shellcheck disable=2059
-      test "$c" -lt "$col" && printf "$SEP" || printf '\n'
+      [[ "$c" -lt "$col" ]] && printf "$SEP" || printf '\n'
     done
   done
 }

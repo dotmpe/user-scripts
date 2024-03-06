@@ -2,9 +2,9 @@
 ### Build-r0.0 env parts
 
 
-build__lib__load ()
+build_r0_0_lib__load ()
 {
-  true "${GITDIR:=$(git rev-parse --git-dir)}"
+  true #"${GITDIR:=$(git rev-parse --git-dir)}"
 }
 
 
@@ -18,7 +18,7 @@ env__build__properties ()
 # Generate a copy of the build profile for caching.
 env__build__build_env_cache ()
 {
-  env_require build-envs || return
+  envd_require build-envs || return
 
   # Finally run some steps to generate the profile
   #set -- ${BUILD_ENV_STATIC:-${BUILD_BOOT-env-path log-key build-action}}
@@ -46,7 +46,8 @@ env__build__rule_params ()
 env__define__argv ()
 {
   #source "${U_S:?}/src/sh/lib/argv.lib.sh"
-  source "${U_C:?}/script/argv-uc.lib.sh"
+  #source "${US_BIN:?}/argv.lib.sh"
+  lib_load argv
 }
 
 env__define__properties ()
@@ -86,7 +87,7 @@ env__define__properties ()
       _unredo "${properties_sh:?}" || return
     } || {
       $LOG info ::properties "Checking to load properties" "$BUILD_TARGET"
-      env_require ifdone || return
+      envd_require ifdone || return
       build-ifdone "${properties_sh:?}" || return ${_E_OOB:-199}
     }
   }
@@ -106,7 +107,7 @@ env__define__properties_cache ()
 
 env__define__build ()
 {
-  env_require build-env build-core build-lib build-init || return
+  envd_require build-env build-core build-lib build-init || return
   build_define_commands || return
   build_add_setting "BUILD_SPECIAL_RE BUILD_VIRTUAL_RE BUILD_TARGET_DECO" &&
   build_add_handler "$( for cmd in $(build_actions)
@@ -138,7 +139,7 @@ env__define__build_action ()
   esac
   test $# -eq 0 && return
   #  build_env_sources ||
-  env_require "$@" || return
+  envd_require "$@" || return
   $LOG debug "" "Build action '$BUILD_ACTION' booted" "$*"
 }
 
@@ -191,7 +192,7 @@ env__define__build_env ()
 #
 env__define__build_env_cache ()
 {
-  env_require build-function-targets || return
+  envd_require build-function-targets || return
 
   # Built-in recipe for cache file with accumalated profile.
   # Project could include $BUILD_ENV_CACHE.do file to override built-in recipe
@@ -201,7 +202,7 @@ env__define__build_env_cache ()
     #build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
 
     # Include any libs that might override env:build:build-env-cache
-    env_require build-libs || return
+    envd_require build-libs || return
     # Run build routine
     env__build__build_env_cache || return
     return ${_E_stop:-197}
@@ -226,7 +227,7 @@ env__define__build_env_cache ()
       _unredo "${BUILD_ENV_CACHE:?}" || return
     } || {
       $LOG info ::build-env-cache "Checking to load build-env cache" "$BUILD_TARGET"
-      env_require ifdone || return
+      envd_require ifdone || return
       build-ifdone "$BUILD_ENV_CACHE" || return
     }
   }
@@ -249,7 +250,7 @@ env__define__build_envs ()
       sh_lookup ${build_envs_defnames:?}) || return
 
   test -z "${ENV_BUILD_ENV:-}" || {
-    sh_source $ENV_BUILD_ENV || $LOG error :build-envs \
+    source_all $ENV_BUILD_ENV || $LOG error :build-envs \
       "Sourcing build-envs returned error" "E$?:$ENV_BUILD_ENV" $? || return
     ENV_BUILD_ENV="${ENV_BUILD_ENV//$'\n'/:}"
     $LOG debug :build-envs "Loaded helper profile(s)" "$ENV_BUILD_ENV"
@@ -263,8 +264,8 @@ env__define__build_function_targets ()
 {
   test "${BUILD_TARGET:0:1}" != "${BUILD_NS_:?}" && return
 
-  env_require ${BUILD_FUNCTIONS_ENV-build-envs build-libs build-init} || return
-  env_require argv || return
+  envd_require ${BUILD_FUNCTIONS_ENV-build-envs build-libs build-init} || return
+  envd_require argv || return
 
   # XXX:
   declare rule r
@@ -276,21 +277,20 @@ env__define__build_function_targets ()
   $LOG info ::build-function-targets "Trying rule at boot time..." "${rule//%/%%}"
   build_target_rule ${rule} && {
     return ${_E_break:-197}
-  } || { r=$?
-    test $r -eq ${_E_continue:-196} && return
-    $LOG error "::build-function-targets" "Failed to build from rule" "E$r:$rule" $r
+  } || {
+    test ${_E_continue:-196} -eq $? && return
+    $LOG error "::build-function-targets" "Failed to build from rule" "E$_:$rule" $_
   }
 }
 
 env__define__build_init ()
 {
   test -z "${BUILD_ID:-}" && {
-    env_require build-session || return
+    envd_require build-session || return
   } || {
-    env_require build-${BUILD_TOOL:?} || return
+    envd_require build-${BUILD_TOOL:?} || return
   }
-  build__lib__load && # XXX: can use build_lib_init here at some point?
-  build_define_commands || return
+  build_define_commands
 }
 
 env__define__build_lib ()
@@ -318,7 +318,7 @@ env__define__build_libs ()
       sh_lookup ${build_libs_defnames:?}) || return
 
   test -z "${ENV_BUILD_LIBS:-}" || {
-    sh_source $ENV_BUILD_LIBS || $LOG error :build-libs \
+    source_all $ENV_BUILD_LIBS || $LOG error :build-libs \
       "Sourcing build-libs returned error" "E$r:$ENV_BUILD_LIBS" $? || return
     ENV_BUILD_LIBS="${ENV_BUILD_LIBS//$'\n'/:}"
     $LOG debug :build-libs "Loaded helpers (libraries)" "$ENV_BUILD_LIBS"
@@ -331,8 +331,8 @@ env__define__build_parts () #
   build_add_setting "BUILD_PARTS"
   test -n "${BUILD_PARTS:-}" && return
 
-  ! sh_arr BUILD_PART_PREFS ||
-  test 0 -lt "${#BUILD_PART_PREFS[*]}" || set -- "${BUILD_PART_PREFS[@]}"
+  test "${BUILD_PART_PREFS[*]-unset}" = "unset" ||
+  test 0 -eq "${#BUILD_PART_PREFS[*]}" || set -- "${BUILD_PART_PREFS[@]}"
   test $# -gt 0 || set -- \
           tools/{sh,ci,build,${BUILD_TOOL:?}}/{boot,build,parts,recipes}
 
@@ -388,10 +388,10 @@ env__define__build_source ()
 
 env__define__env_path ()
 {
-  test -n "${ENV_PATH:-}" || {
+  test -n "${ENV_PATH-}" || {
     ENV_PATH=tools/sh/parts
     sh_exts=.sh
-    env_require from-dist || return
+    envd_require from-dist || return
   }
 
   test "${ENV_PATH:-}" != "tools/sh/parts" || {
@@ -416,16 +416,16 @@ env__define__fifo_server ()
 
 env__define__from_dist ()
 {
-  source "${U_S:?}/tools/sh/build-env-defaults.sh"
-
-  build_add_setting "BUILD_DECO_NAMES BUILD_TARGET_DECO BUILD_TARGET_ALIAS"
-    build_add_setting "BUILD_NS_DIR BUILD_SPECIAL_RE BUILD_VIRTUAL_RE BUILD_NS BUILD_NS_"
-  build_add_setting PROJECT_CACHE
-
+  envd_declare - build - - &&
+  source "${U_S:?}/tools/sh/build-env-defaults.sh" &&
+  #  --settings \
+  envd_dvar \
+    BUILD_DECO_NAMES BUILD_TARGET_DECO BUILD_TARGET_ALIAS \
+    BUILD_NS_DIR BUILD_SPECIAL_RE BUILD_VIRTUAL_RE BUILD_NS BUILD_NS_ \
+    PROJECT_CACHE BUILD_RULES BUILD_RULES_BUILD \
+    BUILD_BASES BUILD_NS BUILD_NS_DIR BUILD_TOOL \
+    build_main_targets build_all_targets
   #BUILD_PATH
-  build_add_setting "CWD BUILD_RULES BUILD_RULES_BUILD"
-  build_add_setting "BUILD_BASES BUILD_NS BUILD_NS_DIR BUILD_TOOL"
-  build_add_setting "build_main_targets build_all_targets"
 }
 
 env__define__from_package ()
@@ -443,8 +443,8 @@ env__define__from_package ()
 
 env__define__from_local ()
 {
-  env_require build-envs build-libs build-init from-dist || return
-  env_require ${BUILD_ENV:-} || return
+  envd_require build-envs build-libs build-init from-dist &&
+  envd_require ${BUILD_ENV:-} &&
   build_add_setting "BUILD_ENV"
   #env_autoconfig properties build-rules build-params
 }
@@ -601,7 +601,7 @@ env__define__rule_params ()
       _unredo "${params_sh:?}" || return
     } || {
       $LOG info ::rule-params "Checking to load params" "$BUILD_TARGET"
-      env_require ifdone || return
+      envd_require ifdone || return
       build-ifdone "$params_sh" || return ${_E_OOB:-199}
     }
   }

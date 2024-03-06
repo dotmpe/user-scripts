@@ -30,53 +30,54 @@ ck_lib__load()
 # See ck-git for description.
 ck_b2 () # File [Check]
 {
-  typeset cksum_cmd=( "b2sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "b2sum" ) ; ck_sum "$@"
 }
 
 # Helpers to validate checksum for file
 # abbrev=7 (default) allow abbreviated checksums even only 1 char, set minimum
 ck_git() # File [Check]
 {
-  typeset cksum_cmd=( "git" "hash-object" ) ; ck_sum "$@"
+  declare cksum_cmd=( "git" "hash-object" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_md5 () # File [Check]
 {
-  typeset cksum_cmd=( "md5sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "md5sum" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_sha1 () # File [Check]
 {
-  typeset cksum_cmd=( "sha1sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "sha1sum" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_sha2 () # File [Check]
 {
-  typeset cksum_cmd=( "${sha256sum_cmd[@]}" ) ; ck_sum "$@"
+  declare cksum_cmd=( "${sha256sum_cmd[@]}" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_sha224 () # File [Check]
 {
-  typeset cksum_cmd=( "sha224sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "sha224sum" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_sha384 () # File [Check]
 {
-  typeset cksum_cmd=( "sha384sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "sha384sum" ) ; ck_sum "$@"
 }
 
 # See ck-git for description.
 ck_sha512 () # File [Check]
 {
-  typeset cksum_cmd=( "sha512sum" ) ; ck_sum "$@"
+  declare cksum_cmd=( "sha512sum" ) ; ck_sum "$@"
 }
 
-# Generate or validate checksum for input (file or stdin).
+# Wrapper for commands that generate or validate checksum for inputs (file or
+# stdin).
 ck_sum () # ~ [<File>] [<Checksum>]
 {
   test -n "${abbrev-}" || local abbrev=7

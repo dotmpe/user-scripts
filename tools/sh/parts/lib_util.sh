@@ -23,12 +23,12 @@ lib_util_lib__load()
 lib_util_init()
 {
   # XXX: want glob expansion, but theoretically env could inter-depend; ie.
-  # need delayed eval/macro; see env-d.lib. And local tools/{ci,sh}/env.sh
+  # need delayed eval/macro; see mkenv-d.lib. And local tools/{ci,sh}/env.sh
   # setup
 
   test -n "$sh_tools" || return 103 # NOTE: sanity
 
-  # FIXME: instead going with hardcoded sequence for env-d like for lib.
+  # FIXME: instead going with hardcoded sequence for mkenv-d like for lib.
   for env_d in $lib_util_env_d_default
   do
     . $sh_tools/parts/env-$env_d.sh

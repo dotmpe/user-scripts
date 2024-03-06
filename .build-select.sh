@@ -18,6 +18,6 @@ case "${1:?}" in
   src/man/man*/*.* )
         build_target__seq__source_do "tools/redo/recipes/src_man_man*_*.*.do" ;;
 
-  * ) return ${_E_next:-196} ;;
+  * ) return ${_E_next:-196}
 
 esac

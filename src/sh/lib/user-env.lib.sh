@@ -9,7 +9,6 @@ user_env_lib__load()
   #test -n "$ENV_NAME" || ENV_NAME=development
 
   user_env_init
-  test -n "${lib_loaded-}" || lib_loaded=
 }
 
 user_env_init()

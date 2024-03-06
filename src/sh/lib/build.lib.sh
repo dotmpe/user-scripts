@@ -5,6 +5,8 @@
 
 build_lib__load ()
 {
+  lib_require envd || return
+
   true "${BUILD_TOOL:=null}"
 
   true "${build_rules_defnames:=$(echo {,.}build-rules.{txt,list} .components.txt .meta/stat/index/components-local.list)}"
@@ -25,6 +27,8 @@ build_lib__load ()
 
   # Not sure what shells to restrict to, so setting it very liberal
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
+
+  envd_dtype build.lib lib
 }
 
 build_lib__init () # ~
@@ -57,15 +61,10 @@ build_lib__init () # ~
 }
 
 
-build__declare ()
-{
-  :
-}
-
 build_actions ()
 {
   declare var=${BUILD_TOOL:?}_commands
-  test -n "${!var-}" || {
+  [[ -n "${!var-}" ]] || {
     $LOG error "" "No build tool actions" "$BUILD_TOOL" 1
     return
   }
@@ -75,42 +74,41 @@ build_actions ()
 # Cache part files of current build-env profile
 build_add_cache ()
 {
-  BUILD_ENV_CACHES=${BUILD_ENV_CACHES:-}${BUILD_ENV_CACHES:+ }${1:?} &&
-    test $# -eq 1
+  BUILD_ENV_CACHES=${BUILD_ENV_CACHES:-}${BUILD_ENV_CACHES:+ }${*:?}
 }
 
 # Exported functions that are part of the build-env profile
 build_add_handler ()
 {
-  BUILD_ENV_FUN=${BUILD_ENV_FUN:-}${BUILD_ENV_FUN:+ }${1:?} && test $# -eq 1
+  BUILD_ENV_FUN=${BUILD_ENV_FUN:-}${BUILD_ENV_FUN:+ }${*:?}
 }
 
 # Variables defined by the current build-env
 build_add_setting ()
 {
-  BUILD_ENV_DEP=${BUILD_ENV_DEP:-}${BUILD_ENV_DEP:+ }${1:?} && test $# -eq 1
+  BUILD_ENV_DEP=${BUILD_ENV_DEP:-}${BUILD_ENV_DEP:+ }${*:?}
 }
 
 # Sources from which the current build-env was assembled
 build_add_source ()
 {
-  BUILD_ENV_SRC="${BUILD_ENV_SRC:-}${BUILD_ENV_SRC:+ }${1:?}" && test $# -eq 1
+  BUILD_ENV_SRC="${BUILD_ENV_SRC:-}${BUILD_ENV_SRC:+ }${*:?}"
 }
 
 # Helper for recipes to auto-install as part for targets on TARGET_ALIAS
 build_alias_part ()
 {
-  test -z "${TARGET_ALIAS:-}" || {
+  [[ -z "${TARGET_ALIAS:-}" ]] || {
     true "${part:?Aliased build with tools part needs path to recipe}"
     declare pnals alsp
     pnals=$(echo "${BUILD_TARGET:?}" | tr './' '_')
     alsp="${REDO_STARTDIR:?}/tools/redo/recipes/$pnals.do"
-    ! test -h "$alsp" || {
-      test -e "$alsp" || {
+    ! [[ -h "$alsp" ]] || {
+      [[ -e "$alsp" ]] || {
         rm "$alsp" || return
       }
     }
-    test -e "$alsp" || {
+    [[ -e "$alsp" ]] || {
       ln -s "$part" "$alsp" || return
     }
     build_unalias
@@ -177,35 +175,37 @@ build_arr_seq () # ~ <Var-name> [ <Items <...>> ] [ -- <...> ]
 #
 build_boot () # (Build-Action) ~ <Argv...>
 {
-  $LOG info :build-boot Boot "$*"
-  test "$PWD" != "/" || {
-    $LOG error ":build-boot:${BUILD_ACTION:?}" "! Build cannot do that" "root"
+  declare lk=${lk-}:build-boot
+  $LOG info "$lk" Boot "$*"
+  [[ "$PWD" != "/" ]] || {
+    $LOG error "$lk:${BUILD_ACTION:?}" "! Build cannot do that" "root"
     return 1
   }
-
-  declare env_boot=true
-
   #shellcheck disable=2086
-  test $# -gt 0 || set -- ${BUILD_ENV:?Missing build env}
-  test "${BUILD_ACTION:?}" = target &&
-    $LOG debug ":build-boot(${BUILD_TARGET//%/%%})" "@@@ Bootstrapping target" "$*" ||
-    $LOG debug ":build-boot" "@@@ Bootstrapping @@@ '${BUILD_ACTION:?}'..." "$*"
+  [[ $# -gt 0 ]]  || set -- ${BUILD_ENV:?Missing initial build env setting}
+  [[ "${BUILD_ACTION:?}" = target ]] &&
+    $LOG debug "$lk(${BUILD_TARGET//%/%%})" "@@@ Bootstrapping target" "$*" ||
+    $LOG debug "$lk" "@@@ Bootstrapping @@@ '${BUILD_ACTION:?}'..." "$*"
 
   declare tag ret
-  test "unset" != "${ENV_DEF[*]-unset}" || declare -gA ENV_DEF=()
-  test "unset" != "${ENV_PART[*]-unset}" || declare -gA ENV_PART=()
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
+    ! "${DEBUG:-false}" || {
+      : "($#) $*"
+      $LOG debug "$lk" "Booting env..." "${_//%/%%}"
+    }
+
     tag=${1:?}
-    { env_boot=true build_env_declare "$tag"
-    } || { ret=$?
-      test $ret -eq "${_E_break:-197}" && return $ret
-      test $ret -eq "${_E_retry:-198}" || {
-        $LOG error ":build-boot" "Error defn/decl" "E$ret:tag=$tag" ; return $ret
+    envd_boot=true envd_declare "$tag" ||
+    { ret=$?
+      [[ $ret -eq "${_E_break:-197}" ]] && return $ret
+      [[ $ret -eq "${_E_retry:-198}" ]] || {
+        $LOG error "$lk" "Error defn/decl" "E$ret:tag=$tag" ; return $ret
       }
-      for pen in ${ENV_PENDING:?Pending expected for \"$tag\" E$ret = E198}
+      : "${ENV_PENDING:?Pending expected for \"$tag\" E$ret = E:retry}"
+      for pen in $_
       do
-        ! env_declared "$pen" || { $LOG error ":build-boot:pending" \
+        ! envd_declared "$pen" || { $LOG error "$lk:pending" \
               "Unable to resolve/error with '$pen' for '$tag'"
           return 1
         }
@@ -221,12 +221,12 @@ build_boot () # (Build-Action) ~ <Argv...>
 
 build_chatty () # Level
 {
-  "${quiet:-$(test "$verbosity" -lt "${1:-3}" && printf true || printf false )}"
+  "${quiet:-$([[ "$verbosity" -lt "${1:-3}" ]] && printf true || printf false )}"
 }
 
 build_copy_changed ()
 {
-  { test -e "$2" && diff -bqr "$1" "$2" >/dev/null
+  { [[ -e "$2" ]] && diff -bqr "$1" "$2" >/dev/null
   } || {
     cp "$1" "$2" || return
     echo "Updated <$2>" >&2
@@ -237,7 +237,7 @@ build_copy_changed ()
 build_define_commands ()
 {
   set -- $(build_actions)
-  test $# -gt 0 || return
+  [[ $# -gt 0 ]] || return
   declare name cmd
   for name in "$@"
   do
@@ -318,20 +318,20 @@ build_env () # ~ [<Handler-tags...>]
 # TODO: Provide boostrap for default.do tools/sh/parts/default-do-env@dev
 build_env_build ()
 {
-  mkdir -vp ${PROJECT_CACHE:?} >&2 || return
-  test -e .properties && set -- properties
-  test -e ${BUILD_RULES:?} && set -- "$@" rule-params
+  #mkdir -vp ${PROJECT_CACHE:?} >&2 || return
+  #test -e .properties && set -- properties
+  #test -e ${BUILD_RULES:?} && set -- "$@" rule-params
 
   declare r
   build_boot "$@" build-env-cache || r=$?
-  test ${r:-0} -eq ${_E_break:-197} && {
+  [[ ${r:-0} -eq ${_E_break:-197} ]] && {
 
-    test "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE:-}" && {
-      test -z "${BUILD_ENV_CACHES?}" || {
+    [[ "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE:-}" ]] && {
+      [[ -z "${BUILD_ENV_CACHES?}" ]] || {
         build-ifchange ${BUILD_ENV_CACHES//:/ } || return
         echo BUILD_ENV_CACHE[$BUILD_TARGET]: caches: ${BUILD_ENV_CACHES:-} >&2
       }
-      test -z "${ENV_BUILD_ENV?}" || {
+      [[ -z "${ENV_BUILD_ENV?}" ]] || {
         build-ifchange ${ENV_BUILD_ENV//:/ } || return
         echo BUILD_ENV_CACHE[$BUILD_TARGET]: seed: ${ENV_BUILD_ENV:-} >&2
       }
@@ -341,35 +341,8 @@ build_env_build ()
 
   #build_boot default-do-env-default
   #build_boot default-redo-env
-  test -z "${BUILD_ENV:-}" || build_boot $BUILD_ENV || return
+  [[ -z "${BUILD_ENV:-}" ]] || build_boot $BUILD_ENV || return
   return ${r:-0}
-}
-
-# Make every env group declare itself; its requirements, its variables and its
-# functions.
-build_env_declare ()
-{
-  declare tag fun line script
-  while test $# -gt 0
-  do
-    tag=${1:?}
-    env_declared "$tag" || {
-      sh_fun env__define__"${tag//-/_}" || {
-        env_boot=false env_require $tag || return
-      }
-      ! sh_fun env__declare__"${tag//-/_}" || {
-        build_add_handler env__declare__"${tag//-/_}" &&
-        env__declare__"${tag//-/_}" || return
-      }
-      #! sh_fun env__build__"${tag//-/_}" || {
-      #  env__build__"${tag//-/_}" || return
-      #}
-      build_add_handler env__define__"${tag//-/_}" &&
-      env__define__"${tag//-/_}" || return
-      ENV_DEF[$tag]=1
-    }
-    shift
-  done
 }
 
 
@@ -413,8 +386,7 @@ build_env_init ()
 #
 build_env_require ()
 {
-  test -n "${BUILD_ENV_FUN:-}" &&
-  test -n "${BUILD_ENV_DEP:-}"
+  [[ -n "${BUILD_ENV_FUN:-}" && -n "${BUILD_ENV_DEP:-}" ]]
   #test -n "${BUILD_ENV_SRC:-}"
 }
 
@@ -440,7 +412,7 @@ build_env_rule ()
       ;;
   esac
   val=${!var-}
-  test -n "$val" && BUILD_RULE="$val"
+  [[ -n "$val" ]] && BUILD_RULE="$val"
 }
 
 build_env_sh ()
@@ -462,10 +434,10 @@ build_env_sh ()
 build_env_sources ()
 {
   $LOG info ":build-env-sources" "Sourcing function libs..." "${BUILD_TARGET//%/%%}"
-  test "unset" != ${CWD-unset} || declare -l CWD
-  test -n "${BUILD_PATH:-}" || declare -l BUILD_PATH
+  [[ "unset" != ${CWD-unset} ]] || declare -l CWD
+  [[ -n "${BUILD_PATH:-}" ]] || declare -l BUILD_PATH
   true "${CWD:=$PWD}"
-  test "unset" != "${build_source[*]-unset}" || env__define__build_source
+  [[ "unset" != "${build_source[*]-unset}" ]] || env__define__build_source
 
   declare rp
   rp=$(realpath "$0")
@@ -479,12 +451,12 @@ build_env_sources ()
   # Env-Buildpath as env. Standard is to use hard-coded default sequence, and
   # only establish that sequence determined after loading specififed or or
   # local build-lib, the former must exist while the latter is optional.
-  test $# -eq 0 && {
-    ! test -e "$CWD/build-lib.sh" || {
+  [[ $# -eq 0 ]] && {
+    ! [[ -e "$CWD/build-lib.sh" ]] || {
       build_source "$CWD/build-lib.sh" || return
     }
   } || {
-    test -e "$1/build-lib.sh" ||
+    [[ -e "$1/build-lib.sh" ]] ||
       $LOG error :build-env-default "Expected build-lib" "$1" 1 || return
     build_source "$1/build-lib.sh" || return
   }
@@ -494,8 +466,8 @@ build_env_sources ()
   declare -l dir
   for dir in ${BUILD_PATH:?}
   do
-    test "unset" = "${build_source[$dir]-unset}" ||
-    test -e "$dir/build-lib.sh" || continue
+    [[ "unset" = "${build_source[$dir]-unset}" ]] ||
+    [[ -e "$dir/build-lib.sh" ]] || continue
     build_source "$dir/build-lib.sh" || return
     set -- "$@" "$dir"
   done
@@ -503,7 +475,7 @@ build_env_sources ()
 
   # If this script is the entry point, there is no need to load it again.
   # Could make this a lot shorter but want to warn about Build-Entry-Point.
-  { test -n "${BUILD_SCRIPT:-}" &&
+  { [[ -n "${BUILD_SCRIPT:-}" ]] &&
     fnmatch "build*" "${BUILD_SCRIPT:-}"
   } && {
 
@@ -511,7 +483,7 @@ build_env_sources ()
     # however we already added the entry-point script above
     local bl="${U_S:?}/src/sh/lib/build.lib.sh"
     rp=$(realpath "$bl")
-    ! test "unset" = "${build_source[$rp]-unset}" ||
+    ! [[ "unset" = "${build_source[$rp]-unset}" ]] ||
       $LOG warn ":build-env-default" \
         "Expected build.lib entry point but was" "$0" && false
 
@@ -543,7 +515,7 @@ build_fetch_alias_rules () # ~ <Group-Name> <Prerequisites...>
 {
   declare group="$1"
   shift
-  while test $# -gt 0
+  while [[ $# -gt 0 ]]
   do
     echo "$group $1"
     shift
@@ -633,14 +605,14 @@ build_fetch_symlinks_rules () # ~ <Group-Name> <Target-Spec> <Source-Spec>
 # TODO: add TTL impl.
 build_file () # ~ <File-target> <File-source> <TTL> <Command-argv...>
 {
-  test -e "${1:?}" && {
-    test -n "${2:-}" && {
+  [[ -e "${1:?}" ]] && {
+    [[ -n "${2:-}" ]] && {
       # age1 < age2 && return
-      test "$1" -nt "$2" && return
+      [[ "$1" -nt "$2" ]] && return
       # age1 - TTL < age2 && return
       false
     }
-    test -n "${3:-}" && {
+    [[ -n "${3:-}" ]] && {
       # age1 < TTL && return
       false
     }
@@ -699,14 +671,14 @@ build_from_rules () # ~ <Name>
   btf=${BUILD_TARGET//%/%%}
 
   comptab=$(build_rule_fetch "${1:?}") &&
-    test -n "$comptab" || {
+    [[ -n "$comptab" ]] || {
       $LOG error "$lk" "No such symbolic rule" "$btf" ; return 1
     }
 
   declare name="${1:?}" name_ type_ args_ rf
   shift
   read_data name_ type_ args_ <<<"$comptab"
-  test -n "$type_" ||
+  [[ -n "$type_" ]] ||
     $LOG error "$lk" "Empty directive for rule" "symbol=$name" $? || return
   rf=${args_// -- /::}
   rf=${rf/ /:}
@@ -716,9 +688,9 @@ build_from_rules () # ~ <Name>
   set -o noglob; set -- $type_ $args_; set +o noglob
   $LOG debug "$lk" "Building as '$type_:$name_' rule" "($#) $*"
 
-  "${quiet:-false}" || test -n "${BUILD_ID:-}" ||
+  "${quiet:-false}" || [[ -n "${BUILD_ID:-}" ]] ||
     echo "# build:rule: $name_ $type_ ($#) '$args_'"
-  $LOG notice "$lk" "Building rule for target..." "$btf:$type_:$rf"
+  $LOG notice "$lk" "Building rule for target..." "$btf: $type_: rule: ${rf//%/%%}"
   build_target_rule "$@"
 }
 
@@ -753,24 +725,24 @@ build_expand_symbols ()
 
 build_install_parts ()
 {
-  test "${BUILD_RULES_BUILD:-0}" != "0" || {
+  [[ "${BUILD_RULES_BUILD:-0}" != "0" ]] || {
     stderr_ "! Set Build-Rules-Build to auto-install rules"
     return 1
   }
   declare br in
-  test "${BUILD_RULES_BUILD:-0}" = "1" &&
+  [[ "${BUILD_RULES_BUILD:-0}" = "1" ]] &&
     br=${BUILD_RULES:?} || br=${BUILD_RULES_BUILD:?}
-  test -z "${BUILD_TARGET:-}" -o "$br" != "${BUILD_TARGET:-}" || {
+  [[ -z "${BUILD_TARGET:-}" || "$br" != "${BUILD_TARGET:-}" ]] || {
     stderr_ "! Install during build-rules build '$br' '$BUILD_TARGET'"
     return 1
   }
-  test "$br" = "${BUILD_TARGET:-}" && { in=$br; br=$BUILD_TARGET_TMP; }
-  while test $# -gt 0
+  [[ "$br" = "${BUILD_TARGET:-}" ]] && { in=$br; br=$BUILD_TARGET_TMP; }
+  while [[ $# -gt 0 ]]
   do
     grep -qF "${1:?} " "${in:-${br:?}}" || {
       part=$1
       target=$3
-      test -n "$2" -a "${2:0:1}" != "." && cache="$2" ||
+      [[ -n "$2" && "${2:0:1}" != "." ]] && cache="$2" ||
         cache="$(printf '${PROJECT_CACHE:?}/%s' "$1$2")"
       {
         echo "$target expand $cache"
@@ -1266,7 +1238,9 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   #test $# -gt 0 && lk=":fun($#)" || lk=:fun
 
   test "${fref:-"-"}" != "-" || fref="$target"
-  fun=${BUILD_HPREF:-build__}$(build_target_name__function "$fref")
+  fun=$(build_target_name__function "$fref")
+  : "${BUILD_HPREF:-build__}"
+  test "${fun:0:${#_}}" = "$_" || fun=$_$fun
 
   #test "${fun:-"-"}" != "*" ||
   #  fun="build_$(mkvid "$target" && printf -- "$vid")"
@@ -1306,7 +1280,7 @@ build_target__from__compose () # ~ <Composed...>
 build_target__from__compose_names () # ~ <Composed...>
 {
   shift || return "${_E_GAE:-193}"
-  : "${@:?"Expected one or more functions to typeset"}"
+  : "${@:?"Expected one or more functions to declare"}"
   declare fun tp rs r
   for fun in "$@"
   do
@@ -1319,7 +1293,7 @@ build_target__from__compose_names () # ~ <Composed...>
 build_target__from__compose__resolve ()
 {
   # There are myriads of ways to start looking for a function definition,
-  # and also to generate a typeset.
+  # and also to generate a declare.
 
   { tp="$(type -t "${1:?}")" && test "$tp" = "function"
   } || {
@@ -1336,7 +1310,7 @@ build_target__from__compose__resolve ()
       return $r
     }
   }
-  #build_target__from__compose__typeset__${BUILD_COMPO_TGEN:-sh}
+  #build_target__from__compose__declare__${BUILD_COMPO_TGEN:-sh}
   $LOG info "" "Typesetting..." "$1"
   type "$1" | tail -n +2 > "${BUILD_TARGET_TMP:?}" || return
 }
@@ -1390,6 +1364,9 @@ build_target__from__lines_word () # ~ <Nr> <List-refs...>
 #
 build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
 {
+  envd_declare build-parts || return
+  stderr echo env[build-parts]: ${ENV_DEF["build-parts"]-unset}
+
   declare pn=${1:--} part method
   shift
 
@@ -1632,19 +1609,19 @@ build_target__seq__if_dest () # ~ <Symlinks...>  -- <Rule <...>>
   build_target_rule "$@"
 }
 
-# Pseudo-target: depend on certain function typeset. To invalidate without
+# Pseudo-target: depend on certain function declare. To invalidate without
 # having prerequisites of its own, it uses build-always.
 # See if-scr-fun to validate based on specified script source file.
 build_target__seq__if_fun () # ~ <Fun <..>> [ -- <Rule <...>> ]
 {
   build_arr_seq IF_FUN "$@" || return
-  #shellcheck disable=2316 # Var is indeed called 'typeset'
-  declare typeset
-  typeset="$( for fun in "${IF_FUN[@]}"
+  #shellcheck disable=2316 # Var is indeed called 'declare'
+  declare declare
+  declare="$( for fun in "${IF_FUN[@]}"
     do
       declare -f "$fun"
     done )" || return
-  ${BUILD_TOOL:?}-stamp <<< "$typeset"
+  ${BUILD_TOOL:?}-stamp <<< "$declare"
   ${BUILD_TOOL:?}-always
   $LOG info "::if-fun" "Function check done" "${IF_FUN[*]}"
   shift ${#IF_FUN[@]}
@@ -1703,7 +1680,7 @@ build_target__seq__if_lines () # ~ <File <...>> [ -- <Rule <...>> ]
 }
 
 # build-target:* helper for rule part 'if-scr-fun': depend on script file and
-# function typeset.
+# function declare.
 #
 # This allows to assemble recipes that stamp certain function definitions.
 # It does compine two sequence handlers into one, see if-scr and if-fun.
@@ -1726,13 +1703,13 @@ build_target__seq__if_scr_fun () # ~ <Script> <Fun <...>> [ -- <Rule <...>> ]
   build-ifchange :if-lines:"$script" || return
   shift
   build_arr_seq IF_FUN "$@" || return
-  #shellcheck disable=2316 # Var is indeed called 'typeset'
-  declare typeset
-  typeset="$( for fun in "${IF_FUN[@]}"
+  #shellcheck disable=2316 # Var is indeed called 'declare'
+  declare declare
+  declare="$( for fun in "${IF_FUN[@]}"
     do
       declare -f "$fun"
     done )" || return
-  ${BUILD_TOOL:?}-stamp <<< "$typeset"
+  ${BUILD_TOOL:?}-stamp <<< "$declare"
   $LOG info ::if-scr-fun "Script function check done" "$script:${IF_FUN[*]}"
   ! args_is_seq "$@" && return
   shift
@@ -2181,7 +2158,7 @@ build_target_lookup_methods ()
 {
   declare target=${1:?} deco_re
   lib_require match &&
-  deco_re=$(match_re_argsor ${!BUILD_TARGET_DECO[*]}) || return
+  deco_re=$(match_re_argsor "${!BUILD_TARGET_DECO[@]}") || return
   [[ "${target:0:1}" =~ ^$deco_re$ ]] && {
     echo ${BUILD_TARGET_DECO[${target:0:1}]:?"Expected for '$target' because '$deco_re'"}
   } ||
@@ -2307,28 +2284,6 @@ build_which__special ()
 }
 
 
-## Env parts
-
-. "${U_S:?}/tools/sh/parts/build-r0-0.sh"
-
-
-## Build-info action/frontend handlers
-#
-. "${U_S:?}/tools/build/parts/build-info.sh"
-
-
-## Misc. build parts
-
-# XXX: some old, mostly copies to-be compiled into final build.lib or prereqs
-# elsewhere
-
-. "${US_BIN:=$HOME/bin}/args.lib.sh"
-
-. "${U_S:?}/tools/sh/parts/fnmatch.sh"
-. "${U_S:?}/tools/sh/parts/str-id.sh"
-. "${U_S:?}/tools/sh/parts/sh-mode.sh"
-
-
 properties_sh ()
 {
   grep -Ev '^\s*(#.*|\s*)$' "$@" |
@@ -2355,61 +2310,6 @@ expand_format () # ~ <Format> <Name-Parts>
     esac
   done
 }
-
-
-env_defined ()
-{
-  test "unset" != "${ENV_DEF[${1:?}]-unset}"
-}
-
-env_declared ()
-{
-  env_defined "${1:?}" && test "1" -eq "${ENV_DEF[${1:?}]}"
-}
-
-env_included ()
-{
-  test "unset" != "${ENV_PART[${1:?}]-unset}"
-}
-
-env_require ()
-{
-  set -- $( while test $# -gt 0
-      do
-        env_declared "${1:?}" || echo "$1"
-        shift
-      done )
-  test $# -eq 0 && return
-
-  ${env_boot:-false} && {
-    $LOG debug :env-require "Pending env" "$*"
-    ENV_PENDING="$@"
-    return ${_E_pending:-198}
-  }
-  $LOG debug :env-require "Requiring env" "$*"
-  declare pen
-
-  for pen in "$@"
-  do
-    $LOG info ":env-require" "Looking for pending env part" "$pen"
-    ENV_PART[$pen]=$(sh_path=${ENV_PATH:?} any=true sh_lookup $pen ) || {
-        $LOG error :env-require "Unable to locate '$pen'" "E$?:${ENV_PATH:-}"
-        return 1
-      }
-  done
-  sh_source $(for pen in "$@"; do echo "${ENV_PART[$pen]}"; done) || {
-    $LOG error :env-require "Unexpected error sourcing '$*'" E$?
-    return 1
-  }
-  for pen in "$@"
-  do
-    sh_fun env__define__"${pen//-/_}" && continue
-    # XXX: parts declare
-    eval "env__define__${pen//-/_} () { :; }"
-    #type "env__define__${pen//-/_}" >&2
-  done
-}
-
 
 find_executables ()
 {
@@ -2617,15 +2517,6 @@ sh_lookup () # ~ <Paths...> # Lookup paths at PATH.
 sh_null ()
 {
   "$@" >/dev/null
-}
-
-sh_source ()
-{
-  while test $# -gt 0
-  do
-    source "${1:?}" || return
-    shift
-  done
 }
 
 sh_type_clear () # [exectype] ~ <Sym>
@@ -2957,9 +2848,6 @@ build_ () # ~ <Build-action> <Argv <...>>
   declare BUILD_ACTION=${1:-${BUILD_ACTION:?}} build_action_handler r
   test $# -eq 0 || shift
 
-  # FIXME:
-  lib_load std-uc
-
   # build-* handlers override exists else defer execution to build_<action>
   build_action_handler=build-"$BUILD_ACTION"
   sh_fun "$build_action_handler" && {
@@ -2967,27 +2855,27 @@ build_ () # ~ <Build-action> <Argv <...>>
     return
   }
 
-  declare ret
-  build_boot ${BUILD_BOOT-env-path log-key build-action} || { ret=$?
-      test $ret -eq ${_E_break:-197} && exit
+  build_boot ${BUILD_BOOT-env-path log-key build-action} || {
+      test ${_E_break:-197} -eq $? && exit
       $LOG error ":[${BUILD_TARGET//%/%%}]" "Failed bootstrapping" \
-        "E$ret:action=${BUILD_ACTION:?}"
-      return $ret
+        "E$_:action=${BUILD_ACTION:?}" $_ || return
     }
   declare -a ENV_BOOT=( "${!ENV_DEF[@]}" )
   $LOG info "" "@@@ Bootstrap for '${BUILD_ACTION:?}' done" "${ENV_BOOT[*]}"
 
   build_action_handler=build_$(build_target_name__function "${BUILD_ACTION:?}")
-  sh_fun "$build_action_handler" || { ret=$?
-    $LOG error "" "No such entrypoint" "$build_action_handler" $ret
-    exit $ret
+  sh_fun "$build_action_handler" || {
+    $LOG error "" "No such entrypoint" "$_" $?
+    exit $_
   }
   $LOG debug "" "Ready for script '$BUILD_ACTION'" "$*"
 
   # Execute build-action
 
+  declare ret
   "${build_action_handler}" "$@" || ret=$?
-  $LOG debug "" "Finished script '$BUILD_ACTION'" "E${ret:-0}:$*"
+  : "$*"
+  $LOG debug "" "Finished script '$BUILD_ACTION'" "E${ret:-0}:${_//%/%%}"
 
   test ${ret:-0} -eq ${_E_break:-197} && exit
   #stderr echo "build_ returns.. ${ret:-0}: $BUILD_SCRIPT"
@@ -2998,6 +2886,35 @@ test -n "${lib_loading-}" || {
 
   # Safe script's entry point name as BUILD_SCRIPT, or re-use SCRIPTNAME
   BUILD_SCRIPT=${SCRIPTNAME:-$(basename "$(basename -- "$0" .lib.sh )" .sh)}
+  BUILD_BASE=$PWD
+  BUILD_TOOL=build
+
+  ## Env parts
+
+  . "${U_S:?}/tools/sh/parts/build-r0-0.sh"
+
+  ## Build-info action/frontend handlers
+
+  . "${U_S:?}/tools/build/parts/build-info.sh"
+
+  # XXX: make this part of boot
+  #test ! -e "$PWD/.build-env.sh" || . "$_"
+
+  ## Misc. build parts
+
+  # XXX: some old, mostly copies to-be compiled into final build.lib or prereqs
+  # elsewhere
+
+  #. "${US_BIN:=$HOME/bin}/args.lib.sh"
+  #. "${U_S:?}/tools/sh/parts/fnmatch.sh"
+  #. "${U_S:?}/tools/sh/parts/str-id.sh"
+  #. "${U_S:?}/tools/sh/parts/sh-mode.sh"
+
+  #lib_load os sys envd || return
+  lib_load build std-uc envd
+
+  envd_loadenv
+
   case "$BUILD_SCRIPT" in
 
     ( "build-" )
@@ -3016,19 +2933,20 @@ test -n "${lib_loading-}" || {
   # XXX: most scripts should not return to root,
   $LOG info :build.lib:main "Returned to root (E$?)" "$BUILD_SCRIPT"
 
-  case "$BUILD_SCRIPT" in
-    ( build-|build-*|build )
-        $LOG notice :build.lib:main "Main returned OK, continueing root script" "$BUILD_SCRIPT"
-      ;;
+  # XXX: load debug
+  #case "$BUILD_SCRIPT" in
+  #  ( build-|build-*|build|${BUILD_TOOL:?} )
+  #      $LOG notice :build.lib:main "Main returned OK, continuing root script" "$BUILD_SCRIPT"
+  #    ;;
 
-    ( "-"* )
-        $LOG notice :build.lib:main "Ignored script command" "$BUILD_SCRIPT"
-      ;;
+  #  ( "-"* )
+  #      $LOG notice :build.lib:main "Ignored script command" "$BUILD_SCRIPT"
+  #    ;;
 
-    ( * )
-        $LOG notice :build.lib:main "Unknown script command" "$BUILD_SCRIPT"
-      ;;
-  esac
+  #  ( * )
+  #      $LOG notice :build.lib:main "Unknown script command" "$BUILD_SCRIPT"
+  #    ;;
+  #esac
 }
 
 # Id: Users-Scripts/0.0.2-dev  build.lib.sh  [2018-2022; 2018-11-18]

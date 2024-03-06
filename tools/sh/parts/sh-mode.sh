@@ -57,7 +57,9 @@ sh_mode ()
 
           ( dev )
                 sh_fun stderr || stderr () { "$@" >&2; }
-                stderr echo "Development mode enabled"
+                test -n "${LOG-}" &&
+                  $LOG info :sh-mode@dev "Development mode enabled" ||
+                  stderr echo "Development mode enabled"
                 test -n "${U_S:-}" && {
                   sh_mode dev-us
                   return
