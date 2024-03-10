@@ -11,10 +11,10 @@ envd_lib__load ()
 
 envd_lib__init ()
 {
-  declare -ga ENVD_{D,PATHA,SLICEA} &&
   declare -g ENVD_{PATH,SLICE} &&
+  declare -ga ENVD_{D,PATHA,SLICEA} &&
   declare -gA \
-    ENVD_{DEF,DEP,FUN,HOOK,PART,SRC,TYPE,VAR} \
+    ENVD_{DECL,DEF,DEP,FUN,HOOK,PART,TYPE,VAR} \
     LIB_{PRE,DEP} &&
   # Expose type array so (user) scripts can check for presence of env mngmnt
   declare -n \
@@ -23,7 +23,7 @@ envd_lib__init ()
   #  str.lib/str-word os.lib/filter-args sys.lib/source-all sys.lib/var-assert
   envd_dtype envd.lib lib - - - \
     --vars \
-      ENVD_{DEF,DEP,FUN,HOOK,PART,SRC,TYPE,VAR} \
+      ENVD_{DEF,DEP,FUN,HOOK,PART,TYPE,VAR} \
       LIB_{PRE,DEP} \
     --funs \
       envd_restart envd_boot envd_require filter_args envd_declared \
@@ -36,13 +36,13 @@ envd_lib__init ()
 # TODO: set TYPE
 envd__update__us_def ()
 {
-  declare -ga us_def
+  declare -ga US_DEF
   local base
-  for base in $ENVD_BASES
+  for base in ${ENVD_BASES:?}
   do
     # List all functions with prefix
     if_ok "$(compgen -A function ${base:?}__define__)" &&
-    <<< "$_" mapfile -O ${#us_def[*]} -t us_def || continue
+    <<< "$_" mapfile -O ${#US_DEF[*]} -t US_DEF || continue
   done
 }
 
@@ -183,45 +183,80 @@ envd_declare () # ~ <Type-ref> <Preload-lib> <Postinit-lib> <Envd-dep> <declares
   }
 }
 
-envd_declared ()
+envd_declare__funs () # ~ <Funs...>
 {
-  [[ "unset" != "${ENVD_TYPE["${1:?}"]-unset}" ]]
+  sys_default "ENVD_FUN[${ENVD_TAG:?}]" "" &&
+  str_append "ENVD_FUN[${ENVD_TAG:?}]" "$*"
 }
 
-# Make every env part define itself and its context
+envd_declare__vars () # ~ <Vars...>
+{
+  sys_default "ENVD_VAR[${ENVD_TAG:?}]" "" &&
+  #: "${ENVD_VAR[@]?"$(sys_exc exc Exception)"}"
+  str_append "ENVD_VAR[${ENVD_TAG:?}]" "$*"
+}
+
+envd_declared ()
+{
+  [[ "${ENVD_TYPE["${1:?}"]:+ne}" ]]
+}
+
+# Make every env part define everything about itself and its context
 envd_define ()
 {
   declare lk=${lk-}:env-declare
   declare ENVD_{REF,T{AG,WORD}}
   for ENVD_REF
   do
+    # Filter refs from normal tags
     [[ "$ENVD_REF" =~ ^[a-z0-9][a-z0-9-]+[a-z0-9]$ ]] || {
+
+      # Reference is not a single tag but path
       [[ "$ENVD_REF" =~ \/ ]] && {
-        envd_defined "${ENVD_REF##*/}" && continue
-        #envd_define_from_path "${ENVD_REF#/*}" || return
-        stderr echo ENVD_TAG=${ENVD_REF##*/} envd_require "${ENVD_REF%/*}"
-        ENVD_TAG=${ENVD_REF##*/} envd_require "${ENVD_REF%/*}" || return
+        envd_define__pathref "$ENVD_REF" || return
         continue
       }
+
+      # Reference is not a tag or path but has type extension(s)
+      [[ "$ENVD_REF" =~ \. ]] && {
+        envd_define__as__"${ENVD_REF##*.}" "${ENVD_REF%.*}" || return
+        continue
+      }
+
       $LOG alert "$lk" "Unrecognized env part reference" "$ENVD_REF"
       return ${_E_script:-2}
     }
+
+    # Process ref as normal tag
     ENVD_TAG=$ENVD_REF
     envd_defined "$ENVD_TAG" || {
 
+      ENVD_TWORD="${ENVD_TAG//[^A-Za-z0-9_]/_}"
+      declare -n \
+        envd_def=ENVD_DEF["$ENVD_TAG"] \
+        envd_part=ENVD_PART["$ENVD_TAG"] \
+        envd_decl=ENVD_DECL["$ENVD_TAG"]
+
       #! envd_declared "$ENVD_TAG" || {
+
       #  envd_handle define "$ENVD_TAG" || return
       #  continue
       #}
 
+      # Handle definition for unknown part name
+
       envd_loaded "$ENVD_TAG" || {
-        envd_load "$ENVD_TAG" || return
+        envd_load "$ENVD_TAG" ||
+          $LOG error :envd-load "Failed" "E$?:$ENVD_TAG" $? || return
       }
 
-      ENVD_TWORD="${ENVD_TAG//[^A-Za-z0-9_]/_}"
-      declare -n envd_def=ENVD_DEF["$ENVD_TAG"]
+      #sh_fun "$ENVD_TWORD" && {
+      #  envd_declare envd.fun
+      #  envd_def=$?
+      #} || {
       env__define__"$ENVD_TWORD"
       envd_def=$?
+      #}
       ! "${DEBUG:-false}" ||
         [[ $envd_def -eq 0 ]] &&
           $LOG debug "$lk" "Declared" "$ENVD_TAG" ||
@@ -231,16 +266,37 @@ envd_define ()
   done
 }
 
-envd_defined ()
+envd_define__as__fun ()
 {
-  set -- "${1:?}" "${ENVD_DEF["${1:?}"]-unset}" &&
-  [[ "unset" != "$2" ]] &&
-  [[ 0 -eq "$2" ]]
+  false
 }
 
-envd_declare__funs () # ~ <Funs...>
+envd_define__as__group ()
 {
-  str_append "ENVD_FUN[${ENVD_TAG:?}]" "$*"
+  false
+}
+
+envd_define__as__part ()
+{
+  false
+}
+
+envd_define__as__var ()
+{
+  false
+}
+
+envd_define__pathref ()
+{
+  envd_defined "${1##*/}" && return
+  #envd_define_from_path "${1#/*}" || return
+  stderr echo ENVD_TAG=${1##*/} envd_require "${1%/*}"
+  ENVD_TAG=${1##*/} envd_require "${1%/*}"
+}
+
+envd_defined ()
+{
+  [[ "${ENVD_DEF["${1:?}"]:+set}" && 0 -eq "${ENVD_DEF["${1:?}"]}" ]]
 }
 
 envd_dtype ()
@@ -259,11 +315,6 @@ envd_dump ()
   declare -f ${ENVD_FUN[*]}
 }
 
-envd_declare__vars () # ~ <Vars...>
-{
-  str_append "ENVD_VAR[${ENVD_TAG:?}]" "$*"
-}
-
 envd_export ()
 {
   declare -x ${ENVD_VAR[*]}
@@ -279,22 +330,23 @@ envd_export ()
 envd_load ()
 {
   $LOG debug :env-load "Looking for part filess" "$*"
-  declare ENVD_PART ENVD_SRC ENVD_oldPATH=$PATH
-  export PATH=$ENVD_PATH:$ENVD_oldPATH
-  for ENVD_PART
+  declare ENVD_NAME ENVD_SRC ENVD_oldPATH=$PATH
+  [[ -z "${ENVD_PATH+set}" ]] || export PATH=$ENVD_PATH:$ENVD_oldPATH
+  #[[ "${ENVD_PATH+set}" ]] && export PATH=$ENVD_PATH:$ENVD_oldPATH
+  for ENVD_NAME
   do
-    $LOG info ":env-require" "Looking for pending env part" "$ENVD_PART"
-    envd_lookup ENVD_SRC "$ENVD_PART" &&
-    ENVD_PART["$ENVD_PART"]=$ENVD_SRC &&
-    sys_var_assert ENVD_TYPE["$ENVD_PART"] ||
-        $LOG error :env-require "Unable to locate '$ENVD_PART'" \
+    $LOG info ":env-require" "Looking for pending env part" "$ENVD_NAME"
+    envd_lookup ENVD_SRC "$ENVD_NAME" &&
+    ENVD_PART["$ENVD_NAME"]=$ENVD_SRC &&
+    sys_default ENVD_TYPE["$ENVD_NAME"] "" ||
+        $LOG error :env-require "Unable to locate '$ENVD_NAME'" \
             "E$?:${ENVD_PATH:-}" $? || return
   done
-  source_all $(for ENVD_PART; do echo "${ENVD_PART[$ENVD_PART]}"; done) || {
+  source_all $(for ENVD_NAME; do echo "${ENVD_PART[$ENVD_NAME]}"; done) || {
     $LOG error :env-require "Unexpected error sourcing '$*'" E$?
     return 1
   }
-  export PATH=$ENVD_oldPATH
+  [[ -z "${ENVD_PATH+set}" ]] || export PATH=$ENVD_oldPATH
 }
 
 envd_load_if ()
@@ -314,32 +366,49 @@ envd_loaded ()
 # Recover envd session from environment.
 envd_loadenv () # ~
 {
-  ENVD_TYPE["us-def"]="env.arr.envd"
-  ENVD_TYPE["envd-var-update"]="var.assoc.envd"
+  #: "${ENVD_PART[@]?"$(sys_exc envd:loadenv "Lib not initialized")"}"
+  ENVD_PART["us-def"]="env.arr.envd"
+  ENVD_PART["envd-var-update"]="var.assoc.envd"
+
+  # var.envd
+  # group.envd
+  # fun.envd
+  # define.envd
+  # declare.envd
 
   #ENVD_VAR_UPDATE["us-def"]
   # Look at existing declarations; definition functions, updatable variables
   envd_var_update us-def envd &&
-  envd_var_update envd-var-update envd
-  return
+  envd_var_update envd-var-update envd || return
 
-  declare pn pw pf fn
-  for pn in "${US_DEF[@]}_"
-  do
-    pw="${pn:13}"
-    pw="${pw//_/-}"
-    [[ "empty" != "${ENVD_TYPE["$pw"]:-empty}" ]] && continue
-    read -r _ _ pf <<< "$(declare -F "$pn")"
-    ENVD_PART["$pw"]=$pf
-    ENVD_TYPE["$pw"]=define
-  done
+  #stderr declare -p US_DEF envd_var_update
+
+  #declare pn pw pf fn
+  #for pn in "${US_DEF[@]}_"
+  #do
+  #  pw="${pn:13}"
+  #  pw="${pw//_/-}"
+  #  stderr echo "pw:$pw pn:$pn"
+  #  [[ "set" = "${ENVD_TYPE["$pw"]+set}" ]] && continue
+  #  read -r _ _ pf <<< "$(declare -F "$pn")"
+  #  ENVD_PART["$pw"]=$pf
+  #  ENVD_TYPE["$pw"]=define
+  #done
   if_ok "$(compgen -A function)" &&
   for fn in $_
   do
-    pn=${fn//_/-}
-    sys_var_assert ENVD_PART["$pn"]
+    pn=${fn//__/\/}
+    pn=${pn//_/-}
+    rpn=${pn##*/}
+    pt=${pn%/*}
+    pt=$(str_join . $(argvr ${pt//\// }))
+
+    if [[ $pt = "$rpn" ]]
+    then
+      pt=fun.envd
+    fi
+    sys_assert ENVD_PART["$rpn"] $pt
   done
-  true
 }
 
 envd_lookup () # ~ <Var> <Name>
@@ -382,7 +451,6 @@ envd_require () # ~ <Names...>
     return ${_E_retry:-198}
   }
   $LOG debug :env-require "Declaring" "$*"
-  #envd_load "$@" &&
   envd_define "$@"
 }
 
@@ -415,7 +483,7 @@ envd_var_update () # ~ <Name> [<Bases..>]
 {
   local id
   id=${1:?"$(sys_exc envd:var-update:id@_1 "Name for type expected")"}
-  declare -n type=ENVD_TYPE["$id"]
+  declare -n type=ENVD_PART["$id"]
   [[ "set" = ${type+set} ]] &&
   wid=$(str_word "$id") &&
     # XXX:

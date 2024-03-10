@@ -281,10 +281,16 @@ date_iso() # Ts [date|hours|minutes|seconds|ns]
   }
 }
 
+date_epoch_ms ()
+{
+  date_ "${1-"now"}" +"%s.%N"
+}
+
 # Print fractional seconds since Unix epoch
 epoch_microtime () # [Date-Ref=now]
 {
-  date_ "${1-"now"}" +"%s.%N"
+  stderr echo "Deprecated: epoch-microtime: $(caller 1)"
+  date_epoch_ms "$@"
 }
 
 date_microtime ()

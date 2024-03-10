@@ -13,6 +13,17 @@ math_lib__init ()
   # not actually doing anything. And it needs to exclude this call from that.
 }
 
+calc_float () # ~ <Expr> [<fpp=3>]
+{
+  local f
+  f="$(echo "scale=${2:-3}; $1" | bc)" || return
+
+  [[ "${f:0:2}" != "-." ]] && {
+    [[ "${f:0:1}" != "." ]] && : "$f" || : "0$f"
+  } || : "-0${f:1}"
+  echo "$_"
+}
+
 # Calculate average value of several numeric samples from command output. By
 # default the number must be an integer, and a floating point part is simply
 # stripped before summing and averaging. Set sample_float=true to calculate

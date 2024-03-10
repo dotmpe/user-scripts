@@ -54,6 +54,18 @@ str_vawords () # ~ <Variables...> # Transform strings to words
   done
 }
 
+# A tag? See URL/URN RFC's as well...
+str_tag () # <String> # Transform string to tag
+{
+  echo "${1//[^A-Za-z0-9%+-]/-}"
+}
+
+str_vtag () # <Var> <String> # Transform string to tag
+{
+  declare -n v=${1:?}
+  v="${v//[^A-Za-z0-9%+-]/-}"
+}
+
 str_vword () # ~ <Variable> # Transform string to word
 {
   declare -n v=${1:?}
@@ -259,18 +271,14 @@ str_globstripcr () # ~ <Str> [<Glob-c>]
 
 str_indent () # (s) ~ [<Indentation>]
 {
-  local str indent=${1:-  }
-  while read -r str
-  do echo "${indent}${str}"
-  done
+  str_prefix "${1:-  }"
 }
 
 # Combine all Strings, using Concat as separation string. Concat or any string
 # can be left empty (an empty concat or string will be concatenated).
 str_join () # ~ <Concat> <Strings...>
 {
-  declare c=${1?} s=${2-} && shift 2 &&
-  : "$s" &&
+  declare c=${1?} s=${2-} && shift 2 && : "$s" &&
   for s
   do : "$_$c$s"
   done &&
@@ -286,6 +294,14 @@ str_nejoin () # ~ <Concat> <Strings...>
   do : "${_:+$_${s:+$c}}$s"
   done &&
   echo "$_"
+}
+
+str_prefix () # (s) ~ <Prefix-str>
+{
+  local str prefix=${1:?}
+  while read -r str
+  do echo "${prefix}${str}"
+  done
 }
 
 str_quote ()

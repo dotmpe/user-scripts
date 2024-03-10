@@ -373,7 +373,8 @@ fileisext() # Name Exts..
 # Use `stat` to get modification time (in epoch seconds)
 filemtime() # File
 {
-  local flags=- ; file_stat_flags
+  local flags=
+  file_stat_flags
   while [[ $# -gt 0 ]]
   do
     case "${uname,,}" in
@@ -424,7 +425,8 @@ filenamext () # ~ <Name..>
 # Use `stat` to get size in bytes
 filesize () # File
 {
-  local flags=- ; file_stat_flags
+  local flags=
+  file_stat_flags
   while [[ $# -gt 0 ]]
   do
     case "${uname,,}" in

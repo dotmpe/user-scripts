@@ -386,8 +386,12 @@ env__define__build_source ()
   #declare -ga build_source_
 }
 
+#
 env__define__env_path ()
 {
+  stderr trap
+  stderr sys_callers 1
+
   test -n "${ENV_PATH-}" || {
     ENV_PATH=tools/sh/parts
     sh_exts=.sh
@@ -419,7 +423,7 @@ env__define__from_dist ()
   envd_declare - build - - &&
   source "${U_S:?}/tools/sh/build-env-defaults.sh" &&
   #  --settings \
-  envd_dvar \
+  envd_declare__vars \
     BUILD_DECO_NAMES BUILD_TARGET_DECO BUILD_TARGET_ALIAS \
     BUILD_NS_DIR BUILD_SPECIAL_RE BUILD_VIRTUAL_RE BUILD_NS BUILD_NS_ \
     PROJECT_CACHE BUILD_RULES BUILD_RULES_BUILD \

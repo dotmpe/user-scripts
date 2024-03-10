@@ -587,6 +587,17 @@ std_utf8_en()
     export LC_ALL=
 }
 
+stderr ()
+{
+  "$@" >&2
+}
+
+# stderr-format-line-from-env
+stderr_lfmtv () # ~ <String-expression> <Var-names...>
+{
+  sys_fmtv "$1\n" "${@:2}" >&2
+}
+
 stdin_first () # (s) ~ <Var> <Test...>
 {
   test 1 -le $# || return ${_E_MA:?}
@@ -625,7 +636,9 @@ assoc_from_env () # ~ <Array> <Vars...>
   do arr["${!var}"]=$var
   done
 }
+# XXX: sys-argv-assoc
 
+# system-array-from-command
 # Read stdout of given command into array, if command returns zero status.
 sys_arr () # ~ <Array> <Cmd...> # Read stdout (lines) into array
 {
@@ -633,6 +646,17 @@ sys_arr () # ~ <Array> <Cmd...> # Read stdout (lines) into array
   <<< "$_" mapfile ${mapfile_f:--t} "${1:?}"
 }
 
+# system-array-from-variable-values
+sys_arrv () # ~ <Array-name> <Var-names...>
+{
+  local var
+  declare -n values=${1:?}
+  for var in "${@:2}"
+  do values+=( "${!var-}" )
+  done
+}
+
+# system-array-default
 # XXX:
 sys_arr_def () # ~ <Var-name> <Defaults...>
 {
@@ -664,6 +688,17 @@ sys_assert_nz () # ~ <Var-name> <Value> ...
   ref="${ref:-${2:?"$(sys_exc sys:assert-nz "Non-empty value expected")"}}"
 }
 
+# XXX: new function: ignore last status if test succeeds, or return it
+sys_astat ()
+{
+  local stat=$?
+  while [[ $# -gt 0 ]]
+  do
+    test $stat "$1" "$2" || return $stat
+    shift 2
+  done
+}
+
 # Return function call stack
 sys_callers () # ~ [<Frame>]
 {
@@ -693,9 +728,9 @@ sys_cd () # ~ <Dir> <Cmd...>
 # command name can never contain spaces.
 sys_cmd_apop () # ~ <Offset> <Cmd> [ <Arguments...> ]
 {
-  local o=${1:?"$(sys_exc sys.lib:cmd-apop:offset@_1 "Offset expected")"}
+  local o=${1:?"$(sys_exc sys.lib:cmd-apop~offset "Offset expected")"}
   [[ $o -ge 1 ]] || return 2
-  "${@:1:$o}" "${*:$(( o + 1 ))}"
+  "${@:2:$o}" "${*:$(( o + 2 ))}"
 }
 
 # Execute commands from arguments in sequence, reading into array one segment at
@@ -741,6 +776,14 @@ sys_default () # ~ <Name> <Value> ...
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
 
+# system-fromat-from-variables
+sys_fmtv () # ~ <String-expression> <Var-names...>
+{
+  declare vars=()
+  sys_arrv vars "${@:2}" &&
+  printf "${1:?}" "${vars[@]}"
+}
+
 # A helper for inside ${var?...} expressions
 sys_exc () # Format exception-id and message
 {
@@ -770,6 +813,28 @@ sys_eval_seq () # ~ <script...> [ -- <script...> ]
       break
     cmd=()
   done
+}
+
+sys_join () # ~ <Concat> <Array>
+{
+  declare -n __arr=${2:?} &&
+  declare _i_ __c=${1?} &&
+  : "" &&
+  for _i_ in "${!__arr[@]}"
+  do : "$_${_:+$__c}${__arr[_i_]}"
+  done &&
+  echo "$_"
+}
+
+sys_nejoin () # ~ <Concat> <Array>
+{
+  declare -n __arr=${2:?} &&
+  declare _i_ __c=${1?} &&
+  : "" &&
+  for _i_ in "${!__arr[@]}"
+  do : "${_:+$_${__arr[_i_]:+$__c}}${__arr[_i_]}"
+  done &&
+  echo "$_"
 }
 
 #
@@ -834,6 +899,15 @@ sys_paths_maxdepth ()
   echo $maxdepth
 }
 
+sys_prefix () # ~ <Prefix> <File>
+{
+  local tmpfile
+  tmpfile=$(mktemp) &&
+  cp "${2:?}" "$tmpfile" &&
+  < "$tmpfile" str_prefix "${1:?}" >| "${2:?}" &&
+  rm "$tmpfile"
+}
+
 # sys-prompt PROMPT [VAR=choice_confirm]
 sys_prompt()
 {
@@ -848,6 +922,16 @@ sys_get ()
 {
   : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
   echo "${!_:?}"
+}
+
+sys_rarr () # ~ <Arr-from> <Arr-to>
+{
+  declare -n __from=${1:?} __to=${2:?}
+  local _i_
+  for (( _i_=$(( ${#__from[@]} - 1 )); _i_>=0; _i_-- ))
+  do
+    __to+=( "${__from[$_i_]}" )
+  done
 }
 
 # Set variable to value, creates new global variable if name is undeclared.
@@ -869,15 +953,9 @@ sys_set_ne () # ~ <Var-name> <Value> ...
   ref=$val
 }
 
-# XXX: new function: ignore last status if test succeeds, or return it
 sys_stat ()
 {
-  local stat=$?
-  while [[ $# -gt 0 ]]
-  do
-    test $stat "$1" "$2" || return $stat
-    shift 2
-  done
+  return ${1:-$?}
 }
 
 # Check for RAM-fs or regular temporary directory, or set to given
@@ -924,6 +1002,7 @@ source_all ()
 {
   while [[ $# -gt 0 ]]
   do . "${1:?}" || return
+    shift
   done
 }
 

@@ -33,15 +33,10 @@ build_lib__load ()
 
 build_lib__init () # ~
 {
-  #shellcheck disable=2086
-  # build_env_reset
   build_env_init &&
   #build_boot ${BUILD_ENV:?Missing build env boot load arguments} || return
-
   #env__define__from_package || return
-
-  #lib_require args date match "$BUILD_TOOL" || return
-
+  lib_require args date match "$BUILD_TOOL" || return
   build_define_commands || return
 
   #build_init env_lookup components
@@ -65,7 +60,7 @@ build_actions ()
 {
   declare var=${BUILD_TOOL:?}_commands
   [[ -n "${!var-}" ]] || {
-    $LOG error "" "No build tool actions" "$BUILD_TOOL" 1
+    $LOG error "" "No build tool actions" "$BUILD_TOOL:var=$var" 1
     return
   }
   echo "${!var-}"
@@ -2474,7 +2469,13 @@ sh_fun_type ()
 }
 
 sh_lookup () # ~ <Paths...> # Lookup paths at PATH.
-# Regular source or command do not look up paths, only declare (base) names.
+# Regular source or command do not look up paths, only (base) names. This
+# is a multipurpose helper to retrieve a list of paths on PATH or other lookup.
+# Normally it returns on first match
+# first=true # Wether to try all paths or return on first existing
+# none=false # Wether to accept no results
+# any=false  # Wether to try all basedirs
+# every=true # XXX: status
 {
   declare n e bd found foundany sh_path=${sh_path:-} sh_path_var=${sh_path_var:-PATH}
 
@@ -2858,7 +2859,7 @@ build_ () # ~ <Build-action> <Argv <...>>
   build_boot ${BUILD_BOOT-env-path log-key build-action} || {
       test ${_E_break:-197} -eq $? && exit
       $LOG error ":[${BUILD_TARGET//%/%%}]" "Failed bootstrapping" \
-        "E$_:action=${BUILD_ACTION:?}" $_ || return
+        "E$_:action=${BUILD_ACTION:?}:parts=${BUILD_BOOT-default}" $_ || return
     }
   declare -a ENV_BOOT=( "${!ENV_DEF[@]}" )
   $LOG info "" "@@@ Bootstrap for '${BUILD_ACTION:?}' done" "${ENV_BOOT[*]}"
@@ -2889,6 +2890,13 @@ test -n "${lib_loading-}" || {
   BUILD_BASE=$PWD
   BUILD_TOOL=build
 
+  set -eETuo pipefail
+  shopt -s extdebug
+  #lib_require bash-uc
+  #trap 'bash_uc_errexit' ERR
+  lib_require sys
+  trap 'sys_exc_trc Bash error 1' ERR EXIT
+
   ## Env parts
 
   . "${U_S:?}/tools/sh/parts/build-r0-0.sh"
@@ -2911,9 +2919,9 @@ test -n "${lib_loading-}" || {
   #. "${U_S:?}/tools/sh/parts/sh-mode.sh"
 
   #lib_load os sys envd || return
-  lib_load build std-uc envd
-
-  envd_loadenv
+  #lib_load build std-uc envd &&
+  #lib_init build std-uc envd
+  lib_require build std-uc envd
 
   case "$BUILD_SCRIPT" in
 
