@@ -4,6 +4,36 @@ assert_lib__load ()
 }
 
 
+assert () # ~ <Test args...> [ -- <Argv> ]
+{
+  [[ true = "${VERBOSE:-${DEBUG:-false}}" ]] && {
+
+    assert_${1:?} "${@:2}"
+    return
+  } ||
+    os_${1:?} "${@:2}"
+}
+
+# XXX: helper for verbose arguments-count-check, but doesnt provide feedback
+# on actual received arguments by itself
+assert_argc () # ~ <Expected> <Actual> ...
+{
+  declare lk=${lk:-}:assert-argc
+  : "${1:?$lk: Expected argument count expected}"
+  : "${2:?$lk: Actual argument count expected}"
+  [[ $2 -eq $1 ]] || {
+    [[ $2 -eq 0 ]] && {
+      $LOG warn "$lk" "No arguments, expected $1" "" ${_E_MA:?}
+      return
+    } ||
+      [[ $2 -lt 0 ]] && {
+        $LOG warn "$lk" "Missing arguments" "$2/$1" ${_E_GAE:?}
+        return
+      } ||
+        $LOG warn "$lk" "Surpluss arguments" "$2>$1" ${_E_GAE:?}
+  }
+}
+
 assert_isblock () # ~ <Name>
 {
   declare lk=${lk:-}:assert-isblock
@@ -51,5 +81,6 @@ assert_ispath () # ~ <Name>
   os_ispath "$_" ||
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
+# alias: test-exists
 
 #

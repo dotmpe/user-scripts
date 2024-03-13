@@ -1074,6 +1074,13 @@ sort_mtimes ()
   act=filemtime foreach_addcol "$@" | sort -r -k 2 | cut -f 1
 }
 
+os_argc () # ~ <Expected> <Actual> ...
+{
+  [[ $2 -eq $1 ]] || {
+    [[ $2 -eq 0 ]] && return ${_E_MA:?} || return ${_E_GAE:?}
+  }
+}
+
 # XXX: see argv.lib test_ funs as well
 # for (user log) verbose functions, see assert.lib
 

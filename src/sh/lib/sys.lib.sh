@@ -228,6 +228,29 @@ cwd_lookup_paths () # (cwd) ~ [ <Local-Paths...> ] # Look rootward for path(s)
   #| sys_path_fmt
 }
 
+# This does exactly the same as cwd-lookup-path w/o args, but may be more
+# appropiate for other cases.
+cwd_path () # ~ ...
+{
+  local cwd=${cwd:-$PWD}
+  until test $cwd = /
+  do
+    echo "$cwd"
+    cwd="$(dirname "$cwd")"
+  done
+}
+
+cwd_arr () # ~ <Arr-name>
+{
+  sys_arr "${1:?}" cwd_path
+}
+
+cwd_rarr () # ~ <Arr-name>
+{
+  sys_arr "${1:?}" cwd_path &&
+  sys_rarr "${1:?}"
+}
+
 # Return non-zero if default was set, or present value does not match default
 default_env() # VAR-NAME DEFAULT-VALUE [Level]
 {
@@ -628,7 +651,8 @@ stdin_from_nonempty () # ~ [<File>]
 }
 
 # Store variables (name and current value) at associative array
-assoc_from_env () # ~ <Array> <Vars...>
+# old assoc_from_env
+sys_aarrv () # ~ <Array> <Vars...>
 {
   declare -n arr=${1:?} var
   shift
@@ -636,7 +660,7 @@ assoc_from_env () # ~ <Array> <Vars...>
   do arr["${!var}"]=$var
   done
 }
-# XXX: sys-argv-assoc
+# XXX: sys-assoc-array-from-variables
 
 # system-array-from-command
 # Read stdout of given command into array, if command returns zero status.
@@ -645,8 +669,17 @@ sys_arr () # ~ <Array> <Cmd...> # Read stdout (lines) into array
   if_ok "$("${@:2}")" &&
   <<< "$_" mapfile ${mapfile_f:--t} "${1:?}"
 }
+# rename sys_arr > sys-vaarr
 
-# system-array-from-variable-values
+# system array from arguments: for reference/normally inline. to show how to
+# move several strings onto an array, and/or use array variable by name
+sys_arra () # ~ <Variable-name> <Strings...>
+{
+  declare -n arr=${1:?}
+  arr+=( "${@:2}" )
+}
+
+# system-array-from-variable-values, see also system-assoc-from-variable-values
 sys_arrv () # ~ <Array-name> <Var-names...>
 {
   local var
@@ -655,6 +688,7 @@ sys_arrv () # ~ <Array-name> <Var-names...>
   do values+=( "${!var-}" )
   done
 }
+
 
 # system-array-default
 # XXX:
@@ -714,47 +748,6 @@ sys_cd () # ~ <Dir> <Cmd...>
   "${@:2}"
 }
 
-# Reduce arguments at offset to a single string (collapse IFS), and then invoke
-# command with that. Using '$*' can be usefull from a user perspective, (as
-# during processing globstars or braces it may expand a single string expression
-# into multiple string values). However it makes the functions signature less
-# specific (and it always collapses IFS for the values). To call such function
-# the user needs to expand arguments in a subshell, or use another additional
-# function (such as this one) to wrap such call:
-# $ funfoo "$(echo ...)"
-# $ sys_cmd_apop 1 funfoo ...
-# Where '...' can be any string expression (with variables, globs or braces).
-# The offset (which is ofcourse 0-index based, and which) must be >0 since a
-# command name can never contain spaces.
-sys_cmd_apop () # ~ <Offset> <Cmd> [ <Arguments...> ]
-{
-  local o=${1:?"$(sys_exc sys.lib:cmd-apop~offset "Offset expected")"}
-  [[ $o -ge 1 ]] || return 2
-  "${@:2:$o}" "${*:$(( o + 2 ))}"
-}
-
-# Execute commands from arguments in sequence, reading into array one segment at
-# a time. Empty sequence can be used to break-off current sys-cmd-seq run, and
-# pass entire rest of arguments to sys-csd. sys-csp is the prefix put before
-# each command.
-sys_cmd_seq () # ~ <cmd> <args...> [ -- <cmd> <args...> ]
-{
-  declare cmd=()
-  while ${sys_csa:-argv_seq} cmd "$@"
-  do
-    test 0 -lt "${#cmd[*]}" && shift $_ || {
-      #test 0 -eq $# && return
-      "${sys_cse:-false}" && cmd=( "${sys_csd:---}" ) || return
-    }
-    : "${sys_csp-}${sys_csp+ }${cmd[*]}"
-    $LOG info "${lk-}" "Calling command" "${_//%/%%}"
-    ${sys_csp-} "${cmd[@]:?}" || return
-    argv_is_seq "$@" && { shift || return; }
-    test 0 -lt $# || break
-    cmd=()
-  done
-}
-
 # sys-confirm PROMPT
 sys_confirm()
 {
@@ -776,7 +769,7 @@ sys_default () # ~ <Name> <Value> ...
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
 
-# system-fromat-from-variables
+# system-format-from-variables
 sys_fmtv () # ~ <String-expression> <Var-names...>
 {
   declare vars=()
@@ -799,22 +792,7 @@ sys_exc_trc () # ~ [<Head>] [<Msg>] [<Offset=2>] ...
   std_findent "  - " sys_callers "${3-2}"
 }
 
-sys_eval_seq () # ~ <script...> [ -- <script...> ]
-{
-  declare cmd=()
-  while ${sys_cesa:-argv_seq} cmd "$@"
-  do
-    test 0 -lt "${#cmd[*]}" &&
-    shift $_ &&
-    : "${cmd[*]}" &&
-    $LOG info "${lk-}" "Evaluating script" "${_//%/%%}" &&
-    eval "${cmd[*]}" || return
-    argv_is_seq "$@" && shift && test 0 -lt $# ||
-      break
-    cmd=()
-  done
-}
-
+# system-join-array, system-collapse-array
 sys_join () # ~ <Concat> <Array>
 {
   declare -n __arr=${2:?} &&
@@ -837,7 +815,7 @@ sys_nejoin () # ~ <Concat> <Array>
   echo "$_"
 }
 
-#
+# system-path-output
 sys_path () # ~ <Cmd...> # TODO??
 {
   echo "${PATH//:/$'\n'}" | sys_path_fmt
@@ -924,7 +902,15 @@ sys_get ()
   echo "${!_:?}"
 }
 
-sys_rarr () # ~ <Arr-from> <Arr-to>
+sys_rarr () # ~ <Arr-name>
+{
+  declare -a temp
+  sys_rarr2 "${1:?}" temp &&
+  declare -n dest=${2:?} &&
+  dest=( "${temp[@]}" )
+}
+
+sys_rarr2 () # ~ <Arr-from> <Arr-to>
 {
   declare -n __from=${1:?} __to=${2:?}
   local _i_
