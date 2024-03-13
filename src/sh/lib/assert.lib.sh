@@ -34,6 +34,9 @@ assert_argc () # ~ <Expected> <Actual> ...
   }
 }
 
+
+# Local (file system) assertions
+
 assert_isblock () # ~ <Name>
 {
   declare lk=${lk:-}:assert-isblock
@@ -82,5 +85,33 @@ assert_ispath () # ~ <Name>
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 # alias: test-exists
+
+
+# Numeric assertions
+
+assert_isdigit () # ~ <String>
+{
+  [[ "$1" =~ ^[0-9]$ ]] ||
+    $LOG warn "$lk" "Not a digit" "E$?:string=$1" ${_E_fail:?}
+}
+
+assert_isfloat () # ~ <String>
+{
+  [[ "$1" =~ ^[+-]?[0-9]+\.[0-9]+$ ]] ||
+    $LOG warn "$lk" "Not a float" "E$?:string=$1" ${_E_fail:?}
+}
+
+assert_isnum () # ~ <String>
+{
+  [[ "$1" =~ ^[+-]?[0-9]+$ ]] ||
+    $LOG warn "$lk" "Not a number" "E$?:string=$1" ${_E_fail:?}
+}
+
+assert_inrange () # ~ <Int> [<255> [<0>]]
+{
+  [[ ${3:-0} -le "$1" && $1 -le ${2:-255} ]] ||
+    $LOG warn "$lk" "Out of range" "E$?:$*" ${_E_fail:?}
+}
+# alias assert-bytenum
 
 #

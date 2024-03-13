@@ -1167,14 +1167,14 @@ build_target__from__expand_all () # ~ <Source...> -- <Target-Formats...>
   args_is_seq "$@" || return
   shift
   test 0 -lt ${#source_cmd[*]} || {
-    std_v "$stdp Expected executable, filepath(s), or symbol(s)" || return
+    std_verbose "$stdp Expected executable, filepath(s), or symbol(s)" || return
   }
   { { declare -F "${source_cmd[0]}" || command -v "${source_cmd[0]}"
     } >/dev/null
   } || {
     read -a source_files <<< "$(build_expand_symbols "${source_cmd[@]}")"
     test 0 -lt ${#source_files[*]} || {
-      std_v "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
+      std_verbose "$stdp Expected filepaths: '${source_cmd[*]@Q}" ||
         return
     }
     source_cmd=( "cat" )

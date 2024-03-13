@@ -650,6 +650,23 @@ stdin_from_nonempty () # ~ [<File>]
   exec < "$_"
 }
 
+sys_aappend () # ~ <Array> <Item>
+{
+  declare -n arr=${1:?}
+  shift
+  local item
+  for item
+  do
+    "${sys_aap_ne:-true}" ||
+      [[ "$item" ]] || continue
+    for ((i=0;i<${#arr[*]};i++))
+    do
+      [[ "${arr[i]}" != "$item" ]] || continue 2
+    done
+    arr+=( "$item" )
+  done
+}
+
 # Store variables (name and current value) at associative array
 # old assoc_from_env
 sys_aarrv () # ~ <Array> <Vars...>
@@ -688,7 +705,6 @@ sys_arrv () # ~ <Array-name> <Var-names...>
   do values+=( "${!var-}" )
   done
 }
-
 
 # system-array-default
 # XXX:

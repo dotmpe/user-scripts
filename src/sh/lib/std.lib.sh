@@ -17,11 +17,12 @@ std_lib__load ()
  USER2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM\
  PROF WINCH IO POLL PWR LOST"}"
 
-  $INIT_LOG debug "" "Loaded std-uc.lib" "$0"
+  ${INIT_LOG:?} debug "" "Loaded std-uc.lib" "$0"
 }
 
 std_lib__init ()
 {
+  #lib_require log || return
   test -n "${INIT_LOG-}" || return 109
   test -x "$(command -v readlink)" || error "readlink util required for stdio-type" 1
   test -x "$(command -v file)" || error "file util required for stdio-type" 1
@@ -31,7 +32,7 @@ std_lib__init ()
   true "${STD_INTERACTIVE:=`eval "$std_interactive"; printf "%i" $?`}"
 
   std_uc_env_def &&
-  $INIT_LOG debug "" "Initialized std.lib" "$0"
+  ${INIT_LOG:?} debug "" "Initialized std.lib" "$0"
 }
 
 
@@ -264,7 +265,7 @@ stdemsg () # level msg exit
 
 # std-v <level>
 # if verbosity is defined, return non-zero if <level> is below verbosity treshold
-std_v() # Log-Level
+std_v () # Log-Level
 {
   test -z "${verbosity:-${v:-}}" && return || {
     test ${verbosity:-${v:-}} -ge $1 && return || return 1
