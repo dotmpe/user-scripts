@@ -54,7 +54,7 @@ sys_cmd_seq () # ~ <cmd> <args...> [ -- <cmd> <args...> ]
 sys_eval_seq () # ~ <script...> [ -- <script...> ]
 {
   declare cmd=()
-  while ${sys_cesa:-argv_seq} cmd "$@"
+  while ${sys_cesa:-args_seq_arr} cmd "$@"
   do
     test 0 -lt "${#cmd[*]}" &&
     shift $_ &&

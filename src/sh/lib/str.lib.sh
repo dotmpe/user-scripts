@@ -43,7 +43,8 @@ str_lib__init()
 str_append () # ~ <Var-name> <Value> ...
 {
   declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
-  ref="${ref-}${ref:+${str_fs- }}${2:?}"
+  #: ${ref:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
+  ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
 }
 
 str_vawords () # ~ <Variables...> # Transform strings to words

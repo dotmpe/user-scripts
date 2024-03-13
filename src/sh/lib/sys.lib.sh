@@ -902,6 +902,7 @@ sys_get ()
   echo "${!_:?}"
 }
 
+# Reverse array items
 sys_rarr () # ~ <Arr-name>
 {
   declare -a temp
@@ -910,6 +911,7 @@ sys_rarr () # ~ <Arr-name>
   dest=( "${temp[@]}" )
 }
 
+# Reverse copy items from array to array
 sys_rarr2 () # ~ <Arr-from> <Arr-to>
 {
   declare -n __from=${1:?} __to=${2:?}

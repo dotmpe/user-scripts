@@ -4,7 +4,7 @@
 
 envd_lib__load ()
 {
-  lib_require str sys argv &&
+  lib_require str args sys-cmd &&
   declare -g ENVD_BASES &&
   sys_cmd_apop 2 sys_default ENVD_BASES env{,d} us build host user
 }
@@ -176,7 +176,7 @@ envd_declare () # ~ <Type-ref> <Preload-lib> <Postinit-lib> <Envd-dep> <declares
       : "${!o:2}"
       cmd=envd_declare__${_//-/_}
       o=$(( o + 1 ))
-      argv_hseq args "${@:$o}"
+      args_hseq_arrv args "${@:$o}"
       "$cmd" "${args[@]}" || return
       o=$(( o + ${#args[@]} ))
     done
@@ -401,7 +401,7 @@ envd_loadenv () # ~
     pn=${pn//_/-}
     rpn=${pn##*/}
     pt=${pn%/*}
-    pt=$(str_join . $(argvr ${pt//\// }))
+    pt=$(str_join . $(args_rev ${pt//\// }))
 
     if [[ $pt = "$rpn" ]]
     then
