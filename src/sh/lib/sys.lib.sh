@@ -772,10 +772,45 @@ sys_confirm()
   trueish "$choice_confirm"
 }
 
-sys_debug () # ~ [<...>]
+sys_debug ()
 {
-  # TODO:
-  echo false
+  test $# -gt 0 || set -- debug
+  while test $# -gt 0
+  do
+    # Default to doing IF-OR
+    case "$1" in [A-Za-z]* ) set -- "?$1" "${@:2}"; esac
+
+    # Check IF ON/OFF condition
+    case "$1" in
+      "?"* ) sys_debug_mode "${1:1}" ;;
+      "!"* ) sys_not sys_debug_mode "${1:1}" ;;
+    esac ||
+      return
+
+    # XXX: Check SET ON/OFF mode
+    case "$1" in [+-]* )
+    esac
+
+    shift
+  done
+}
+
+sys_debug_mode ()
+{
+  case "$1" in
+    ( exceptions ) "${QUIET:-false}" ;;
+    ( diag ) "${DIAGNOSTIC:-${INIT:-false}}" ;;
+    ( init ) "${INIT:-false}" ;;
+    ( debug ) "${DEBUG:-false}" ;;
+
+    ( * ) $LOG alert "${lk-:sys.lib:debug}" "No such mode" "$1" ${_E_script:?}
+  esac
+}
+
+# XXX: hook to test for envd/uc and defer, returning cur bool value for setting
+sys_debug_ () # ~ [<...>]
+{
+  sys_debug "$@" && echo true || echo false
 }
 
 # Ensure variable is set or use argument(s) as value
@@ -796,7 +831,7 @@ sys_fmtv () # ~ <String-expression> <Var-names...>
 # A helper for inside ${var?...} expressions
 sys_exc () # Format exception-id and message
 {
-  ! "${DEBUG:-$(sys_debug exceptions)}" && echo "$1: $2" ||
+  ! "${DEBUG:-$(sys_debug_ exceptions)}" && echo "$1: $2" ||
     # TODO: use localenv for params
     "${sys_on_exc:-sys_exc_trc}" "$1" "$2" 3 "${@:3}"
 }
@@ -829,6 +864,14 @@ sys_nejoin () # ~ <Concat> <Array>
   do : "${_:+$_${__arr[_i_]:+$__c}}${__arr[_i_]}"
   done &&
   echo "$_"
+}
+
+# Test for fail/false status exactly, or return status. Ie. do not mask all
+# non-zero statusses, but one specifically. See also sys-astat.
+sys_not ()
+{
+  "$@"
+  sys_astat -eq ${_E_fail:-1}
 }
 
 # system-path-output
