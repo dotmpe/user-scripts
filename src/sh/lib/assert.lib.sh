@@ -6,7 +6,7 @@ assert_lib__load ()
 
 assert () # ~ <Test args...> [ -- <Argv> ]
 {
-  [[ true = "${VERBOSE:-${DEBUG:-false}}" ]] && {
+  sys_debug assert && {
 
     assert_${1:?} "${@:2}"
     return
@@ -35,7 +35,7 @@ assert_argc () # ~ <Expected> <Actual> ...
 }
 
 
-# Local (file system) assertions
+## Local (file system) assertions
 
 assert_isblock () # ~ <Name>
 {
@@ -87,7 +87,7 @@ assert_ispath () # ~ <Name>
 # alias: test-exists
 
 
-# Numeric assertions
+## Numeric assertions
 
 assert_isdigit () # ~ <String>
 {
@@ -113,5 +113,27 @@ assert_inrange () # ~ <Int> [<255> [<0>]]
     $LOG warn "$lk" "Out of range" "E$?:$*" ${_E_fail:?}
 }
 # alias assert-bytenum
+
+
+## String assertions - indices
+
+## String assertions - glob matches
+
+assert_globmatch () # ~ <String> <Glob>
+{
+  declare lk=${lk:-}:assert-globmatch
+  #str_globmatch "$1" "$2"
+  fnmatch "$2" "$1" ||
+    throw "$lk" "${3-Expression failed}" "$1:$2" || return
+}
+
+## String assertions - regular expressions
+
+assert_rematch () # ~ <String> <Expr>
+{
+  declare lk=${lk:-}:assert-rematch
+  [[ "$1" =~ $2 ]] ||
+    throw "$lk" "${3-Expression failed}" "$1:$2" || return
+}
 
 #

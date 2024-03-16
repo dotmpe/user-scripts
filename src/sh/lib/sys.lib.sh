@@ -25,6 +25,13 @@ sys_lib__init ()
       && sys_lib_log="$LOG" || sys_lib_log="$U_S/tools/sh/log.sh"
     [[ "$sys_lib_log" ]] || return 108
 
+    throw ()  # Id Msg Ctx
+    {
+      local lk=${1:?}:sys.lib/throw ctx
+      ctx="${3-}${3+:$'\n'}$(sys_exc "$1" "$2")"
+      $LOG error "$lk" "${2-Exception}" "$ctx" ${_E_script:-2}
+    }
+
     sys_tmp_init &&
     $sys_lib_log debug "" "Initialized sys.lib" "$0"
   }
@@ -797,13 +804,17 @@ sys_debug ()
 
 sys_debug_mode ()
 {
+  local lk=${lk-}:us:sys.lib:debug-mode
   case "$1" in
-    ( exceptions ) "${QUIET:-false}" ;;
-    ( diag ) "${DIAGNOSTIC:-${INIT:-false}}" ;;
+    ( assert ) "${ASSERT:-${DIAG:-${DEBUG:-${DEV:-false}}}}" ;;
+    ( debug ) "${DEBUG:-${DEV:-false}}" ;;
+    ( dev ) "${DEV:-false}" ;;
+    ( diag ) "${DIAG:-${INIT:-${DEBUG:-false}}}" ;;
+    ( exceptions ) "${VERBOSE:-false}" || "${DIAG:-true}" || ! "${QUIET:-false}" ;;
     ( init ) "${INIT:-false}" ;;
-    ( debug ) "${DEBUG:-false}" ;;
+    ( verbose ) "${VERBOSE:-false}" ;;
 
-    ( * ) $LOG alert "${lk-:sys.lib:debug}" "No such mode" "$1" ${_E_script:?}
+    ( * ) $LOG alert "$lk" "No such mode" "$1" ${_E_script:?"$(sys_exc "$lk")"}
   esac
 }
 
@@ -823,17 +834,18 @@ sys_default () # ~ <Name> <Value> ...
 # system-format-from-variables
 sys_fmtv () # ~ <String-expression> <Var-names...>
 {
-  declare vars=()
+  declare vars=() fmt
+  fmt=${1:?"$(sys_exc us:sys.lib)"}
   sys_arrv vars "${@:2}" &&
-  printf "${1:?}" "${vars[@]}"
+  printf "$fmt" "${vars[@]}"
 }
 
 # A helper for inside ${var?...} expressions
-sys_exc () # Format exception-id and message
+sys_exc () # ~ <Head>: <Label> # Format exception-id and message
 {
-  ! "${DEBUG:-$(sys_debug_ exceptions)}" && echo "$1: $2" ||
+  ! "${DEBUG:-$(sys_debug_ exceptions)}" && echo "$1: ${2-Expected}" ||
     # TODO: use localenv for params
-    "${sys_on_exc:-sys_exc_trc}" "$1" "$2" 3 "${@:3}"
+    "${sys_on_exc:-sys_exc_trc}" "$1" "${2-Expected}" 3 "${@:3}"
 }
 
 # system-exception-trace: Helper to format callers list including custom head.
