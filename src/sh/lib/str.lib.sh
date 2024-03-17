@@ -332,6 +332,11 @@ str_quote_var ()
   echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
 }
 
+str_rematch ()
+{
+  [[ "$1" =~ $2 ]]
+}
+
 str_trim ()
 {
   [[ 0 -lt $# ]] || return ${_E_MA:-194}

@@ -851,7 +851,7 @@ sys_exc () # ~ <Head>: <Label> # Format exception-id and message
 # system-exception-trace: Helper to format callers list including custom head.
 sys_exc_trc () # ~ [<Head>] [<Msg>] [<Offset=2>] ...
 {
-  echo "${1:-Source:}${2+ }${2}"
+  echo "${1:-us:sys: E$? source trace:}${2+ }${2}"
   std_findent "  - " sys_callers "${3-2}"
 }
 

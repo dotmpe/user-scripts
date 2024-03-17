@@ -1,17 +1,36 @@
 assert_lib__load ()
 {
-  lib_require os
+  lib_require os &&
+  declare -gA ASSERT=(
+    [isblock]=os
+    [ischar]=os
+    [isdir]=os
+    [isfile]=os
+    [islink]=os
+    [isnonempty]=os
+    [ispath]=os
+    [issymlink]=os
+
+    #[isdigit]=sys/test
+    #[isfloat]=sys/test
+    #[isisnum]=sys/test
+    #[inrange]=sys/test
+
+    [globmatch]=str
+    [rematch]=str
+  )
 }
 
 
 assert () # ~ <Test args...> [ -- <Argv> ]
 {
-  sys_debug assert && {
+  ! sys_debug assert || {
 
     assert_${1:?} "${@:2}"
     return
-  } ||
-    os_${1:?} "${@:2}"
+  }
+
+  "${ASSERT["${1:?}"]:-test}_${1:?}" "${@:2}"
 }
 
 # XXX: helper for verbose arguments-count-check, but doesnt provide feedback
@@ -69,6 +88,14 @@ assert_isfile () # ~ <Name>
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 
+assert_islink () # ~ <Name>
+{
+  declare lk=${lk:-}:assert-islink
+  : "${1:?$lk: Path name expected}"
+  os_islink "$_" ||
+    $LOG warn "$lk" "No such link" "E$?:name=$1" ${_E_fail:?}
+}
+
 assert_isnonempty () # ~ <Name>
 {
   declare lk=${lk:-}:assert-isnonempty
@@ -85,6 +112,14 @@ assert_ispath () # ~ <Name>
     $LOG warn "$lk" "No such path" "E$?:name=$1" ${_E_fail:?}
 }
 # alias: test-exists
+
+assert_issymlink () # ~ <Name>
+{
+  declare lk=${lk:-}:assert-issymlink
+  : "${1:?$lk: Path name expected}"
+  os_issymlink "$_" ||
+    $LOG warn "$lk" "No such symlink" "E$?:name=$1" ${_E_fail:?}
+}
 
 
 ## Numeric assertions
