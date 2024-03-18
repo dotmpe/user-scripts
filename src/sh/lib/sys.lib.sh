@@ -579,6 +579,14 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
   echo "$3/$2$1"
 }
 
+source_all ()
+{
+  while [[ $# -gt 0 ]]
+  do . "${1:?}" || return
+    shift
+  done
+}
+
 # fixed indentation
 std_findent () # ~ <Indentation> <Cmd ...>
 {
@@ -657,7 +665,7 @@ stdin_from_nonempty () # ~ [<File>]
   exec < "$_"
 }
 
-sys_aappend () # ~ <Array> <Item>
+sys_aappend () # ~ <Array> <Item> # Append new unique item to indexed array
 {
   declare -n arr=${1:?}
   shift
@@ -666,10 +674,13 @@ sys_aappend () # ~ <Array> <Item>
   do
     "${sys_aap_ne:-true}" ||
       [[ "$item" ]] || continue
-    for ((i=0;i<${#arr[*]};i++))
-    do
-      [[ "${arr[i]}" != "$item" ]] || continue 2
-    done
+    # Dont compare against unitialized array
+    ! [[ "${arr+set}" ]] || {
+      for ((i=0;i<${#arr[*]};i++))
+      do
+        [[ "${arr[i]}" != "$item" ]] || continue 2
+      done
+    }
     arr+=( "$item" )
   done
 }
@@ -831,15 +842,6 @@ sys_default () # ~ <Name> <Value> ...
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
 
-# system-format-from-variables
-sys_fmtv () # ~ <String-expression> <Var-names...>
-{
-  declare vars=() fmt
-  fmt=${1:?"$(sys_exc us:sys.lib)"}
-  sys_arrv vars "${@:2}" &&
-  printf "$fmt" "${vars[@]}"
-}
-
 # A helper for inside ${var?...} expressions
 sys_exc () # ~ <Head>: <Label> # Format exception-id and message
 {
@@ -853,6 +855,21 @@ sys_exc_trc () # ~ [<Head>] [<Msg>] [<Offset=2>] ...
 {
   echo "${1:-us:sys: E$? source trace:}${2+ }${2}"
   std_findent "  - " sys_callers "${3-2}"
+}
+
+# system-format-from-variables
+sys_fmtv () # ~ <String-expression> <Var-names...>
+{
+  declare vars=() fmt
+  fmt=${1:?"$(sys_exc us:sys.lib)"}
+  sys_arrv vars "${@:2}" &&
+  printf "$fmt" "${vars[@]}"
+}
+
+sys_get ()
+{
+  : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
+  echo "${!_:?}"
 }
 
 # system-join-array, system-collapse-array
@@ -967,12 +984,6 @@ sys_prompt()
   read -n 1 $2
 }
 
-sys_get ()
-{
-  : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
-  echo "${!_:?}"
-}
-
 # Reverse array items
 sys_rarr () # ~ <Arr-name>
 {
@@ -1055,14 +1066,6 @@ sys_tmp_init () # DIR
     $sys_lib_log warn $tag "No RAM tmpdir/No tmpdir found" "" 1
   }
   sys_tmp="$1"
-}
-
-source_all ()
-{
-  while [[ $# -gt 0 ]]
-  do . "${1:?}" || return
-    shift
-  done
 }
 
 # Error unless non-empty and true-ish value

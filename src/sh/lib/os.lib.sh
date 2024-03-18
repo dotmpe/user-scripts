@@ -485,8 +485,8 @@ filter () # (Std:0:) ~ <Test-handler>
   while read -r value
   do
     "${@:?}" "$value" || {
-      [[ ${_E_next:?} -eq $? ]] && continue
-      return $_
+      sys_astat -eq ${_E_next:?} && continue
+      return
     }
     echo "$value"
   done
