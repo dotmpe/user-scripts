@@ -841,6 +841,11 @@ not ()
   ! "$@"
 }
 
+os_file_mode ()
+{
+  stat -L -c "%a" "${@:?}"
+}
+
 os_path_first () # (s) ~ <Var> <Test...>
 {
   [[ 1 -le $# ]] || return ${_E_MA:?}
@@ -848,6 +853,16 @@ os_path_first () # (s) ~ <Var> <Test...>
   shift
   [[ 0 -lt $# ]] || set -- test -e
   stdin_first "$var" "$@"
+}
+
+os_private () # ~ <File> # True if current user only has at least read rights
+{
+  test -f "${1:?}" && {
+    test -z "${2-}" && local mode || local -n mode=${2:?}
+    test -O "$1" &&
+    sys_ mode stat -L -c "%a" "$1" &&
+    case "$mode" in ( [4-7]00 ) true;; ( * ) false; esac
+  }
 }
 
 os_pids () # ~ <Cmd-name>

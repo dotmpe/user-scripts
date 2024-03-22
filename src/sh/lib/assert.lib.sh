@@ -10,6 +10,7 @@ assert_lib__load ()
     [isnonempty]=os
     [ispath]=os
     [issymlink]=os
+    [private]=os
 
     #[isdigit]=sys/test
     #[isfloat]=sys/test
@@ -121,6 +122,17 @@ assert_issymlink () # ~ <Name>
     $LOG warn "$lk" "No such symlink" "E$?:name=$1" ${_E_fail:?}
 }
 
+assert_private () # ~ <File>
+{
+  declare lk=${lk:-}:assert-private
+  assert_isfile "${1:?}" && {
+
+    local assert_mode
+    : "${1:?$lk: Path name expected}"
+    os_private "$_" assert_mode ||
+      $LOG warn "$lk" "File access too open" "E$?:name=$1:$assert_mode" ${_E_fail:?}
+  }
+}
 
 ## Numeric assertions
 

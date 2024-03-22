@@ -610,6 +610,12 @@ std_noout ()
 
 std_quiet ()
 {
+  "$@" 2>/dev/null
+}
+# alias for std-noerr
+
+std_silent ()
+{
   "$@" >/dev/null 2>&1
 }
 
@@ -663,6 +669,15 @@ stdin_from_nonempty () # ~ [<File>]
   test -n "${1-}" &&
   test -s "$_" &&
   exec < "$_"
+}
+
+sys_ () # ~ <Var> <Cmd...>
+{
+  local -n var=${1:?}
+  var=$("${@:2}")
+  # XXX: at least this creates a global variable
+  #if_ok "$("${@:2}")" &&
+  #read -r ${1:?} <<< "$_"
 }
 
 sys_aappend () # ~ <Array> <Item> # Append new unique item to indexed array
@@ -783,10 +798,10 @@ sys_cd () # ~ <Dir> <Cmd...>
 }
 
 # sys-confirm PROMPT
-sys_confirm()
+sys_confirm ()
 {
   local choice_confirm=
-  sys_prompt "$1" choice_confirm
+  sys_prompt "$1" choice_confirm -n 1 &&
   trueish "$choice_confirm"
 }
 
@@ -866,7 +881,7 @@ sys_fmtv () # ~ <String-expression> <Var-names...>
   printf "$fmt" "${vars[@]}"
 }
 
-sys_get ()
+sys_get () # ~ <Var>
 {
   : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
   echo "${!_:?}"
@@ -974,14 +989,14 @@ sys_prefix () # ~ <Prefix> <File>
   rm "$tmpfile"
 }
 
-# sys-prompt PROMPT [VAR=choice_confirm]
-sys_prompt()
+sys_prompt () # ~ <Prompt> <Var> <Read-argv>
 {
-  test -n "${1-}" || $sys_lib_log error sys "sys-prompt: arg expected" "" 1
-  test -n "${2-}" || set -- "$1" choice_confirm
-  test -z "${3-}" || $sys_lib_log error sys "surplus-args '$3'" "" 1
-  echo $1
-  read -n 1 $2
+  local -r prompt=${1:?"$(sys_exc sys.lib:-prompt "Prompt text expected")"}
+  local -r var=${2:-choice_confirm}
+  test $# -gt 2 || set -- "$@" -n 1
+  printf '%s' "$prompt"
+  read "${@:3}" $var &&
+  printf '\n'
 }
 
 # Reverse array items

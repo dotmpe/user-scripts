@@ -22,32 +22,34 @@ sh_mode ()
     SHMODE=${SHMODE:-$-}
     SHMODE="$SHMODE $*"
     declare opt
-    for opt in "${@:?}"
+    while test $# -gt 0
     do
+      opt=${1:?}
+      shift
       case "${opt:?}" in
 
           ( build ) # Handler for build.lib
-                sh_mode_exclusive $opt dev "$@"
+                sh_mode_exclusive $opt dev "$@" &&
                 # noundef, noclobber, inherit DBG/RET traps and exitonerror
-                set -uCETeo pipefail
-                trap "build_error_handler" ERR || return
+                set -euETo pipefail -o noclobber &&
+                trap "build_error_handler" ERR &&
+                set -- public-group "$@"
               ;;
 
           ( defs )
-                  # XXX: for interactive and some particular batch or build modes
-                  declare -ga env_updates=()
-                  declare -ga env_defs=()
-                  #declare -ga env_decl=()
+                # XXX: for interactive and some particular batch or build modes
+                declare -ga env_updates=()
+                declare -ga env_defs=()
+                #declare -ga env_decl=()
               ;;
 
           ( dev-us )
-                test -n "${U_C:-}" && {
-                  sh_mode dev-uc || return
-                }
+                test -n "${U_C-}" -a -d "${U_C-}" &&
+                set -- "dev-uc" "$@"
               ;;
 
           ( dev-uc )
-                sh_mode_exclusive $opt "$@"
+                sh_mode_exclusive $opt build "$@"
                 # Hash location, inherit DBG/RET traps and exitonerror
                 set -hETe &&
                 shopt -s extdebug &&
@@ -56,15 +58,22 @@ sh_mode ()
               ;;
 
           ( dev )
+                # XXX: should this not set DEBUG=true. It wil slow down many
+                # things, need to get sys_debug alike in here...
                 sh_fun stderr || stderr () { "$@" >&2; }
                 test -n "${LOG-}" &&
                   $LOG info :sh-mode@dev "Development mode enabled" ||
                   stderr echo "Development mode enabled"
-                test -n "${U_S:-}" && {
-                  sh_mode dev-us
-                  return
-                } ||
-                  sh_mode build
+                test -n "${U_S-}" -a -d "${U_S-}" &&
+                  set -- dev-us "$@" ||
+                  set -- build "$@"
+              ;;
+
+          ( isleep ) # Setup interruptable, verbose sleep command (for batch scripting)
+
+                  trap '{ return $?; }' INT
+                  # Override sleep with function
+                  fun_def sleep stderr_sleep_int \"\$@\"\;
               ;;
 
           ( logger )
@@ -73,14 +82,15 @@ sh_mode ()
               ;;
 
           ( log-error )
-                sh_mode_exclusive $opt dev "$@"
+                sh_mode_exclusive $opt dev "$@" &&
                 set -CET &&
-                trap "LOG_error_handler" ERR || return
+                trap "LOG_error_handler" ERR
               ;;
 
           ( log-init )
                 # Temporary setting if no LOG is configured
-                test -n "${LOG:-}" && INIT_LOG=$LOG || sh_mode log-tmp || return
+                test -n "${LOG:-}" && INIT_LOG=$LOG ||
+                  set -- log-tmp "$@"
               ;;
 
           ( log-uc-start )
@@ -103,23 +113,37 @@ sh_mode ()
               ;;
 
           ( mod )
-                  sh_mode strict log-error &&
-                  shopt -s expand_aliases
+                set -- strict log-error "$@" &&
+                shopt -s expand_aliases
+              ;;
+
+          ( private )
+                umask 077
+              ;;
+
+          ( private-group )
+                umask 007
+              ;;
+
+          ( private-sharegroup )
+                umask 027
+              ;;
+
+          ( public )
+                umask 000
+              ;;
+
+          ( share | public-group )
+                umask 002
               ;;
 
           ( strict )
-                  set -euo pipefail -o noclobber
-              ;;
-
-          ( isleep ) # Setup interruptable, verbose sleep command (for batch scripting)
-
-                  trap '{ return $?; }' INT
-                  # Override sleep with function
-                  fun_def sleep stderr_sleep_int \"\$@\"\;
+                set -euo pipefail -o noclobber &&
+                set -- private-sharegroup "$@"
               ;;
 
           ( * ) stderr echo "! $0: sh-mode: Unknown mode '$opt'"; return 1 ;;
-      esac
+      esac || return
     done
   }
 }
