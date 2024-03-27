@@ -214,7 +214,7 @@ ledge_do()
 # Fetch files in logs-dir from all ledge-images (no merge or overwrite)
 ledge_fetchlogs()
 {
-  test $# -eq 0 || return 98
+  test $# -eq 0 || return ${_E_GAE:-193}
   local ledge_tag ledge_log log_bn
 
   set -- web docker-hub

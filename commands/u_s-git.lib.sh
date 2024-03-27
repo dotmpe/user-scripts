@@ -50,7 +50,7 @@ u_s_repo_args() # Repo-Id [Repo-Url]
 
   # XXX: make sure at least internal hardcoded repo-id/Url match
   test "${U_S_REPO_ID}" = "$1" -o "${U_S_REPO_URL}" = "$2" && {
-    test "${U_S_REPO_ID}" = "$1" -a "${U_S_REPO_URL}" = "$2" || return 98;
+    test "${U_S_REPO_ID}" = "$1" -a "${U_S_REPO_URL}" = "$2" || return ${_E_GAE:-193}
   }
 
   repo_id="$1" repo_url="$2"

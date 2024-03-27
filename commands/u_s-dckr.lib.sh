@@ -99,14 +99,14 @@ DESTDIR= PREFIX=/usr/local ./do -j10 install
 # Remove U_s container instance
 dckr_deinit ()
 {
-  test $# -eq 0 || return 98
+  test $# -eq 0 || return ${_E_GAE:-193}
   dckr_load && docker_sh_c delete "$docker_name" &&
   $dckr_log note u-s:dckr "Removed container"
 }
 
 dckr_reset () #
 {
-  test $# -eq 0 || return 98
+  test $# -eq 0 || return ${_E_GAE:-193}
   dckr_load &&
   docker_sh_c_exists $docker_name && {
     dckr_deinit || return
@@ -116,7 +116,7 @@ dckr_reset () #
 
 dckr_req () #
 {
-  test $# -eq 0 || return 98
+  test $# -eq 0 || return ${_E_GAE:-193}
   dckr_load && {
     # Return if container is running, else initialize one
     docker inspect --format '{{ .Id }}' "$docker_name" >/dev/null || return
