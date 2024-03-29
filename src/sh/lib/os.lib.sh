@@ -157,6 +157,12 @@ dir_exists () # ~ <Action> <Paths...>
   os_do_exists "test -d" "$@"
 }
 
+disk_usage () # ~ <Path> [<Du-flags=s>]
+{
+  if_ok "$(du ${2:+-}${2--s} "${1:?}")" &&
+  echo "${_%%[$'\t ']*}"
+}
+
 # Perform action for first path from inputs that passes test.
 os_do_exists () # ~ <Test> <Action=echo> <Paths...>
 {
@@ -695,10 +701,9 @@ line_count () # FILE
 
 line_number_raw () # ~ <Line-str> <Var-pk> <Num-sep> # Extract line number prefix
 {
-  local str=${1--} vpk=${2:-line_} nsep=${3:- }
-
-  sys_set_var ${vpk}ln "${str%%$nsep*}" &&
-  sys_set_var ${vpk}raw "${str#*$nsep}"
+  local lnr__str=${1--} lnr__vpk=${2:-line_} lnr__nsep=${3:- }
+  local -n lnr__ln=${vpk}ln lnr__raw=${vpk}raw
+  lnr__ln="${lnr__str%%$lnr__nsep*}" lnr__raw="${lnr__str#*$lnr__nsep}"
 }
 
 # Offset content from input/file to line-based window.
@@ -844,15 +849,6 @@ not ()
 os_file_mode ()
 {
   stat -L -c "%a" "${@:?}"
-}
-
-os_path_first () # (s) ~ <Var> <Test...>
-{
-  [[ 1 -le $# ]] || return ${_E_MA:?}
-  declare var=${1:?os-path-first: Variable name expected} fp
-  shift
-  [[ 0 -lt $# ]] || set -- test -e
-  stdin_first "$var" "$@"
 }
 
 os_private () # ~ <File> # True if current user only has at least read rights

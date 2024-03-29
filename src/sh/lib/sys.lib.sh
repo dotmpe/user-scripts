@@ -642,21 +642,6 @@ stderr_lfmtv () # ~ <String-expression> <Var-names...>
   sys_fmtv "$1\n" "${@:2}" >&2
 }
 
-stdin_first () # (s) ~ <Var> <Test...>
-{
-  test 1 -le $# || return ${_E_MA:?}
-  declare var=${1:?stdin-first: Variable name expected} part
-  shift
-  test 0 -lt $# || set -- test -n
-  while read -r part
-  do ! "$@" "$part" || {
-      sys_set_var "$var" "$part"
-      return
-    }
-  done
-  false
-}
-
 stdin_from_ () # ~ <Cmd...>
 {
   declare str
@@ -937,8 +922,10 @@ sys_path_fmt ()
   esac
 }
 
-# system-paths-depthfirst
-sys_paths_df ()
+# system-paths-depthfirst: a simple line-reader that indexes paths by their
+# depth and index for that depth. Upon reading all lines, deeper paths are then
+# output first.
+sys_paths_df () # (s) ~ ...
 {
   local path depth maxdepth seqidx
   declare -A depths
