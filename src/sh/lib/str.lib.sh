@@ -231,6 +231,29 @@ str_glob_replace ()
   echo "$str"
 }
 
+# XXX: return just expanded part for single-star glob
+str_glob_expansions () # ~ <Single-star-glob-expression>
+{
+  local glob=${1:?} glob_head glob_tail
+  : "${glob%%["*"]*}"
+  glob_head=${#_}
+  : "${glob:$(( 1 + glob_head ))}"
+  glob_tail=${#_}
+
+  declare -a values &&
+  if_ok "$(compgen -G "$glob")" &&
+  <<< "$_" mapfile -t values &&
+  for result in "${values[@]}"
+  do
+    [[ 0 -eq $glob_tail ]] && {
+      echo "${result:$glob_head}"
+    } || {
+      len=$(( ${#result} - glob_head - glob_tail ))
+      echo "${result:$glob_head:$len}"
+    }
+  done
+}
+
 # see also fnmatch and wordmatch
 str_globmatch () # ~ <String> <Glob-patterns...>
 {
