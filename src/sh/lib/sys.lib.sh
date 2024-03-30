@@ -900,7 +900,7 @@ sys_nejoin () # ~ <Concat> <Array>
 sys_not ()
 {
   "$@"
-  sys_astat -eq ${_E_fail:-1}
+  [[ $? -eq ${_E_fail:-1} ]]
 }
 
 # system-path-output
