@@ -299,7 +299,7 @@ env_var_mapping_update ()
 }
 
 # Execute arguments, or return on first failure, empty args, or no cmdlines
-exec_arg() # CMDLINE [ -- CMDLINE ]...
+exec_arg() # ~ CMDLINE [ -- CMDLINE ]...
 {
   test $# -gt 0 || return 98
   local execs=$(setup_tmpf .execs) execnr=0
@@ -328,6 +328,60 @@ exec_arg_lines()
   done
   test -z "$exec" || echo "$exec"
 }
+
+# XXX: run cmd for each result of combined glob/brace expression
+exec_exp () # ~ <Expression> <Cmd-strfmt-or-line...> # Run for each glob/braces expansion
+{
+  local expression=${1:?} result cmd
+  [[ $# -eq 2 && "$2" =~ ^.*%.*$ ]] || cmd="${*:2}"
+  declare -a values &&
+  if_ok "$(eval "printf '%s\n' $expression")" &&
+  <<< "$_" mapfile -t values || return
+  test 0 -lt "${#values[@]}" || return ${_E_nsk:?}
+  $LOG info "${lk:-:exec-exp}" "Expanded to ${#values[@]} results" &&
+  for result in "${values[@]}"
+  do
+    test -n "${cmd-}" && {
+      $cmd "$result" || {
+        test ${_E_next:-196} -eq $? && continue
+        return $_
+      }
+    } || {
+      if_ok "$(printf "$2" "$result")" &&
+      eval "$_" || {
+        test ${_E_next:-196} -eq $? && continue
+        return $_
+      }
+    }
+  done
+}
+
+exec_glob () # ~ <Glob-expression> <Cmd-strfmt-or-line...> #
+{
+  local glob=${1:?} result cmd
+  [[ $# -eq 2 && "$2" =~ ^.*%.*$ ]] || cmd="${*:2}"
+  declare -a values &&
+  if_ok "$(compgen -G "$glob")" &&
+  <<< "$_" mapfile -t values || return
+  test 0 -lt "${#values[@]}" || return ${_E_nsk:?}
+  $LOG info "${lk:-:exec-exp}" "Expanded to ${#values[@]} results" &&
+  for result in "${values[@]}"
+  do
+    test -n "${cmd-}" && {
+      $cmd "$result" || {
+        test ${_E_next:-196} -eq $? && continue
+        return $_
+      }
+    } || {
+      if_ok "$(printf "$2" "$result")" &&
+      eval "$_" || {
+        test ${_E_next:-196} -eq $? && continue
+        return $_
+      }
+    }
+  done
+}
+
 
 # Error unless non-empty and falseish
 falseish()
