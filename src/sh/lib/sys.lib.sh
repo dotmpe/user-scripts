@@ -298,8 +298,8 @@ env_var_mapping_update ()
   done
 }
 
-# Execute arguments, or return on first failure, empty args, or no cmdlines
-exec_arg() # ~ CMDLINE [ -- CMDLINE ]...
+# Execute arguments as command, or return on first failure, empty args, or no cmdlines
+execa_cmd () # ~ CMDLINE [ -- CMDLINE ]...
 {
   test $# -gt 0 || return 98
   local execs=$(setup_tmpf .execs) execnr=0
@@ -316,8 +316,9 @@ exec_arg() # ~ CMDLINE [ -- CMDLINE ]...
   test $execnr -gt 0 || return 1
 }
 
+# TODO: rename, move to str.lib?
 # Turn '--' seperated argument seq. into lines
-exec_arg_lines()
+exec_arg_lines () # ~
 {
   local exec=
   while test $# -gt 0
@@ -329,8 +330,14 @@ exec_arg_lines()
   test -z "$exec" || echo "$exec"
 }
 
+# XXX: Read script from stdin and evaluate it for each expansion somehow?
+#exec_exp () # (s) ~ <Expression>
+#{
+#}
+
+# Execute expansion of initial argument with command-line from rest arguments
 # XXX: run cmd for each result of combined glob/brace expression
-exec_exp () # ~ <Expression> <Cmd-strfmt-or-line...> # Run for each glob/braces expansion
+exec_expa () # ~ <Expression> <Cmd-strfmt-or-line...> # Run for each glob/braces expansion
 {
   local expression=${1:?} result cmd
   [[ $# -eq 2 && "$2" =~ ^.*%.*$ ]] || cmd="${*:2}"
@@ -355,6 +362,12 @@ exec_exp () # ~ <Expression> <Cmd-strfmt-or-line...> # Run for each glob/braces 
     }
   done
 }
+
+# TODO: execute sequence of functions/commands for each expansion with callback
+# args?
+#exec_expaa () # ~ ~ <Expression> <Callbacks...>
+#{
+#}
 
 exec_glob () # ~ <Glob-expression> <Cmd-strfmt-or-line...> #
 {

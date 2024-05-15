@@ -208,8 +208,8 @@ file_format_reader () # ~ <File-path>
 # XXX: would want to select modepart for specific editor if specified as well
 file_modeline () # :file{version,id,mode} ~ <File>
 {
-  declare fml_lvar=${fml_lvar:-false} vpk
-  "$fml_lvar" && vpk=local:file_ml_ || vpk=file_ml_
+  declare fml_lvar=${fml_lvar:-false} vpk=file_ml_
+  #"$fml_lvar" && vpk=local:file_ml_ || vpk=file_ml_
 
   fileversion="" fileid="" filemode=""
 

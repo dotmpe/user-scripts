@@ -410,4 +410,18 @@ str_wordsmatch () # ~ <String> <Words...> #
   false
 }
 
+strfmt_hashtab () # ~ <Printfmt> <Assoc-arr> # printf for associative arrays
+{
+  # Cannot have by-reference array var, so instead use eval macro to refer to
+  # dynamic but global array name
+  local key fmt=${1:?} arr=${2:?}
+  eval "
+    local key
+    for key in \"\${!${arr}[@]}\"
+    do
+      printf \"$fmt\" \"\$key\" \"\${${arr}[\"\$key\"]}\"
+    done
+  "
+}
+
 #
