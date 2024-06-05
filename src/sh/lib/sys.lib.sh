@@ -85,6 +85,30 @@ add_env_path_lookup() # Var-Name Prepend-Value Append-Value
   }
 }
 
+aarr_pickglob () # ~ <Array> <Match-key> # Output tsv for matching keys
+{
+  local -n arr=${1:?}
+
+  local k glob=${2:?}
+  for k in "${!arr[@]}"
+  do
+    str_globmatch "$k" "$glob" && {
+      printf '%s\t%s\n' "$k" "${arr["$k"]}"
+    } || continue
+  done
+}
+
+array_contains () # ~ <Array> <Value>
+{
+  local -n arr=${1:?}
+  for ((i=0; i<${#arr[@]}; i++))
+  do
+    [[ "${arr[i]}" = "${2-}" ]] && return
+  done
+  false
+}
+# Alias: in-array, array-item-exists
+
 # Merge all associative arrays into first. Last index takes preference.
 assoc_concat () # ~ <To-array> <From-arrays...>
 {
@@ -857,7 +881,10 @@ sys_confirm ()
   trueish "$choice_confirm"
 }
 
-sys_debug ()
+# A simple handler to determine when to run optional script branches for more
+# log/stderr verbosity or other computationally expensive but otherwise non-
+# essential tasks during normal operations.
+sys_debug () # ~ <Modes...> # Test tags with sys-debug-mode, and do !<mode> ?<mode> handling
 {
   test $# -gt 0 || set -- debug
   while test $# -gt 0
@@ -872,7 +899,7 @@ sys_debug ()
     esac ||
       return
 
-    # XXX: Check SET ON/OFF mode
+    # XXX: Check SET ON/OFF mode ? See sh-mode may be.
     case "$1" in [+-]* )
     esac
 
@@ -880,19 +907,46 @@ sys_debug ()
   done
 }
 
-sys_debug_mode ()
+sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
+# based on one or more env settings. In general QUIET overrides modes that have
+# only implications for log generation/stdout verbosity, and VERBOSE overrides
+# QUIET.
 {
   local lk=${lk-}:us:sys.lib:debug-mode
   case "$1" in
-    ( assert ) "${ASSERT:-${DIAG:-${DEBUG:-${DEV:-false}}}}" ;;
-    ( debug ) "${DEBUG:-${DEV:-false}}" ;;
-    ( dev ) "${DEV:-false}" ;;
-    ( diag ) "${DIAG:-${INIT:-${DEBUG:-false}}}" ;;
-    ( exceptions ) "${VERBOSE:-false}" || "${DIAG:-true}" || ! "${QUIET:-false}" ;;
-    ( init ) "${INIT:-false}" ;;
-    ( verbose ) "${VERBOSE:-false}" ;;
+  ( assert ) ## \
+    # Trigger more verbose responses about what exactly precipitates failures,
+    # maybe do a bit more checking in the meanwhile but such actions normally
+    # should be triggered by DIAG instead.
+    ! "${QUIET:-false}" && "${ASSERT:-${DIAG:-${DEBUG:-${DEV:-false}}}}" ;;
+  ( debug ) ## \
+    # Provide more log level events, especially info and debug level
+    # messages which would be far to verbose and many to generate normally.
+    # Still, more detail should be configured on a per-script basis.
+    ! "${QUIET:-false}" && "${DEBUG:-${DEV:-false}}" ;;
+  ( dev ) ## \
+    # Its not production, it just has to work and act sensibly and without
+    # pressure. Dev also triggers assert and debug modes.
+    "${DEV:-false}" ;;
+  ( diag ) ## \
+    # Go further than assert, and perform additional checks during normal
+    # scripts, and even trigger completely diagnostic script branches.
+    "${DIAG:-${INIT:-${DEBUG:-false}}}" ;;
+  ( exceptions )## \
+    # To provide some very specific but verbose (stack) data for a user to see,
+    # but normally turned off at quiet runs.
+    "${VERBOSE:-false}" || "${DIAG:-true}" || ! "${QUIET:-false}" ;;
+  ( init ) ## \
+  # Like debug, but specifically to distinguish 'init' scripts that do setup,
+  # from parts actually in the sub command run.
+    "${INIT:-false}" ;;
+  ( quiet ) ## \
+    # Setting verbose is the only env that overrides the quiet setting.
+    ! "${VERBOSE:-false}" || "${QUIET:-false}" ;;
+  ( verbose )
+    "${VERBOSE:-false}" || ! "${QUIET:-false}"  ;;
 
-    ( * ) $LOG alert "$lk" "No such mode" "$1" ${_E_script:?"$(sys_exc "$lk")"}
+  ( * ) $LOG alert "$lk" "No such mode" "$1" ${_E_script:?"$(sys_exc "$lk")"}
   esac
 }
 
@@ -1043,13 +1097,13 @@ sys_prefix () # ~ <Prefix> <File>
   rm "$tmpfile"
 }
 
-sys_prompt () # ~ <Prompt> <Var> <Read-argv>
+sys_prompt () # ~ <Prompt> <Var> <Read-argv...>
 {
-  local -r prompt=${1:?"$(sys_exc sys.lib:-prompt "Prompt text expected")"}
-  local -r var=${2:-choice_confirm}
+  local -r prompt=${1?"$(sys_exc sys.lib:-prompt "Prompt text expected")"}
+  local -r var=${2:-sys_prompt_input}
   test $# -gt 2 || set -- "$@" -n 1
   printf '%s' "$prompt"
-  read "${@:3}" $var &&
+  read "${@:3}" ${var?} &&
   printf '\n'
 }
 

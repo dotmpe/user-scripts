@@ -17,7 +17,7 @@ std_lib__load ()
  USER2 PIPE ALRM TERM STKFLT CHLD CONT STOP TSTP TTIN TTOU URG XCPU XFSZ VTALRM\
  PROF WINCH IO POLL PWR LOST"}"
 
-  ${INIT_LOG:?} debug "" "Loaded std-uc.lib" "$0"
+  ${INIT_LOG:-${LOG:?}} debug "" "Loaded std-uc.lib" "$0"
 }
 
 std_lib__init ()

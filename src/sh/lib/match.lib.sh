@@ -44,22 +44,36 @@ match_bre_str ()
   LC_COLLATE=$old_lc_collate
 }
 
-# Take any string and return a Regex to match that exact string, see
-# match-grep-pattern-test.
-match_grep () # ~ <String> <...>
+match_egrep () # ~ <String> <...>
 {
   local old_lc_collate=$LC_COLLATE
   LC_COLLATE=C
-
   local length="${#1}"
   for (( i = 0; i < length; i++ )); do
     local c="${1:$i:1}"
     case $c in
-      ( [A-Za-z0-9{}\(\),?!@+_-] ) printf '%s' "$c" ;;
+      ( [?*+{}\(\).\[\]\|\ ] ) printf '\%s' "$c" ;;
+      ( * ) printf '%s' "$c" ;;
+    esac
+  done
+  LC_COLLATE=$old_lc_collate
+}
+
+# Take any string and return a Regex to match that exact string, see
+# match-grep-pattern-test. This is basic regular expressions (BRE), see
+# match-egrep for 'extended' regular expressions.
+match_grep () # ~ <String> <...>
+{
+  local old_lc_collate=$LC_COLLATE
+  LC_COLLATE=C
+  local length="${#1}"
+  for (( i = 0; i < length; i++ )); do
+    local c="${1:$i:1}"
+    case $c in
+      ( [A-Za-z0-9{}\(\),?!@+_\"\'-] ) printf '%s' "$c" ;;
       ( * ) printf '\%s' "$c" ;;
     esac
   done
-
   LC_COLLATE=$old_lc_collate
 }
 

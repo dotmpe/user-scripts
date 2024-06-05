@@ -370,7 +370,7 @@ fileisext() # Name Exts..
   local f="$1" ext="" ; ext=$(filenamext "$1") || return ; shift
   [[ "$*" ]] || return
   [[ "$ext" ]] || return
-  for mext in "$@"
+  for mext
   do [[ ".$ext" = "$mext" ]] && return 0
   done
   return 1
@@ -449,12 +449,12 @@ filesize () # File
 
 bytesize_orders=(
   "B bytes"       # 1 = 8b
-  "KB Kilobytes"  # 10^3
-  "MB Megabytes"  # 10^6
-  "GB Gigabytes"  # 10^9
-  "TB Terabytes"  # 10^12
-  "PB Petabytes"  # 10^15
-  "EB Exabyte"    # 10^18
+  "KiB Kilobytes"  # 10^3
+  "MiB Megabytes"  # 10^6
+  "GiB Gigabytes"  # 10^9
+  "TiB Terabytes"  # 10^12
+  #"PiB Petabytes"  # 10^15
+  #"EB Exabyte"    # 10^18
   #ZB Zettabyte  # 10^21
   #YB Yottabyte  # 10^24
   #RB Ronnabyte  # 10^27
@@ -473,6 +473,19 @@ readable_bytesize () # ~ <Size>
     awk -v a="$bs" -v b="$(( 10 ** $bo ))" 'BEGIN{ if (a<=b) exit 1 }' || break
   done
   echo "$bs${bytesize_orders[$bo_idx]// *}"
+}
+
+# Format int grouping digits in sets of three
+readable_number () # ~ <Num> [<group-separator>]
+{
+  local num=${1:?} sep=${2:-,} n out
+  while [[ 3 -lt "${#num}" ]]
+  do
+    n=${num%???}
+    out=${num:${#n}}${out+$sep$out}
+    num=$n
+  done
+  echo "$num${out+,$out}"
 }
 
 # Return basename for one file, using filenamext to extract extension.
@@ -733,7 +746,7 @@ lines_slice() # [First-Line] [Last-Line] [-|File-Path]
 lines_vars () # ~ <Varnames...> # Read lines on stdin, one for each var
 {
   local __varname
-  for __varname in "$@"
+  for __varname
   do
     read -r $__varname || return
   done
@@ -866,14 +879,67 @@ os_pids () # ~ <Cmd-name>
   ps -C "${1:?}" -o pid:1=
 }
 
-# Combined dirname/basename to remove .ext(s) but return path
-pathname() # PATH EXT...
+# Remove last element from path.
+# Like normal dirname command but native (and cleans out ./)
+# XXX: the normal dirname command says that the directory for . and .. is .
+# (and / for // or ///). Otherwise, aside of '..' the algorithm is fairly
+# straightforward: remove one trailing '/*' match, or return '.' if none.
+os_dirname () # ~ <Path>
 {
-  local name="$1" dirname
+  local path=${1:?"$(sys_exc os:dirname:path)"} abs=false root
+  case "$path" in
+  ( ?*/ )    path="${path%\/}"
+  esac
+  case "$path" in
+  ( /* )     abs=true path=${path:1} ;;
+  ( ./ )     path=. ;;
+  ( ./* )    path=${path:2}
+  esac
+  "$abs" && root=/ || root=.
+  case "$path" in
+  ( ?*/?* )  path="${path%\/*}" ;;
+  ( * )      path="$root" ;;
+  esac
+  echo "$path"
+}
+
+os_basename () # ~ <Path> <Ext ...> # Remove path and given extensions from name (in order)
+{
+  local path=${1:?"$(sys_exc os:basename:path)"} ext
+  shift
+  case "$path" in
+  ( ?*/ )    path="${path%\/}"
+  esac
+  case "$path" in
+  ( */* )  path="${path##*\/}" ;;
+  esac
+  for ext
+  do
+    path=${path%$ext}
+  done
+  echo "$path"
+}
+
+os_pathname () # ~ <Path> <Ext ...> # Remove given extensions from path (in order)
+{
+  local path=${1:?"$(sys_exc os:pathname:path)"} ext
+  shift
+  for ext
+  do
+    path=${path%$ext}
+  done
+  echo "$path"
+}
+
+# TODO: deprecate, see os-pathname
+# Combined dirname/basename to remove .ext(s) but return path
+pathname () # ~ <Path> <Ext ...>
+{
+  local name="${1:?}" dirname
   dirname=$(dirname -- "$1") || return
-  fnmatch "./*" "$1" && dirname="$(echo "$dirname" | cut -c3-)"
+  #fnmatch "./*" "$1" && dirname="$(echo "$dirname" | cut -c3-)"
   shift 1
-  for ext in "$@"
+  for ext
   do
     name="$(basename -- "$name" "$ext")"
   done
@@ -893,7 +959,7 @@ pathnames () # exts=... [ - | PATHS ]
   [[ "${exts-}" ]] || exit 40
   #shellcheck disable=2086
   [[ "${1--}" != "-" ]] && {
-    for path in "$@"
+    for path
     do
       pathname "$path" $exts
     done
@@ -1147,8 +1213,8 @@ unique_args () # ~ <Args...>
 # Ziplists on lines from files. XXX: Each file should be same length.
 zipfiles ()
 {
-  rows="$(count_lines "$1")"
-  { for file in "$@" ; do
+  rows="$(count_lines "$1")" &&
+  { for file ; do
       cat "$file"
       #truncate_lines "$file" "$rows"
     done
