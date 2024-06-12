@@ -33,7 +33,8 @@ sys_lib__init ()
     }
 
     sys_tmp_init &&
-    $sys_lib_log debug "" "Initialized sys.lib" "$0"
+    sys_debug -debug -init ||
+      $sys_lib_log debug "" "Initialized sys.lib" "$(sys_debug_tag)"
   }
 }
 
@@ -886,31 +887,42 @@ sys_confirm ()
 # essential tasks during normal operations.
 sys_debug () # ~ <Modes...> # Test tags with sys-debug-mode, and do !<mode> ?<mode> handling
 {
-  test $# -gt 0 || set -- debug
-  while test $# -gt 0
+  [[ $# -gt 0 ]] || set -- debug
+  local all=true fail p
+  while [[ $# -gt 0 ]]
   do
-    # Default to doing IF-OR
-    case "$1" in [A-Za-z]* ) set -- "?$1" "${@:2}"; esac
-
-    # Check IF ON/OFF condition
     case "$1" in
-      "?"* ) sys_debug_mode "${1:1}" ;;
-      "!"* ) sys_not sys_debug_mode "${1:1}" ;;
-    esac ||
-      return
-
-    # XXX: Check SET ON/OFF mode ? See sh-mode may be.
-    case "$1" in [+-]* )
+      ( "+"* ) p=1 all=false ;; ( * ) p=0 all=true
     esac
-
+    case "${1:$p}" in
+      ( "-"* ) incr p
+          sys_not sys_debug_mode "${1:$p}" || return
+        ;;
+      ( * )
+          sys_debug_mode "${1:$p}"
+        ;;
+    esac && {
+            ! "${all:?}" && return || fail=false
+          } || {
+            "${all:?}" && return 1 || fail=true
+          }
     shift
   done
+  ! "$fail"
 }
 
 sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
 # based on one or more env settings. In general QUIET overrides modes that have
 # only implications for log generation/stdout verbosity, and VERBOSE overrides
-# QUIET.
+# QUIET. Neither value is ever given a default, so that is up to the user or
+# calling script.
+#
+# DEV, DEBUG, DIAG, ASSERT, INIT all mostly default to false, but are never
+# defaulted either so this can be done on a per-script context. The exception is
+# DIAG that defaults to true one time, and only in 'exceptions' mode and if
+# VERBOSE is not already true.
+#
+# See user-script-loadenv for examples.
 {
   local lk=${lk-}:us:sys.lib:debug-mode
   case "$1" in
@@ -954,6 +966,18 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
 sys_debug_ () # ~ [<...>]
 {
   sys_debug "$@" && echo true || echo false
+}
+
+sys_debug_tag ()
+{
+  local var
+  [[ $# -gt 0 ]] || set -- DEV DEBUG DIAG ASSERT INIT
+  for var
+  do
+    [[ false = ${!var:-} ]] && printf "\-%s" "${var,,}"
+    [[ true = ${!var:-} ]] && printf "+%s" "${var,,}"
+  done
+  "${DEBUG:-false}" || printf ',v=%i' "$v"
 }
 
 # Ensure variable is set or use argument(s) as value

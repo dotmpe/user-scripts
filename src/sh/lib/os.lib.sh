@@ -14,7 +14,7 @@ os_lib__init ()
     [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
     [[ "$os_lib_log" ]] || return 108
-    $os_lib_log debug "" "Initialized os.lib"
+    $os_lib_log debug "" "Initialized os.lib" "$(sys_debug_tag)"
   }
 }
 

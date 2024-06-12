@@ -63,8 +63,8 @@ date_lib__init()
   export gdate
 
   req_init_log || return
-  $us_log info "" "Loaded date.lib" "$0"
-  #$LOG info "" "Loaded date.lib" "$0"
+  sys_debug -debug -init ||
+    $us_log debug "" "Loaded date.lib" "$(sys_debug_tag)"
 }
 
 

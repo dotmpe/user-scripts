@@ -1,23 +1,22 @@
 ### Shell mode helper part
 
-##
+# See also us-mode, sys-debug.
 
-LOG_error_handler ()
-{
-  local r=$? lastarg=$_
-  $LOG error ":on-error" "In command '${0}' ($lastarg)" "E$r"
-  exit $r
-}
-# Copy: LOG-error-handler
+# In general this gets called once per shell script, and usually exactly at
+# the beginning. It should only deal with setup that prepares the current
+# shell session and client (connection, link, terminal etc.). Some modes
+# indicate parameters, some can be switched, some may be exclusive and some
+# final.
+
+# Because this is essential but has to be unobtrusive and solid, the current
+# approach is hardcoding (for standard Bash and a custom, hand-compiled urxvt)
+#
 
 # Packaged routines to prep shell.  Un profile, rc or user scripts
 sh_mode ()
 {
-  test $# -eq 0 && {
-    # XXX: sh-mode summary: flags and list traps
-    echo "$0: sh-mode: $-" >&2
-    trap >&2
-  } || {
+  test $# -eq 0 && return ${_E_MA:-194}
+
     # FIXME: check for conflicts with existing SHMODE, and skip existing modes
     SHMODE=${SHMODE:-$-}
     SHMODE="$SHMODE $*"
@@ -120,19 +119,15 @@ sh_mode ()
           ( private )
                 umask 077
               ;;
-
           ( private-group )
                 umask 007
               ;;
-
           ( private-sharegroup )
                 umask 027
               ;;
-
           ( public )
                 umask 000
               ;;
-
           ( share | public-group )
                 umask 002
               ;;
@@ -145,7 +140,6 @@ sh_mode ()
           ( * ) stderr echo "! $0: sh-mode: Unknown mode '$opt'"; return 1 ;;
       esac || return
     done
-  }
 }
 # Copy: sh-mode
 
@@ -179,6 +173,17 @@ build_error_handler ()
   $LOG error ":on-error" "In recipe for '$_' ($lastarg)" "E$r"
   exit $r
 }
+
+##
+
+LOG_error_handler ()
+{
+  local r=$? lastarg=$_
+  $LOG error ":on-error" "In command '${0}' ($lastarg)" "E$r"
+  exit $r
+}
+# Copy: LOG-error-handler
+
 
 # XXX:
 export -f sh_mode{,_exclusive} LOG_error_handler build_error_handler

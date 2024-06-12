@@ -37,7 +37,8 @@ command_avg () # ~ <Var-name> <Sample-count> <Sample-delay> <Cmd-argv...>
   for i in $(seq 1 $count)
   do
     ${c_sleep:-sleep} $sleep &&
-    test -n "$("$@")" || return
+    if_ok "$("$@")" &&
+    test -n "$_" || return
     ${sample_float:-false} "$_" && {
       test -n "$(echo "$samples + $_" | ${c_bc:-bc} -l)" || return
     } || {
@@ -55,4 +56,3 @@ command_avg () # ~ <Var-name> <Sample-count> <Sample-delay> <Cmd-argv...>
     test -n "$(( $samples / $count ))" || return
   declare -g ${name}=$_
 }
-
