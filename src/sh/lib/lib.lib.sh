@@ -29,11 +29,11 @@ lib_lib__group__core={:base,lib-{assert,require}}
 # Verify lib was loaded or bail out
 lib_assert() # Libs...
 {
-  local log_key=${scriptname:-$0}/$$:u-s:lib:assert
+  local log_key=${scriptname:-$0}/$$:u-s:lib:assert vid
   test $# -gt 0 || return 98
   while test $# -gt 0
   do
-    mkvid "$1"
+    vid=$(str_id "${1:?}")
     test "$(eval "echo \$${vid}_lib_load" 2>/dev/null )" = "0" || {
       log_key=$log_key $lib_lib_log error "" "Assert loaded '$1'" "" 1
       return 1

@@ -75,7 +75,7 @@ us_build__target_set () # ~ <Target> <...>
   target="${target%$ext}$ext"
   tpl=$target.build
   us_preproc_src+=( "$tpl" )
-  us_debug &&
+  sys_debug &&
     $LOG debug ":us-build[$targetref]" "Env established" "$tpl:meta:$meta" ||
     $LOG info ":us-build[$targetref]" "Env established" "$tpl"
 }
@@ -427,42 +427,28 @@ us_run () # ~ <Target> [<Args...>]
   exec "$@"
 }
 
-sh_fun us_debug ||
-  us_debug ()
-  {
-    "${US_DEBUG:-${DEBUG:-false}}"
-  }
-
-sh_fun us_dev ||
-  us_dev ()
-  {
-    "${US_DEV:-${DEV:-false}}"
-  }
-
 us_ifdev ()
 {
-  ! us_dev && return
+  ! sys_debug_mode dev && return
   "$@"
 }
 
 us_ifnodev ()
 {
-  us_dev && return
+  sys_debug_mode dev && return
   "$@"
 }
 
 # FIXME: autodefine
-us_debuglog () # ~ <Message> <Context>
+us_debuglog () # ~ <Message> [<Context>] [<Status>]
 {
-  ! us_debug ||
-  $LOG debug "$lk" "$@"
+  us_debug $LOG debug "$lk" "$@"
 }
 
 # FIXME: autodefine
-us_debuglog_info () # ~ <Message> <Context>
+us_debuglog_info () # ~ <Message> [<Context>] [<Status>]
 {
-  ! us_debug ||
-  $LOG info "$lk" "$@"
+  us_debug $LOG info "$lk" "$@"
 }
 
 us_main_log () # ~ <Level-ref> <Message> <Context>

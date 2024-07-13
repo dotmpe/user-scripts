@@ -19,20 +19,20 @@ teardown()
 }
 
 
-@test "${base}: mkid" {
+@test "${base}: str-sid" {
 
-  mkid "1+2/3|4-a^b\\c_f;e:x@y!z~"
+  id=$(str_sid "1+2/3|4-a^b\\c_f;e:x@y!z~")
   { test $? -eq 0 &&
     test -n "$id" &&
     assert_equal "$id" '1-2/3-4-a-b\c_f-e:x-y-z-'
   } || stdfail 1
 }
 
-@test "${base}: mkvid" {
+@test "${base}: str-id" {
   skip TODO
 }
 
-@test "${base}: mkcid" {
+@test "${base}: str-word" {
   skip TODO
 }
 

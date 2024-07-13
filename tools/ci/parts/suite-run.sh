@@ -11,8 +11,8 @@ suite_run () # Execute table specs ~ Table Suite [Prefix]
   OLDIFS="$IFS"
   IFS=$'\n'; for suiteline in $suitelines;
   do
-    upper= mkvid "$suiteline"; suite_stage=$vid
-    export_stage "$vid" && announce_stage
+    suite_stage=$(str_id "$suiteline")
+    export_stage "$suite_stage" && announce_stage
     IFS="$OLDIFS"
     { cmdname=$(echo "$suiteline" | cut -d' ' -f1)
       type -t "$cmdname" 1>/dev/null 2>&1 && {
@@ -29,7 +29,7 @@ suite_run () # Execute table specs ~ Table Suite [Prefix]
         eval $suiteline
       }
     }
-    close_stage "$vid"
+    close_stage "$suite_stage"
   done
   IFS="$OLDIFS"
   stage_id=script

@@ -67,7 +67,8 @@ functions_ranges ()
   functions_list "$@" | while read a1 a2 ; do
     test -n "$a1" -o -n "$a2" || continue
     test -n "$a2" && { f=$a2; s=$a1; } || { f=$a1; s=$1; }
-    f="$(echo $f | tr -d '()')" ; upper=0 mkvid "$f"
+    f="$(echo $f | tr -d '()')"
+    vid=$(str_id "$f")
     r="$(eval scrow regex --rx-multiline --fmt range \
       "$s" "'^$vid\\(\\).*((?<!\\n\\})\\n.*)*\\n\\}'")"
     trueish "$multiple_srcs" && echo "$s $f $r" || echo "$f $r"
@@ -82,7 +83,7 @@ functions_filter_ranges ()
   do
     test -n "$a1" -o -n "$a2" || continue
     test -n "$a2" && { f=$a2; s=$a1; } || { f=$a1; s=$2; }
-    upper=0 mkvid "htd__$(echo $f | tr -d '()')"
+    vid=$(str_id "htd__${f/()}")
     r="$( eval scrow regex --rx-multiline --fmt $out_fmt \
       "$s" "'^$vid\\(\\).*((?<!\\n\\})\\n.*)*\\n\\}'")"
     test -n "$r" || { warn "No range for $s $f"; continue; }

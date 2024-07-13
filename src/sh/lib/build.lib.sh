@@ -398,11 +398,11 @@ build_env_rule ()
   declare vid var val
   case "${1:?}" in
     ( "@"* )
-        mkvid "${1:1}" || return
+        vid=$(str_id "${1:1}")
         var=build_at_${vid}_targets
       ;;
     ( * )
-        mkvid "$1" || return
+        vid=$(str_id "$1")
         var=build_${vid}_targets
       ;;
   esac
@@ -1216,7 +1216,7 @@ build_target__from__expand_eval ()
 }
 
 # Function target: invoke function with build-args.
-# If function is '-' then it is set to `mkvid build_$BUILD_TARGET`. A special
+# If function is '-' then it is set to `str-id build_$BUILD_TARGET`. A special
 # case is made for '*' type, which is identical to '-' but uses  BUILD_NAME_NS
 # instead of the target name. These functions can use BUILD_NAME_PARTS to
 # access the rest of the name.
@@ -1238,10 +1238,10 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   test "${fun:0:${#_}}" = "$_" || fun=$_$fun
 
   #test "${fun:-"-"}" != "*" ||
-  #  fun="build_$(mkvid "$target" && printf -- "$vid")"
+  #  fun="build_$(str_id "$target")"
 
   #test "${fun:-"-"}" != ":" ||
-  #  fun="build_$(mkvid "$target" && printf -- "$vid")"
+  #  fun="build_$(str_word "$target")"
 
   # XXX: function argv?
   #test $# -eq 0 || {
@@ -1410,10 +1410,10 @@ build_target__from__shlib () # ~ <Target> [<Function>] [<Libs>] [<Args>]
   declare name=${1:?} func=${2:--}
   shift 2
   test "${func:-"-"}" != "*" ||
-    func="build__$(mkvid "$BUILD_NAME_NS" && printf -- "$vid")"
+    func="build__$(str_id "$BUILD_NAME_NS")"
 
   test "${func:-"-"}" != "-" ||
-    func="build_$(mkvid "$name" && printf -- "$vid")"
+    func="build_$(str_id "$name")"
 
   test $# -eq 0 || {
     #shellcheck disable=2046
@@ -1985,7 +1985,7 @@ build_target__with__env () # ~ [<Build-target>]
   declare tn vid var
   tn=${1:-${BUILD_TARGET:?}}
   tn=${tn/.\/}
-  mkvid "$tn" &&
+  vid=$(str_id "$tn") &&
   var=build_${vid}_targets &&
 
   # Must be set or return and signal lookup to continue with ext alternative
@@ -2299,8 +2299,8 @@ expand_format () # ~ <Format> <Name-Parts>
     #shellcheck disable=2001,2154
     case "$format" in
       *'%*'* ) echo "$format" | sed 's#%\*#'"$part"'#g' ;;
-      *'%_'* ) mkvid "$part"; echo "$format" | sed 's/%_/'"$vid"'/g' ;;
-      *'%-'* ) mksid "$part"; echo "$format" | sed 's/%-/'"$sid"'/g' ;;
+      *'%_'* ) vid=$(str_word "$part"); echo "$format" | sed 's/%_/'"$vid"'/g' ;;
+      *'%-'* ) sid=$(str_id "$part"); echo "$format" | sed 's/%-/'"$sid"'/g' ;;
       * ) return 98 ;;
     esac
   done

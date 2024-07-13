@@ -32,7 +32,8 @@ std_lib__init ()
   true "${STD_INTERACTIVE:=`eval "$std_interactive"; printf "%i" $?`}"
 
   std_uc_env_def &&
-  ${INIT_LOG:?} debug "" "Initialized std.lib" "$0"
+  sys_debug -debug -init ||
+  ${INIT_LOG:?} notice "" "Initialized std.lib" "$0"
 }
 
 
@@ -53,20 +54,20 @@ std_lib_check()
 # Check for Linux, MacOS or Cygwin.
 std_iotype_check()
 {
-  case "$uname" in
+  case "${OS_UNAME:?}" in
 
     Linux | CYGWIN_NT-* ) ;;
     Darwin ) ;;
 
-    * ) error "No stdio-type for $uname" ;;
+    * ) error "No stdio-type for $OS_UNAME" ;;
   esac
   return 1
 }
 
 
-std_uc_env_def ()
+std_uc_env_def () # ~ <Key=UC_DEFAULT_>
 {
-  local key
+  local kp=${1:-UC_DEFAULT_} key
 
   # Set defaults for status codes
   # XXX: need better variable name convention if integrated with +U-s
@@ -75,8 +76,8 @@ std_uc_env_def ()
 
   for key in ${STD_E} ${STD_E_SIGNALS}
   do
-    vref=UC_DEFAULT_${key^^}
-    declare $vref=false
+    vref=${kp}${key^^}
+    #declare $vref=false
     #declare $vref=true
     #val=${!vref-} || continue
     #echo "val='$val'" >&2
@@ -85,8 +86,8 @@ std_uc_env_def ()
   : "${_E_GAE:=193}" # Generic Argument Error. Value error, unspecific.
   : "${_E_MA:=194}" # Missing arguments. Syntax error. Was 64 in places.
   # See std-uc.lib
-  : "${_E_continue:=195}" # error but may continue steps/batch
-  : "${_E_next:=196}" # failure try next
+  : "${_E_continue:=195}" # success, but unfinished; continue steps/batch
+  : "${_E_next:=196}" # failure or not satisfied, try next
   : "${_E_done:=200}"
 }
 
@@ -108,11 +109,11 @@ stdio_type()
 {
   local io= pid=
   test -n "$1" && io=$1 || io=1
-  case "$uname" in
+  case "${OS_UNAME:?}" in
 
     Linux | CYGWIN_NT-* )
         test -n "${2-}" && pid=$2 || pid=$$
-        test -e /proc/$pid/fd/${io} || error "No $uname FD $io"
+        test -e /proc/$pid/fd/${io} || error "No $OS_UNAME FD $io"
         if readlink /proc/$pid/fd/$io | grep -q "^pipe:"; then
           eval stdio_${io}_type=p
         elif file $( readlink /proc/$pid/fd/$io ) | grep -q 'character.special'; then
@@ -124,7 +125,7 @@ stdio_type()
 
     Darwin )
 
-        test -e /dev/fd/${io} || error "No $uname FD $io"
+        test -e /dev/fd/${io} || error "No $OS_UNAME FD $io"
         if file /dev/fd/$io | grep -q 'named.pipe'; then
           eval stdio_${io}_type=p
         elif file /dev/fd/$io | grep -q 'character.special'; then
@@ -134,7 +135,7 @@ stdio_type()
         fi
       ;;
 
-    * ) error "No stdio-type for $uname" ;;
+    * ) error "No stdio-type for $OS_UNAME" ;;
   esac
 }
 

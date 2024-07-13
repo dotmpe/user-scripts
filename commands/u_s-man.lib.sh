@@ -110,7 +110,7 @@ print_topic ()
     cat "$@"
     return
   }
-  case "$uname" in
+  case "${OS_UNAME:?}" in
 
     Darwin ) {
       pandoc -s -f markdown -t man "$@" || return
@@ -118,6 +118,6 @@ print_topic ()
 
     Linux ) pandoc -s -f markdown -t man "$@" || return ;;
 
-    * ) $LOG "error" "" "Unexpected uname" "$uname" 1 ;;
+    * ) $LOG "error" "" "Unexpected uname" "$OS_UNAME" 1 ;;
   esac
 }

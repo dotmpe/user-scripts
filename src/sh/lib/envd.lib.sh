@@ -139,9 +139,10 @@ envd_commit () # ~ <fk>
 # Declares is a list of long-options followed by arguments
 # Outside Envd-Tag context initial argument may be option, with -n for new
 # declaration (cannot exist) of tag followed by type, or -r to re-run declares
-envd_declare () # ~ <Type-ref> <Preload-lib> <Postinit-lib> <Envd-dep> <declares ...>
+envd_declare () # ~ <Type-ref> <Preload-lib> <Post-reinit-lib> <Envd-dep> <declares ...>
 {
   local lk=${lk-}:envd-declare
+  # Given static Envd.Tag env, load default
   test -n "${ENVD_TAG-}" && {
     local type=${1-}
     [[ $type = "-" ]] && type=
@@ -166,7 +167,8 @@ envd_declare () # ~ <Type-ref> <Preload-lib> <Postinit-lib> <Envd-dep> <declares
     [[ "unset" != "${type-unset}" ]] || return
   }
   test $# -le 4 || {
-    # XXX: reset values
+    # XXX: reset values; declare now by running envd-declare:<type> for each
+    # type (Envd.Tag) in <declare...>
     declare o=5
     while test $o -lt $#
     do
@@ -185,15 +187,25 @@ envd_declare () # ~ <Type-ref> <Preload-lib> <Postinit-lib> <Envd-dep> <declares
 
 envd_declare__funs () # ~ <Funs...>
 {
-  sys_default "ENVD_FUN[${ENVD_TAG:?}]" "" &&
-  str_append "ENVD_FUN[${ENVD_TAG:?}]" "$*"
+  envd_declare__tagc fun "$@"
 }
 
-envd_declare__vars () # ~ <Vars...>
+envd_declare__sources () # ~ <Paths...>
 {
-  sys_default "ENVD_VAR[${ENVD_TAG:?}]" "" &&
-  #: "${ENVD_VAR[@]?"$(sys_exc exc Exception)"}"
-  str_append "ENVD_VAR[${ENVD_TAG:?}]" "$*"
+  envd_declare__tagc src "$@"
+}
+
+envd_declare__tagc () # ~ <Key> <Init-values...>
+{
+  : "${1:?}"
+  local __us_envd_tagc=${_^^}
+  sys_default "ENVD_${__us_envd_tagc}[${ENVD_TAG:?}]" "" &&
+  str_append "ENVD_${__us_envd_tagc}[${ENVD_TAG:?}]" "${*:2}"
+}
+
+envd_declare__vars () # ~ <Names...>
+{
+  envd_declare__tagc var "$@"
 }
 
 envd_declared ()
@@ -299,7 +311,8 @@ envd_defined ()
   [[ "${ENVD_DEF["${1:?}"]:+set}" && 0 -eq "${ENVD_DEF["${1:?}"]}" ]]
 }
 
-envd_dtype ()
+# Embed envd-declare in explicit ENVD_TAG env
+envd_dtype () # ~ <Dynamic-type-ref> <envd-declare-argv...>
 {
   ENVD_TAG=${1:?} envd_declare "${@:2}"
 }

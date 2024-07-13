@@ -5,7 +5,11 @@
 
 os_lib__load ()
 {
-  : "${uname:="$(uname -s)"}"
+  lib_require str &&
+  : "${OS_HOST:="$(hostname -f)"}" &&
+  : "${OS_HOSTNAME:="$(hostname -s)"}" &&
+  : "${OS_NAME:="$(uname -o)"}" &&
+  : "${OS_UNAME:="$(uname -s)"}"
 }
 
 os_lib__init ()
@@ -14,7 +18,8 @@ os_lib__init ()
     [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
     [[ "$os_lib_log" ]] || return 108
-    $os_lib_log debug "" "Initialized os.lib" "$(sys_debug_tag)"
+    sys_debug -debug -init ||
+      $os_lib_log notice "" "Initialized os.lib" "$(sys_debug_tag)"
   }
 }
 
@@ -345,14 +350,14 @@ filectime() # File
 {
   while [[ $# -gt 0 ]]
   do
-    case "${uname,,}" in
+    case "${OS_UNAME,,}" in
       darwin )
           stat -L -f '%c' "$1" || return 1
         ;;
       linux | cygwin_nt-6.1 )
           stat -L -c '%Z' "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filectime: $uname?" "" 1 ;;
+      * ) $os_lib_log error "os" "filectime: $OS_UNAME?" "" 1 ;;
     esac; shift
   done
 }
@@ -383,7 +388,7 @@ filemtime() # File
   file_stat_flags
   while [[ $# -gt 0 ]]
   do
-    case "${uname,,}" in
+    case "${OS_UNAME,,}" in
       darwin )
           "${file_names:-false}" && pat='%N %m' || pat='%m'
           stat -f "$pat" $flags "$1" || return 1
@@ -392,7 +397,7 @@ filemtime() # File
           "${file_names:-false}" && pat='%N %Y' || pat='%Y'
           stat -c "$pat" $flags "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filemtime: $uname?" "" 1 ;;
+      * ) $os_lib_log error "os" "filemtime: $OS_UNAME?" "" 1 ;;
     esac; shift
   done
 }
@@ -401,21 +406,21 @@ filemtime() # File
 filemtype () # File..
 {
   local flags= ; file_tool_flags
-  case "${uname,,}" in
+  case "${OS_UNAME,,}" in
     darwin )
         file -"${flags}"I "$1" || return 1
       ;;
     linux )
         file -"${flags}"i "$1" || return 1
       ;;
-    * ) error "filemtype: $uname?" 1 ;;
+    * ) error "filemtype: $OS_UNAME?" 1 ;;
   esac
 }
 
 filename_baseid () # ~ <Path-Name>
 {
   basename="$(filestripext "$1")"
-  mkid "$basename" '' '_'
+  id=$(str_sid "$basename")
 }
 
 # for each argument echo filename-extension suffix (last non-dot name element)
@@ -435,14 +440,14 @@ filesize () # File
   file_stat_flags
   while [[ $# -gt 0 ]]
   do
-    case "${uname,,}" in
+    case "${OS_UNAME,,}" in
       darwin )
           stat -L -f '%z' "$1" || return 1
         ;;
       linux | cygwin_nt-6.1 )
           stat -L -c '%s' "$1" || return 1
         ;;
-      * ) $os_lib_log error "os" "filesize: $uname?" "" 1 ;;
+      * ) $os_lib_log error "os" "filesize: $OS_UNAME?" "" 1 ;;
     esac; shift
   done
 }
@@ -869,7 +874,7 @@ os_private () # ~ <File> # True if current user only has at least read rights
   test -f "${1:?}" && {
     test -z "${2-}" && local mode || local -n mode=${2:?}
     test -O "$1" &&
-    sys_ mode stat -L -c "%a" "$1" &&
+    sys_out mode stat -L -c "%a" "$1" &&
     case "$mode" in ( [4-7]00 ) true;; ( * ) false; esac
   }
 }

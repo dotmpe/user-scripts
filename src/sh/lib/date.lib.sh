@@ -47,10 +47,10 @@ date_lib__init()
   lib_require log || return
   # XXX: test -z "${date_lib_init:-}" || return ${date_lib_init:-}
 
-  test -n "${gdate-}" || case "$uname" in
+  test -n "${gdate-}" || case "${OS_UNAME:?}" in
     Darwin ) gdate="gdate" ;;
     Linux ) gdate="date" ;;
-    * ) $LOG error "" uname "$uname" 1 ; return 1 ;;
+    * ) $LOG error "" uname "$OS_UNAME" 1 ; return 1 ;;
   esac
 
   TZ_OFF_1=$($gdate -d '1 Jan' +%z)

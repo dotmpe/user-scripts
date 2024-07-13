@@ -4,8 +4,8 @@
 vc_lib__init()
 {
   test "${vc_lib_init-}" = "0" && return
-  test -n "${INIT_LOG-}" || return 109
-  $INIT_LOG debug "" "Initialized vc.lib" "$0"
+  sys_debug -debug -init ||
+    ${INIT_LOG:?} notice "" "Initialized vc.lib" "$(sys_debug_tag --oneline)"
 }
 
 # Given COPY src and trgt file from user-conf repo,

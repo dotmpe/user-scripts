@@ -10,12 +10,13 @@
 
 sys_lib__load ()
 {
-  lib_require os || return
+  lib_require str os || return
 
   : "${LOG:?"No LOG env"}"
-  if_ok "${uname:=$(uname -s)}" &&
-  if_ok "${HOST:=$(hostname -s)}" || return
-  : "${hostname:=${HOST,,}}"
+  if_ok "${OS_UNAME:=$(uname -s)}" &&
+  if_ok "${OS_HOSTNAME:=$(hostname -s)}" || return
+
+  sys_debug_fun=sys_debug,sys_debug_tag,sys_match_select,sys_debug_mode,sys_exc,sys_source_trace,std_findent,sys_callers,if_ok,fnmatch,str_prefix
 }
 
 sys_lib__init ()
@@ -34,7 +35,7 @@ sys_lib__init ()
 
     sys_tmp_init &&
     sys_debug -debug -init ||
-      $sys_lib_log debug "" "Initialized sys.lib" "$(sys_debug_tag)"
+      $sys_lib_log notice "" "Initialized sys.lib" "$(sys_debug_tag)"
   }
 }
 
@@ -66,7 +67,7 @@ add_env_path() # Prepend-Value Append-Value
 add_env_path_lookup() # Var-Name Prepend-Value Append-Value
 {
   test $# -ge 2 -a $# -le 3 || return 64
-  local val="$(eval echo "\$$1")"
+  local val="${!1:?}"
   test -e "$2" -o -e "${3-}" || {
     echo "No such file or directory '$*'" >&2
     return 1
@@ -99,16 +100,41 @@ aarr_pickglob () # ~ <Array> <Match-key> # Output tsv for matching keys
   done
 }
 
-array_contains () # ~ <Array> <Value>
+arr_contains () # ~ <Array> <Value>
 {
-  local -n arr=${1:?}
-  for ((i=0; i<${#arr[@]}; i++))
+  local -n __us_arr=${1:?}
+  for ((i=0; i<${#__us_arr[@]}; i++))
   do
-    [[ "${arr[i]}" = "${2-}" ]] && return
+    [[ "${__us_arr[i]}" = "${2-}" ]] && return
   done
   false
 }
 # Alias: in-array, array-item-exists
+
+arr_dump () # ~ <Array>
+{
+  local __us_arr_key
+  local -n __us_arr=${1:?}
+  for __us_arr_key in "${!__us_arr[@]}"
+  do
+    : "$__us_arr_key"
+    echo "$1[\"$_\"]=${__us_arr["$_"]@Q}"
+  done
+}
+
+arr_sub () # ~ <Array> ( <Match> <Replace> )+
+{
+  local -n __us_arr_sub=${1:?}
+  shift &&
+  while true
+  do
+    for ((i=0; i<${#__us_arr_sub[@]}; i++))
+    do
+      [[ "${__us_arr_sub[i]}" != "${1-}" ]] || __us_arr_sub[$i]=$2
+    done
+    shift 2 || return
+  done
+}
 
 # Merge all associative arrays into first. Last index takes preference.
 assoc_concat () # ~ <To-array> <From-arrays...>
@@ -284,15 +310,16 @@ cwd_rarr () # ~ <Arr-name>
 }
 
 # Return non-zero if default was set, or present value does not match default
-default_env() # VAR-NAME DEFAULT-VALUE [Level]
+default_env() # ~ VAR-NAME DEFAULT-VALUE [Level]
 {
-  test -n "${1-}" -a $# -eq 2 || error "default-env requires two args ($*)" 1
+  test -n "${1-}" -a $# -eq 2 || return ${_E_GAE:-193}
+  local
   local vid= cid= id= v= c=0
   trueish "${title-}" && upper= || {
     test -n "${upper-}" || upper=1
   }
-  mkvid "$1"
-  mkcid "$1"
+  str_vword vid "$1"
+  str_id cid "$1"
   unset upper
   v="$(eval echo \$$vid 2>/dev/null )"
   test -n "${3-}" || set -- "$1" "$2" "debug"
@@ -328,7 +355,7 @@ execa_cmd () # ~ CMDLINE [ -- CMDLINE ]...
 {
   test $# -gt 0 || return 98
   local execs=$(setup_tmpf .execs) execnr=0
-  exec_arg_lines "$@" | while read -r execline
+  str_arg_seqs "$@" | while read -r execline
     do
       test -n "$execline" || continue
       echo "$execline">>"$execs"
@@ -339,20 +366,6 @@ execa_cmd () # ~ CMDLINE [ -- CMDLINE ]...
   test ! -e "$execs" || { execnr=$(count_lines "$execs"); rm "$execs"; }
   $sys_lib_log info sys "Exec-arg: executed $execnr lines"
   test $execnr -gt 0 || return 1
-}
-
-# TODO: rename, move to str.lib?
-# Turn '--' seperated argument seq. into lines
-exec_arg_lines () # ~
-{
-  local exec=
-  while test $# -gt 0
-  do
-    test "$1" = "--" && { echo "$exec"; exec=; shift; continue; }
-    test -n "$exec" && exec="$exec $1" || exec="$1"
-    shift
-  done
-  test -z "$exec" || echo "$exec"
 }
 
 # XXX: Read script from stdin and evaluate it for each expansion somehow?
@@ -467,7 +480,7 @@ init_uconfdir_path()
 {
   # Add path dirs in $UCONF to $PATH
   local name
-  for name in $uname $(uname -s) Generic
+  for name in ${OS_NAME-} ${OS_UNAME:?} Generic
   do
     local user_PATH=$UCONF/path/$name
     if test -d "$user_PATH"
@@ -748,15 +761,6 @@ stdin_from_nonempty () # ~ [<File>]
   exec < "$_"
 }
 
-sys_ () # ~ <Var> <Cmd...>
-{
-  local -n var=${1:?}
-  var=$("${@:2}")
-  # XXX: at least this creates a global variable
-  #if_ok "$("${@:2}")" &&
-  #read -r ${1:?} <<< "$_"
-}
-
 sys_aappend () # ~ <Array> <Item> # Append new unique item to indexed array
 {
   declare -n arr=${1:?}
@@ -788,6 +792,19 @@ sys_aarrv () # ~ <Array> <Vars...>
   done
 }
 # XXX: sys-assoc-array-from-variables
+
+sys_loop () # ~ <Callback> <Items ...>
+{
+  local fun=${1:?}
+  shift
+  while [[ $# -gt 0 ]]
+  do
+    "$fun" "${1:?}" && break
+    test ${_E_done:-200} -eq $? && return
+    test ${_E_continue:-195} -eq $_ || return $_
+    shift
+  done
+}
 
 # system-array-from-command
 # Read stdout of given command into array, if command returns zero status.
@@ -849,7 +866,7 @@ sys_assert_nz () # ~ <Var-name> <Value> ...
 }
 
 # XXX: new function: ignore last status if test succeeds, or return it
-sys_astat ()
+sys_astat () # ~ ( <Test-flag> <Test-value> )*
 {
   local stat=$?
   while [[ $# -gt 0 ]]
@@ -868,14 +885,16 @@ sys_callers () # ~ [<Frame>]
   done
 }
 
-sys_cd () # ~ <Dir> <Cmd...>
+sys_cd () # ~ <Dir> <Cmd...> # Change PWD before executing
 {
-  cd "${1:?}" &&
-  "${@:2}"
+  # TODO: silence output, return cmd state
+  pushd "${1:?}" &&
+  "${@:2}" &&
+  popd
 }
 
 # sys-confirm PROMPT
-sys_confirm ()
+sys_confirm () # ~ <Prompt-string> # Read one character (key-press)
 {
   local choice_confirm=
   sys_prompt "$1" choice_confirm -n 1 &&
@@ -888,27 +907,7 @@ sys_confirm ()
 sys_debug () # ~ <Modes...> # Test tags with sys-debug-mode, and do !<mode> ?<mode> handling
 {
   [[ $# -gt 0 ]] || set -- debug
-  local all=true fail p
-  while [[ $# -gt 0 ]]
-  do
-    case "$1" in
-      ( "+"* ) p=1 all=false ;; ( * ) p=0 all=true
-    esac
-    case "${1:$p}" in
-      ( "-"* ) incr p
-          sys_not sys_debug_mode "${1:$p}" || return
-        ;;
-      ( * )
-          sys_debug_mode "${1:$p}"
-        ;;
-    esac && {
-            ! "${all:?}" && return || fail=false
-          } || {
-            "${all:?}" && return 1 || fail=true
-          }
-    shift
-  done
-  ! "$fail"
+  sys_match_select "" "" sys_debug_mode "$@"
 }
 
 sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
@@ -970,14 +969,20 @@ sys_debug_ () # ~ [<...>]
 
 sys_debug_tag ()
 {
-  local var
+  local var tagstr
+  # TODO: implement different out-fmt
+  case "${1-}" in
+    --oneline ) fmt=oneline; shift
+  esac
   [[ $# -gt 0 ]] || set -- DEV DEBUG DIAG ASSERT INIT
-  for var
-  do
-    [[ false = ${!var:-} ]] && printf "\-%s" "${var,,}"
-    [[ true = ${!var:-} ]] && printf "+%s" "${var,,}"
-  done
-  "${DEBUG:-false}" || printf ',v=%i' "$v"
+  tagstr=$(sys_selector_tag "$@")
+  tagstr="${tagstr//$'\n'/,}"
+  [[ ${tagstr-} ]] || return 0
+  [[ ! ${v:-${verbosity-}} ]] && {
+    echo "$tagstr"
+  } || {
+    ! "${DEBUG:-false}" || printf '%s,v=%i' "$tagstr" "${v:-$verbosity}"
+  }
 }
 
 # Ensure variable is set or use argument(s) as value
@@ -987,19 +992,24 @@ sys_default () # ~ <Name> <Value> ...
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
 
-# A helper for inside ${var?...} expressions
-sys_exc () # ~ <Head>: <Label> # Format exception-id and message
+sys_each () # ~ <Exec-names...>
 {
-  ! "${DEBUG:-$(sys_debug_ exceptions)}" && echo "$1: ${2-Expected}" ||
-    # TODO: use localenv for params
-    "${sys_on_exc:-sys_exc_trc}" "$1" "${2-Expected}" 3 "${@:3}"
+  local __us_sys_each_cmdname
+  for __us_sys_each_cmdname
+  do
+    "${__us_sys_each_cmdname:?}" || return
+  done
 }
 
-# system-exception-trace: Helper to format callers list including custom head.
-sys_exc_trc () # ~ [<Head>] [<Msg>] [<Offset=2>] ...
+# An exception helper, e.g. for inside ${var?...} expressions
+sys_exc () # ~ <Head>: <Label> # Format exception-id and message
 {
-  echo "${1:-us:sys: E$? source trace:}${2+ }${2-}"
-  std_findent "  - " sys_callers "${3-2}"
+  local \
+    sys_exc_id=${1:-us:exc:$0:${*// /:}} \
+    sys_exc_msg=${2-Expected}
+  ! "${DEBUG:-$(sys_debug_ exceptions)}" &&
+  echo "$sys_exc_id${sys_exc_msg:+: $sys_exc_msg}" ||
+    "${sys_on_exc:-sys_source_trace}" "$sys_exc_id" "$sys_exc_msg" 3 "${@:3}"
 }
 
 # system-format-from-variables
@@ -1011,10 +1021,34 @@ sys_fmtv () # ~ <String-expression> <Var-names...>
   printf "$fmt" "${vars[@]}"
 }
 
+sys_for_arg () # (s) ~ <Args...> # Run each command line on stdin with arguments
+{
+  local sfa_cmd &&
+  while read -ra sfa_cmd
+  do "${sfa_cmd[@]}" "$@" || return; done
+}
+
+sys_for_do () # (s) ~ <Cmd...> # Run command for each argument line on stdin
+{
+  local sfd_args &&
+  while read -ra sfd_args
+  do "$@" "${sfd_args[@]}" || return; done
+}
+
 sys_get () # ~ <Var>
 {
   : "${1:?"$(sys_exc sys.lib:get:@_1: "Variable name expected")"}"
   echo "${!_:?}"
+}
+
+sys_iref () # ~ <Path> [<Var-key=sys_iref_>]
+{
+  : "${2:-sys_iref_}"
+  local -n \
+    __sys_iref_ino=${_}ino \
+    __sys_iref_mnt=${_}mnt
+  if_ok "$(stat -c '%i %m' "${1:?}")" &&
+  read -r __sys_iref_{ino,mnt} <<< "$_"
 }
 
 # system-join-array, system-collapse-array
@@ -1027,6 +1061,33 @@ sys_join () # ~ <Concat> <Array>
   do : "$_${_:+$__c}${__arr[_i_]}"
   done &&
   echo "$_"
+}
+
+# XXX: theoretically could accept variable len pref key
+sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
+{
+  local all=true fail p inc=${1:-"+"} exc=${2:-"-"} fun=${3:?}
+  shift 3 || return
+  while [[ $# -gt 0 ]]
+  do
+    case "$1" in
+      ( "$exc"* ) p=1 all=false ;; ( * ) p=0 all=true
+    esac
+    case "${1:$p}" in
+      ( "$inc"* ) incr p
+          ! "$fun" "${1:$p}" || return
+        ;;
+      ( * )
+          "$fun" "${1:$p}"
+        ;;
+    esac && {
+            ! "${all:?}" && return || fail=false
+          } || {
+            "${all:?}" && return 1 || fail=true
+          }
+    shift
+  done
+  ! "${fail:-true}"
 }
 
 sys_nejoin () # ~ <Concat> <Array>
@@ -1048,8 +1109,17 @@ sys_not ()
   [[ $? -eq ${_E_fail:-1} ]]
 }
 
+sys_out () # ~ <Var> <Cmd...> # Capture command output
+{
+  local -n var=${1:?}
+  var=$("${@:2}")
+  # XXX: at least this creates a global variable
+  #if_ok "$("${@:2}")" &&
+  #read -r ${1:?} <<< "$_"
+}
+
 # system-path-output
-sys_path () # ~ <Cmd...> # TODO??
+sys_path () # ~ # TODO??
 {
   echo "${PATH//:/$'\n'}" | sys_path_fmt
 }
@@ -1135,6 +1205,7 @@ sys_prompt () # ~ <Prompt> <Var> <Read-argv...>
 sys_rarr () # ~ <Arr-name>
 {
   declare -a temp
+  #shellcheck disable=2178 # 'dest' still used as array afaics
   sys_rarr2 "${1:?}" temp &&
   declare -n dest=${2:?} &&
   dest=( "${temp[@]}" )
@@ -1148,6 +1219,17 @@ sys_rarr2 () # ~ <Arr-from> <Arr-to>
   for (( _i_=$(( ${#__from[@]} - 1 )); _i_>=0; _i_-- ))
   do
     __to+=( "${__from[$_i_]}" )
+  done
+}
+
+# XXX: use concat sep or not
+sys_selector_tag () # ~ <Var-names...>
+{
+  local var
+  for var
+  do
+    [[ false = "${!var:-}" ]] && printf -- "-%s\n" "${var,,}"
+    [[ true = "${!var:-}" ]] && printf "+%s\n" "${var,,}"
   done
 }
 
@@ -1168,6 +1250,27 @@ sys_set_ne () # ~ <Var-name> <Value> ...
   val=${2:?"$(sys_exc sys:set-var-ne:val@_2 "Value expected")"} &&
   declare -n ref=$var &&
   ref=$val
+}
+
+# system-source-trace: Helper to format callers list including custom head.
+sys_source_trace () # ~ [<Head>] [<Msg>] [<Offset=2>] [ <var-names...> ]
+{
+  ! "${US_SRC_TRC:-true}" && {
+    echo "${1:-us:source-trace: E$? source trace (disabled):}${2+ ${2-}}"
+  } || {
+    echo "${1:-us:source-trace: E$? source trace:}${2+ ${2-}}" &&
+    std_findent "  - " sys_callers "${3-2}"
+  }
+  [[ 3 -ge $# ]] && return
+  echo "Variable context:"
+  local -n var &&
+  for var in "${@:4}"
+  do
+    if_ok "$(declare -p ${!var})" &&
+    fnmatch "declare -n *" "$_" && {
+      printf '- %s\n  %s\n' "$_" "${!var}: ${var@Q}"
+    } || echo "$_"
+  done | str_prefix '  '
 }
 
 sys_stat ()
@@ -1215,6 +1318,36 @@ sys_tmp_init () # DIR
   sys_tmp="$1"
 }
 
+sys_tsvars () # ~ VARNAMES... # Read fields from TSV line
+{
+  local line &&
+  IFS=$'\n' read -r line &&
+# Unfortenately, Bash read insists on reading non-zero values. So we use
+  # something (\f ie. ASCII form-feed character) that is does accept as value
+  # and clear that afterwards. FIXME: but it does seem doing our own read would
+  # improve performance.
+  : "${line//$'\t\t'/$'\t-\t'}" &&
+  : "${_//$'\t\t'/$'\t-\t'}" &&
+  : "${_/#$'\t'/$'-\t'}" &&
+  : "${_/%$'\t'/$'\t-'}" &&
+  IFS=$'\t\n' read -r $* <<< "$_" &&
+  for var
+  do [[ ${!var?} != '-' ]] || eval "$var="
+  done
+}
+
+sys_varstab () # ~ VARNAMES... # Write fields to TSV line
+{
+  local varname
+  : ""
+  for varname
+  do
+    : "$_${!varname?}"$'\t'
+  done
+  : "${_%$'\t'}"
+  echo "$_"
+}
+
 # Error unless non-empty and true-ish value
 trueish () # ~ <String>
 {
@@ -1243,6 +1376,7 @@ try_value()
   [[ $# -gt 1 ]] && {
     value="$(eval echo "\"\${$(echo_local "$@")-}\"" || return )"
   } || {
+    #shellcheck disable=1083 # { is literal, yes
     value="$(eval echo \"\${${1-}-}\" || return )"
   }
   [[ "$value" ]] || return 1
@@ -1278,12 +1412,12 @@ user_lookup_path () # ~ [<User-paths...>] -- <Local-paths...>
 # when these are variants on the normal user profile, the normal name is
 # ENV_NAME, which should be an ID describing ENV (or BASH_ENV, etc.). But
 # additional formatting and IDs are added for
-work_env()
+work_env ()
 {
   # Get name for shell profile
   [[ -z "$ENV_NAME" ]] && {
-    [[ -n "$hostname" ]] || exit 110
-    LENV="$hostname"
+    [[ ${OS_HOSTNAME-} ]] || exit 110
+    LENV="$OS_HOSTNAME"
   } || {
     LENV="$ENV_NAME"
   }
@@ -1292,7 +1426,7 @@ work_env()
   [[ "0" = "$PYVENV" ]] || {
     LENV="$LENV,pyvenv"
   }
-  printf -- "$LENV"
+  printf '%s' "$LENV"
 }
 
 # Sync: BIN:

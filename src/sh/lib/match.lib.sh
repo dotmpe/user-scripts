@@ -14,11 +14,11 @@ match_lib__init()
 {
   test -z "${match_lib_init:-}" || return $_
   #test -n "${INIT_LOG-}" || return 109
-  case "${uname,,}" in
+  case "${OS_UNAME,,}" in
       #darwin ) gsed=gsed; ggrep=ggrep;;
       linux ) gsed=sed; ggrep=grep ;;
       * ) command -v gsed >/dev/null 2>&1 ||
-          $LOG "error" "" "GNU toolkit required" "$uname" 100 || return
+          $LOG "error" "" "GNU toolkit required" "$OS_UNAME" 100 || return
         gsed=gsed; ggrep=ggrep;;
   esac
   test ! -e "${match_local_nametab:?}" || MATCH_NAMETAB=$_

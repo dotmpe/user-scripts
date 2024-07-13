@@ -13,7 +13,9 @@ index_update () # Cmds... -- Select Id-Col Sort-Key Target Temp
   local new_index=
   test -e "$index" && new_index=0 || new_index=1
   set -- $cmds "$@"
-  local build_sub=$1; mkvid "$1"; shift; local build_sub_cmd="$vid"; unset vid
+  local build_sub=$1 build_sub_cmd
+  str_vid build_sub_cmd "$build_sub"
+  shift
   { $build_sub_cmd "$@" || return
   } > "$cache"
 

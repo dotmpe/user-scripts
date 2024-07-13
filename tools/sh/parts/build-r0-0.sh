@@ -158,7 +158,7 @@ env__define__build_core ()
 " build_rules build_from_rules read_data sh_fun_body sh_fun_type"\
 " build_env_rule"\
 " build_rule_exists build_rule_fetch"\
-" fnmatch mkvid match_grep sh_fun"\
+" fnmatch match_grep sh_fun"\
 " build_ sh_unset sh_unset_ifset"\
 " build_alias_part build_unalias"\
 " expand_format"\

@@ -8,7 +8,7 @@ init_lib_log () # ~ NAME
 
 lib_util_lib__load()
 {
-  case "$uname" in Darwin ) default_lib="$default_lib Darwin" ;; esac
+  case "${OS_UNAME:?}" in Darwin ) default_lib="$default_lib Darwin" ;; esac
 
   test -n "${lib_util_env_d_default-}" ||
       lib_util_env_d_default=init-log\ ucache\ scriptpath-deps

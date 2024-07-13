@@ -126,7 +126,7 @@ Test3 done'
   exp_a="$(filectime test.a)" ;
   exp_b="$(filectime test.b)"
   exp_c="$(filectime test.c)"
-  case "$uname" in
+  case "${OS_UNAME:?}" in
     darwin ) stat -f '%N c:%c m:%m' test.* a.src ;;
     * ) stat -c '%n c:%Z m:%Y' test.* a.src ;;
   esac

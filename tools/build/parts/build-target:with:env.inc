@@ -6,9 +6,8 @@ env:declare:build-target:with:env ()
 
 build-target:with:env ()
 {
-  declare vid var
-  mkvid "${1:-${BUILD_TARGET:?}}" &&
-  var=build_${vid}_targets &&
+  declare vid var &&
+  str_vword var "${1:-${BUILD_TARGET:?}}" &&
 
   # Must be set or return and signal lookup to continue with ext alternative
   test "${!var-unset}" != unset || return ${_E_continue:-196}

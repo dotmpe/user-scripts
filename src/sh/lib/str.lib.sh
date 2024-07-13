@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 
 # Set env for str.lib.sh
 str_lib__load()
@@ -10,10 +9,10 @@ str_lib__load()
       && str_lib_log="$LOG" || str_lib_log="$INIT_LOG"
     [[ "$str_lib_log" ]] || return 108
 
-    case "$uname" in
+    case "${OS_UNAME:?}" in
         Darwin ) expr=bash-substr ;;
         Linux ) expr=sh-substr ;;
-        * ) $str_lib_log error "str" "Unable to init expr for '$uname'" "" 1;;
+        * ) $str_lib_log error "str" "Unable to init expr for '$OS_UNAME'" "" 1;;
     esac
 
     [[ "${ext_groupglob-}" ]] || {
@@ -36,15 +35,61 @@ str_lib__load()
 
 str_lib__init()
 {
+  test -z "${str_lib_init-}" || return $_
   [[ -x "$(command -v php)" ]] && bin_php=1 || bin_php=0
+  # Derived (and known extension) libs (fun sets)
+  #: "${str_uc_fun:=}"
+  #: "${str_htd_fun:=}"
+
+  sys_debug -debug -init ||
+    ${INIT_LOG:?} notice "" "Initialized str.lib" "$(sys_debug_tag --oneline)"
 }
 
 
-str_append () # ~ <Var-name> <Value> ...
+str_append () # ~ <Var-name> <Value> ... # Concat value to string at var, using str-fs=' '
 {
-  declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
-  #: ${ref:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
-  ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
+  str_vconcat "$@"
+}
+
+# Turn '--' seperated argument seq. into lines
+str_arg_seqs () # ~ <Arg-seq...> [ -- <Arg-seq> ]
+{
+  local exec=
+  while test $# -gt 0
+  do
+    test "$1" = "--" && { echo "$exec"; exec=; shift; continue; }
+    test -n "$exec" && exec="$exec $1" || exec="$1"
+    shift
+  done
+  test -z "$exec" || echo "$exec"
+}
+
+str_sid () # ~ <String>
+{
+  str_id "$1" _- -
+}
+
+# A more complicated str-word, with additional inputs
+str_id () # ~ <String> <Extra-chars> <Subst-char> ...
+{
+  : "${1:?}"
+  [[ ! ${US_EXTRA_CHAR-} ]] && : "$1" ||
+    : "${1//[${US_EXTRA_CHAR-:,.}]/${3:-_}${3:-_}}"
+  : "${_//[^A-Za-z0-9${2:-_}]/${3:-_}}"
+  "${upper:-false}" "$_" &&
+  echo "${_^^}" || {
+    "${lower:-false}" "$_" &&
+      echo "${_,,}" ||
+      echo "$_"
+  }
+}
+
+# A tag? Simple character limiter using shell replace and char-range matching.
+# See (notes on) URL/URN RFC's as well, in particular the special separator
+# sets.
+str_tag () # <String> # Transform string to tag
+{
+  echo "${1//[^A-Za-z0-9%+-]/-}"
 }
 
 str_vawords () # ~ <Variables...> # Transform strings to words
@@ -55,10 +100,11 @@ str_vawords () # ~ <Variables...> # Transform strings to words
   done
 }
 
-# A tag? See URL/URN RFC's as well...
-str_tag () # <String> # Transform string to tag
+str_vconcat () # ~ <Var-name> <Str> ... # Append at end, concatenating with str-fs=' as separator
 {
-  echo "${1//[^A-Za-z0-9%+-]/-}"
+  declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
+  #: ${ref:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
+  ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
 }
 
 str_vtag () # <Var> <String> # Transform string to tag
@@ -76,7 +122,14 @@ str_vword () # ~ <Variable> # Transform string to word
 # Restrict used characters to 'word' class (alpha numeric and underscore)
 str_word () # ~ <String> # Transform string to word
 {
-  echo "${1//[^A-Za-z0-9_]/_}"
+  : "${1:?}"
+  : "${_//[^A-Za-z0-9_]/_}"
+  "${upper:-false}" "$_" &&
+  echo "${_^^}" || {
+    "${lower:-false}" "$_" &&
+      echo "${_,,}" ||
+      echo "$_"
+  }
 }
 
 str_words () # ~ <Strings...> # Transform strings to words
@@ -86,50 +139,6 @@ str_words () # ~ <Strings...> # Transform strings to words
   do
     echo "${str//[^A-Za-z0-9_]/_}"
   done
-}
-
-# ID for simple strings without special characters
-mkid() # Str Extra-Chars Substitute-Char
-{
-  local s="${2-}" c="${3-}"
-  # Use empty c if given explicitly, else default
-  [[ $# -gt 2 ]] || c='\.\\\/:_'
-  [[ "$s" ]] || s=-
-  [[ "${upper-}" ]] && {
-    trueish "${upper-}" && {
-      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr '[:lower:]' '[:upper:]')
-    } || {
-      id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" | tr '[:upper:]' '[:lower:]')
-    }
-  } || {
-    id=$(printf -- "%s" "$1" | tr -sc '[:alnum:]'"$c$s" "$s" )
-  }
-}
-
-# to filter strings to variable id name
-mkvid () # STR
-{
-  true "${1:?}"
-  [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]+$ && -z "${upper:-}" ]] && {
-    vid="$1"
-    return
-  }
-  trueish "${upper-}" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr '[:lower:]' '[:upper:]')
-    return
-  }
-  falseish "${upper-}" && {
-    vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g' | tr '[:upper:]' '[:lower:]')
-    return
-  }
-  vid=$(printf -- "$1" | sed 's/[^A-Za-z0-9_]\{1,\}/_/g')
-  # Linux sed 's/\([^a-z0-9_]\|\_\)/_/g'
-}
-
-# Simpler than mksid but no case-change
-mkcid()
-{
-  cid=$(echo "$1" | sed 's/\([^A-Za-z0-9-]\|\-\)/-/g')
 }
 
 # x-platform regex match since Bash/BSD test wont chooche on older osx
@@ -215,13 +224,13 @@ expr_substr()
   esac
 }
 
-str_collapse ()
+str_collapse () # ~ <String> <Char>
 {
   declare char=${2:?}
   str_glob_replace "${1:?}" "$char$char" "$char"
 }
 
-str_glob_replace ()
+str_glob_replace () # ~ <String> <Glob> <Substitute>
 {
   declare str=${1:?} glob="${2:?}" sub=${3:?}
   while str_globmatch "$str" "*$glob*"
@@ -271,7 +280,7 @@ str_globmatch () # ~ <String> <Glob-patterns...>
 # String-strip based on glob. Removes all matching characters at the left. This
 # is useful because the standard parameter expansions only do shortest and
 # longest match but not repeated matches.
-str_globstripcl () # ~ <Str> [<Glob-c>]
+str_globstripcl () # ~ <Str> [<Glob-c>] ...
 {
   local prefc=${2:-"[ ]"} str="${1:?}"
   while str_globmatch "$str" "$prefc*"
@@ -282,7 +291,7 @@ str_globstripcl () # ~ <Str> [<Glob-c>]
   echo "$str"
 }
 
-str_globstripcr () # ~ <Str> [<Glob-c>]
+str_globstripcr () # ~ <Str> [<Glob-c>] ...
 {
   local prefc=${2:-"[ ]"} str="${1:?}"
   while str_globmatch "$str" "*$prefc"
@@ -293,14 +302,14 @@ str_globstripcr () # ~ <Str> [<Glob-c>]
   echo "$str"
 }
 
-str_indent () # (s) ~ [<Indentation>]
+str_indent () # (s) ~ [<Indentation>] ...
 {
   str_prefix "${1:-  }"
 }
 
-# Combine all Strings, using Concat as separation string. Concat or any string
+# Concatenate all Strings, using Sep as separation string. Concat or any string
 # can be left empty (an empty concat or string will be concatenated).
-str_join () # ~ <Concat> <Strings...>
+str_join () # ~ <Sep> <Strings...>
 {
   declare c=${1?} s=${2-} && shift 2 && : "$s" &&
   for s
@@ -320,15 +329,23 @@ str_nejoin () # ~ <Concat> <Strings...>
   echo "$_"
 }
 
-str_prefix () # (s) ~ <Prefix-str>
+str_prefix () # (s) ~ <Prefix-str> ...
 {
-  local str prefix=${1:?}
+  local str prefix=${1:?"$(sys_exc str-prefix:str@_1 "Prefix string expected")"}
   while read -r str
   do echo "${prefix}${str}"
   done
 }
 
-str_quote ()
+str_suffix () # (s) ~ <Suffix-str> ...
+{
+  local str suffix=${1:?"$(sys_exc str-suffix:str@_1 "Suffix string expected")"}
+  while read -r str
+  do echo "${str}${suffix}"
+  done
+}
+
+str_quote () # ~ <String> ...
 {
   case "$1" in
     ( "" ) printf '""' ;;
@@ -357,7 +374,7 @@ str_quote_var ()
 
 str_rematch ()
 {
-  [[ "$1" =~ $2 ]]
+  [[ $1 =~ $2 ]]
 }
 
 str_trim ()
@@ -382,6 +399,12 @@ str_trim1 ()
     : "${_%$str_sws}" &&
     echo "$_" && shift || return
   done
+}
+
+str_vid () # ~ <Var> [<String-value>]
+{
+  local -n __str_vid=${1:?} &&
+  __str_vid=$(str_id "${2:-${__str_vid}}")
 }
 
 # XXX: str-fs is used to set element separator
@@ -422,6 +445,12 @@ strfmt_hashtab () # ~ <Printfmt> <Assoc-arr> # printf for associative arrays
       printf \"$fmt\" \"\$key\" \"\${${arr}[\"\$key\"]}\"
     done
   "
+}
+
+
+strfmt_printf () # ~ <printf-fmt> <printf-args...>
+{
+  printf -- "$@"
 }
 
 #

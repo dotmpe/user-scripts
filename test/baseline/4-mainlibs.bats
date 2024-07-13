@@ -83,7 +83,7 @@ setup()
   { type basedir >/dev/null 2>&1 && test $os_lib_loaded -eq 0
   } || false "Error with os.lib"
 
-  { type mkid >/dev/null 2>&1 && test $str_lib_loaded -eq 0
+  { type str_sid >/dev/null 2>&1 && test $str_lib_loaded -eq 0
   } || false "Error with str.lib"
 
   { func_exists fnmatch && test $sys_lib_loaded -eq 0

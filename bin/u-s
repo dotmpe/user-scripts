@@ -202,14 +202,15 @@ main() # [SUBCMD [ARGS...]]
   test $# -gt 0 || set -- usage
   test "$1" != "main" || return # NOTE: Sanity.
 
-  mkvid "$1" || return
-  local subcmd="$1" cmdid=$vid cmdgrp=
+  local subcmd="$1" cmdid cmdgrp=
 
-  test $# -eq 1 || {
-    mkvid "$cmdid-$2" || return
-    func_exists "$vid" && {
+  test $# -eq 1 && {
+    str_vid cmdid "$subcmd" || return
+  } || {
+    str_vid cmdid "$subcmd-${2:?}" || return
+    func_exists "$cmdid" && {
       print_err "info" "" "Found group-cmd" "$subcmd:$2"
-      subcmd=$subcmd:$2 cmdgrp=$cmdid cmdid=$vid
+      subcmd=$subcmd:$2 cmdgrp=$cmdid
       shift
     }
   }

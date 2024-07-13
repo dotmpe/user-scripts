@@ -20,7 +20,9 @@ build_dbgcmd () # Cmd-Line...
 build_sub () # Cmd-Part Cmd-Args...
 {
   local build_sub build_sub_cmd= build_sub_cmd_ret=
-  build_sub=$1; mkvid "$1"; shift; build_sub_cmd="$vid"; unset vid
+  build_sub=$1
+  build_sub_cmd="${1//[^A-Za-z0-9_]/_}"
+  shift
 
   # Defer to part script
   # TODO: can we defer to background, and notify or block for redo calls?

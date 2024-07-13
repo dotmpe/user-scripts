@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-: ${HOST:="`hostname -s`"}
-: ${uname:="`uname -s`"}
+: ${OS_HOST:="`hostname --long`"}
+: ${OS_HOSTNAME:="`hostname --short`"}
+: ${OS_UNAME:="`uname -s`"}
 
 #

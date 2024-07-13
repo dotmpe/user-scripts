@@ -4,7 +4,7 @@
 
 # Set GNU 'aliases' to try to build on Darwin/BSD
 
-case "$uname" in
+case "${OS_UNAME:?}" in
 
   Darwin )
       export gsed=${gsed:-"gsed"}
@@ -20,8 +20,8 @@ case "$uname" in
     ;;
 
   #Linux ) # Default:
-  * ) test "$uname" = "Linux" ||
-        $LOG "warn" ":gnu" "Unknown OS" "$uname"
+  * ) test "$OS_UNAME" = "Linux" ||
+        $LOG "warn" ":tools/sh/parts:env-gnu" "Unknown OS" "$OS_UNAME"
 
       export gsed=${gsed:-"sed"}
       export ggrep=${ggrep:-"grep"}
