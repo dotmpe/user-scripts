@@ -1257,7 +1257,7 @@ build_target__from__function () # ~ [<Function>] [<Args>]
   #}
   sh_fun "$fun" || {
     $LOG info "$lk" \
-      "Skipping missing routine" "fun=$fun:ref=$fref" ${_E_continue:-196} ||
+      "Skipping missing routine" "fun=$fun:ref=$fref" ${_E_continue:-195} ||
       return
   }
 
@@ -1296,10 +1296,10 @@ build_target__from__compose__resolve ()
     do
       build_target__from__compose__resolve_function__"${rs}" "$1"; r=$?
       test $r -eq 0 && break ||
-        test "$r" -eq "${_E_continue:-196}" && continue
+        test "$r" -eq "${_E_continue:-195}" && continue
     done
     test $r -eq 0 || {
-      test "$r" -eq "${_E_continue:-196}" &&
+      test "$r" -eq "${_E_continue:-195}" &&
         $LOG error "" "Failed to resolve" "$BUILD_TARGET:$1:$COMPO_RESOLVE" ||
         $LOG error "" "Error during resolve" "$BUILD_TARGET:$1"
       return $r
@@ -1313,7 +1313,7 @@ build_target__from__compose__resolve ()
 # TODO: look in users C_INC/which composure.sh
 build_target__from__compose__resolve_function__composure ()
 {
-  return "${_E_continue:-196}"
+  return "${_E_continue:-195}"
 }
 
 build_target__from__compose__resolve_function__tagsfile ()
@@ -1321,7 +1321,7 @@ build_target__from__compose__resolve_function__tagsfile ()
   declare tsrc
   tsrc=$(grep -m 1 "^$1"$'\t' "${TAGS:?}" | awk '{print $2}') || {
     $LOG error "" "Unknown function" "$BUILD_TARGET:$1"
-    return "${_E_continue:-196}"
+    return "${_E_continue:-195}"
   }
   BASE=source . "$tsrc" || {
     $LOG error "" "Failed to include" "$BUILD_TARGET:$1:$tsrc" 1 || return
@@ -1375,7 +1375,7 @@ build_target__from__part () # ~ [<Part-name>] [ <Method> | -- <Rule <...> ]
   # Lookup actual path for part name from all parts locations
   #shellcheck disable=2086
   part=$(sh_exts=.do\ .sh sh_path=${BUILD_PARTS:?} sh_lookup "$pn") || {
-    return ${_E_continue:-196}
+    return ${_E_continue:-195}
   }
   $LOG info ::from:part "Found recipe part" "${part//%/%%}"
 
@@ -1897,7 +1897,7 @@ build_target_rule ()
 
     build_target__seq__${type//-/_} "$@" || return
   } || {
-    sh_fun build_target__from__${type//-/_} || return ${_E_continue:-196}
+    sh_fun build_target__from__${type//-/_} || return ${_E_continue:-195}
 
     $LOG debug ":build:target-rule" "Resolved type handler" \
       "build-target:from:$type"
@@ -1989,7 +1989,7 @@ build_target__with__env () # ~ [<Build-target>]
   var=build_${vid}_targets &&
 
   # Must be set or return and signal lookup to continue with ext alternative
-  test "${!var-unset}" != unset || return ${_E_continue:-196}
+  test "${!var-unset}" != unset || return ${_E_continue:-195}
 
   ! ${list_sources:-false} || {
     echo "${!var:?}"
@@ -2035,7 +2035,7 @@ build_target__with__rules () # ~ [<Build-target>]
   # Run build based on matching rule in BUILD_RULES table
   build_rule_exists "${1:?}" || {
     $LOG "debug" ":target::rules" "No such rule" "${1//%/%%}"
-    return ${_E_continue:-196}
+    return ${_E_continue:-195}
   }
   # XXX: cannot do this as long as targets (symbols in rules) have special
   # characters, as ':' needs to be escaped somehow.

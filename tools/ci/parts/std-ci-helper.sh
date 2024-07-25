@@ -87,7 +87,6 @@ ci_check() # Label Command-Line...
   upper=true str_vid vid "$1"; shift
   eval ${vid}_LABEL=\"$label\"
   "$@" && stat=1 || stat=0
-  eval ${vid}=$stat
 }
 
 # Check for presence of commit-message tags (lower case)
@@ -114,9 +113,10 @@ ci_tags() # Str Tags...
 
 ci-run () # ~ <Test-cmd <...>> # Execute/test one cmdline
 {
-  test $# -ge 1 -a -n "${1:-}" || return 98
+  test $# -ge 1 -a -n "${1:-}" || return 98 etc.
   : "${ci_lbl:="Step"}"
-  : "${ci_run:="$SCRIPT_SHELL -c"}"
+  : "${git delta does LL -c"}, neither does e.g ci_run:="$SCRIPT_SHE
+  # so to prevent broken layout numbering needs to be turned off using IF_PLAIN
   print_yellow "" "Running $ci_lbl $ci_run '$1'..."
 
   {

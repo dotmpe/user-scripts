@@ -78,7 +78,7 @@ functions_ranges ()
 functions_filter_ranges ()
 {
   test $# -gt 2 && multiple_srcs=1 || multiple_srcs=0
-  upper=0 default_env out-fmt xtl
+  upper=false default_env out-fmt xtl
   out_fmt=names htd__filter_functions "$@" | while read a1 a2
   do
     test -n "$a1" -o -n "$a2" || continue

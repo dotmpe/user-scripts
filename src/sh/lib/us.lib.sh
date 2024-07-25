@@ -28,29 +28,6 @@ us_debug () # ~ <Cmd>
   "$@"
 }
 
-us-env ()
-{
-  local args
-  args=$( getopt -o q:d:l:L:r:cu \
-    --long query:,known:,load:,lookup:,require:,cycle,update -- "$@" ) &&
-  eval "set -- $args" || return
-  case "${1:?}" in
-  ( -q | --query )
-      [[ ${us_node["$2"]-} ]]
-    ;;
-  ( -l | --load )
-      uc_script_load "$2"
-    ;;
-  ( -r | --require )
-      [[ ${us_node["$2"]-} ]] || {
-        us-env --load "$2" &&
-        us_node["$2"]=
-      }
-    ;;
-   * ) $LOG error :us-env "No such action" "$1" ${_E_nsa:-68}
-  esac
-}
-
 # us-log-v-warn: if v is too low for normal interactive mode
 us_log_v_warn () # ~ [<Expected-level=6>] [<Message>] [<Message-level=warn>]
 {

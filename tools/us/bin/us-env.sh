@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# us-env obviously cannot recurse on itself to do bootstrap, so it hard codes a
+# sequence of env parts to load for bootstrapping instead.
 #us-env -r user-script || ${us_stat:-exit} $?
 
 
@@ -82,6 +84,35 @@ us_env_src__scr ()
   uc_script_load "${1:?}"
 }
 
+
+us-env ()
+{
+  local args
+  args=$( getopt -o q:d:l:L:r:cu \
+    --long query:,known:,load:,lookup:,require:,cycle,update -- "$@" ) &&
+  eval "set -- $args" &&
+  case "${1:?}" in
+  esac &&
+  case "${1:?}" in
+  ( -E | --exec )
+    ;;
+  ( -q | --query )
+      [[ ${us_node["$2"]-} ]]
+    ;;
+  ( -l | --load )
+      uc_script_load "$2"
+    ;;
+  ( -r | --require )
+      [[ ${us_node["$2"]-} ]] || {
+        us-env --load "$2" &&
+        us_node["$2"]=
+      }
+    ;;
+   * ) $LOG error :us-env "No such action" "$1" ${_E_nsa:-68}
+  esac
+}
+
+
 ## Util
 
 if_ok ()
@@ -118,29 +149,39 @@ us_env_loadenv ()
   us_env_funsets=lib-uc,str-uc,sys-debug,us-env,uc-env,us
 
   us_env_fun=$(echo us_env_{fun{,sets},generate,source})
-  uc_env_fun=str_word,str_append,str_vconcat
+  uc_env_fun=str_word,str_append,str_vconcat,uc_fun,uc_debug
 
   return ${_E_continue:-195}
 }
+
+# Static bootstrap for us-env: get env up as far as 'user-script' part, and
+# load that if not already part of env.
+test -n "${uc_fun_profile-}" || {
+  [[ ${BASH-} ]] ||
+    $LOG error "" "No implementation for shell" "$SHELL" 201 ||
+    ${us_stat:-exit} $?
+
+  : "${USER:=$(whoami)}"
+  : "${HOME:=/home/${USER:?}}"
+  : "${UCONF:=${HOME:?}/.conf}"
+
+  # TODO: prepare us-env basis env set if not found or ood
+  echo sourcing uc_fun.sh env part >&2
+  . "${UCONF:?}/etc/profile.d/uc_fun.sh" || ${us_stat:-exit} $?
+}
+
+test -n "${uc_lib_profile-}" ||
+  . "${UCONF:?}/etc/profile.d/uc_lib.sh" || ${us_stat:-exit} $?
+
+
+test -n "${user_script_uc_fun_profile-}" ||
+  uc_script_load user-script || ${us_stat:-exit} $?
 
 : "${0##*\/}"
 : "${_%.sh}"
 case "$_" in
 ( us-env )
-  test -n "${uc_fun_profile-}" || {
-    [[ ${BASH-} ]] ||
-      $LOG error "" "No implementation for shell" "$SHELL" 201 ||
-      ${us_stat:-exit} $?
-
-    test -n "${uc_lib_profile-}" ||
-      . "${UCONF:?}/etc/profile.d/uc_lib.sh" || ${us_stat:-exit} $?
-
-    # TODO: prepare us-env basis env set if not found or ood
-    . "${UCONF:?}/etc/profile.d/uc_fun.sh" || ${us_stat:-exit} $?
-  }
-  uc_script_load user-script
-;;
-
+  SCRIPTNAME=us-env.sh
 esac
 
 ! script_isrunning "us-env.sh" || {

@@ -239,7 +239,7 @@ htd_make_targets()
 {
   test -n "$*" || set -- $(htd_make_files | act=dirname foreach_do | sort -u)
   note "Setting make-targets args to '$*'"
-  upper=0 default_env out-fmt list
+  upper=false default_env out-fmt list
 
   # NOTE: need to expand vars/macro's so cannot grep raw source; so need way
   # around to get back at src-file after listing all targets, somewhere else.

@@ -313,22 +313,17 @@ cwd_rarr () # ~ <Arr-name>
 default_env() # ~ VAR-NAME DEFAULT-VALUE [Level]
 {
   test -n "${1-}" -a $# -eq 2 || return ${_E_GAE:-193}
-  local
-  local vid= cid= id= v= c=0
-  trueish "${title-}" && upper= || {
-    test -n "${upper-}" || upper=1
-  }
-  str_vword vid "$1"
-  str_id cid "$1"
-  unset upper
+  local vid cid v='' c
+  vid=$(str_word "${1^^}")
+  cid=$(str_id "$1")
   v="$(eval echo \$$vid 2>/dev/null )"
   test -n "${3-}" || set -- "$1" "$2" "debug"
   test -n "$v" && {
     test "$v" = "${2-}" || c=$?
-      test $c -eq 0 &&
-        $3 "Default $cid env ($vid)" ||
-        $3 "Custom $cid env ($vid): '${2-}'"
-    return $c
+    test ${c:-0} -eq 0 &&
+      $3 "Default $cid env ($vid)" ||
+      $3 "Custom $cid env ($vid): '${2-}'"
+    return ${c:-0}
   } || {
     $3 "No $cid env ($vid), using default '${2-}'"
     eval $vid="${2-}"

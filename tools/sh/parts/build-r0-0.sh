@@ -278,7 +278,7 @@ env__define__build_function_targets ()
   build_target_rule ${rule} && {
     return ${_E_break:-197}
   } || {
-    test ${_E_continue:-196} -eq $? && return
+    test ${_E_continue:-195} -eq $? && return
     $LOG error "::build-function-targets" "Failed to build from rule" "E$_:$rule" $_
   }
 }
