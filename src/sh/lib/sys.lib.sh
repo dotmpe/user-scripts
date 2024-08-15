@@ -387,7 +387,7 @@ exec_expa () # ~ <Expression> <Cmd-strfmt-or-line...> # Run for each glob/braces
         return $_
       }
     } || {
-      if_ok "$(printf "$2" "$result")" &&
+      if_ok "$(printf "${2:-"echo \"%s\""}" "$result")" &&
       eval "$_" || {
         test ${_E_next:-196} -eq $? && continue
         return $_
@@ -997,7 +997,7 @@ sys_each () # ~ <Exec-names...>
 }
 
 # An exception helper, e.g. for inside ${var?...} expressions
-sys_exc () # ~ <Head>: <Label> # Format exception-id and message
+sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
 {
   local \
     sys_exc_id=${1:-us:exc:$0:${*// /:}} \
@@ -1257,7 +1257,7 @@ sys_source_trace () # ~ [<Head>] [<Msg>] [<Offset=2>] [ <var-names...> ]
     std_findent "  - " sys_callers "${3-2}"
   }
   [[ 3 -ge $# ]] && return
-  echo "Variable context:"
+  echo "Variable context ($(( $# - 3 )) vars):"
   local -n var &&
   for var in "${@:4}"
   do
