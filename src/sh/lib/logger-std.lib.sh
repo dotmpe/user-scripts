@@ -10,7 +10,7 @@ logger_std_lib__load()
 
 logger_std_init() # [Log-Channel]
 {
-  test $# -eq 1 || set -- "$scriptname"
+  test $# -eq 1 || set -- "${SCRIPTNAME:?}"
 
   stderr_log_channel="$1"
   test -z "${verbosity-}" && {

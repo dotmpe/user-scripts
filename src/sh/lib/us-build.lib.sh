@@ -336,11 +336,12 @@ us_exec () # ~ <Target-script>
 # TODO: however also handle dev, debug and noact modes here
 us_main () # (base) ~ <Target-script>
 {
-  : "${base:=u-s}"
-  test -n "${us_preproc_vardefs[$base]:-}" || {
-    : "${base^^}"
-    us_preproc_vardefs["$base"]=${!_:?}
-  }
+  : "${base:=us}"
+  # XXX:
+  #[[ ${us_preproc_vardefs[$base]-} ]] || {
+  #  : "${base^^}"
+  #  us_preproc_vardefs["$base"]=${!_:?"$(sys_exc us:main:base "" base)"}
+  #}
   us_main_env debug noact
   us_main_devenv
 

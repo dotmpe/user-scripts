@@ -7,13 +7,17 @@
 }
 #bool return ${REDO_DEBUG:-0}
 
-lk=u-s:default.do[$$]
+export SCRIPTNAME=us:default.do
+lk=$SCRIPTNAME[$$]
 export UC_LOG_BASE=$lk
 
 sh_mode build strict
 
-lib_require str script-mpe us-build log ||
+lib_require str script-mpe us-build log shell ||
   stderr echo E$?:lib-require
+
+lib_init str log script-mpe shell us-build ||
+  stderr echo E$?:lib-init
 
 us_preproc_vardefs[":"]=u-s
 us_preproc_vardefs["u-s"]="$U_S"

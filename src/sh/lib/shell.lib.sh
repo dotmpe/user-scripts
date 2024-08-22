@@ -13,7 +13,7 @@ shell_lib__load()
   # XXX: env-name, cs, base and sh-id....
   test -n "${MPE_ENV_NAME-}" || MPE_ENV_NAME=dev
   test -n "${CS-}" || CS=dark
-  test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "%s" "$0")
+  #test -n "${base-}" || base=$(test -e "$0" && basename -- "$0" .sh || printf -- "%s" "$0")
 
   # Shell Name depends on env SHELL
   test -h "$SHELL" &&
@@ -45,7 +45,7 @@ shell_lib__init()
   shell_init_mode || return
 
   req_init_log us || return
-  local log_key="$scriptname/$$":u-s:shell:lib:init
+  local log_key="${SCRIPTNAME:-$0}/$$":u-s:shell:lib:init
 
   log_key=$log_key $us_log debug "" "Running final shell.lib init"
 
