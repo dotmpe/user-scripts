@@ -66,6 +66,8 @@ add_env_path() # Prepend-Value Append-Value
 # Add an entry to colon-separated paths, ie. PATH, CLASSPATH alike lookup paths
 add_env_path_lookup() # Var-Name Prepend-Value Append-Value
 {
+  : TODO "Rewrite to and implement sys-wordv-{{ap,pre}pend,add,remove}"
+  : "And sys-wordv-*-all <var> <words>"
   test $# -ge 2 -a $# -le 3 || return 64
   local val="${!1:?}"
   test -e "$2" -o -e "${3-}" || {
