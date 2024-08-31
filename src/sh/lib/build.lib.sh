@@ -53,6 +53,9 @@ build_lib__init () # ~
   test -n "${build_txt-}" || build_txt="${BUILD_TXT:-"build.txt"}"
 
   test -n "${dependencies_txt-}" || dependencies_txt="${DEPENDENCIES_TXT:-"dependencies.txt"}"
+
+  ! sys_debug -dev -debug -init ||
+    $LOG notice "" "Initialized build.lib" "$(sys_debug_tag)"
 }
 
 

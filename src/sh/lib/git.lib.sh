@@ -23,7 +23,10 @@ git_lib__init()
   test -d "${SRC_DIR:-}" &&
   test -d "${VND_GH_SRC:-}" &&
   test -d "${GIT_SCM_SRV:-}" &&
-  test -d "${PROJECT_DIR:-}"
+  test -d "${PROJECT_DIR:-}" || return
+
+  ! sys_debug -dev -debug -init ||
+    $LOG notice "" "Initialized git.lib" "$(sys_debug_tag)"
 }
 
 # Use find to list repos on $PROJECTS path

@@ -161,3 +161,81 @@ setup()
   run try_exec_func no_such_function
   test $status -eq 1
 }
+
+@test "$base: sys-debug" {
+  true
+}
+
+@test "$base: sys-debug-mode" {
+
+  load stdtest extra
+  . ~/bin/user-script.sh &&
+  user_script_stdstat_env
+
+  ASSERT=false
+  run sys_debug_mode assert
+  test_nok_empty || stdfail
+
+  ASSERT=true
+  run sys_debug_mode assert
+  test_ok_empty || stdfail
+
+  DEBUG=false
+  run sys_debug_mode debug
+  test_nok_empty || stdfail
+
+  DEBUG=true
+  run sys_debug_mode debug
+  test_ok_empty || stdfail
+
+  DEV=false
+  run sys_debug_mode dev
+  test_nok_empty || stdfail
+
+  DEV=true
+  run sys_debug_mode dev
+  test_ok_empty || stdfail
+
+  DIAG=false
+  run sys_debug_mode diag
+  test_nok_empty || stdfail
+
+  DIAG=true
+  run sys_debug_mode diag
+  test_ok_empty || stdfail
+
+}
+
+@test "$base: sys-match-select sys-debug-mode" {
+
+  load stdtest extra
+  . ~/bin/user-script.sh &&
+  user_script_stdstat_env
+
+  DEV=true FOO=false BAR=false
+  run sys_match_select "" "" sys_debug_mode dev -foo -bar
+  test_ok_empty || stdfail
+
+  BAR=true
+  run sys_match_select "" "" sys_debug_mode +dev -foo -bar
+  test_nok_empty || stdfail
+
+  DEV=false
+  run sys_match_select "" "" sys_debug_mode dev -foo -bar
+  test_nok_empty || stdfail
+  run sys_match_select "" "" sys_debug_mode -dev -foo -bar
+  test_ok_empty || stdfail
+  DEV=true
+  run sys_match_select "" "" sys_debug_mode dev -foo -bar
+  test_ok_empty || stdfail
+  run sys_match_select "" "" sys_debug_mode +dev -foo -bar
+  test_nok_empty || stdfail
+  BAR=false
+  run sys_match_select "" "" sys_debug_mode +dev -foo -bar
+  test_nok_empty || stdfail
+  unset bar
+  run sys_match_select "" "" sys_debug_mode dev -foo -bar
+  test_ok_empty || stdfail
+  run sys_match_select "" "" sys_debug_mode +dev -foo -bar
+  test_ok_empty || stdfail
+}

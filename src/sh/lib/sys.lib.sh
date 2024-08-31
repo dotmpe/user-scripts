@@ -33,8 +33,9 @@ sys_lib__init ()
       $LOG error "$lk" "${2-Exception}" "$ctx" ${_E_script:-2}
     }
 
-    sys_tmp_init &&
-    sys_debug -debug -init ||
+    sys_tmp_init || return
+
+    ! sys_debug -dev -debug -init ||
       $sys_lib_log notice "" "Initialized sys.lib" "$(sys_debug_tag)"
   }
 }
@@ -43,6 +44,7 @@ sys_lib__init ()
 # Add an entry to PATH, see add-env-path-lookup for solution to other env vars
 add_env_path() # Prepend-Value Append-Value
 {
+  : source "sys.lib.sh"
   test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return 64
   test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
@@ -865,6 +867,7 @@ sys_assert_nz () # ~ <Var-name> <Value> ...
 # XXX: new function: ignore last status if test succeeds, or return it
 sys_astat () # ~ ( <Test-flag> <Test-value> )*
 {
+  : source "sys.lib.sh"
   local stat=$?
   while [[ $# -gt 0 ]]
   do
@@ -876,6 +879,7 @@ sys_astat () # ~ ( <Test-flag> <Test-value> )*
 # Return function call stack
 sys_callers () # ~ [<Frame>]
 {
+  : source "sys.lib.sh"
   local i
   for (( i=${1-0}; 1; i++ ))
   do caller $i || break
@@ -903,6 +907,7 @@ sys_confirm () # ~ <Prompt-string> # Read one character (key-press)
 # essential tasks during normal operations.
 sys_debug () # ~ <Modes...> # Test tags with sys-debug-mode, and do !<mode> ?<mode> handling
 {
+  : source "sys.lib.sh"
   [[ $# -gt 0 ]] || set -- debug
   sys_match_select "" "" sys_debug_mode "$@"
 }
@@ -920,6 +925,7 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
 #
 # See user-script-loadenv for examples.
 {
+  : source "sys.lib.sh"
   local lk=${lk-}:us:sys.lib:debug-mode
   case "$1" in
   ( assert ) ## \
@@ -935,7 +941,7 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
   ( dev ) ## \
     # Its not production, it just has to work and act sensibly and without
     # pressure. Dev also triggers assert and debug modes.
-    "${DEV:-false}" ;;
+    ! "${RELEASE:-false}" && "${DEV:-false}" ;;
   ( diag ) ## \
     # Go further than assert, and perform additional checks during normal
     # scripts, and even trigger completely diagnostic script branches.
@@ -951,6 +957,10 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
   ( quiet ) ## \
     # Setting verbose is the only env that overrides the quiet setting.
     ! "${VERBOSE:-false}" || "${QUIET:-false}" ;;
+  ( release ) ## \
+    # Its not production, it just has to work and act sensibly and without
+    # pressure. Dev also triggers assert and debug modes.
+    "${RELEASE:-false}" && ! "${DEV:-false}" ;;
   ( verbose )
     "${VERBOSE:-false}" || ! "${QUIET:-false}"  ;;
 
@@ -961,11 +971,13 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
 # XXX: hook to test for envd/uc and defer, returning cur bool value for setting
 sys_debug_ () # ~ [<...>]
 {
+  : source "sys.lib.sh"
   sys_debug "$@" && echo true || echo false
 }
 
 sys_debug_tag ()
 {
+  : source "sys.lib.sh"
   local var tagstr
   # TODO: implement different out-fmt
   case "${1-}" in
@@ -985,6 +997,7 @@ sys_debug_tag ()
 # Ensure variable is set or use argument(s) as value
 sys_default () # ~ <Name> <Value> ...
 {
+  : source "sys.lib.sh"
   declare -n ref=${1:?"$(sys_exc sys:default:ref@_1 "Variable name expected")"}
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
@@ -1001,6 +1014,7 @@ sys_each () # ~ <Exec-names...>
 # An exception helper, e.g. for inside ${var?...} expressions
 sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
 {
+  : source "sys.lib.sh"
   local \
     sys_exc_id=${1:-us:exc:$0:${*// /:}} \
     sys_exc_msg=${2-Expected}
@@ -1012,6 +1026,7 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
 # system-format-from-variables
 sys_fmtv () # ~ <String-expression> <Var-names...>
 {
+  : source "sys.lib.sh"
   declare vars=() fmt
   fmt=${1:?"$(sys_exc us:sys.lib)"}
   sys_arrv vars "${@:2}" &&
@@ -1063,6 +1078,7 @@ sys_join () # ~ <Concat> <Array>
 # XXX: theoretically could accept variable len pref key
 sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
 {
+  : source "sys.lib.sh"
   local all=true fail p inc=${1:-"+"} exc=${2:-"-"} fun=${3:?}
   shift 3 || return
   while [[ $# -gt 0 ]]
@@ -1118,11 +1134,13 @@ sys_out () # ~ <Var> <Cmd...> # Capture command output
 # system-path-output
 sys_path () # ~ # TODO??
 {
+  : source "sys.lib.sh"
   echo "${PATH//:/$'\n'}" | sys_path_fmt
 }
 
 sys_path_fmt ()
 {
+  : source "sys.lib.sh"
   case "${out_fmt:-path}" in
     one|first ) head -n 1 ;;
     last ) tail -n 1 ;;
@@ -1139,6 +1157,7 @@ sys_path_fmt ()
 # output first.
 sys_paths_df () # (s) ~ ...
 {
+  : source "sys.lib.sh"
   local path depth maxdepth seqidx
   declare -A depths
   # Sort
@@ -1252,6 +1271,7 @@ sys_set_ne () # ~ <Var-name> <Value> ...
 # system-source-trace: Helper to format callers list including custom head.
 sys_source_trace () # ~ [<Head>] [<Msg>] [<Offset=2>] [ <var-names...> ]
 {
+  : source "sys.lib.sh"
   ! "${US_SRC_TRC:-true}" && {
     echo "${1:-us:source-trace: E$? source trace (disabled):}${2+ ${2-}}"
   } || {

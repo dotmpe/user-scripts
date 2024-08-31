@@ -30,7 +30,10 @@ envd_lib__init ()
       envd_define envd_load &&
 
   # Continue from existing envd (ie. from cache); initialize to use as current
-  envd_loadenv
+  envd_loadenv || return
+
+  ! sys_debug -dev -debug -init ||
+    $LOG notice "" "Initialized envd.lib" "$(sys_debug_tag)"
 }
 
 # TODO: set TYPE

@@ -5,12 +5,15 @@ us_lib__load ()
 
 us_lib__init ()
 {
-  lib_require sys str
+  #test -z "${ansi_uc_lib_init-}" || return $_
+  lib_require sys str || return
+  ! { "${DEBUG:-false}" || "${DEV:-false}" || "${INIT:-false}"; } ||
+  ${LOG:?} info ":us:lib-load" "Initialized us.lib"
 }
 
 us_env_init ()
 {
-  declare -gA us_node=() &&
+  declare -gA us_node=() us_src=() &&
   export us_node &&
   export -f us-env \
     str_vconcat \

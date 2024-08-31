@@ -41,13 +41,14 @@ str_lib__init()
   #: "${str_uc_fun:=}"
   #: "${str_htd_fun:=}"
 
-  sys_debug -debug -init ||
+  ! sys_debug -dev -debug -init ||
     ${INIT_LOG:?} notice "" "Initialized str.lib" "$(sys_debug_tag --oneline)"
 }
 
 
 str_append () # ~ <Var-name> <Value> ... # Concat value to string at var, using str-fs=' '
 {
+  : source "str.lib.sh"
   str_vconcat "$@"
 }
 
@@ -66,12 +67,14 @@ str_arg_seqs () # ~ <Arg-seq...> [ -- <Arg-seq> ]
 
 str_sid () # ~ <String>
 {
+  : source "str.lib.sh"
   str_id "$1" _- -
 }
 
 # A more complicated str-word, with additional inputs
 str_id () # ~ <String> <Extra-chars> <Subst-char> ...
 {
+  : source "str.lib.sh"
   : "${1:?}"
   [[ ! ${US_EXTRA_CHAR-} ]] && : "$1" ||
     : "${1//[${US_EXTRA_CHAR-:,.}]/${3:-_}${3:-_}}"
@@ -89,11 +92,13 @@ str_id () # ~ <String> <Extra-chars> <Subst-char> ...
 # sets.
 str_tag () # <String> # Transform string to tag
 {
+  : source "str.lib.sh"
   echo "${1//[^A-Za-z0-9%+-]/-}"
 }
 
 str_vawords () # ~ <Variables...> # Transform strings to words
 {
+  : source "str.lib.sh"
   declare -n v
   for v
   do v="${v//[^A-Za-z0-9_]/_}"
@@ -102,6 +107,7 @@ str_vawords () # ~ <Variables...> # Transform strings to words
 
 str_vconcat () # ~ <Var-name> <Str> ... # Append at end, concatenating with str-fs=' as separator
 {
+  : source "str.lib.sh"
   declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
   #: ${ref:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
   ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
@@ -109,12 +115,14 @@ str_vconcat () # ~ <Var-name> <Str> ... # Append at end, concatenating with str-
 
 str_vtag () # <Var> <String> # Transform string to tag
 {
+  : source "str.lib.sh"
   declare -n v=${1:?}
   v="${v//[^A-Za-z0-9%+-]/-}"
 }
 
 str_vword () # ~ <Variable> # Transform string to word
 {
+  : source "str.lib.sh"
   declare -n v=${1:?}
   v="${v//[^A-Za-z0-9_]/_}"
 }
@@ -122,6 +130,7 @@ str_vword () # ~ <Variable> # Transform string to word
 # Restrict used characters to 'word' class (alpha numeric and underscore)
 str_word () # ~ <String> # Transform string to word
 {
+  : source "str.lib.sh"
   : "${1:?}"
   : "${_//[^A-Za-z0-9_]/_}"
   "${upper:-false}" "$_" &&
@@ -134,6 +143,7 @@ str_word () # ~ <String> # Transform string to word
 
 str_words () # ~ <Strings...> # Transform strings to words
 {
+  : source "str.lib.sh"
   declare str
   for str
   do
@@ -144,6 +154,7 @@ str_words () # ~ <Strings...> # Transform strings to words
 # x-platform regex match since Bash/BSD test wont chooche on older osx
 x_re()
 {
+  : source "str.lib.sh"
   echo $1 | grep -E "^$2$" > /dev/null && return 0 || return 1
 }
 
@@ -151,12 +162,14 @@ x_re()
 # adding a Bash dependency (keep it vanilla Bourne-style shell).
 fnmatch() # PATTERN STRING
 {
+  : source "str.lib.sh"
   case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
 }
 # Derive: str-globmatch
 
 fnmatch_any () # STRING... -- PATTERNS...
 {
+  : source "str.lib.sh"
   local str=; while args_has_next "$@"; do str="${str:-}${str:+" "}$1"; shift;
   done; shift
   while [[ $# -gt 0 ]]
@@ -171,6 +184,7 @@ fnmatch_any () # STRING... -- PATTERNS...
 # Insert tab-character at x position (awk)
 awk_insert_char() # Char Line-Chars-Offset
 {
+  : source "str.lib.sh"
   [[ $# -eq 2 ]] || return 99
   awk -vFS="" -vOFS="" '{$'"$2"'=$'"$2"'"'"$1"'"}1'
 }
@@ -178,6 +192,7 @@ awk_insert_char() # Char Line-Chars-Offset
 # Insert tab-character at x position (sed)
 sed_insert_char() # Char Line-Chars-Offset
 {
+  : source "str.lib.sh"
   [[ $# -eq 2 ]] || return 99
   sed 's/./&'"$1"'/'"$3"
 }
@@ -185,6 +200,7 @@ sed_insert_char() # Char Line-Chars-Offset
 # Remove last n chars from stream at stdin
 strip_last_nchars() # Num
 {
+  : source "str.lib.sh"
   rev | cut -c $(( 1 + $1 ))- | rev
 }
 
@@ -192,6 +208,7 @@ strip_last_nchars() # Num
 # See https://unix.stackexchange.com/questions/193748/join-lines-of-text-with-repeated-beginning
 join_lines() # [Src] [Delim]
 {
+  : source "str.lib.sh"
   [[ "${1-}" ]] || set -- "-" "${2-}"
   [[ "${2-}" ]] || set -- "$1" " "
   [[ "-" = "$1" || -e "$1" ]] || error "join-lines: file expected '$1'" 1
@@ -214,6 +231,7 @@ join_lines() # [Src] [Delim]
 
 expr_substr()
 {
+  : source "str.lib.sh"
   [[ "$expr" ]] || error "expr init req" 1
   case "$expr" in
       sh-substr )
@@ -226,12 +244,14 @@ expr_substr()
 
 str_collapse () # ~ <String> <Char>
 {
+  : source "str.lib.sh"
   declare char=${2:?}
   str_glob_replace "${1:?}" "$char$char" "$char"
 }
 
 str_glob_replace () # ~ <String> <Glob> <Substitute>
 {
+  : source "str.lib.sh"
   declare str=${1:?} glob="${2:?}" sub=${3:?}
   while str_globmatch "$str" "*$glob*"
   do
@@ -243,6 +263,7 @@ str_glob_replace () # ~ <String> <Glob> <Substitute>
 # XXX: return just expanded part for single-star glob
 str_glob_expansions () # ~ <Single-star-glob-expression>
 {
+  : source "str.lib.sh"
   local glob=${1:?} glob_head glob_tail
   : "${glob%%["*"]*}"
   glob_head=${#_}
@@ -266,6 +287,7 @@ str_glob_expansions () # ~ <Single-star-glob-expression>
 # see also fnmatch and wordmatch
 str_globmatch () # ~ <String> <Glob-patterns...>
 {
+  : source "str.lib.sh"
   [[ 2 -le $# ]] || return ${_E_GAE:-193}
   declare str=${1:?"$(sys_exc str-globmatch:str@_1 "String expected")"}
   shift
@@ -282,6 +304,7 @@ str_globmatch () # ~ <String> <Glob-patterns...>
 # longest match but not repeated matches.
 str_globstripcl () # ~ <Str> [<Glob-c>] ...
 {
+  : source "str.lib.sh"
   local prefc=${2:-"[ ]"} str="${1:?}"
   while str_globmatch "$str" "$prefc*"
   do
@@ -293,6 +316,7 @@ str_globstripcl () # ~ <Str> [<Glob-c>] ...
 
 str_globstripcr () # ~ <Str> [<Glob-c>] ...
 {
+  : source "str.lib.sh"
   local prefc=${2:-"[ ]"} str="${1:?}"
   while str_globmatch "$str" "*$prefc"
   do
@@ -304,6 +328,7 @@ str_globstripcr () # ~ <Str> [<Glob-c>] ...
 
 str_indent () # (s) ~ [<Indentation>] ...
 {
+  : source "str.lib.sh"
   str_prefix "${1:-  }"
 }
 
@@ -311,6 +336,7 @@ str_indent () # (s) ~ [<Indentation>] ...
 # can be left empty (an empty concat or string will be concatenated).
 str_join () # ~ <Sep> <Strings...>
 {
+  : source "str.lib.sh"
   declare c=${1?} s=${2-} && shift 2 && : "$s" &&
   for s
   do : "$_$c$s"
@@ -322,6 +348,7 @@ str_join () # ~ <Sep> <Strings...>
 # still be empty).
 str_nejoin () # ~ <Concat> <Strings...>
 {
+  : source "str.lib.sh"
   declare c=${1?} s && shift && : "" &&
   for s
   do : "${_:+$_${s:+$c}}$s"
@@ -331,6 +358,7 @@ str_nejoin () # ~ <Concat> <Strings...>
 
 str_prefix () # (s) ~ <Prefix-str> ...
 {
+  : source "str.lib.sh"
   local str prefix=${1:?"$(sys_exc str-prefix:str@_1 "Prefix string expected")"}
   while read -r str
   do echo "${prefix}${str}"
@@ -339,6 +367,7 @@ str_prefix () # (s) ~ <Prefix-str> ...
 
 str_suffix () # (s) ~ <Suffix-str> ...
 {
+  : source "str.lib.sh"
   local str suffix=${1:?"$(sys_exc str-suffix:str@_1 "Suffix string expected")"}
   while read -r str
   do echo "${str}${suffix}"
@@ -347,6 +376,7 @@ str_suffix () # (s) ~ <Suffix-str> ...
 
 str_quote () # ~ <String> ...
 {
+  : source "str.lib.sh"
   case "$1" in
     ( "" ) printf '""' ;;
     ( *" "* | *[\[\]\<\>$]* )
@@ -360,6 +390,7 @@ str_quote () # ~ <String> ...
 
 str_quote_kvpairs () # ~ [<Src-asgn-sep>]
 {
+  : source "str.lib.sh"
   while IFS=${1:-=}$'\n' read -r key value
   do
     if_ok "$(str_quote "$value")" &&
@@ -369,16 +400,19 @@ str_quote_kvpairs () # ~ [<Src-asgn-sep>]
 
 str_quote_var ()
 {
+  : source "str.lib.sh"
   echo "$( printf '%s' "$1" | grep -o '^[^=]*' )=$(str_quote "$( printf -- '%s' "$1" | sed 's/^[^=]*=//' )")"
 }
 
 str_rematch ()
 {
+  : source "str.lib.sh"
   [[ $1 =~ $2 ]]
 }
 
 str_trim ()
 {
+  : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   declare str_sws=${str_sws:-"[\n\t ]"}
   while [[ 0 -lt $# ]]
@@ -391,6 +425,7 @@ str_trim ()
 
 str_trim1 ()
 {
+  : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   declare str_sws=${str_sws:-"[\n\t ]"}
   while [[ 0 -lt $# ]]
@@ -403,6 +438,7 @@ str_trim1 ()
 
 str_vid () # ~ <Var> [<String-value>]
 {
+  : source "str.lib.sh"
   local -n __str_vid=${1:?} &&
   __str_vid=$(str_id "${2:-${__str_vid}}")
 }
@@ -410,6 +446,7 @@ str_vid () # ~ <Var> [<String-value>]
 # XXX: str-fs is used to set element separator
 str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
 {
+  : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   [[ 2 -le $# ]] || return ${_E_GAE:-193}
   local str_fs=${str_fs:- } words="${*:2}"
@@ -421,6 +458,7 @@ str_wordmatch () # ~ <Word> <Strings...> # Non-zero unless word appears
 
 str_wordsmatch () # ~ <String> <Words...> #
 {
+  : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   [[ 2 -le $# ]] || return ${_E_GAE:-193}
   local str_fs=${str_fs:- } word
@@ -435,6 +473,7 @@ str_wordsmatch () # ~ <String> <Words...> #
 
 strfmt_hashtab () # ~ <Printfmt> <Assoc-arr> # printf for associative arrays
 {
+  : source "str.lib.sh"
   # Cannot have by-reference array var, so instead use eval macro to refer to
   # dynamic but global array name
   local key fmt=${1:?} arr=${2:?}
@@ -450,6 +489,7 @@ strfmt_hashtab () # ~ <Printfmt> <Assoc-arr> # printf for associative arrays
 
 strfmt_printf () # ~ <printf-fmt> <printf-args...>
 {
+  : source "str.lib.sh"
   printf -- "$@"
 }
 

@@ -10,6 +10,9 @@ composure_lib__init()
 {
   true "${COMPOSURE:?"Expected Composure user dir setting"}" &&
   test -d "$COMPOSURE" || false "${Error:?"Expected Composure user dir"}"
+
+  ! sys_debug -dev -debug -init ||
+    $LOG notice "" "Initialized composure.lib" "$(sys_debug_tag)"
 }
 
 

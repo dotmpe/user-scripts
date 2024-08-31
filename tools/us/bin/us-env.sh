@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+
+## Bootstrap
+
 # us-env obviously cannot recurse on itself to do bootstrap, so it hard codes a
 # sequence of env parts to load for bootstrapping instead.
 #us-env -r user-script || ${us_stat:-exit} $?
@@ -88,11 +91,23 @@ us_env_src__scr ()
 us-env ()
 {
   local args
+  case "${*:?}" in
+  ( "-r us:boot.screnv" )
+      local scriptenv
+      # These are intended to control local script, export must be turned off first.
+      for scriptenv in DEV DEBUG DIAG INIT ASSERT QUIET VERBOSE
+      do
+        # If set assume they are exported, un-export but keep for local session
+        ! [[ ${!scriptenv+set} ]] || {
+          declare -g +x ${scriptenv}=${!scriptenv?}
+        }
+      done
+      return
+    ;;
+  esac &&
   args=$( getopt -o q:d:l:L:r:cu \
     --long query:,known:,load:,lookup:,require:,cycle,update -- "$@" ) &&
   eval "set -- $args" &&
-  case "${1:?}" in
-  esac &&
   case "${1:?}" in
   ( -E | --exec )
     ;;

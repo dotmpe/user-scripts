@@ -19,7 +19,9 @@ lib_lib__load()
 lib_lib__init()
 {
   init_lib_log lib_lib  || return
-  $lib_lib_log info ":lib-init" "Loaded lib.lib" "$0"
+
+  ! sys_debug -dev -debug -init ||
+    $lib_lib_log notice ":lib-init" "Initialized lib.lib" "$(sys_debug_tag)"
 }
 
 lib_lib__group__base={lib-{path,load,init}}
