@@ -113,18 +113,20 @@ str_vconcat () # ~ <Var-name> <Str> ... # Append at end, concatenating with str-
   ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
 }
 
-str_vtag () # <Var> <String> # Transform string to tag
+str_vtag () # <Var> [<String>] # Transform string to tag
 {
   : source "str.lib.sh"
   declare -n v=${1:?}
-  v="${v//[^A-Za-z0-9%+-]/-}"
+  : "${2-$v}"
+  v="${_//[^A-Za-z0-9%+-]/-}"
 }
 
-str_vword () # ~ <Variable> # Transform string to word
+str_vword () # ~ <Variable> [<String>] # Transform string to word
 {
   : source "str.lib.sh"
   declare -n v=${1:?}
-  v="${v//[^A-Za-z0-9_]/_}"
+  : "${2-$v}"
+  v="${_//[^A-Za-z0-9_]/_}"
 }
 
 # Restrict used characters to 'word' class (alpha numeric and underscore)
