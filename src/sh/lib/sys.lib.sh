@@ -91,8 +91,14 @@ add_env_path_lookup() # Var-Name Prepend-Value Append-Value
   }
 }
 
-aarr_pickglob () # ~ <Array> <Match-key> # Output tsv for matching keys
+aarr_pickglob () # ~ <Array> <Match-expr> # Output tsv for matching keys
+# Pick assoc-arr key(s) by globmatch
 {
+  : about "Output tsv for matching keys"
+  : extended "Pick assoc-arr key(s) by globmatch"
+  : param "<Array> <Match-expr>"
+  : group "sys/arr"
+  : source "sys.lib.sh"
   local -n arr=${1:?}
 
   local k glob=${2:?}
@@ -104,8 +110,24 @@ aarr_pickglob () # ~ <Array> <Match-key> # Output tsv for matching keys
   done
 }
 
+arr_cpy () # ~ <Arr> <Arr>
+{
+  : about "Copy first to second array"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local -n __arr_in=${1:?} __arr_out=${2:?}
+  local -i i
+  for i in "${!__arr_in[@]}"
+  do
+    __arr_out[i]=${__arr_in[i]}
+  done
+}
+
 arr_contains () # ~ <Array> <Value>
 {
+  : about "Test each value and return true on match or false on none"
+  : group "sys/arr"
+  : source "sys.lib.sh"
   local -n __us_arr=${1:?}
   for ((i=0; i<${#__us_arr[@]}; i++))
   do
@@ -115,8 +137,14 @@ arr_contains () # ~ <Array> <Value>
 }
 # Alias: in-array, array-item-exists
 
+# Dump array for re-reading, one item per line. See also kpdump to select keys
+# from associative array based on prefix.
 arr_dump () # ~ <Array>
 {
+  : about "Dump array data"
+  : extended "Write oneline shell declaration for every array index or key"
+  : group "sys/arr"
+  : source "sys.lib.sh"
   local __us_arr_key
   local -n __us_arr=${1:?}
   for __us_arr_key in "${!__us_arr[@]}"
@@ -126,8 +154,59 @@ arr_dump () # ~ <Array>
   done
 }
 
+arr_kcpy () # ~ <Assoc-arr> <Arr> # Copy keys, adding them as items to array
+{
+  : about "Copy keys, adding them as items to array"
+  : param "<Assoc-arr> <Arr>"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local -n __arr_in=${1:?} __arr_out=${2:?}
+  local key
+  for key in "${!__arr_in[@]}"
+  do
+    __arr_out+=( "$key" )
+  done
+}
+
+arr_kdump () # ~ <Array> <Keys...>
+{
+  : about "Dump array data by key"
+  : extended "Write oneline shell declaration for each given key"
+  : param "<Array> <Keys...>"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local __arr_key __arr_name=${1:?}
+  local -n __arr=${1:?}
+  shift
+  for __arr_key
+  do
+    : "$__arr_key"
+    echo "${__arr_name}[\"$_\"]=${__arr["$_"]@Q}"
+  done
+}
+
+arr_kpdump () # ~ <Array> <Key-prefix>
+{
+  : about "Dump array data by key prefix"
+  : extended "Write oneline shell declaration for each matching key"
+  : param "<Array> <Key-prefix>"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local __us_arr_key
+  local -n __us_arr=${1:?}
+  for __us_arr_key in "${!__us_arr[@]}"
+  do
+    [[ $__us_arr_key =~ ^${2:?} ]] || continue
+    : "$__us_arr_key"
+    echo "$1[\"$_\"]=${__us_arr["$_"]@Q}"
+  done
+}
+
 arr_sub () # ~ <Array> ( <Match> <Replace> )+
 {
+  : param "<Array> ( <Match> <Replace> )+"
+  : group "sys/arr"
+  : source "sys.lib.sh"
   local -n __us_arr_sub=${1:?}
   shift &&
   while true
@@ -137,6 +216,25 @@ arr_sub () # ~ <Array> ( <Match> <Replace> )+
       [[ "${__us_arr_sub[i]}" != "${1-}" ]] || __us_arr_sub[$i]=$2
     done
     shift 2 || return
+  done
+}
+
+# Use third assoc array to track and add (append) only unique items from arr-in
+# to arr-out
+arr_unique () # ~ <Arr-in> <Arr-out>
+{
+  : param "<Arr-in> <Arr-out>"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local -A arr_unique
+  local -n __arr_in=${1:?} __arr_out=${2:?}
+  local item
+  for item in "${__arr_in[@]}"
+  do
+    [[ ${__arr_unique["$item"]+set} ]] || {
+      __arr_unique["$item"]=
+      __arr_out[${#__arr_out[*]}]=$item
+    }
   done
 }
 
@@ -1021,6 +1119,39 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
   ! "${DEBUG:-$(sys_debug_ exceptions)}" &&
   echo "$sys_exc_id${sys_exc_msg:+: $sys_exc_msg}" ||
     "${sys_on_exc:-sys_source_trace}" "$sys_exc_id" "$sys_exc_msg" 3 "${@:3}"
+}
+
+# Expand shell string expression (with braces and or globs) and put expansion
+# into array. XXX: does not handle space escapes
+sys_exparr () # ~ <Arr> <Expr>
+{
+  #local __sys_exparr_arr=${1:?} __sys_exparr_expr=${2:?}
+  # XXX: declare -ga ${1:?}
+  "${UC_STATIC_ENV:-true}" && {
+    if_ok "$(eval "echo ${2:?}")" &&
+    test -n "$_" &&
+    mapfile -t ${1:?} <<< "${_// /$'\n'}" || return
+  } || {
+    #shellcheck disable=2162
+    test -n "$2" &&
+    read -a ${1:?} <<< "${_//:/ }"
+  }
+}
+
+# Expand spec or use existing path value to fill array
+sys_expparr () # ~ <Arr> <Var-name>
+{
+  #local __sys_expparr_arr=${1:?} __sys_expparr_var=${2:?}
+  : "${2:?}"
+  : "${!_:?"$(sys_exc uc:annex:dirs-var-ref "Expected $_")"}"
+  test -n "$_" || return
+  "${UC_STATIC_ENV:-true}" "$_" && {
+    if_ok "$(eval "echo ${_:?}")" &&
+    mapfile -t ${1:?} <<< "${_// /$'\n'}" || return
+  } || {
+    #shellcheck disable=2162
+    read -a ${1:?} <<< "${_//:/ }"
+  }
 }
 
 # system-format-from-variables

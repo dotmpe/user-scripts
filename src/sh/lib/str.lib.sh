@@ -244,14 +244,16 @@ expr_substr()
   esac
 }
 
-str_collapse () # ~ <String> <Char>
+str_collapse () # ~ <String> <Char> # Use glob replate
 {
   : source "str.lib.sh"
   declare char=${2:?}
   str_glob_replace "${1:?}" "$char$char" "$char"
 }
 
-str_glob_replace () # ~ <String> <Glob> <Substitute>
+# Unlike normal glob substitution repeat operation on result, rewriting the
+# entire string until it no longer matches glob.
+str_glob_replace () # ~ <String> <Glob> <Substitute> # Replace until no more matches are found
 {
   : source "str.lib.sh"
   declare str=${1:?} glob="${2:?}" sub=${3:?}
