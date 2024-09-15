@@ -1,5 +1,5 @@
 
-### us-build: a simple file-preprocessor to assemble scripts
+### us-build: a simple file-preprocessor for assembling scripts
 
 
 us_build_lib__load ()
