@@ -579,8 +579,9 @@ filter_lines () # ~ <Cmd...> # Remove lines for which command returns non-zero
 #
 # If this routine is given no data is hangs indefinitely. It does not have
 # indicators for data availble at stdin.
-foreach () # [(s)] ~ ['-' | <Arg...>]
+foreach_item () # [(s)] ~ ['-' | <Arg...>]
 {
+  : source "os.lib.sh"
   {
     [[ 0 -lt $# ]] && {
       while [[ 0 -lt $# ]]
@@ -612,12 +613,13 @@ foreach_addcol () # ~ [ - | <Arg...> ]
   [[ "${p-}" ]] || local p= # Prefix string
   [[ "${s-}" ]] || local s= # Suffix string
   [[ "${act-unset}" != unset ]] || local act="echo"
-  foreach "$@" | while read -r _S
+  foreach_item "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$S" "$($act "$S")" ; done
 }
 # Var: F:foreach-addcol.bash
 
-# Read `foreach` lines and act, default is echo ie. same result as `foreach`
+# Read `foreach-item` lines and act, default is echo ie. same result as
+# `foreach-item`
 # but with p(refix) and s(uffix) wrapped around each item produced. The
 # unwrapped loop-var is _S.
 foreach_do () # ~ [ - | <Arg...> ]
@@ -625,7 +627,7 @@ foreach_do () # ~ [ - | <Arg...> ]
   [[ "${p-}" ]] || local p= # Prefix string
   [[ "${s-}" ]] || local s= # Suffix string
   [[ "${act-}" ]] || local act="echo"
-  foreach "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" || return ; done
+  foreach_item "$@" | while read -r _S ; do S="$p$_S$s" && $act "$S" || return ; done
 }
 
 foreach_eval ()
@@ -633,7 +635,7 @@ foreach_eval ()
   local p="${p-}" # Prefix string
   local s="${s-}" # Suffix string
   local act=${act:-"echo"}
-  foreach "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
+  foreach_item "$@" | while read -r _S ; do S="$p$_S$s" && eval "$act \"$S\"" ; done
 }
 
 # See -addcol and -do.
@@ -642,7 +644,7 @@ foreach_inscol ()
   [[ "${p-}" ]] || local p= # Prefix string
   [[ "${s-}" ]] || local s= # Suffix string
   [[ "${act-}" ]] || local act="echo"
-  foreach "$@" | while read -r _S
+  foreach_item "$@" | while read -r _S
     do S="$p$_S$s" && printf -- '%s\t%s\n' "$($act "$S")" "$S" ; done
 }
 
@@ -1158,9 +1160,33 @@ sort_mtimes ()
 
 os_argc () # ~ <Expected> <Actual> ...
 {
+  : source "os.lib.sh"
   [[ $2 -eq $1 ]] || {
     [[ $2 -eq 0 ]] && return ${_E_MA:?} || return ${_E_GAE:?}
   }
+}
+
+os_expandpath () # ~ <Arr> <Expr>
+{
+  sys_exparr "$@" &&
+  local outname=${1:-os_paths} offset &&
+  local -n __os_expp_arr=${outname} &&
+  local -i i &&
+  for i in "${!__os_expp_arr[@]}"
+  do
+    [[ -e ${__os_expp_arr[i]} ]] && continue
+    unset "${outname}[$i]"
+  done
+}
+
+os_find_bdarr () # ~ <Arr-name> <Find-args>
+{
+  local basedir
+  local -n __os_fbdarr=${1:?}
+  for basedir in "${__os_fbdarr[@]}"
+  do
+    find "${basedir}" "${@:2}" || return
+  done
 }
 
 # XXX: see argv.lib test_ funs as well
@@ -1168,30 +1194,35 @@ os_argc () # ~ <Expected> <Actual> ...
 
 os_isblock () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-isblock: Path name expected}"
   [[ -b "$_" ]]
 }
 
 os_ischar () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-ischar: Path name expected}"
   [[ -c "$_" ]]
 }
 
 os_isdir () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-isdir: Path name expected}"
   [[ -d "$_" ]]
 }
 
 os_isfile () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-isfile: Path name expected}"
   [[ -f "$_" ]]
 }
 
 os_isnonempty () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-isnonempty: Path name expected}"
   [[ -s "$_" ]]
 }
@@ -1199,8 +1230,107 @@ os_isnonempty () # ~ <Name>
 # test -e (XXX: same as test -a?)
 os_ispath () # ~ <Name>
 {
+  : source "os.lib.sh"
   : "${1:?test-ispath: Path name expected}"
   [[ -e "$_" ]]
+}
+
+os_path_add () # <Prepend-Value> <Append-Value>
+{
+  : source "os.lib.sh"
+  test $# -ge 1 -a -n "$1" -o -n "${2:-}" || return 64
+  test -e "$1" -o -e "${2-}" || {
+    echo "os_path_add: No such file or directory '$*'" >&2
+    return 1
+  }
+  test -n "${1:-}" && {
+    case "$PATH" in
+      $1:* | *:$1 | *:$1:* ) ;;
+      * ) eval PATH=$1:$PATH ;;
+    esac
+  } || {
+    test -n "${2:?}" && {
+      case "$PATH" in
+        $2:* | *:$2 | *:$2:* ) ;;
+        * ) eval PATH=$PATH:$2 ;;
+      esac
+    }
+  }
+  # XXX: to export or not to launchctl
+  #test "$OS_UNAME" != "Darwin" || {
+  #  launchctl setenv "$1" "$(eval echo "\$$1")" ||
+  #    echo "Darwin setenv '$1' failed ($?)" >&2
+  #}
+}
+
+os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
+{
+  : source "os.lib.sh"
+  : "${1:?"os-lookuppaths: Expected variable reference"}"
+  : "${2:?"os-lookuppaths: Expected variable reference"}"
+
+  local -n __out=${2:?}
+  sys_arr "$1" && local -n __arr=$1 || {
+    local -n __ref=$1 __arr=${1}_arr
+    <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr || return
+  }
+  shift 2
+  : "${*:?"os-lookuppaths: Expected paths"}"
+  local path __path __r
+  for path
+  do
+    for __path in "${__arr[@]}"
+    do
+      if ${os_lookuppaths_expand:-false}
+      then
+        for __r in $(eval "echo \"$__path/\"$path")
+        do
+          [[ -e "$__r" ]] || continue
+          __out+=( "$__r" )
+        done
+      else
+        [[ -e "$__path/$path" ]] || continue
+        __out+=( "$__path/$path" )
+      fi
+    done
+  done
+}
+
+os_path () # ~ <Path-var> [<Arr-var>]
+{
+  : source "os.lib.sh"
+  : "${1:?"os-path: Expected variable reference"}"
+  local __os_path_out=${2:-${1}_arr}
+  sys_arr "$1" && {
+    declare -gn ${__os_path_out}=${1}
+  } || {
+    local -n __ref=$1 __arr=${__os_path_out}
+    <<< "${__ref//:/$'\n'}" mapfile -t ${__os_path_out}
+  }
+}
+
+# alias foreach-pathseq?
+os_pathcb () # ~ <Path-var> <Cmd...>
+{
+  : source "os.lib.sh"
+  : "${1:?"os-pathcb: Expected variable reference"}"
+  : "${2:?"os-pathcb: Expected command"}"
+  sys_arr "$1" && local -n __arr=$1 || {
+    local -n __ref=$1 __arr=${1}_arr
+    <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr
+  }
+  local __path
+  for __path in "${__arr[@]}"
+  do
+    "${@:2}" "${__path:?}" || return
+  done
+}
+
+os_sourceif ()
+{
+  : source "os.lib.sh"
+  [[ -s "${1:?}" ]] || return 0
+  . "${1:?}"
 }
 
 unique_args () # ~ <Args...>

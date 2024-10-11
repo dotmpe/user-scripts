@@ -57,7 +57,7 @@ envd__update__envd_var_update ()
   for base in ${ENVD_BASES:?}
   do
     blo=$(( ${#base} + 10 ))
-    sys_arr funs compgen -A function ${base:?}__update__ || continue
+    sys_execmap funs compgen -A function ${base:?}__update__ || continue
     for fun in "${funs[@]}"
     do
       wid=${fun:$blo}

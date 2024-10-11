@@ -22,9 +22,12 @@ stderr echo running script=$script
 
 sh_mode dev
 
-. ./tools/sh/parts/sh-fun.sh &&
-lib_require us-build log &&
-lib_init us-build
+#. ./tool/sh/part/sh-fun.sh &&
+lib_require script-mpe us-build log shell-uc &&
+stderr echo libs loaded &&
+lib_init shell-uc us-build &&
+stderr echo libs initialized &&
+true
 
 base=u-s
 

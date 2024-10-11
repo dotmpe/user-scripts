@@ -3,6 +3,9 @@
 
 ## Bootstrap
 
+[[ ${us_node[*]+set} ]] ||
+  $LOG warn "" "Broken env, repair us-env group or check shell profile"
+
 # us-env obviously cannot recurse on itself to do bootstrap, so it hard codes a
 # sequence of env parts to load for bootstrapping instead.
 #us-env -r user-script || ${us_stat:-exit} $?
@@ -43,6 +46,12 @@ us_env_generate ()
 {
   us_env_source ||
     $LOG error "" "Problem sourcing env part" E$? $? || return
+  us_env_generate_funs &&
+  echo "us_env_loadenv || test \${_E_continue:-${_E_continue:-195}} -eq \$?"
+}
+
+us_env_generate_funs ()
+{
   set -- $(us_env_fun) &&
   [[ $# -gt 0 ]] ||
     $LOG error "" "No functions" "" 1 || return
@@ -90,6 +99,10 @@ us_env_src__scr ()
 
 us-env ()
 {
+  : source "us-env.sh"
+  [[ ${us_node[*]+set} ]] || us_env_loadenv ||
+    test ${_E_continue:-195} -eq $? ||
+    $LOG error ":us-env" "Illegal status" "E$_" $_ || return
   local args
   case "${*:?}" in
   ( "-r us:boot.screnv" )
@@ -118,6 +131,10 @@ us-env ()
       uc_script_load "$2"
     ;;
   ( -r | --require )
+      #sys_vfl us_node x A ||
+      #[[ ${#us_node[*]} -gt 0 ]] ||
+      #[[ ${us_node[*]+set} ]] ||
+      #  $LOG error "" "Broken us-env (global missing)" "a:us-node" 3 || return
       [[ ${us_node["$2"]-} ]] || {
         us-env --load "$2" &&
         us_node["$2"]=
@@ -147,24 +164,37 @@ str_suffix () # (s) ~ <Suffix-str> ...
 
 us_env_loadenv ()
 {
-  #declare -gA us_node_base=(
-  #  [sys-debug]=sys
-  #)
+  : source "us-env.sh"
+
+  #sys_varfcase2 us_node A ||
+  [[ ${us_node[*]+set} ]] || {
+    declare -gxA us_node
+    us_node[us]=
+    us_node[us-env]=
+  }
+  [[ ${us_node_base[*]+set} ]] || {
+    declare -gxA us_node_base=(
+      [sys-debug]=sys
+      [us-env]=us
+    )
+  }
   #declare -gA us_env_type=(
   #  [sys]=lib
   #)
-  declare -gA us_env_srctype=(
+  declare -xgA us_env_srctype=(
     #[str-uc]=lib
     #[sys]=lib
     #[us]=lib
   )
-  declare -gA us_env_srcname=(
+  declare -xgA us_env_srcname=(
     [sys-debug]=sys
   )
   us_env_funsets=lib-uc,str-uc,sys-debug,us-env,uc-env,us
 
-  us_env_fun=$(echo us_env_{fun{,sets},generate,source})
-  uc_env_fun=str_word,str_append,str_vconcat,uc_fun,uc_debug
+  us_env_funspec="us_env_{fun{,sets},generate{,_funs},loadenv,source}"
+  us_env_fun=$(eval "echo ${us_env_funspec:?}")
+
+  uc_env_fun=add_path,str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
 
   return ${_E_continue:-195}
 }
@@ -187,7 +217,6 @@ test -n "${uc_fun_profile-}" || {
 
 test -n "${uc_lib_profile-}" ||
   . "${UCONF:?}/etc/profile.d/uc_lib.sh" || ${us_stat:-exit} $?
-
 
 test -n "${user_script_uc_fun_profile-}" ||
   uc_script_load user-script || ${us_stat:-exit} $?

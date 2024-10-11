@@ -1,6 +1,7 @@
+
 us_lib__load ()
 {
-  us_fun=sys_default,sys_astat,sys_loop,stderr,std_quiet,std_noout,std_silent,str_globmatch,fnmatch,incr,str_vconcat,lib_load,lib_init,lib_require,us_debug,us-env
+  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,std_noout,std_quiet,std_silent,stderr,str_globmatch,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
 }
 
 us_lib__init ()
@@ -13,10 +14,11 @@ us_lib__init ()
 
 us_env_init ()
 {
-  declare -gA us_node=() us_src=() &&
-  export us_node &&
+  : source "us.lib.sh"
+  declare -xgA us_node=() us_src=() &&
+  #export us_node &&
   export -f us-env \
-    str_vconcat \
+    sys_nconcat{n,l} \
     sys_exc &&
   export \
     _E_nsk=67 _E_nsa=68 \

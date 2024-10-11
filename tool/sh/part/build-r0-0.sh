@@ -198,7 +198,7 @@ env__define__build_env_cache ()
   # Project could include $BUILD_ENV_CACHE.do file to override built-in recipe
   true "${BUILD_ENV_CACHE:="${PROJECT_CACHE:=".meta/cache"}/${BUILD_TOOL:?}-env.sh"}"
   test "${BUILD_TARGET:?}" = "$BUILD_ENV_CACHE" && {
-    build_targets_ :if-scr-fun:${U_S:?}/tools/sh/parts/build-r0-0.sh:env__build__build_env_cache || return
+    build_targets_ :if-scr-fun:${U_S:?}/tool/sh/part/build-r0-0.sh:env__build__build_env_cache || return
     #build_targets_ :env:BUILD_ENV_STATIC,BUILD_BOOT
 
     # Include any libs that might override env:build:build-env-cache
@@ -334,7 +334,7 @@ env__define__build_parts () #
   test "${BUILD_PART_PREFS[*]-unset}" = "unset" ||
   test 0 -eq "${#BUILD_PART_PREFS[*]}" || set -- "${BUILD_PART_PREFS[@]}"
   test $# -gt 0 || set -- \
-          tools/{sh,ci,build,${BUILD_TOOL:?}}/{boot,build,parts,recipes}
+          tool/{sh,ci,build,${BUILD_TOOL:?}}/{boot,build,part,recipe}
 
   { BUILD_PARTS=$(sh_exts="" sh_path=${BUILD_BASES:?} any=true first=false \
         sh_lookup "$@"
@@ -389,17 +389,14 @@ env__define__build_source ()
 #
 env__define__env_path ()
 {
-  stderr trap
-  stderr sys_callers 1
-
   test -n "${ENV_PATH-}" || {
-    ENV_PATH=tools/sh/parts
+    ENV_PATH=tool/sh/part
     sh_exts=.sh
     envd_require from-dist || return
   }
 
-  test "${ENV_PATH:-}" != "tools/sh/parts" || {
-    { ENV_PATH=$( for pp in tools/{sh,ci,main}/parts
+  test "${ENV_PATH:-}" != "tool/sh/part" || {
+    { ENV_PATH=$( for pp in tool/{sh,ci,main}/part
       do
         sh_exts= sh_path=${BUILD_BASES:?} any=true first=false \
           sh_lookup "$pp" || return
@@ -421,7 +418,7 @@ env__define__fifo_server ()
 env__define__from_dist ()
 {
   envd_declare - build - - &&
-  source "${U_S:?}/tools/sh/build-env-defaults.sh" &&
+  source "${U_S:?}/tool/sh/build-env-defaults.sh" &&
   #  --settings \
   envd_declare__vars \
     BUILD_DECO_NAMES BUILD_TARGET_DECO BUILD_TARGET_ALIAS \
@@ -621,7 +618,7 @@ env__define__rule_params ()
 env__define__stderr_ ()
 {
   # TODO: move to build-env:build and handle as build target
-  source "${C_INC:?}/tools/sh/parts/stderr-user.sh" &&
+  source "${C_INC:?}/tool/sh/part/stderr-user.sh" &&
   #eval "$(compo- c-export stderr_ stderr_nolevel)" &&
   build_add_handler "stderr_ stderr_nolevel"
 }
@@ -629,7 +626,7 @@ env__define__stderr_ ()
 env__define__us_build ()
 {
   sh_include_path_langs="redo main ci bash sh" &&
-  . "${U_S:?}/tools/sh/parts/include.sh" &&
+  . "${U_S:?}/tool/sh/part/include.sh" &&
   sh_include lib-load &&
   package_build_tool=redo &&
   lib_load match redo build
@@ -638,7 +635,7 @@ env__define__us_build ()
 env__define__us_libs ()
 {
   sh_include_path_langs="redo main ci bash sh" &&
-  . "${U_S:?}/tools/sh/parts/include.sh" &&
+  . "${U_S:?}/tool/sh/part/include.sh" &&
   sh_include lib-load
 }
 

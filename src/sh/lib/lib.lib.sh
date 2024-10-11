@@ -229,7 +229,7 @@ lib_loaded () # ~ [<Lib-ids...>] # Check wether given are loaded or list loaded
     return $?
   }
   # List all
-  foreach $lib_loaded
+  foreach_item $lib_loaded
 }
 
 # Check if loaded or list all loaded libs
@@ -299,7 +299,7 @@ lib_unload() # [Libs...]
 
 # Reload given or already loaded libraries. NOTE: this does not cleanup
 # $lib_loaded, eg. cleanup afterwards:
-# lib_loaded=$(foreach "$lib_loaded" | remove_dupes | lines_to_words)
+# lib_loaded=$(foreach_item "$lib_loaded" | remove_dupes | lines_to_words)
 lib_reload() # [Libs...]
 {
   test $# -gt 0 || set -- $lib_loaded

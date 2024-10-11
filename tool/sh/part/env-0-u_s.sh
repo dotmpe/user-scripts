@@ -25,4 +25,4 @@ scriptname=${scriptname-}:env-0-u_s scriptpid=$$ \
 unset u_s
 
 
-# Id: user-scripts/  tools/sh/parts/env-0-u_s.sh
+# Id: user-scripts/  tool/sh/parts/env-0-u_s.sh

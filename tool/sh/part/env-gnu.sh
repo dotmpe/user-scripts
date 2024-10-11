@@ -21,7 +21,7 @@ case "${OS_UNAME:?}" in
 
   #Linux ) # Default:
   * ) test "$OS_UNAME" = "Linux" ||
-        $LOG "warn" ":tools/sh/parts:env-gnu" "Unknown OS" "$OS_UNAME"
+        $LOG "warn" ":tool/sh/parts:env-gnu" "Unknown OS" "$OS_UNAME"
 
       export gsed=${gsed:-"sed"}
       export ggrep=${ggrep:-"grep"}

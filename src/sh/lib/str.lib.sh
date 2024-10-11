@@ -49,7 +49,7 @@ str_lib__init()
 str_append () # ~ <Var-name> <Value> ... # Concat value to string at var, using str-fs=' '
 {
   : source "str.lib.sh"
-  str_vconcat "$@"
+  sys_nconcatl "$@"
 }
 
 # Turn '--' seperated argument seq. into lines
@@ -103,14 +103,6 @@ str_vawords () # ~ <Variables...> # Transform strings to words
   for v
   do v="${v//[^A-Za-z0-9_]/_}"
   done
-}
-
-str_vconcat () # ~ <Var-name> <Str> ... # Append at end, concatenating with str-fs=' as separator
-{
-  : source "str.lib.sh"
-  declare -n ref=${1:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
-  #: ${ref:?"$(sys_exc str.lib:str-append:ref@_1 "Variable name expected")"}
-  ref="${ref-}${ref:+${str_fs- }}${2:?"$(sys_exc str.lib:str-append "")"}"
 }
 
 str_vtag () # <Var> [<String>] # Transform string to tag

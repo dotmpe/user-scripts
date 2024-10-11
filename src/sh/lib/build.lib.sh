@@ -100,7 +100,7 @@ build_alias_part ()
     true "${part:?Aliased build with tools part needs path to recipe}"
     declare pnals alsp
     pnals=$(echo "${BUILD_TARGET:?}" | tr './' '_')
-    alsp="${REDO_STARTDIR:?}/tools/redo/recipes/$pnals.do"
+    alsp="${REDO_STARTDIR:?}/tool/redo/recipe/$pnals.do"
     ! [[ -h "$alsp" ]] || {
       [[ -e "$alsp" ]] || {
         rm "$alsp" || return
@@ -313,7 +313,7 @@ build_env () # ~ [<Handler-tags...>]
   echo "# Build env OK: '$*' completed"
 }
 
-# TODO: Provide boostrap for default.do tools/sh/parts/default-do-env@dev
+# TODO: Provide boostrap for default.do tool/sh/part/default-do-env@dev
 build_env_build ()
 {
   #mkdir -vp ${PROJECT_CACHE:?} >&2 || return
@@ -2902,11 +2902,11 @@ test -n "${lib_loading-}" || {
 
   ## Env parts
 
-  . "${U_S:?}/tools/sh/parts/build-r0-0.sh"
+  . "${U_S:?}/tool/sh/part/build-r0-0.sh"
 
   ## Build-info action/frontend handlers
 
-  . "${U_S:?}/tools/build/parts/build-info.sh"
+  . "${U_S:?}/tool/build/part/build-info.sh"
 
   # XXX: make this part of boot
   #test ! -e "$PWD/.build-env.sh" || . "$_"
@@ -2917,9 +2917,9 @@ test -n "${lib_loading-}" || {
   # elsewhere
 
   #. "${US_BIN:=$HOME/bin}/args.lib.sh"
-  #. "${U_S:?}/tools/sh/parts/fnmatch.sh"
-  #. "${U_S:?}/tools/sh/parts/str-id.sh"
-  #. "${U_S:?}/tools/sh/parts/sh-mode.sh"
+  #. "${U_S:?}/tool/sh/part/fnmatch.sh"
+  #. "${U_S:?}/tool/sh/part/str-id.sh"
+  #. "${U_S:?}/tool/sh/part/sh-mode.sh"
 
   #lib_load os sys envd || return
   #lib_load build std-uc envd &&

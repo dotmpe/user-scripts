@@ -14,7 +14,7 @@ log_getlogger ()
 
 test -n "${LOG:-}" -a -x "${LOG:-}" -o \
   "$(type -t "${LOG:-}" 2>/dev/null )" = "function" &&
-  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$U_S/tools/sh/log.sh
+  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$U_S/tool/sh/log.sh
 
 
-# Id: user-scripts/ tools/sh/parts/env-init-log.sh :vim:ft=sh:
+# Id: user-scripts/ tool/sh/parts/env-init-log.sh :vim:ft=sh:

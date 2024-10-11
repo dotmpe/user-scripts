@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-## Sys: dealing with vars, functions, env.
+## Sys: dealing with shell parts; vars, functions, env.
+
+# For file IPC and other readline or line-based file relating things see
+# see os.lib.
 
 # Some of these are essential helpers, others are examples of standard ways
 # to do things but which could easily be done in-line.
@@ -16,7 +19,7 @@ sys_lib__load ()
   if_ok "${OS_UNAME:=$(uname -s)}" &&
   if_ok "${OS_HOSTNAME:=$(hostname -s)}" || return
 
-  sys_debug_fun=sys_debug,sys_debug_tag,sys_match_select,sys_debug_mode,sys_exc,sys_source_trace,std_findent,sys_callers,if_ok,fnmatch,str_prefix
+  sys_debug_fun=sys_debug,sys_debug_tag,sys_selector_tag,sys_match_select,sys_debug_mode,sys_exc,sys_source_trace,sys_varf,sys_vfl,std_findent,sys_callers,if_ok,fnmatch,str_prefix
 }
 
 sys_lib__init ()
@@ -402,12 +405,12 @@ cwd_path () # ~ ...
 
 cwd_arr () # ~ <Arr-name>
 {
-  sys_arr "${1:?}" cwd_path
+  sys_execmap "${1:?}" cwd_path
 }
 
 cwd_rarr () # ~ <Arr-name>
 {
-  sys_arr "${1:?}" cwd_path &&
+  sys_execmap "${1:?}" cwd_path &&
   sys_rarr "${1:?}"
 }
 
@@ -447,6 +450,7 @@ env_var_mapping_update ()
   done
 }
 
+# XXX: rename/alias execn-cmd or exec-cmdseq
 # Execute arguments as command, or return on first failure, empty args, or no cmdlines
 execa_cmd () # ~ CMDLINE [ -- CMDLINE ]...
 {
@@ -797,7 +801,7 @@ std_findent () # ~ <Indentation> <Cmd ...>
 
 std_lookup_path ()
 {
-  std_read_path
+  XXX: std_read_path
 }
 
 std_noerr ()
@@ -890,52 +894,24 @@ sys_aarrv () # ~ <Array> <Vars...>
 }
 # XXX: sys-assoc-array-from-variables
 
-sys_loop () # ~ <Callback> <Items ...>
+sys_arr ()
 {
-  local fun=${1:?}
-  shift
-  while [[ $# -gt 0 ]]
-  do
-    "$fun" "${1:?}" && break
-    test ${_E_done:-200} -eq $? && return
-    test ${_E_continue:-195} -eq $_ || return $_
-    shift
-  done
-}
-
-# system-array-from-command
-# Read stdout of given command into array, if command returns zero status.
-sys_arr () # ~ <Array> <Cmd...> # Read stdout (lines) into array
-{
-  if_ok "$("${@:2}")" &&
-  <<< "$_" mapfile ${mapfile_f:--t} "${1:?}"
-}
-# rename sys_arr > sys-vaarr
-
-# system array from arguments: for reference/normally inline. to show how to
-# move several strings onto an array, and/or use array variable by name
-sys_arra () # ~ <Variable-name> <Strings...>
-{
-  declare -n arr=${1:?}
-  arr+=( "${@:2}" )
-}
-
-# system-array-from-variable-values, see also system-assoc-from-variable-values
-sys_arrv () # ~ <Array-name> <Var-names...>
-{
-  local var
-  declare -n values=${1:?}
-  for var in "${@:2}"
-  do values+=( "${!var-}" )
-  done
+  : source "sys.lib.sh"
+  : "${1:?"sys-foreach: Expected variable reference"}"
+  if_ok "$(declare -p ${1})" &&
+  case "$_" in
+  ( "declare -"*[aA]*" $1="* ) true ;;
+    * ) false
+  esac
 }
 
 # system-array-default
 # XXX:
 sys_arr_def () # ~ <Var-name> <Defaults...>
 {
-  declare -n arr=${1:?}
-  test 0 -lt ${#arr[@]} || sys_arr_set "$@"
+  : source "sys.lib.sh"
+  declare -n __arr=${1:?}
+  [[ ${#__arr[@]} -gt 0 ]] || sys_arr_set "$@"
 }
 
 # (Re)set array to given arguments
@@ -1100,7 +1076,8 @@ sys_default () # ~ <Name> <Value> ...
   [[ "set" = "${ref+set}" ]] || ref=${2-}
 }
 
-sys_each () # ~ <Exec-names...>
+# XXX: alias sys-each-cmd?
+sys_all () # ~ <Exec-names...>
 {
   local __us_sys_each_cmdname
   for __us_sys_each_cmdname
@@ -1121,21 +1098,41 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
     "${sys_on_exc:-sys_source_trace}" "$sys_exc_id" "$sys_exc_msg" 3 "${@:3}"
 }
 
-# Expand shell string expression (with braces and or globs) and put expansion
-# into array. XXX: does not handle space escapes
-sys_exparr () # ~ <Arr> <Expr>
+# system-array-from-command
+# XXX: rename to sys-execmap from sys-arr
+# OLD sys-vaarr sys-arr
+# Read stdout of given command into array, if command returns zero status.
+sys_execmap () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
 {
-  #local __sys_exparr_arr=${1:?} __sys_exparr_expr=${2:?}
-  # XXX: declare -ga ${1:?}
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys-execmap:array-name)"}"
+  : "${2:?"$(sys_exc sys-execmap:command)"}"
+  local outname=${1} offset
+  local -n __sys_execmap_arr=${outname}
+  offset=${#__sys_execmap_arr[@]}
+  if_ok "$("${@:2}")" &&
+  test -n "$_" &&
+  <<< "$_" mapfile -O ${offset} ${mapfile_f:--t} ${outname}
+}
+
+sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
+{
+  : source "sys.lib.sh"
   "${UC_STATIC_ENV:-true}" && {
-    if_ok "$(eval "echo ${2:?}")" &&
-    test -n "$_" &&
-    mapfile -t ${1:?} <<< "${_// /$'\n'}" || return
+    sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}" || return
   } || {
     #shellcheck disable=2162
     test -n "$2" &&
     read -a ${1:?} <<< "${_//:/ }"
   }
+}
+
+# Expand shell string expression (with braces and or globs) and put expansions
+# into array. XXX: does not handle space escapes
+sys_exparr () # ~ <Arr> <Expr>
+{
+  : source "sys.lib.sh"
+  sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}"
 }
 
 # Expand spec or use existing path value to fill array
@@ -1160,7 +1157,7 @@ sys_fmtv () # ~ <String-expression> <Var-names...>
   : source "sys.lib.sh"
   declare vars=() fmt
   fmt=${1:?"$(sys_exc us:sys.lib)"}
-  sys_arrv vars "${@:2}" &&
+  sys_mapln vars "${@:2}" &&
   printf "$fmt" "${vars[@]}"
 }
 
@@ -1206,6 +1203,40 @@ sys_join () # ~ <Concat> <Array>
   echo "$_"
 }
 
+sys_loop () # ~ <Callback> <Items ...>
+{
+  local sys_loop=${1:?}
+  shift
+  while [[ $# -gt 0 ]]
+  do
+    "$sys_loop" "${1:?}" && break
+    test ${_E_done:-200} -eq $? && return
+    test ${_E_continue:-195} -eq $_ || return $_
+    shift
+  done
+}
+
+# system array from arguments: for reference/normally inline. to show how to
+# move several strings onto an array, and/or use array variable by name
+# OLD sys-arra
+sys_mapl () # ~ <Variable-name> <Strings...>
+{
+  declare -n arr=${1:?}
+  arr+=( "${@:2}" )
+}
+
+# system-array-from-variable-values, see also system-assoc-from-variable-values
+# OLD sys-arrv
+sys_mapln () # ~ <Array-name> <Var-names...>
+{
+  : source "sys.lib.sh"
+  local var
+  declare -n values=${1:?}
+  for var in "${@:2}"
+  do values+=( "${!var-}" )
+  done
+}
+
 # XXX: theoretically could accept variable len pref key
 sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
 {
@@ -1232,6 +1263,26 @@ sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
     shift
   done
   ! "${fail:-true}"
+}
+
+# XXX: sys-nconcatl renamed from str-vconcat
+sys_nconcatl () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero values using str-fs=' as separator
+{
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys/-nconcatl:ref@_1 "Variable name expected")"}"
+  : "${2?"$(sys_exc sys/-nconcatl:str2@_2 "String value expected")"}"
+  declare -n __ref=$1
+  __ref="${__ref-}${__ref:+${str_fs- }}$2"
+}
+
+sys_nconcatn () # ~ <Var-name> <Var-name-2> ... # Append at end, concatenating with str-fs=' as separator
+{
+  : source "sys.lib.sh"
+  declare -n \
+    __ref=${1:?"$(sys_exc sys/-nconcatn:ref@_1 "Variable name expected")"} \
+    __ref2=${2:?"$(sys_exc sys/-nconcatn:ref2@_1 "Variable name expected")"}
+  : "${__ref2?"$(sys_exc sys/-nconcatn:str2:ref2@_2 "String value expected")"}"
+  __ref="${__ref-}${__ref:+${str_fs- }}${__ref2}"
 }
 
 sys_nejoin () # ~ <Concat> <Array>
@@ -1484,6 +1535,38 @@ sys_tsvars () # ~ VARNAMES... # Read fields from TSV line
   done
 }
 
+sys_varf () # ~ <Var-name> ...
+{
+  : about "Show current flags spec for given variable (including leading '-')"
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys/-varf:var-name:@_1)"}"
+  if_ok "$(declare -p "$1")" &&
+  : "${_#declare }" &&
+  : "${_% $1=*}" &&
+  echo "$_"
+}
+
+sys_varfcase () # ~ <Var-name> <Var-flag-spec-case-expr> ...
+{
+  : about "Test if given case-expression matches current flags spec"
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys/-varfcase:var-name:@_1)"}"
+  : "${2:?"$(sys_exc sys/-varfcase:var-flags:@_2)"}"
+  if_ok "$(sys_varf "$1")" &&
+  case "$_" in $2 ) true;; * ) false ;; esac
+}
+
+sys_varfcase2 () # ~ <Var-name> <Var-flags> ...
+{
+  : about "Test if any character of flags appears in current flags spec"
+  : source "sys.lib.sh"
+  # ALT: sys_varfcase "$1" "-*[$2]*"
+  : "${1:?"$(sys_exc sys/-varfcase2:var-name:@_1)"}"
+  : "${2:?"$(sys_exc sys/-varfcase2:var-flags:@_2)"}"
+  if_ok "$(sys_varf "$1")" &&
+  case "$_" in "-"*[$2]* ) true;; * ) false ;; esac
+}
+
 sys_varstab () # ~ VARNAMES... # Write fields to TSV line
 {
   local varname
@@ -1494,6 +1577,20 @@ sys_varstab () # ~ VARNAMES... # Write fields to TSV line
   done
   : "${_%$'\t'}"
   echo "$_"
+}
+
+sys_vfl () # ~ <Var-name> <Spec-flags...>
+{
+  : about "Test flags are present in current spec"
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys/-vfl:var-name:@_1)"}"
+  : "${2:?"$(sys_exc sys/-vfl:var-flags:@_2)"}"
+  local spec flag
+  spec="$(sys_varf "$1")" &&
+  shift &&
+  for flag
+  do case "$spec" in "-"*"$flag"* ) ;; * ) return 1 ;; esac
+  done
 }
 
 # Error unless non-empty and true-ish value

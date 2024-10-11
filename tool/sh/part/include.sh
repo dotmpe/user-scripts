@@ -18,7 +18,7 @@ sh_include_path_subdirs()
   do
     for suite in $suites
     do
-      echo "tools/$lang/$suite"
+      echo "tool/$lang/$suite"
     done
   done
 }
@@ -48,7 +48,7 @@ sh_include_path_dirs () # (sh-include:) ~ <Basedirs...> # Output sh-include look
 
 #alias sh-parts=sh_include
 
-# Include file by name-id from from $PWD/tools and other tools directories.
+# Include file by name-id from from $PWD/tool and other tool directories.
 # By default sets sh_include_suites=ci,sh and sh_include_path=$PWD,$U_S.
 sh_include () # ~ <Partnames...> # Source first existing
 {

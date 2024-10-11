@@ -199,7 +199,7 @@ dckr_update_ext() # [Repo-Revision] [Repo-Id [Repo-Url]]
 
 dckr_update_deps()
 {
-  dckr_exec ./tools/sh/parts/init.sh init-deps
+  dckr_exec ./tool/sh/part/init.sh init-deps
 }
 
 dckr_test_suite()

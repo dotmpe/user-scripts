@@ -16,7 +16,7 @@ sh_cmd_funcs()
   test -n "${src:-}" && {
     eval set -- $src || return 97
   } || {
-    set -- $0 $CWD/tools/sh/*.d/*.*
+    set -- $0 $CWD/tool/sh/*.d/*.*
   }
 
   local src_

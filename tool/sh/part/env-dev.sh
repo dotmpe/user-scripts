@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# XXX: test -n "$U_S" -a -d "$U_S" || source ./tools/sh/parts/env-0-u_s.sh
+# XXX: test -n "$U_S" -a -d "$U_S" || source ./tool/sh/parts/env-0-u_s.sh
 export U_S="${U_S:="$CWD"}" # No-Sync
 
 : "${hostname:="`hostname -s`"}"
 
 : "${sh_src_base:="/src/sh/lib"}"
-: "${sh_util_base:="/tools/sh"}"
-: "${ci_util_base:="/tools/ci"}"
+: "${sh_util_base:="/tool/sh"}"
+: "${ci_util_base:="/tool/ci"}"
 
 : "${userscript:="$U_S"}"
 
@@ -22,7 +22,7 @@ export U_S="${U_S:="$CWD"}" # No-Sync
 : "${ci_tools:="$CWD$ci_util_base"}"
 
 type sh_include >/dev/null 2>&1 || {
-  . "$U_S/tools/sh/parts/include.sh" || return
+  . "$U_S/tool/sh/parts/include.sh" || return
 }
 
 # XXX . "$sh_tools/parts/env-init-log.sh"

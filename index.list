@@ -18,22 +18,22 @@ commands/u_s-man.lib.sh: - @dev
 commands/u_s-stats.lib.sh: - @dev
 commands/u_s-travis.lib.sh: - @dev
 commands/u_s-user.lib.sh: - @dev
-tools/sh/init.sh: - @dev
-tools/sh/init-from.sh: - @dev
-tools/sh/init-gh.sh: - @dev
-tools/sh/init-here.sh: - @dev
-tools/sh/init-include.sh: - @dev
-tools/sh/init-wrapper.sh: - @dev
-tools/sh/parts/fnmatch.sh: - @dev
-tools/sh/parts/init.sh: - @dev
-tools/sh/parts/init-here.sh: - @dev
-tools/sh/parts/init-wrapper.sh: - @dev
-tools/sh/parts/lib_util.sh: - @dev
+tool/sh/init.sh: - @dev
+tool/sh/init-from.sh: - @dev
+tool/sh/init-gh.sh: - @dev
+tool/sh/init-here.sh: - @dev
+tool/sh/init-include.sh: - @dev
+tool/sh/init-wrapper.sh: - @dev
+tool/sh/part/fnmatch.sh: - @dev
+tool/sh/part/init.sh: - @dev
+tool/sh/part/init-here.sh: - @dev
+tool/sh/part/init-wrapper.sh: - @dev
+tool/sh/part/lib_util.sh: - @dev
 &function-context - context-lib src-htd-lib
 &context-local - context-lib src-htd-lib
 
 contexts/ctx-us-build.lib.sh: -
 src/sh/lib/build.lib.sh: -
 
-tools/sh/log.sh: -
-tools/sh/util.sh: -
+tool/sh/log.sh: -
+tool/sh/util.sh: -

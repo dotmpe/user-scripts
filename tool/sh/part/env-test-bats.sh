@@ -1,1 +1,1 @@
-. "$CWD/tools/bats/env.sh"
+. "$CWD/tool/bats/env.sh"

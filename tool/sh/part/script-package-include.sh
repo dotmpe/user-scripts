@@ -15,4 +15,4 @@ script_package_include () # SH_EXT=sh ~ SCRIPT_PATH
   return 1
 }
 
-# Id: U-S:tools/sh/parts/script-package-include.sh                vim:ft=bash:
+# Id: U-S:tool/sh/parts/script-package-include.sh                vim:ft=bash:

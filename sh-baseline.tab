@@ -17,27 +17,27 @@ set -u
  /SCRIPTPATH                                   test -z "${SCRIPTPATH:-}"
 
 #export SCRIPTPATH=$PWD/src/sh/lib              . ./sh-main
-true                                           . ./tools/sh/env.sh
-#true                                           . ./tools/ci/env.sh
+true                                           . ./tool/sh/env.sh
+#true                                           . ./tool/ci/env.sh
 
-#export U_S; echo U-s:$U_S                      . ./tools/sh/util.sh
-sh_tools=tools/sh ci_tools=tools/ci            . ./tools/sh/util.sh
-export sh_tools=tools/sh ci_tools=tools/ci
-  . ./tools/sh/util.sh                         . ./tools/ci/util.sh
+#export U_S; echo U-s:$U_S                      . ./tool/sh/util.sh
+sh_tool=tool/sh ci_tool=tool/ci            . ./tool/sh/util.sh
+export sh_tool=tool/sh ci_tool=tool/ci
+  . ./tool/sh/util.sh                         . ./tool/ci/util.sh
 
 set -euo pipefail
 
- . ./tools/sh/env.sh                           echo 1.1. $SCRIPTPATH
+ . ./tool/sh/env.sh                           echo 1.1. $SCRIPTPATH
  /SCRIPTPATH
-  . ./tools/sh/env.sh                          echo 1.2. $SCRIPTPATH
+  . ./tool/sh/env.sh                          echo 1.2. $SCRIPTPATH
 
- . ./tools/ci/env.sh                           echo 2.1. $SCRIPTPATH
+ . ./tool/ci/env.sh                           echo 2.1. $SCRIPTPATH
  /SCRIPTPATH
-  . ./tools/ci/env.sh                          echo 2.2. $SCRIPTPATH
+  . ./tool/ci/env.sh                          echo 2.2. $SCRIPTPATH
 
- export sh_tools=tools/sh ci_tools=tools/ci
-  CWD=$PWD . ./tools/sh/util.sh
-   . ./tools/sh/parts/env-dev.sh
+ export sh_tool=tool/sh ci_tool=tool/ci
+  CWD=$PWD . ./tool/sh/util.sh
+   . ./tool/sh/part/env-dev.sh
      sh_include env-log
       sh_include remove-dupes unique-paths
        sh_include env-scriptpath-deps
@@ -47,18 +47,18 @@ set -euo pipefail
 true                                           ./sh-main lines sh-baseline.tab >/dev/null
 
 set -euo pipefail
-  DOCKER_NS=dotmpe                             . ./tools/sh/parts/env-docker-hub.sh
-  true                                         . ./tools/sh/parts/env-dev.sh
-  true                                         . ./tools/sh/parts/env-0.sh
-  true                                         . ./tools/sh/parts/env-0-src.sh
-  true                                         . ./tools/sh/parts/env-std.sh
-  true                                         . ./tools/sh/parts/env-test.sh
-  CWD=$PWD                                     . ./tools/sh/parts/env-test-bats.sh
+  DOCKER_NS=dotmpe                             . ./tool/sh/part/env-docker-hub.sh
+  true                                         . ./tool/sh/part/env-dev.sh
+  true                                         . ./tool/sh/part/env-0.sh
+  true                                         . ./tool/sh/part/env-0-src.sh
+  true                                         . ./tool/sh/part/env-std.sh
+  true                                         . ./tool/sh/part/env-test.sh
+  CWD=$PWD                                     . ./tool/sh/part/env-test-bats.sh
 
 # Test some other parts from sh-main           sh-main: treebox
 # XXX: requires docker-sh-htd
 #SUITE=Main keep_going=1 stage=
-# . ./tools/sh/env.sh
+# . ./tool/sh/env.sh
 #  sh_include env-scriptpath-deps lib-load
 #   . "./commands/u_s-dckr.lib.sh"              docker_image=dotmpe/sandbox:dev dckr_load
 
@@ -96,20 +96,20 @@ v=4
 
 set -euo pipefail
  CWD=$PWD;
-  . tools/sh/env.sh                            . ./tools/sh/init.sh
+  . tool/sh/env.sh                            . ./tool/sh/init.sh
 
 # ./bin/u-s update
-#   f_lib_load= util_mode= default_lib=         . ./tools/sh/init-wrapper.sh
+#   f_lib_load= util_mode= default_lib=         . ./tool/sh/init-wrapper.sh
 #    SCRIPTPATH=
 
 
 # varspec                                      cmdspec                        #
 
-LOG=$PWD/tools/sh/log.sh
+LOG=$PWD/tool/sh/log.sh
   true                                         bats test/baseline/3-bats.bats
   set -euo pipefail
-   v=4 . tools/sh/env.sh
-    . tools/ci/util.sh
+   v=4 . tool/sh/env.sh
+    . tool/ci/util.sh
         true                                   ci_test test/baseline/1-log.bats
         true                                   ci_test test/unit/std-stack.bats
         true                                   ci_test test/baseline/2-bash.bats

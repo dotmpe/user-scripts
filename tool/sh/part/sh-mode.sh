@@ -94,8 +94,8 @@ sh_mode ()
 
           ( log-uc-start )
                 # Requires lib helpers to be ready
-                . ${U_C:?}/tools/sh/log.sh && uc_log_init &&
-                # Unexport again, tools/sh/log.sh exec should be usable at this stage
+                . ${U_C:?}/tool/sh/log.sh && uc_log_init &&
+                # Unexport again, tool/sh/log.sh exec should be usable at this stage
                 unset INIT_LOG LOG &&
                 # Use logger function instead of sub-shell
                 LOG=uc_log &&

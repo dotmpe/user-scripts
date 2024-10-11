@@ -14,7 +14,7 @@ export scriptname=env-scriptpath-deps
 # Assert every parts we need is sourced
 for func_dep in fnmatch trueish remove_dupes unique_paths script_package_include
 do test "$(type -t $func_dep 2>/dev/null)" = function && continue
-  . $U_S/tools/sh/parts/${func_dep//_/-}.sh
+  . $U_S/tool/sh/parts/${func_dep//_/-}.sh
 done
 
 # Make effort to autodetect name of shell and use as load.<ext>, if none given

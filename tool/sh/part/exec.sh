@@ -19,4 +19,4 @@ sh_exec() # Exec fe-cmd ~ Command-Line...
     }
 }
 
-# Id: U-S:tools/sh/parts/exec.sh               ex:filetype=bash:colorcolumn=80:
+# Id: U-S:tool/sh/parts/exec.sh               ex:filetype=bash:colorcolumn=80:

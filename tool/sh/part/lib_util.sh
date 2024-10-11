@@ -14,16 +14,16 @@ lib_util_lib__load()
       lib_util_env_d_default=init-log\ ucache\ scriptpath-deps
   test -n "${sh_tools-}" || {
       test -n "${scriptpath-}" || return 106
-      sh_tools=$scriptpath/tools/sh
+      sh_tools=$scriptpath/tool/sh
   }
 }
 
-# Helper for Htd env, setup env helped by any parts in tools/sh/
+# Helper for Htd env, setup env helped by any parts in tool/sh/
 # TODO: [this] build[s] around init.sh again
 lib_util_init()
 {
   # XXX: want glob expansion, but theoretically env could inter-depend; ie.
-  # need delayed eval/macro; see mkenv-d.lib. And local tools/{ci,sh}/env.sh
+  # need delayed eval/macro; see mkenv-d.lib. And local tool/{ci,sh}/env.sh
   # setup
 
   test -n "$sh_tools" || return 103 # NOTE: sanity
@@ -42,7 +42,7 @@ lib_util_init()
     }
   }
 
-  script_env=$scriptpath/tools/sh/user-env.sh
+  script_env=$scriptpath/tool/sh/user-env.sh
   test ! -e "$script_env" || {
     $INIT_LOG "info" "" "User-Env..." "$script_env"
     . "$script_env" || return 104

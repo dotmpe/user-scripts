@@ -1,5 +1,5 @@
 # This is an ad-hoc file for +U-s' build-tools to find deps during dev/test
-# see tools/sh/parts/env-scriptpath-deps
+# see tool/sh/part/env-scriptpath-deps
 
 # basher user-tools/user-scripts
 # basher user-tools/user-scripts-incubator
