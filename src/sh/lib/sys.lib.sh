@@ -113,6 +113,19 @@ aarr_pickglob () # ~ <Array> <Match-expr> # Output tsv for matching keys
   done
 }
 
+# Read arguments onto array, stopping at first argument matching prefix
+arr_argseqp () # ~ <Arr> <Arg-pref> <Args...>
+{
+  local -n __arr=${1:?}
+  local argpref=${2:--}
+  shift 2
+  while [[ ${1:?} =~ ^[^$argpref] ]]
+  do
+    __arr+=( "${1:?}" ) &&
+    shift || return
+  done
+}
+
 arr_cpy () # ~ <Arr> <Arr>
 {
   : about "Copy first to second array"
@@ -452,6 +465,8 @@ env_var_mapping_update ()
 
 # XXX: rename/alias execn-cmd or exec-cmdseq
 # Execute arguments as command, or return on first failure, empty args, or no cmdlines
+# XXX: this uses a subshell to split the argument, which seems a roundabout way
+#
 execa_cmd () # ~ CMDLINE [ -- CMDLINE ]...
 {
   test $# -gt 0 || return 98
