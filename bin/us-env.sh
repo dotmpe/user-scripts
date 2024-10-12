@@ -1,1 +1,1 @@
-../tools/us/bin/us-env.sh
+../tool/us/bin/us-env.sh

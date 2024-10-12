@@ -3,7 +3,7 @@
 
 ## Bootstrap
 
-# XXX cannot export arrays
+# XXX: cannot export arrays
 #[[ ${us_node[*]+set} ]] ||
 #  $LOG warn "" "Broken env, repair us-env group or check shell profile"
 
