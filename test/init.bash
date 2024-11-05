@@ -94,8 +94,8 @@ test_env_load()
   for env_d in $( grep -vE '^\s*(#.*|\s*)$' build.txt|awk '{print $6" "$1}'|grep '^0'|sort -u|cut -f2 -d' ')
   do
     $INIT_LOG "debug" "" "Loading env-part" "$env_d"
-    part=$ci_tools/parts/$env_d.sh
-    test -e "$part" || part=$sh_tools/parts/$env_d.sh
+    part=$ci_tools/part/$env_d.sh
+    test -e "$part" || part=$sh_tools/part/$env_d.sh
     . "$part" ||
         $INIT_LOG "warn" "" "Failed env-part"  "$? $env_d"
   done
@@ -103,7 +103,7 @@ test_env_load()
 
   test -n "$base" || return 12 # NOTE: sanity
   test -n "$INIT_LOG" || return 109 # NOTE: sanity
-  $INIT_LOG "info" "" "Env initialized from parts"
+  $INIT_LOG "info" "" "Env initialized from part"
 }
 
 # Set env and other per-specfile init
@@ -128,12 +128,12 @@ init() # ( 0 | 1 [~ [~ [~]]] )
   test -z "$lib_loaded" || return 105
 
   test -n "$CWD" || CWD=$(pwd -P)
-  test -n "$sh_tools" || sh_tools=$CWD/tools/sh
+  test -n "$sh_tools" || sh_tools=$CWD/tool/sh
   script_util=$sh_tools
-  test -n "$ci_tools" || ci_tools=$CWD/tools/ci
+  test -n "$ci_tools" || ci_tools=$CWD/tool/ci
   test -d "$sh_tools" || return 103 # NOTE: sanity
 
-  . "$CWD/tools/bats/env.sh"
+  . "$CWD/tool/bats/env.sh"
 
   # Get lib-load, and optional libs/boot script/helper
   while test $# -lt 4 ; do set -- "$@" "" ; done
@@ -151,7 +151,7 @@ init() # ( 0 | 1 [~ [~ [~]]] )
 
   test "$1" = "0" && return
 
-  # Load tools/*/parts bits
+  # Load tool/*/part bits
   test_env_load || return
 
   # Set variables for init.sh script
@@ -169,7 +169,7 @@ init() # ( 0 | 1 [~ [~ [~]]] )
 # ie. something around ENV_NAME, ENV_STACK. Renamed ENV_SRC to LIB_SRC for now
 # and dealing only with current env, testing lib-load and tools, user-scripts.
   LIB_SRC=
-  #. $U_S/tools/sh/init.sh
+  #. $U_S/tool/sh/init.sh
   . $sh_tools/init.sh
 }
 
@@ -182,7 +182,7 @@ load_init() # [ 0 ]
   }
 
   test -n "$TMPDIR" || TMPDIR=/tmp
-  . "/tools/bats/env.sh"
+  . "/tool/bats/env.sh"
   load_init_bats
 #  test "$PWD" = "$scriptpath"
 }

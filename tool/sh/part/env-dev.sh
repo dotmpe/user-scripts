@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# XXX: test -n "$U_S" -a -d "$U_S" || source ./tool/sh/parts/env-0-u_s.sh
+# XXX: test -n "$U_S" -a -d "$U_S" || source ./tool/sh/part/env-0-u_s.sh
 export U_S="${U_S:="$CWD"}" # No-Sync
 
 : "${hostname:="`hostname -s`"}"
@@ -22,10 +22,10 @@ export U_S="${U_S:="$CWD"}" # No-Sync
 : "${ci_tools:="$CWD$ci_util_base"}"
 
 type sh_include >/dev/null 2>&1 || {
-  . "$U_S/tool/sh/parts/include.sh" || return
+  . "$U_S/tool/sh/part/include.sh" || return
 }
 
-# XXX . "$sh_tools/parts/env-init-log.sh"
+# XXX . "$sh_tools/part/env-init-log.sh"
 sh_include env-0-src env-std env-ucache || return
 
 # XXX: remove from env; TODO: disable undefined check during init.sh,

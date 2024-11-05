@@ -96,6 +96,7 @@ str_tag () # <String> # Transform string to tag
   echo "${1//[^A-Za-z0-9%+-]/-}"
 }
 
+# TODO: rename strvar-words
 str_vawords () # ~ <Variables...> # Transform strings to words
 {
   : source "str.lib.sh"
@@ -295,9 +296,9 @@ str_globmatch () # ~ <String> <Glob-patterns...>
   return 1
 }
 
-# String-strip based on glob. Removes all matching characters at the left. This
-# is useful because the standard parameter expansions only do shortest and
-# longest match but not repeated matches.
+# String-strip based on glob repeatedly.
+# XXX: This # is useful? because the standard parameter expansions only does
+# shortest match for char-ranges and bc. repeated matches cannot overlap.
 str_globstripcl () # ~ <Str> [<Glob-c>] ...
 {
   : source "str.lib.sh"
@@ -406,7 +407,7 @@ str_rematch ()
   [[ $1 =~ $2 ]]
 }
 
-str_trim ()
+str_trim () # ~ <Strings...> # Remove str-sws from both ends of each string
 {
   : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
@@ -419,7 +420,8 @@ str_trim ()
   done
 }
 
-str_trim1 ()
+# XXX: review this and other method for exact function (ie. TOTEST)
+str_trim1 () # ~ <Strings...> # Remove str-sws from both ends of each string
 {
   : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
@@ -429,6 +431,83 @@ str_trim1 ()
     : "${1#$str_sws}" &&
     : "${_%$str_sws}" &&
     echo "$_" && shift || return
+  done
+}
+
+str_trim () # ~ <Strings...> # Remove str-sws from both ends of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  declare str_sws=${str_sws:-"[\n\t ]"}
+  while [[ 0 -lt $# ]]
+  do
+    : "${1##$str_sws}" &&
+    : "${_%%$str_sws}" &&
+    echo "$_" && shift || return
+  done
+}
+
+strvar_trim () # ~ <String-vars...> # Remove str-sws from both ends of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  local -n __strvar
+  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  for __strvar
+  do
+    : "${__strvar##$str_exp}" &&
+    : "${_%%$str_exp}" &&
+    __strvar="$_"
+  done
+}
+
+strvar_ltrim () # ~ <String-vars...> # Remove all str-sws from start of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  local -n __strvar
+  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  for __strvar
+  do
+    __strvar="${__strvar##$str_exp}"
+  done
+}
+
+strvar_ltrim1 () # ~ <String-vars...> # Remove one str-sws from start of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  local -n __strvar
+  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  for __strvar
+  do
+    __strvar="${__strvar#$str_exp}"
+  done
+}
+
+strvar_rtrim () # ~ <String-vars...> # Remove all str-sws from end of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  local -n __strvar
+  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  stderr declare -p str_exp
+  for __strvar
+  do
+    __strvar="${__strvar%%$str_exp}"
+  done
+}
+
+strvar_rtrim1 () # ~ <String-vars...> # Remove one str-sws from end of each string
+{
+  : source "str.lib.sh"
+  [[ 0 -lt $# ]] || return ${_E_MA:-194}
+  local -n __strvar
+  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  stderr declare -p str_exp
+  for __strvar
+  do
+    __strvar="${__strvar%$str_exp}"
   done
 }
 

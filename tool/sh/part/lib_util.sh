@@ -31,7 +31,7 @@ lib_util_init()
   # FIXME: instead going with hardcoded sequence for mkenv-d like for lib.
   for env_d in $lib_util_env_d_default
   do
-    . $sh_tools/parts/env-$env_d.sh
+    . $sh_tools/part/env-$env_d.sh
   done
   $INIT_LOG "info" "" "Env initialized from parts" "$lib_util_env_d_default"
 

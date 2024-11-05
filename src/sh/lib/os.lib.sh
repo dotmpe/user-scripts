@@ -1168,8 +1168,8 @@ os_argc () # ~ <Expected> <Actual> ...
 
 os_expandpath () # ~ <Arr> <Expr>
 {
-  sys_exparr "$@" &&
   local outname=${1:-os_paths} offset &&
+  sys_exparr "$outname" "${2}" &&
   local -n __os_expp_arr=${outname} &&
   local -i i &&
   for i in "${!__os_expp_arr[@]}"

@@ -8,7 +8,7 @@
 # - U_S ?= $PWD
 # - sh_src_base ?= /src/sh/lib
 # - SCRIPTPATH %%= $U_S/$sh_src_base
-# - sh_tools ?= $U_S/tools/sh
+# - sh_tools ?= $U_S/tool/sh
 
 # It cannot determine the path to the init.sh, but instead setups like above.
 # In addition, it takes these envs to select libs and boot script:
@@ -19,23 +19,23 @@
 test -n "${CWD-}" || CWD="$PWD"
 test -n "${LOG-}" -a -x "${LOG-}" -o \
   "$(type -t "${LOG:-}" 2>/dev/null )" = "function" &&
-  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tools/sh/log.sh
-# Sh-Sync: tools/sh/parts/env-init-log.sh
+  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tool/sh/log.sh
+# Sh-Sync: tool/sh/part/env-init-log.sh
 
 # Must be set after U-s:load
-test -n "${U_S-}" -a -d "${U_S-}" || . $CWD/tools/sh/parts/env-0-u_s.sh
+test -n "${U_S-}" -a -d "${U_S-}" || . $CWD/tool/sh/part/env-0-u_s.sh
 
 # Must be started from script-package, or provide SCRIPTPATH
-test -n "${SCRIPTPATH-}" || . $U_S/tools/sh/parts/env-scriptpath-deps.sh
+test -n "${SCRIPTPATH-}" || . $U_S/tool/sh/part/env-scriptpath-deps.sh
 
 test -n "${U_S-}" -a -d "${U_S-}" || $LOG "error" "" "Missing U-s" "$U_S" 1
 
 test -n "${sh_src_base-}" || sh_src_base=/src/sh/lib
 test -n "${u_s_lib-}" || u_s_lib="$U_S$sh_src_base"
 test -n "${scriptname-}" || scriptname="`basename -- "$0"`"
-test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
+test -n "${sh_tools-}" || sh_tools="$U_S/tool/sh"
 
-. $U_S/tools/sh/parts/lib_util.sh
+. $U_S/tool/sh/part/lib_util.sh
 
 # Now include module with `lib_load`
 test -z "${US_DEBUG-}" || echo . $u_s_lib/lib.lib.sh >&2
@@ -56,7 +56,7 @@ test "${init_sh_libs-}" = "0" || {
 
   $INIT_LOG "info" "$scriptname:sh:init" "Loading" "$init_sh_libs"
 
-  type sh_include >/dev/null 2>&1 || . "$U_S/tools/sh/parts/include.sh"
+  type sh_include >/dev/null 2>&1 || . "$U_S/tool/sh/part/include.sh"
 
   lib_load $init_sh_libs || {
     $INIT_LOG "error" "$scriptname:init.sh" "Failed loading libs: $?" "$init_sh_libs"
@@ -86,4 +86,4 @@ test "$(type -f scripts_init 2>/dev/null)" = function && {
 
 # XXX: end init-phase: test -n "$LOG_ENV" && unset LOG_ENV INIT_LOG || unset LOG_ENV INIT_LOG LOG
 
-# Id: user-scripts/0.0.0-dev tools/sh/init.sh
+# Id: user-scripts/0.0.0-dev tool/sh/init.sh

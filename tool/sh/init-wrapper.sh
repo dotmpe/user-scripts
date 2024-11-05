@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test -n "${U_S-}" -a -d "${U_S-}" || source "$(dirname -- "$0")/parts/env-0-u_s.sh"
+test -n "${U_S-}" -a -d "${U_S-}" || source "$(dirname -- "$0")/part/env-0-u_s.sh"
 test -d "$U_S" || return
 
 
@@ -12,7 +12,7 @@ test function = "$(type -t lib_load)" || {
 test -n "${default_lib-}" ||
   default_lib="os std sys str log shell stdio src main args match vc std-ht"
 
-. $U_S/tools/sh/parts/lib_util.sh
+. $U_S/tool/sh/part/lib_util.sh
 
 
 # Main
@@ -72,4 +72,4 @@ case "$0" in
     ;;
 esac
 
-# Id: User-script/0.0.1-dev tools/sh/init-wrapper.sh
+# Id: User-script/0.0.1-dev tool/sh/init-wrapper.sh

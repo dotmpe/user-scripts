@@ -4,15 +4,17 @@
 # Show path after resolving inlcude part
 sh_include_path()
 {
+  : source "u-s:tool/sh/part/include.sh"
   sh_include_dry=1 sh_include "$@"
 }
 
 # List all paths with include parts
 sh_include_path_subdirs()
 {
+  : source "u-s:tool/sh/part/include.sh"
   local lang suite langs suites
   langs="${sh_include_path_langs:-"main ci bash sh"}"
-  suites="${sh_include_path_suites:-"boot parts"}"
+  suites="${sh_include_path_suites:-"boot part"}"
 
   for lang in $langs
   do
@@ -26,11 +28,14 @@ sh_include_path_subdirs()
 # Default sh-include path basedirs
 sh_include_path_basedirs () # ~
 {
+  : source "u-s:tool/sh/part/include.sh"
   test "$CWD" = "$(cd $U_S && pwd -P)" && echo "$CWD" || echo "$CWD $U_S"
 }
 
 sh_include_path_dirs () # (sh-include:) ~ <Basedirs...> # Output sh-include lookup path list
 {
+  : source "u-s:tool/sh/part/include.sh"
+
   local basedir subdir
 
   test $# -gt 0 -a -n "${1:-}" ||
@@ -49,9 +54,13 @@ sh_include_path_dirs () # (sh-include:) ~ <Basedirs...> # Output sh-include look
 #alias sh-parts=sh_include
 
 # Include file by name-id from from $PWD/tool and other tool directories.
+# XXX: This is another dynamic setup variant of PPATH I suppose, older script
+# not yet using arrays for lookup paths as well.
 # By default sets sh_include_suites=ci,sh and sh_include_path=$PWD,$U_S.
 sh_include () # ~ <Partnames...> # Source first existing
 {
+  : source "u-s:tool/sh/part/include.sh"
+
   test $# -gt 0 || return 64
 
   test -n "${LOG-}" || local LOG=print_err
@@ -65,6 +74,7 @@ sh_include () # ~ <Partnames...> # Source first existing
 
   for sh_include_partid in $*
   do
+    # Var to declare when path was found for name
     sh_include_part_var=sh_include_part_${sh_include_partid//-/_}
     # test ${!sh_include_part_var:-1} -eq 0 && continue
 
@@ -96,6 +106,8 @@ sh_include () # ~ <Partnames...> # Source first existing
 
 sh_require () # ~ <Partnames...> # ~ Test each part was sourced with zero-status
 {
+  : source "u-s:tool/sh/part/include.sh"
+
   test $# -gt 0 || return 64
 
   test -n "${LOG-}" || local LOG=print_err
@@ -114,6 +126,8 @@ sh_require () # ~ <Partnames...> # ~ Test each part was sourced with zero-status
 # XXX: sh-include-run <Cmd-fun-name> [<Part-name>]
 sh_run ()
 {
+  : source "u-s:tool/sh/part/include.sh"
+
   local -r vid=$(str_word "${1:?}")
   #local vid=${1:?}
   #str_vword vid

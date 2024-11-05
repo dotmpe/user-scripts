@@ -1,7 +1,7 @@
 sh_mode dev
 
 stderr echo "lib-load is a function"
-. tools/sh/parts/lib_util.sh
+. tool/sh/part/lib_util.sh
 . src/sh/lib/lib.lib.sh
 sh_fun lib_load
 lib_lib__load

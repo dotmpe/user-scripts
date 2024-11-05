@@ -5,7 +5,7 @@
 usage()
 {
   echo 'Usage:'
-  echo '  ./tool/sh/parts/init.sh <function name>'
+  echo '  ./tool/sh/part/init.sh <function name>'
 }
 abort() { usage && exit 2; } # XXX: see CI/c-bail also
 
@@ -257,15 +257,15 @@ case "$(basename -- "$0" .sh)" in
   -* ) ;; # No main regardless
 
   init )
-      test "$(basename "$(dirname "$0")")/$(basename "$0")" = parts/init.sh ||
+      test "$(basename "$(dirname "$0")")/$(basename "$0")" = part/init.sh ||
         exit 105 # Sanity
 
       set -euo pipefail
       : "${CWD:="$PWD"}"
-      . "$CWD/tool/sh/parts/env-0-1-lib-sys.sh"
-      . "$CWD/tool/sh/parts/env-0-src.sh"
-      . "$CWD/tool/sh/parts/env-0.sh"
-      . "$CWD/tool/sh/parts/fnmatch.sh"
+      . "$CWD/tool/sh/part/env-0-1-lib-sys.sh"
+      . "$CWD/tool/sh/part/env-0-src.sh"
+      . "$CWD/tool/sh/part/env-0.sh"
+      . "$CWD/tool/sh/part/fnmatch.sh"
       # XXX: . "${ci_tools:="$CWD/tool/ci"}/env.sh"
 
       "$@"

@@ -7,7 +7,7 @@
 default_do_env () # ~ # Prepare shell profile with build-target handler
 {
   test -n "${BUILD_ID:-}" || {
-    # . ${U_S:?}/tools/build/parts/build-static.sh
+    # . ${U_S:?}/tool/build/part/build-static.sh
     CWD=${REDO_STARTDIR:?}
     BUILD_TOOL=redo
     BUILD_ID=$REDO_RUNID
@@ -20,7 +20,7 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
   }
 
   # Use external script during dev
-  . ${U_S:?}/tools/build/parts/default-do-env@dev.sh || return
+  . ${U_S:?}/tool/build/part/default-do-env@dev.sh || return
 
   true "${ENV:="@dev"}"
   true "${APP:="@User-Scripts/0.0.2-dev"}"

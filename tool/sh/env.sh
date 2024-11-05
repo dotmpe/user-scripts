@@ -6,10 +6,10 @@ test -z "${sh_env_:-}" && sh_env_=1 || return 96 # Recursion
 
 test ${DEBUG:-0} -ne 0 || DEBUG=
 : "${CWD:="$PWD"}"
-: "${sh_tools:="$CWD/tools/sh"}"
+: "${sh_tools:="$CWD/tool/sh"}"
 
 test "${env_strict_-}" = "0" || {
-  . "$sh_tools/parts/env-strict.sh" && env_strict_=$?; }
+  . "$sh_tools/part/env-strict.sh" && env_strict_=$?; }
 
 test ! -e $CWD/.htd/meta.sh || . $CWD/.htd/meta.sh
 
@@ -46,4 +46,4 @@ suite_source "${build_txt}" "${SUITE}" 0
 
 test -z "${DEBUG:-}" || print_green "" "Finished sh:env ${SUITE} <$0>" >&2
 
-# Id: user-script/ tools/sh/env.sh
+# Id: user-script/ tool/sh/env.sh

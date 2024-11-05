@@ -5,10 +5,11 @@
 us_build_lib__load ()
 {
   : "${USER_TOOLS_CACHE:=$HOME/.local/var/user-tools}"
+
   : "${US_BUILD_CACHE_PREF:=us-preproc--}"
 
   # XXX: Set default ref to context and (set) name for built-in directives
-  : "${us_build_proc_default:=u-s:tools/u-s/preproc/base}"
+  : "${us_build_proc_default:=u-s:tools/us/preproc/base}"
 
   # List every built-in directive
   : "${us_build_proc_dirs:=INCLUDE DEFINE MODELINE RESOLVE}"
@@ -23,7 +24,8 @@ us_build_lib__load ()
   # Auto-append all included files to generated target's us-build-files list.
   #: "${us_build_autorun:=true}"
 
-  : "${us_build_trgt_ext:=.sh}"
+  : "${us_build_target_ext=.sh}"
+
   # For DEFINE, define now so seeding is possible before lib-init
   declare -gA us_preproc_vardefs
 }
@@ -37,6 +39,14 @@ us_build_lib__init ()
   us_build_init
 }
 
+# Take us-build-proc-default and determine init{base,import} from that.
+# Ie. with 'u-s:tool/us/preproc/base'
+# context init
+#   base 'u-s'
+#   part 'base:*'
+#   import 'tool/us/preproc/base.sh'
+# tool/bash/exec and base
+
 us_build_init () # ~
 {
   : "${us_build_proc_default%/*}"
@@ -44,67 +54,86 @@ us_build_init () # ~
   us_preproc_vardefs["$_"]=${us_build_proc_default%/*} us_preproc_initbase=$_
   us_preproc_initimport="${us_build_proc_default##*/}"
 
-  test -n "${us_preproc_vardefs[":"]:-}" || us_preproc_vardefs[":"]=$PWD
+  [[ ${us_preproc_vardefs[":"]-} ]] || {
+    us_preproc_vardefs[":"]=.build:
+    us_preproc_vardefs[".build"]=${PPBASE:-${PWD}}
+  }
 
-  test "${us_preproc_vardefs[":"]}" = "${us_preproc_initbase}" && {
-    us_preproc_context=${us_preproc_vardefs[":"]}
+  #[[ ${us_preproc_vardefs[":"]} = "${us_preproc_initbase}" ]] && {
+  #  us_preproc_context=${us_preproc_vardefs[":"]}
     #us_build_context "${us_preproc_context:?}"
+
     us_preproc_src+=( "$us_preproc_initimport.sh" )
   } || {
+    stderr echo Need context "${us_preproc_initbase}"
     us_build_context "${us_preproc_initbase}" ||
       return
     us_preproc_src+=( "$ctx_dir/$us_preproc_initimport.sh" )
   }
 
   us_debuglog "Importing main suite" "$us_preproc_initbase:$us_preproc_initimport"
-  . "$us_preproc_initimport.sh"
+  . "$us_preproc_initimport.sh" || return
   # uc_script_load $us_preproc_initimport.sh
+
+  stderr echo us-build init PID $$
+  stderr declare -p \
+    PWD BASH_COMMAND BASH_ARGV \
+    us_preproc_vardefs \
+    us_build_proc_default us_preproc_init{base,import} us_preproc_context us_preproc_src
 }
 
-# Ensure target has .sh suffix, and reset cached, tpl and meta for target value.
+# Ensure template has .sh suffix, and reset cached, tpl and meta for template value.
 # All values will be all global and absolute paths.
-us_build__target_set () # ~ <Target> <...>
+us_build__template_set () # ~ <Target> <...>
 {
-  local ext=$us_build_trgt_ext
-  targetref=${1:?}
-  target=$(us_build_value "$targetref") || return
-  str_globmatch "$target" "/*" || target="$PWD/$target"
-  : "${target%$ext}"
+  local ext=$us_build_target_ext
+  templateref=${1:?}
+  template=$(us_build_value "$templateref") || return
+  str_globmatch "$template" "/*" || {
+    stderr echo "Expected global template (build-base=$bbase), proceeding with PWD/$template"
+    template="$PWD/$template"
+  }
+  : "${template%$ext}"
   cached="${USER_TOOLS_CACHE:?}/${US_BUILD_CACHE_PREF:?}${_//\//--}$ext"
   meta="${cached%$ext}.meta.sh"
-  target="${target%$ext}$ext"
-  tpl=$target.build
+  template="${template%$ext}$ext"
+  tpl=$template.build
+
+  stderr echo Target set
+  stderr declare -p template{,ref} PWD cached meta tpl
   us_preproc_src+=( "$tpl" )
   sys_debug &&
-    $LOG debug ":us-build[$targetref]" "Env established" "$tpl:meta:$meta" ||
-    $LOG info ":us-build[$targetref]" "Env established" "$tpl"
+    $LOG debug ":us-build[$templateref]" "Env established" "$tpl:meta:$meta" ||
+    $LOG info ":us-build[$templateref]" "Env established" "$tpl"
 }
 
-us_build__target_unset () # (target{,ref}) ~
+us_build__template_unset () # (template{,ref}) ~
 {
   # FIXME: move to run directives?
   if_ok "$(declare -p us_preproc_src)" &&
   echo "$_" >| "$meta" ||
   us_ifnodev rm "$meta"
-  $LOG info ":us-build[$targetref]" "Finished from ${#us_preproc_src[@]} sources" "meta:$meta"
+  $LOG info ":us-build[$templateref]" "Finished from ${#us_preproc_src[@]} sources" "meta:$meta"
 }
 
-# Return if target is up-to-date, or assemble new one in Cache-Dir
+# Return if template is up-to-date, or assemble new one in Cache-Dir
 us_build () # ~ <Target> # Assemble if missing or out-of-date
 {
   local cached meta tpl ood cmdpref
-  : "${base:?}"
+
+  : "${base:-us}"
   : "${_,,}"
   : "${_//[^a-z0-9]}"
-  local base=$_-build
-  ${base//-/_}__target_set "${1:?}" || return
+  local bbase=$_-build
+  ${bbase//-/_}__template_set "${1:?}" || return
   test 2 -ge $# || return ${_E_GAE:?}
 
-  local lk=${lk:-${base}}[$targetref]
+  local lk=${lk:-${bbase}}[$templateref]
+  $LOG info $lk "Looking at build state for template" "$1"
 
-  # Source meta for cached build, test if target is UTD. Otherwise
+  # Source meta for cached build, test if template is UTD. Otherwise
   # always try to set regenerate.
-  test -e "$target" -a -e "$meta" && {
+  test -e "$template" -a -e "$meta" && {
 
     us_debuglog "Sourcing cached meta..." "$meta"
     . "$meta" &&
@@ -116,14 +145,14 @@ us_build () # ~ <Target> # Assemble if missing or out-of-date
         ood=true
         false
       }
-    } && { test "$target" -nt "$tpl" || {
+    } && { test "$template" -nt "$tpl" || {
         us_debuglog "Target OOD for template" "$tpl"
         ood=true
         false
       }
     } &&
     for file in "${us_preproc_src[@]}"
-    do test "$target" -nt "$file" && {
+    do test "$template" -nt "$file" && {
       us_debuglog "Target UTD for source" "$file"
     } || {
       us_debuglog_info "Target OOD for source" "$file"
@@ -131,32 +160,35 @@ us_build () # ~ <Target> # Assemble if missing or out-of-date
     done
 
     ! ${ood:-false} && {
-      us_debuglog "Target and cache all up-to-date" "$targetref:$meta"
+      us_debuglog "Target and cache all up-to-date" "$templateref:$meta"
       return
     }
   } || {
-    us_debuglog_info "Target (or cache) missing" "$targetref:$meta"
+    stderr echo "Target (or cache) missing" "$templateref:$meta"
+    # FIXME
+    #us_debuglog_info "Target (or cache) missing" "$templateref:$meta"
   }
 
-  us_debuglog "(Re)generating script..." "$targetref"
+  $LOG debug "$lk" "(Re)generating script..." "$templateref"
 
   # Run preproc, body transform and run directives to generate file
   "${NOACT:-false}" && {
     us_notice "*** NOACT ***: Process template" "$tpl"
     return
   } || {
+
     { us_build_preproc "$tpl" &&
-      us_debuglog "Preprocessing done" "$targetref" &&
+      us_debuglog "Preprocessing done" "$templateref" &&
       us_build_proc "$tpl" &&
-      us_debuglog "Main processing done" "$targetref" &&
+      us_debuglog "Main processing done" "$templateref" &&
       us_build_run "$tpl"
-    } >| "$target" || {
-      rm "$target"
+    } >| "$template" || {
+      rm "$template"
       return 3
     }
   }
 
-  ${base//-/_}__target_unset || return
+  ${bbase//-/_}__template_unset || return
 }
 
 us_build__runline () # ~ <Rest>...
@@ -173,15 +205,21 @@ us_build__runline () # ~ <Rest>...
 us_build_value () # ~ <...
 {
   ! str_globmatch "$1" "*:*" || {
-    # Expand '*:' prefix using either vardefs table or env variable
-    : "${1%%:*}"
-    : "${_,,}"
-    sh_adef us_preproc_vardefs "$_" &&
-      set -- "${us_preproc_vardefs[$_]}/${1:$(( 1 + ${#_} ))}" || {
-        : "${_^^}"
-        : "${_//[^A-Z0-9_]/_}"
-        set -- "${!_}/${1:$(( 1 + ${#_} ))}"
-      }
+    [[ ${1:0:1} = : ]] && {
+      stderr echo Local namespace
+      stderr declare -p PWD
+      set -- "$PWD/${1:1}"
+    } || {
+      # Expand '*:' prefix using either vardefs table or env variable
+      : "${1%%:*}"
+      : "${_,,}"
+      sh_adef us_preproc_vardefs "$_" &&
+        set -- "${us_preproc_vardefs[$_]}/${1:$(( 1 + ${#_} ))}" || {
+          : "${_^^}"
+          : "${_//[^A-Z0-9_]/_}"
+          set -- "${!_:?"Missing either '${1%%:*}' vardef or env"}/${1:$(( 1 + ${#_} ))}"
+        }
+    }
   }
   # XXX: also allow var refs in definitions... but BWC mode, should be using vardefs
   if_ok "$(eval "echo \"${1:?}\"")" &&
@@ -193,7 +231,7 @@ us_build_context () # ~ <...
   local lk=${lk:-us:build}:context
   if_ok "$(us_build_value "$1")" &&
   test -d "$_" ||
-    $LOG error "$lk" "Unknown context type" "E$?:$1:$_" 3 || return
+    $LOG error "$lk" "Unknown context type" "E$?:$1,NODIR:$_" 3 || return
   ctx_dir=$_
   PATH=$PATH:$ctx_dir
 }
@@ -258,9 +296,9 @@ us_build_proc () # ~ <File> [<Additional-directives>...] [...]
     : "${_^^}"
     procdirs="$procdirs ${_//[^A-Z0-9_]/_}"
   }
-  echo "# % Generated on $(date --iso=min) from ${targetref:?}"
+  echo "# % Generated on $(date --iso=min) from ${templateref:?}"
   echo "# % Do not edit; auto-generated from ${#us_preproc_src[@]} sources "
-  $LOG info :run:proc "Generating script body" "$targetref"
+  $LOG info :run:proc "Generating script body" "$templateref"
   while read -r prefix rest
   do
     us_build_dir "$prefix" && {
@@ -316,25 +354,25 @@ us_build_run () # ~ <File> [<Additional-directives>...] [...]
   done
 }
 
-us_build_v () # ~ <Target ...> # Verbose build of target
+us_build_v () # ~ <Target ...> # Verbose build of template
 {
-  $LOG info :run "Check script target" "$1"
+  $LOG info :run "Check script template" "$1"
   us_build "$@" ||
     $LOG alert :run "Script build failed" "E$?:$1" $? || return
 }
 
-# Check for dev mode, build and fork to target script. The flow is identical
+# Check for dev mode, build and fork to template script. The flow is identical
 # to us-run, except the current process exits and is replaced by a new instance
-# running the target.
+# running the template.
 us_exec () # ~ <Target-script>
 {
   us_fork=true us_run "$@"
 }
 
-# Build and fork to script when executable bit is set, otherwise source and
-# exit. See us-run and us-exec,
+# Build and run script. Fork to script when executable bit is set, otherwise
+# source and exit. See us-run and us-exec,
 # TODO: however also handle dev, debug and noact modes here
-us_main () # (base) ~ <Target-script>
+us_build_main () # (base) ~ <Target-script>
 {
   : "${base:=us}"
   # XXX:
@@ -345,11 +383,11 @@ us_main () # (base) ~ <Target-script>
   us_main_env debug noact
   us_main_devenv
 
-  local target=$(us_build_value "${1:?}") || return
-  local t="${target%$us_build_trgt_ext}"
+  local template=$(us_build_value "${1:?}") || return
+  local t="${template%$us_build_target_ext}"
   local lk=${lk:-${base}-main[$$]}:run
 
-  test -x "$t$us_build_trgt_ext" && : "${us_fork:=true}"
+  test -x "$t$us_build_target_ext" && : "${us_fork:=true}"
   # Execute (fork) or load script into current session, possibly return for exit
   us_run "$@"
   exit $?
@@ -401,28 +439,28 @@ us_main_devenv ()
 # possibly return from us-run after execution.
 us_run () # ~ <Target> [<Args...>]
 {
-  local target targetref=${1:?}
+  local template templateref=${1:?}
   shift
-  us_build_v "$targetref" || return
+  us_build_v "$templateref" || return
 
   ! "${us_fork:-false}" && {
     "${NOACT:-false}" &&  {
       llk=:source
-      us_notice "*** NOACT ***: Source target" "$target"
+      us_notice "*** NOACT ***: Source template" "$template"
       return
     }
-    us_notice "Sourcing script target" "$targetref"
-    . "$target"
-    us_notice "Returned from target" "E$?:$targetref" $?
+    us_notice "Sourcing script template" "$templateref"
+    . "$template"
+    us_notice "Returned from template" "E$?:$templateref" $?
     return
   }
-  test -x "$target" &&
-    set -- "$target" "$@" ||
-    set -- bash -a "$base" "$target" "$@"
-  us_notice "Forking to target" "$*"
+  test -x "$template" &&
+    set -- "$template" "$@" ||
+    set -- bash -a "$base" "$template" "$@"
+  us_notice "Forking to template" "$*"
   "${NOACT:-false}" && {
     llk=:exec
-    us_notice "*** NOACT ***: Exec target" "$target"
+    us_notice "*** NOACT ***: Exec template" "$template"
     return
   }
   exec "$@"
@@ -441,6 +479,7 @@ us_ifnodev ()
 }
 
 # FIXME: autodefine
+# us-debuglog like us-debug only executes the given log command if DEBUG is on,
 us_debuglog () # ~ <Message> [<Context>] [<Status>]
 {
   us_debug $LOG debug "$lk" "$@"

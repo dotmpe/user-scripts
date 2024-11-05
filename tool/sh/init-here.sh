@@ -16,8 +16,8 @@ test -n "${CWD-}" || CWD="$PWD"
 test -n "${LOG-}" && LOG_ENV=1 || LOG_ENV=
 test -n "${LOG-}" -a -x "${LOG-}" -o \
   "$(type -t "${LOG-}" 2>/dev/null )" = "function" &&
-  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tools/sh/log.sh
-# Sh-Sync: tools/sh/parts/env-init-log.sh
+  LOG_ENV=1 INIT_LOG=$LOG || LOG_ENV=0 INIT_LOG=$CWD/tool/sh/log.sh
+# Sh-Sync: tool/sh/part/env-init-log.sh
 
 test -n "${sh_src_base-}" || sh_src_base=/src/sh/lib
 
@@ -27,13 +27,13 @@ test -n "${scriptname-}" || scriptname="$(basename -- "$0")" # No-Sync
 case "$0" in -* ) ;; * ) # No-Sync
   U_S="$(dirname "$(dirname "$(dirname "$0")" )" )" # No-Sync
 ;; esac # No-Sync
-test -n "${U_S-}" -a -d "${U_S-}" || . $PWD$sh_util_base/parts/env-0-u_s.sh
+test -n "${U_S-}" -a -d "${U_S-}" || . $PWD$sh_util_base/part/env-0-u_s.sh
 : ${status:=exit}
 test -n "${U_S-}" -a -d "${U_S-}" || $status $?
 
-test -n "${sh_tools-}" || sh_tools="$U_S/tools/sh"
+test -n "${sh_tools-}" || sh_tools="$U_S/tool/sh"
 type sh_include >/dev/null 2>&1 || {
-  . "$sh_tools/parts/include.sh" || $status $?
+  . "$sh_tools/part/include.sh" || $status $?
 }
 
 #test -n "$1" && {
@@ -70,4 +70,4 @@ shift 3
 
 eval "$@"
 
-# Id: user-script/ tools/sh/init-here.sh
+# Id: user-script/ tool/sh/init-here.sh

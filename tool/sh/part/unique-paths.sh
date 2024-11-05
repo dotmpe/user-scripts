@@ -7,4 +7,4 @@ unique_paths () # PATHNAME...
     test -e "$path" && realpath "$path" || echo "$path"
   done | remove_dupes
 }
-# Id: U-S:tools/sh/parts/unique-paths.sh :vim:ft=bash:
+# Id: U-S:tool/sh/part/unique-paths.sh :vim:ft=bash:

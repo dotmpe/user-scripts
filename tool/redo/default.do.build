@@ -1,7 +1,7 @@
-#define ctx1 "${U_S:?}/tools/sh/parts"
-#define ctx2 "${U_S:?}/tools/redo/parts"
-#define ctx3 "${U_S:?}/tools/us/parts"
-##define ctx0 "${U_S:?}/tools/build/parts"
+#define ctx1 "${U_S:?}/tool/sh/part"
+#define ctx2 "${U_S:?}/tool/redo/part"
+#define ctx3 "${U_S:?}/tool/us/part"
+##define ctx0 "${U_S:?}/tool/build/part"
 
 #resolve scr sh-util $ctx3
 

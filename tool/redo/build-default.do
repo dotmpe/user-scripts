@@ -27,7 +27,7 @@ lib_init us-build
 ##resolve fun sh-exception
 ##resolve fun sh-error
 #XXX: unset -f sh_{fun,error,exception}
-. ./tools/sh/parts/sh-fun.sh
+. ./tool/sh/part/sh-fun.sh
 : "${_E_fail:=1}"
 : "${_E_GAE:=193}" # Generic Argument Error
 : "${_E_ok:=195}" # Explicit OK (finished step, continue batch)
@@ -37,6 +37,6 @@ lib_init us-build
 
 
 us_build_trgt_ext=.do \
-us_main tools/redo/default.do "$@"
+us_build_main tool/redo/default.do "$@"
 
 # Id: U-s:default.do                                               ex:ft=bash:

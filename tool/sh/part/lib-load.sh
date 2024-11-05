@@ -10,4 +10,4 @@ test -z "${DEBUG:-}" || {
   set +x || true;
 }
 
-# Id: tool/sh/parts/lib-load.sh
+# Id: tool/sh/part/lib-load.sh

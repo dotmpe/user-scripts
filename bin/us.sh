@@ -1,1 +1,1 @@
-../tool/us/bin/us.sh
+../tool/us/exec/us.sh

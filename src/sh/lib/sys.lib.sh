@@ -113,16 +113,59 @@ aarr_pickglob () # ~ <Array> <Match-expr> # Output tsv for matching keys
   done
 }
 
-# Read arguments onto array, stopping at first argument matching prefix
-arr_argseqp () # ~ <Arr> <Arg-pref> <Args...>
+# A wrapper for arr-argseq-lit that sets the End-of-Seq value to '--'
+arr_argseq () # ~ <Arr> <Args...>
 {
+  : source "sys.lib.sh"
+  : group "sys/arr"
+  : see-also "arr-argseq-lit"
+  set -- "$1" "--" "${@:2}" &&
+  arr_argseq_lit "$@"
+}
+
+# Read arguments onto array, stopping at first argument matching prefix.
+# character. This uses regex and the default is '-', and only one character is
+# matched but the value can any regex character set.
+arr_argseq_pchar () # ~ <Arr> [<Char-expr>] <Args...>
+{
+  : source "sys.lib.sh"
+  : group "sys/arr"
+  : see-also "arr-argseq-re" "arr-argseq"
+  set -- "$1" "^[^${2:--}]" "${@:3}" &&
+  arr_args_re "$@"
+}
+
+# Read arguments onto array until argument matches given literal, then break and
+# return.
+arr_argseq_lit () # ~ <Arr> <Arg-match> <Args...>
+{
+  : source "sys.lib.sh"
+  : group "sys/arr"
+  : "${3:?"arr-argseq-lit: Arguments expected"}"
   local -n __arr=${1:?}
-  local argpref=${2:--}
-  shift 2
-  while [[ ${1:?} =~ ^[^$argpref] ]]
+  local endofseq=${2:?}
+  shift 2 &&
+  while [[ ${1:?} != $endofseq ]]
   do
     __arr+=( "${1:?}" ) &&
-    shift || return
+    shift || break
+  done
+}
+
+# Read arguments onto array while argument matches given regex, otherwise break
+# and return.
+arr_args_re () # ~ <Arr> <Arg-regex> <Args...>
+{
+  : source "sys.lib.sh"
+  : group "sys/arr"
+  : "${3:?"arr-argseq-re: Arguments expected"}"
+  local -n __arr=${1:?}
+  local argre=${2:?}
+  shift 2 &&
+  while [[ ${1:?} =~ $argre ]]
+  do
+    __arr+=( "${1:?}" ) &&
+    shift || break
   done
 }
 
@@ -218,6 +261,7 @@ arr_kpdump () # ~ <Array> <Key-prefix>
   done
 }
 
+# Replaces one item, exact matches only.
 arr_sub () # ~ <Array> ( <Match> <Replace> )+
 {
   : param "<Array> ( <Match> <Replace> )+"
@@ -225,13 +269,13 @@ arr_sub () # ~ <Array> ( <Match> <Replace> )+
   : source "sys.lib.sh"
   local -n __us_arr_sub=${1:?}
   shift &&
-  while true
+  while :
   do
     for ((i=0; i<${#__us_arr_sub[@]}; i++))
     do
       [[ "${__us_arr_sub[i]}" != "${1-}" ]] || __us_arr_sub[$i]=$2
     done
-    shift 2 || return
+    shift 2 || break
   done
 }
 
@@ -909,19 +953,21 @@ sys_aarrv () # ~ <Array> <Vars...>
 }
 # XXX: sys-assoc-array-from-variables
 
-sys_arr ()
+# XXX: now tests both declared and defined (was only defined) [4124]
+sys_arr () # ~ <Arr> # Test if name is declared as array symbol
 {
   : source "sys.lib.sh"
-  : "${1:?"sys-foreach: Expected variable reference"}"
+  : "${1:?"sys-arr: Expected symbol name"}"
   if_ok "$(declare -p ${1})" &&
   case "$_" in
-  ( "declare -"*[aA]*" $1="* ) true ;;
+  ( "declare -"*[aA]*" $1" | \
+    "declare -"*[aA]*" $1="* ) true ;;
     * ) false
   esac
 }
 
-# system-array-default
-# XXX:
+# system-array-default: define with given arguments as elements, but only if
+# undefined.
 sys_arr_def () # ~ <Var-name> <Defaults...>
 {
   : source "sys.lib.sh"
@@ -934,6 +980,42 @@ sys_arr_set () # ~ <Var-name> <Elements...>
 {
   declare -n arr=${1:?}
   arr=("${@:2}")
+}
+
+sys_arrstrip () # ~ <Arr> <Remove-items...>
+{
+  : param "<Array> ( <String> )+"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local -n __us_arr_sub=${1:?}
+  shift &&
+  while :
+  do
+    for ((i=0; i<${#__us_arr_sub[@]}; i++))
+    do
+      [[ "${__us_arr_sub[i]}" != "${1-}" ]] || unset "__us_arr_sub[i]"
+    done
+    shift || break
+  done
+}
+
+# Rewrite array items by shell string epxression(s)
+sys_arrsub_shstr () # ~ <Arr> ( <Str-expr> )+
+{
+  : param "<Array> ( <Bash-string-expr> )+"
+  : group "sys/arr"
+  : source "sys.lib.sh"
+  local -n __us_arr_sub=${1:?}
+  shift &&
+  : "${@:?}"
+  while :
+  do
+    for ((i=0; i<${#__us_arr_sub[@]}; i++))
+    do
+      eval "__us_arr_sub[i]=\${__us_arr_sub[i]$1}"
+    done
+    shift || break
+  done
 }
 
 # Ensure variable is set without using inspection, simply declare using current
@@ -1114,7 +1196,7 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
 }
 
 # system-array-from-command
-# XXX: rename to sys-execmap from sys-arr
+# XXX: renamed to sys-execmap from sys-arr
 # OLD sys-vaarr sys-arr
 # Read stdout of given command into array, if command returns zero status.
 sys_execmap () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
@@ -1124,10 +1206,11 @@ sys_execmap () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
   : "${2:?"$(sys_exc sys-execmap:command)"}"
   local outname=${1} offset
   local -n __sys_execmap_arr=${outname}
+  #: "${__sys_execmap_arr[*]?"$(sys_exc sys-execmap:array $1)"}"
   offset=${#__sys_execmap_arr[@]}
   if_ok "$("${@:2}")" &&
   test -n "$_" &&
-  <<< "$_" mapfile -O ${offset} ${mapfile_f:--t} ${outname}
+  <<< "$_" mapfile -O ${offset:-0} ${mapfile_f:--t} ${outname}
 }
 
 sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
@@ -1143,13 +1226,15 @@ sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
 }
 
 # Expand shell string expression (with braces and or globs) and put expansions
-# into array. XXX: does not handle space escapes
+# into array. XXX: does not handle space escapes, should handle any valid
+# bash expression as input (uses eval).
 sys_exparr () # ~ <Arr> <Expr>
 {
   : source "sys.lib.sh"
   sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}"
 }
 
+# XXX: remove this, probably one usage
 # Expand spec or use existing path value to fill array
 sys_expparr () # ~ <Arr> <Var-name>
 {
@@ -1532,6 +1617,7 @@ sys_tmp_init () # DIR
   sys_tmp="$1"
 }
 
+# Read variable declarations from tab-separated name/value lines.
 sys_tsvars () # ~ VARNAMES... # Read fields from TSV line
 {
   local line &&

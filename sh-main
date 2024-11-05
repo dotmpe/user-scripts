@@ -173,7 +173,7 @@ case "$(basename -- "$0" .sh)" in
       : "${SUITE:="Main"}"
       : "${keep_going:=1}" # No-Sync
       : "${stage:=}"
-      . "${sh_tools:="$PWD/tools/sh"}/env.sh"
+      . "${sh_tools:="$PWD/tool/sh"}/env.sh"
       test $# -gt 0 || set -- $sh_main_cmdl
 
       ci_file_exec()
@@ -208,4 +208,4 @@ EOM
     ;;
 esac
 
-# Derive: U-S:tools/sh/parts/init.sh vim:ft=bash:
+# Derive: U-S:tool/sh/part/init.sh vim:ft=bash:
