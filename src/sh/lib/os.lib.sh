@@ -1185,7 +1185,8 @@ os_find_bdarr () # ~ <Arr-name> <Find-args>
   local -n __os_fbdarr=${1:?}
   for basedir in "${__os_fbdarr[@]}"
   do
-    find "${basedir}" "${@:2}" || return
+    : "${basedir%%\/}"
+    find "${_}/" "${@:2}" || return
   done
 }
 
