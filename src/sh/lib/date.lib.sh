@@ -48,8 +48,8 @@ date_lib__init()
   # XXX: test -z "${date_lib_init:-}" || return ${date_lib_init:-}
 
   test -n "${gdate-}" || case "${OS_UNAME:?}" in
-    Darwin ) gdate="gdate" ;;
-    Linux ) gdate="date" ;;
+    Darwin ) gdate=gdate gsed=gsed ;;
+    Linux ) gdate=date gsed=sed ;;
     * ) $LOG error "" uname "$OS_UNAME" 1 ; return 1 ;;
   esac
 
@@ -122,17 +122,19 @@ date_epochsec () # File | -Delta-Seconds | @Timestamp | Time-Fmt
   return 1
 }
 
-date_fmt() # Date-Ref Str-Time-Fmt
+date_fmt () # ~ <Date-Ref> <Str-Time-Fmt>
 {
-  test $# -eq 2 || return 98
-  test -z "$1" && {
+  [[ $# -eq 2 ]] || return ${_E_GAE:-193}
+  [[ ! $1 ]] && {
     tags="today"
   } || {
     # NOTE patching for GNU date
-    test -e "$1" && tags="@$(filemtime "$1")" ||
-        tags=$( echo "$1" | bsd_date_tag ) # XXX: date-htd.lib
+    test -e "${1:?}" &&
+    tags="@$(filemtime "$1")" ||
+      tags=$( echo "$1" | bsd_date_tag ) || # XXX: date-htd.lib
+        return
   }
-  $gdate ${date_flags:-} -d "$tags" +"$2"
+  ${gdate?} ${date_flags-} -d "${tags:?}" +"${2:?}"
 }
 
 date_()
