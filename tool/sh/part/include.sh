@@ -92,6 +92,7 @@ sh_include () # ~ <Partnames...> # Source first existing
     test -n "${sh_include_dry:-}" && {
       echo "$sh_include_base/$sh_include_partid.sh"
     } || {
+
       # DEBUG "\e[30m# START $sh_include_base/$sh_include_partid.sh\e[0m\n" >&2
       . "$sh_include_base/$sh_include_partid.sh" && {
         declare -g "${sh_include_part_var}=0"
@@ -128,7 +129,7 @@ sh_run ()
 {
   : source "u-s:tool/sh/part/include.sh"
 
-  local -r vid=$(str_word "${1:?}")
+  local -r vid=$(upper=false str_word "${1:?}")
   #local vid=${1:?}
   #str_vword vid
   local lk=${lk-}:sh-run:$vid
