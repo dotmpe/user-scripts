@@ -43,10 +43,11 @@ us-env:define-env ()
 
 }
 
-us-env:fun ()
+#us-env:fun ()
+us_env_fun ()
 {
   local -n names
-  if-ok "$(us-env:funsets)" &&
+  if_ok "$(us_env_funsets)" &&
   for names in $_
   do
     : "${names//,/ }" &&
