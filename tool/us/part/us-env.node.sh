@@ -119,18 +119,6 @@ us_env_src__scr ()
 }
 
 
-
-us-env ()
-{
-  : source "us-env.sh"
-
-  [[ ${us_node[*]+set} ]] || us-env:define-env ||
-    test ${_E_continue:-195} -eq $? ||
-    $LOG error ":us-env" "Illegal status" "E$_" $_ || return
-
-  false
-}
-
 us-env.fun ()
 {
   local -n names

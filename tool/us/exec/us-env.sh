@@ -19,7 +19,7 @@ us_env_sh__grp=us-env,user-script,user-script-sh
 us_env_name="User Script Environment"
 us_env_version=0.0.1-dev
 us_env_defcmd=short
-us_env_maincmds=help
+us_env_maincmds=help,load,query,require
 us_env_shortdescr=
 
 
@@ -31,7 +31,22 @@ us-env ()
     $LOG error ":us-env" "Illegal status" "E$_" $_ || return
 
   local args
+  # XXX: compiled help for static function export, outer script will use
+  # user-script-help functions
   case "${*:?}" in
+  ( -h|-?|--help )
+      cat <<EOM
+Command
+  us-env <...>
+
+Usage options:
+  -r | --require <require-parts...>
+  -E TODO
+  -l | --load <load-parts...>
+  -q | --query <query-parts...>
+
+EOM
+    ;;
   ( "-r us:boot.screnv" )
       local scriptenv
       # These are intended to control local script, export must be turned off first.
@@ -69,6 +84,21 @@ us-env ()
     ;;
    * ) $LOG error :us-env "No such action" "$1" ${_E_nsa:-68}
   esac
+}
+
+us_env__load_parts () # ~ <Parts...>
+{
+  false
+}
+
+us_env__query () # ~ <Parts...>
+{
+  false
+}
+
+us_env_sh__require () # ~ <Parts...>
+{
+  false
 }
 
 

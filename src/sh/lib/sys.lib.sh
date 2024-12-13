@@ -187,6 +187,7 @@ arr_contains () # ~ <Array> <Value>
   : about "Test each value and return true on match or false on none"
   : group "sys/arr"
   : source "sys.lib.sh"
+  local i
   local -n __us_arr=${1:?}
   for ((i=0; i<${#__us_arr[@]}; i++))
   do
@@ -267,6 +268,7 @@ arr_sub () # ~ <Array> ( <Match> <Replace> )+
   : param "<Array> ( <Match> <Replace> )+"
   : group "sys/arr"
   : source "sys.lib.sh"
+  local i
   local -n __us_arr_sub=${1:?}
   shift &&
   while :
@@ -932,6 +934,7 @@ sys_aappend () # ~ <Array> <Item> # Append new unique item to indexed array
       [[ "$item" ]] || continue
     # Dont compare against unitialized array
     ! [[ "${arr+set}" ]] || {
+      local i
       for ((i=0;i<${#arr[*]};i++))
       do
         [[ "${arr[i]}" != "$item" ]] || continue 2
@@ -991,6 +994,7 @@ sys_arrstrip () # ~ <Arr> <Remove-items...>
   shift &&
   while :
   do
+    local i
     for ((i=0; i<${#__us_arr_sub[@]}; i++))
     do
       [[ "${__us_arr_sub[i]}" != "${1-}" ]] || unset "__us_arr_sub[i]"
@@ -1010,6 +1014,7 @@ sys_arrsub_shstr () # ~ <Arr> ( <Str-expr> )+
   : "${@:?}"
   while :
   do
+    local i
     for ((i=0; i<${#__us_arr_sub[@]}; i++))
     do
       eval "__us_arr_sub[i]=\${__us_arr_sub[i]$1}"
@@ -1456,6 +1461,7 @@ sys_paths_df () # (s) ~ ...
     [[ $depth -lt $maxdepth ]] || maxdepth=$depth
   done
   # Output
+  local depth
   for (( depth=$maxdepth; depth>=0; depth-- ))
   do
     for (( seqidx=${depths["$depth"]}; seqidx>0; seqidx-- ))
