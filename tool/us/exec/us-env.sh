@@ -122,12 +122,14 @@ str_suffix () # (s) ~ <Suffix-str> ...
 us_env_loadenv ()
 {
   : source "us-env.sh"
+
   # XXX: do proper build and then graph init
-  add_path "${U_S?}/tool/us/part"
-  add_path "${U_S?}/tool/us/exec"
-  uc_script_load us-env.node
-  #stderr declare -F us_env_loadenv
-  us-env:define-env
+  add_path "${U_S?}/tool/us/part" &&
+  add_path "${U_S?}/tool/us/exec" &&
+  uc_script_load us-env.node &&
+  us-env:define-env &&
+    true || return
+
   return ${_E_continue:-195}
 }
 
