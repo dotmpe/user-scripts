@@ -148,7 +148,7 @@ arr_argseq_lit () # ~ <Arr> <Arg-match> <Args...>
   while [[ ${1:?} != $endofseq ]]
   do
     __arr+=( "${1:?}" ) &&
-    shift || break
+    shift && [[ $# -gt 0 ]] || break
   done
 }
 
@@ -165,7 +165,7 @@ arr_args_re () # ~ <Arr> <Arg-regex> <Args...>
   while [[ ${1:?} =~ $argre ]]
   do
     __arr+=( "${1:?}" ) &&
-    shift || break
+    shift && [[ $# -gt 0 ]] || break
   done
 }
 
@@ -990,16 +990,17 @@ sys_arrstrip () # ~ <Arr> <Remove-items...>
   : param "<Array> ( <String> )+"
   : group "sys/arr"
   : source "sys.lib.sh"
-  local -n __us_arr_sub=${1:?}
+  local -n __us_arrstrip_in=${1:?}
   shift &&
+  : "${@:?Expected remove-items argument(s)}" &&
   while :
   do
     local i
-    for ((i=0; i<${#__us_arr_sub[@]}; i++))
+    for ((i=0; i<${#__us_arrstrip_in[@]}; i++))
     do
-      [[ "${__us_arr_sub[i]}" != "${1-}" ]] || unset "__us_arr_sub[i]"
+      [[ "${__us_arrstrip_in[i]}" != "${1-}" ]] || unset "__us_arrstrip_in[i]"
     done
-    shift || break
+    shift && [[ $# -gt 0 ]] || break
   done
 }
 
@@ -1009,17 +1010,17 @@ sys_arrsub_shstr () # ~ <Arr> ( <Str-expr> )+
   : param "<Array> ( <Bash-string-expr> )+"
   : group "sys/arr"
   : source "sys.lib.sh"
-  local -n __us_arr_sub=${1:?}
+  local -n __us_arrsub_in=${1:?}
   shift &&
-  : "${@:?}"
+  : "${@:?Expected string option expression argument(s)}" &&
   while :
   do
     local i
-    for ((i=0; i<${#__us_arr_sub[@]}; i++))
+    for ((i=0; i<${#__us_arrsub_in[@]}; i++))
     do
-      eval "__us_arr_sub[i]=\${__us_arr_sub[i]$1}"
+      eval "__us_arrsub_in[i]=\${__us_arrsub_in[i]$1}"
     done
-    shift || break
+    shift && [[ $# -gt 0 ]] || break
   done
 }
 
