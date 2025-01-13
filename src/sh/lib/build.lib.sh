@@ -2562,8 +2562,12 @@ test_same_dir () # ~ <Dir-path-1> <Dir-path-2>
 env__define__ifdone ()
 {
   declare -ga target_arr ood_arr
-  mapfile -t target_arr <<< $(build-targets) || return
-  mapfile -t ood_arr <<< $(build-ood) || return
+  if_ok "$(build-targets)" &&
+  test -n "$_" &&
+  mapfile -t target_arr <<< "$_" &&
+  if_ok "$(build-ood)" &&
+  test -n "$_" &&
+  mapfile -t ood_arr <<< "$_"
 }
 
 is_target ()
@@ -2634,7 +2638,6 @@ build-ifrule ()
 
 
 # Return non-zero when target(s) are OOD
-
 build-ifdone ()
 {
   while test $# -gt 0

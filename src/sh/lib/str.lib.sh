@@ -281,6 +281,15 @@ str_glob_expansions () # ~ <Single-star-glob-expression>
   done
 }
 
+str_globescape ()
+{
+  : "${1//\]/\\]}"
+  : "${_//\[/\\[}"
+  : "${_//\*/\\*}"
+  : "${_//\?/\\?}"
+  echo "$_"
+}
+
 # see also fnmatch and wordmatch
 str_globmatch () # ~ <String> <Glob-patterns...>
 {

@@ -1,15 +1,31 @@
 
-### Checksumming
+### Checksumming - simple API for generating common, derived key values
 
-# Helper function to generate ASCII (hex encoded) checksums using some common
-# hash or checksum algorithms.
+
+#  Helper function to generate ASCII (hex encoded) "checksums" for file data
+#  using some common hash generation methods or algorithms.
+#
+#  ck-sum() is a simple generic routine to generate, or if a checksum is provided
+#  check data aginst a checksum given that the generator program does not output
+#  anything else or uses two spaces to separate checksum value(s) from trailing
+#  line-data.
+#
+#  The invocation for the actual generator needs to be provided by env var
+#  cksum-cmd, an array that holds the command name and following arguments, to
+#  which the file reference is append.
+#  Various ck-{Algo} functions for common types are provided to provide (and
+#  isolate) this env setting.
+#
+#  Speed is an issue here. Also it may be nice to have an API for string values,
+#  or by-name variables.
+#  XXX: See hash lib for those.
 
 # XXX: several cksum implementations/results exist, see other more experimental
 # libs for those.
 
 # XXX: and file manifests with checksums (see ck-htd.lib etc.)
 
-# TODO: string indexing instead of globmatch comparison could bit faster?
+# TODO: string indexing instead of globmatch comparison could make it a bit faster?
 
 
 ck_lib__load()
@@ -88,12 +104,13 @@ ck_sum () # ~ [<File>] [<Checksum>]
   : "${_/  *}"
   cksum="$_"
   # Handling of result output
-  test -n "$cksum" || return
-  test -n "${2-}" && {
-    test ${#2} -eq ${#cksum} || {
-      test $abbrev -gt 0 || return
+  [[ ${cksum:+set} ]] || return
+  [[ ${2+set} ]] && {
+    [[ ${#2} -eq ${#cksum} ]] || {
+      # Length mismatch; no match unless we have abbreviated checksum
+      [[ $abbrev -gt 0 ]] || return
       # Partial match but at least N chars
-      test ${#2} -ge $abbrev && fnmatch "$2*" "$cksum"
+      [[ ${#2} -ge $abbrev ]] && fnmatch "$2*" "$cksum"
       return $?
     }
     test "$2" = "$cksum" || return

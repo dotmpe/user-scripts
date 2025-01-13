@@ -15,6 +15,9 @@ os_lib__load ()
 os_lib__init ()
 {
   [[ "${os_lib_init-}" = "0" ]] || {
+
+    os_filestat_getschema || return
+
     [[ "$LOG" && ( -x "$LOG" || "$(type -t "$LOG")" = "function" ) ]] \
       && os_lib_log="$LOG" || os_lib_log="$INIT_LOG"
     [[ "$os_lib_log" ]] || return 108
@@ -492,6 +495,225 @@ readable_number () # ~ <Num> [<group-separator>]
   done
   echo "$num${out+,$out}"
 }
+
+os_filestat_fieldsformat () # ~ <FIELDS...>
+{
+  local _fieldspec
+  : "${@:?}"
+  for _fieldspec
+  do
+    fnmatch "$_fieldspec" "[a-zA-Z]" && {
+      echo "%$_fieldspec"
+    } || {
+      echo "${os_filestat_schema["os:stat:format:$_fieldspec.alias"]:?Field $_fieldspec}"
+    }
+  done
+}
+
+os_filestat_getschema () # ~
+{
+  : "${os_filestat_schemafp:=${STATUSDIR_ROOT:?}cache/os-lib-filestat.schema.sh}"
+  [[ -s "${os_filestat_schemafp:?}" ]] && {
+    . "${os_filestat_schemafp:?}" || return
+  } ||
+    os_filestat_init || return
+}
+
+# XXX: single frontend for os-filestat should probably be object based.
+# the utils below are designed to retrieve several stat fields in a single
+# stat invocation
+
+#os_filestat () # ~ <PATH> <DEST> <FIELDS...>
+#{
+#  local _path=${1:?Expected PATH argument} _os_fstat_destname=${2-}
+#  local -n _os_fstat_data=${2:?Expected DEST array table}
+#  #_fmt=$(os_filestat_fieldsformat "${@:3}") &&
+#  TODO $FUNCNAME
+#}
+
+# XXX: write field schemes for file, directory and other path types to Bash
+# readable file
+os_filestat_init ()
+{
+  declare -gA os_filestat_schema=(
+
+  ["os:stat:format:%a.short"]="access rights in octal (note '#' and '0' printf flags)"
+  ["os:stat:format:%A.short"]="access rights in human readable form"
+  ["os:stat:format:%b.short"]="number of blocks allocated (see %B)"
+  ["os:stat:format:%B.short"]="the size in bytes of each block reported by %b"
+  ["os:stat:format:%C.short"]="SELinux security context string"
+  ["os:stat:format:%d.short"]="device number in decimal"
+  ["os:stat:format:%D.short"]="device number in hex"
+  ["os:stat:format:%f.short"]="raw mode in hex"
+  ["os:stat:format:%F.short"]="file type"
+  ["os:stat:format:%g.short"]="group ID of owner"
+  ["os:stat:format:%G.short"]="group name of owner"
+  ["os:stat:format:%h.short"]="number of hard links"
+  ["os:stat:format:%i.short"]="inode number"
+  ["os:stat:format:%m.short"]="mount point"
+  ["os:stat:format:%n.short"]="file name"
+  ["os:stat:format:%N.short"]="quoted file name with dereference if symbolic link"
+  ["os:stat:format:%o.short"]="optimal I/O transfer size hint"
+  ["os:stat:format:%s.short"]="total size, in bytes"
+  ["os:stat:format:%t.short"]="major device type in hex, for character/block device special files"
+  ["os:stat:format:%T.short"]="minor device type in hex, for character/block device special files"
+  ["os:stat:format:%u.short"]="user ID of owner"
+  ["os:stat:format:%U.short"]="user name of owner"
+  ["os:stat:format:%w.short"]="time of file birth, human-readable; - if unknown"
+  ["os:stat:format:%W.short"]="time of file birth, seconds since Epoch; 0 if unknown"
+  ["os:stat:format:%x.short"]="time of last access, human-readable"
+  ["os:stat:format:%X.short"]="time of last access, seconds since Epoch"
+  ["os:stat:format:%y.short"]="time of last data modification, human-readable"
+  ["os:stat:format:%Y.short"]="time of last data modification, seconds since Epoch"
+  ["os:stat:format:%z.short"]="time of last status change, human-readable"
+  ["os:stat:format:%Z.short"]="time of last status change, seconds since Epoch"
+
+  ["os:stat:format:access-rights-oct.alias"]="%a"
+  ["os:stat:format:access-rights.alias"]="%A"
+  ["os:stat:format:allocated-blocks.alias"]="%b"
+  ["os:stat:format:block-size.alias"]="%B"
+  ["os:stat:format:security-context.alias"]="%C"
+  ["os:stat:format:device-number.alias"]="%d"
+  ["os:stat:format:device-number-hex.alias"]="%D"
+  ["os:stat:format:raw-mode-hex.alias"]="%f"
+  ["os:stat:format:file-type.alias"]="%F"
+  ["os:stat:format:owner-gid.alias"]="%g"
+  ["os:stat:format:owner-group-name.alias"]="%G"
+  ["os:stat:format:hard-link-count.alias"]="%h"
+  ["os:stat:format:inode-number.alias"]="%i"
+  ["os:stat:format:mount-point.alias"]="%m"
+  ["os:stat:format:file-name.alias"]="%n"
+  # XXX: called this sym(bolic)-ref(erence) since its one or two quoted strings
+  # "'<linkpath>' -> '<trgtpath>' when type is 'symbolic link'
+  ["os:stat:format:quoted-symref.alias"]="%N"
+  ["os:stat:format:optimal-xfer-size.alias"]="%o"
+  ["os:stat:format:byte-size.alias"]="%s"
+  ["os:stat:format:major-devtype-hex.alias"]="%t"
+  ["os:stat:format:minor-devtype-hex.alias"]="%T"
+  ["os:stat:format:owner-uid.alias"]="%u"
+  ["os:stat:format:owner-name.alias"]="%U"
+  ["os:stat:format:birth-time.alias"]="%w"
+  ["os:stat:format:birth-timestamp.alias"]="%W"
+  ["os:stat:format:access-time.alias"]="%x"
+  ["os:stat:format:access-timestamp.alias"]="%X"
+  ["os:stat:format:modification-time.alias"]="%y"
+  ["os:stat:format:modification-timestamp.alias"]="%Y"
+  ["os:stat:format:status-time.alias"]="%z"
+  ["os:stat:format:status-timestamp.alias"]="%Z"
+	["os:stat:format:terse.alias"]="%n %s %b %f %u %g %D %i %h %t %T %X %Y %Z %W %o %C"
+
+  ["os:stat:format:inode.alias"]="%i"
+  ["os:stat:format:ctime-dt.alias"]="%z"
+  ["os:stat:format:ctime.alias"]="%Z"
+  ["os:stat:format:atime-dt.alias"]="%x"
+  ["os:stat:format:atime.alias"]="%X"
+  ["os:stat:format:mtime-dt.alias"]="%y"
+  ["os:stat:format:mtime.alias"]="%Y"
+  )
+  #os_fsstat_schema=(
+	#)
+
+  {
+    echo "declare -gA os_filestat_schema"
+    arr_dump os_filestat_schema
+  } > "${os_filestat_schemafp:?}"
+}
+
+os_filestat_list () # ~ <PATH> <DEST> <FIELDS...>
+{
+  local _path=${1:?} _fieldspec _fmt
+  local -n _dest=${2:?}
+
+  _fmt="$(os_filestat_fieldsformat "${@:3}")" &&
+  if_ok "$(stat -c "$_" "${_path}")" &&
+  <<< "$_" mapfile -t ${2:?}
+}
+
+os_filestat_makeformat () # <DEST> <FIELDS...>
+{
+	local _field
+	local -n _fmt=${1:?}
+	shift &&
+	for _field
+	do
+	  test -n "${os_filestat_schema["os:stat:format:%$field.short"]-}" &&
+    fmt=${fmt-}${fmt+ }$_ || {
+	    test -n "${os_filestat_schema["os:stat:format:$field.alias"]-}" &&
+      fmt=${fmt-}${fmt+ } $_ ||
+        $LOG alert : "Unknown format specifier" "$field" 3 || return
+    }
+	done
+}
+
+# Read stat output line by line. Each field's format must expand to exactly one
+# line, but may contain spaces. XXX: Not sure if this is useful but it allows
+# to retireve composite string values. Note that while this may seem useful for
+# filenames, those are usually very unrestricted and can have newlines. Better
+# to use bash facilities for quoting, or use %N/quoted-deref instead of
+# %n/filename.
+os_filestat_read () # ~ <PATH> <NAMESPECS...>
+{
+  local _path=${1:?} _fieldspec _var
+  local -a _fields _vars
+  shift 1 &&
+  for _fieldspec in "${@:?}"
+  do
+    _fields+=( ${_fieldspec%%:*} )
+    : "${_fieldspec##*:}"
+    _vars+=( ${_//[^A-Za-z0-9_]/_} )
+  done &&
+  if_ok "$(os_filestat_values "${_path}" - "${_fields[@]}")" &&
+  for _var in "${_vars[@]}"
+  do
+    read -r "${_var}"
+  done <<< "$_"
+}
+
+# Use a single readline invocation to read all stat output to variables.
+# Values cannot include spaces. Newlines in the pattern are substituted for
+# spaces. This suits many values that stat returns, but it cannot read
+# composite formatting sequences. XXX: Also unfortenately file-type can have
+# spaces.
+os_filestat_readline () # ~ <PATH> <NAMESPECS...>
+{
+  local _path=${1:?} _fieldspec
+  local -a _fields _vars
+  shift 1 &&
+  for _fieldspec in "${@:?}"
+  do
+    _fields+=( ${_fieldspec%%:*} )
+    : "${_fieldspec##*:}"
+    _vars+=( ${_//[^A-Za-z0-9_]/_} )
+  done &&
+  if_ok "$(os_filestat_values "${_path}" - "${_fields[@]}")" &&
+  : "${_//$'\n'/ }" &&
+  <<< "$_" read -r "${_vars[@]}"
+}
+
+# FIXME: this is not as useful while stat field values cannot be used with
+# KEYFMT. Only field key or name. Should add callback function for key building.
+# ${os_table_keycb} str_format_one str_format_shell str_format_pfields
+os_filestat_table () # ~ <PATH> <DEST> <KEYFMT> <FIELDS...>
+{
+  local _path=${1:?} _keyfmt=${3:-%s} _{fieldspec,key,value}
+  local -n _dest=${2:?}
+  if_ok "$(os_filestat_values "${_path}" - "${@:4}")" &&
+  for _fieldspec in "${@:4}"
+  do
+    read -r _value &&
+    printf -v _key -- "${_keyfmt}" "$_fieldspec" &&
+    _dest[${_key}]=${_value} || return
+  done <<< "${_}"
+}
+
+os_filestat_values () # ~ <PATH> <DEST=-> <FIELDS...>
+{
+  local _path=${1:?} _dest _fmt
+  { [[ ${2:--} == - ]] && _dest=/dev/stdout || _dest=${2}; } &&
+  _fmt="$(os_filestat_fieldsformat "${@:3}")" &&
+  stat -c "$_fmt" "$_path" >> "${_dest:?}"
+}
+
 
 # Return basename for one file, using filenamext to extract extension.
 # See basenames for multiple args, and pathname to preserve (relative) directory
@@ -1234,6 +1456,14 @@ os_ispath () # ~ <Name>
   : source "os.lib.sh"
   : "${1:?test-ispath: Path name expected}"
   [[ -e "$_" ]]
+}
+
+os_dirs_exist () # ~ <Names...>
+{
+  local _dir
+  for _dir
+  do [[ -d $_dir ]] || return
+  done
 }
 
 os_path_add () # <Prepend-Value> <Append-Value>

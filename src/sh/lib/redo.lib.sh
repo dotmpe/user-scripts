@@ -69,6 +69,8 @@ FROM Files JOIN Deps on Files.rowid = Deps.source WHERE Files.is_generated=1;
   }
 }
 
+# XXX: see build-ifdone
+# needs ood-arr and target-arr env
 redo_ifdone ()
 {
   false
