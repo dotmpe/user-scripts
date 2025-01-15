@@ -930,15 +930,15 @@ line_count () # FILE
 {
   [[ -s "${1-}" ]] || return 42
   [[ "$(filesize "$1")" -gt 0 ]] || return 43
+  # XXX: posix valid files... ?
   #shellcheck disable=2005,2046
-  lc="$(echo $(od -An -tc -j "$(( $(filesize "$1") - 1 ))" "$1"))"
-  case "$lc" in "\n" ) ;;
-    "\r" ) error "POSIX line-end required" 1 ;;
-    * ) printf '\n' >>"$1" ;;
-  esac
-  declare lc
-  lc=$(wc -l "$1" | awk '{print $1}')
-  echo "$lc"
+  #lc="$(echo $(od -An -tc -j "$(( $(filesize "$1") - 1 ))" "$1"))"
+  #case "$lc" in "\n" ) ;;
+  #  "\r" ) error "POSIX line-end required" 1 ;;
+  #  * ) printf '\n' >>"$1" ;;
+  #esac
+  if_ok "$(wc -l "$1")" &&
+  echo "${_%% *}"
 }
 
 line_number_raw () # ~ <Line-str> <Var-pk> <Num-sep> # Extract line number prefix
@@ -1367,6 +1367,18 @@ remove_dupes_nix () # ~ <Awk-argv...>
   awk '( substr($1,1,1) != "#" && !a[$0]++ )' "$@"
 }
 
+remove_dupes_nix_data_bycol () # ~ <Colnr> <Awk-argv>
+{
+  awk -F "${AWK_FS:-${IFS:-$' \t\n'}}" \
+    '( substr($1,1,1) != "#" || !a[$'"${1:-1}"']++ )' \
+    "${@:2}"
+}
+
+remove_dupes_nix_data_bycol_rev () # ~ <Colnr> <Awk-argv>
+{
+  tac | remove_dupes_nix_data_bycol "$@" | tac
+}
+
 # Same as remove-dupes but leave comments/preproc-lines alone.
 remove_dupes_nix_data () # ~ <Awk-argv...>
 {
@@ -1401,6 +1413,11 @@ os_expandpath () # ~ <Arr> <Expr>
   done
 }
 
+# Go over basedirs given in array, and run find for each. Effectively listing
+# paths on stdout.
+# XXX: might want to tab-separate basedirs from subpaths on output, but in
+# practice that is done easily enough in-line (and this array as temporary
+# in-memory data).
 os_find_bdarr () # ~ <Arr-name> <Find-args>
 {
   local basedir
@@ -1408,8 +1425,38 @@ os_find_bdarr () # ~ <Arr-name> <Find-args>
   for basedir in "${__os_fbdarr[@]}"
   do
     : "${basedir%%\/}"
-    find "${_}/" "${@:2}" || return
+    find "${_}/" "${@:2}" || {
+      local _stat=$?
+      {
+        ! "${VERBOSE:-false}" || ! "${DEBUG:-false}"
+      } && return $_stat || {
+        : "E$_stat:find:${*:2}"
+        $LOG warn  "$lk" "Error reading results reading into '$1'" "$_" $_stat
+      }
+    }
   done
+}
+
+# Turn find search query into (array) list of pathnames. Verbosely if requested.
+os_find_sarr () # ~ <Arr> <Find-expr>
+{
+  ! "${VERBOSE:-false}" || ! "${DEBUG:-false}" ||
+    local lk="${lk:-":Bash[$$]:os-find-sarr"}"
+  if_ok "$(find "${@:2}")" &&
+  test -n "$_" &&
+  mapfile -t "${1:?Array name expected}" <<< "$_" && {
+    ! "${VERBOSE:-false}" || ! "${DEBUG:-false}" || {
+      local -n _arr=${1}
+      $LOG debug "$lk" "Read ${#_arr[*]} results by find into array '$1'" "find:${*:2}"
+    }
+  } || { local _stat=$?
+    {
+      ! "${VERBOSE:-false}" || ! "${DEBUG:-false}"
+    } && return $_stat || {
+      : "E$_stat:find:${*:2}"
+      $LOG warn  "$lk" "Error reading results reading into '$1'" "$_" $_stat
+    }
+  }
 }
 
 # XXX: see argv.lib test_ funs as well
