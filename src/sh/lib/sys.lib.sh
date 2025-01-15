@@ -957,7 +957,7 @@ sys_aarrv () # ~ <Array> <Vars...>
 # XXX: sys-assoc-array-from-variables
 
 # XXX: now tests both declared and defined (was only defined) [4124]
-sys_arr () # ~ <Arr> # Test if name is declared as array symbol
+sys_is_arr () # ~ <Arr> # Test if name is declared as array symbol
 {
   : source "sys.lib.sh"
   : "${1:?"sys-arr: Expected symbol name"}"
@@ -967,6 +967,15 @@ sys_arr () # ~ <Arr> # Test if name is declared as array symbol
     "declare -"*[aA]*" $1="* ) true ;;
     * ) false
   esac
+}
+
+# Alias for sys-exec-mapfile
+sys_arr ()
+{
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys-arr:array-name)"}"
+  : "${2:?"$(sys_exc sys-arr:command)"}"
+  sys_exec_mapfile "$@"
 }
 
 # system-array-default: define with given arguments as elements, but only if
@@ -1201,22 +1210,34 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
     "${sys_on_exc:-sys_source_trace}" "$sys_exc_id" "$sys_exc_msg" 3 "${@:3}"
 }
 
+# Alias for sys-exec-mapfile
+sys_map ()
+{
+  : source "sys.lib.sh"
+  : "${1:?"$(sys_exc sys-map:array-name)"}"
+  : "${2:?"$(sys_exc sys-map:command)"}"
+  sys_exec_mapfile "$@"
+}
+
+# XXX rename sys-cmd-mapfile? add cmd_pref param
+# system-arr-exec
 # system-array-from-command
 # XXX: renamed to sys-execmap from sys-arr
 # OLD sys-vaarr sys-arr
 # Read stdout of given command into array, if command returns zero status.
-sys_execmap () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
+sys_exec_mapfile () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
 {
   : source "sys.lib.sh"
-  : "${1:?"$(sys_exc sys-execmap:array-name)"}"
-  : "${2:?"$(sys_exc sys-execmap:command)"}"
+  : "${1:?"$(sys_exc sys-exec-mapfile:array-name)"}"
+  : "${2:?"$(sys_exc sys-exec-mapfile:command)"}"
   local outname=${1} offset
-  local -n __sys_execmap_arr=${outname}
+  local -n __sys_exec_mapfile_arr=${outname}
   #: "${__sys_execmap_arr[*]?"$(sys_exc sys-execmap:array $1)"}"
-  offset=${#__sys_execmap_arr[@]}
+  [[ ${__sys_exec_mapfile_arr[*]:+set} ]] &&
+  offset=${#__sys_exec_mapfile_arr[@]} || offset=0
   if_ok "$("${@:2}")" &&
   test -n "$_" &&
-  <<< "$_" mapfile -O ${offset:-0} ${mapfile_f:--t} ${outname}
+  <<< "$_" mapfile -O ${offset} ${mapfile_f:--t} ${outname}
 }
 
 sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
@@ -1232,11 +1253,12 @@ sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
 }
 
 # Expand shell string expression (with braces and or globs) and put expansions
-# into array. XXX: does not handle space escapes, should handle any valid
-# bash expression as input (uses eval).
+# into array. XXX: how to quote properly, handle space,
+# and handle any valid bash expression as input (uses eval)?
 sys_exparr () # ~ <Arr> <Expr>
 {
   : source "sys.lib.sh"
+  #sys_execmap "${1:?}" eval "printf '%s\n' ${2@Q}"
   sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}"
 }
 
