@@ -66,8 +66,7 @@ EOM
   case "${1:?}" in
   ( -E | --exec )
     ;;
-  ( -q | --query )
-      [[ ${us_node["$2"]-} ]]
+  ( -d | --known )
     ;;
   ( -l | --load )
       uc_script_load "$2"
@@ -81,6 +80,9 @@ EOM
         us-env --load "$2" &&
         us_node["$2"]=
       }
+    ;;
+  ( -q | --query )
+      [[ ${us_node["$2"]-} ]]
     ;;
    * ) $LOG error :us-env "No such action" "$1" ${_E_nsa:-68}
   esac

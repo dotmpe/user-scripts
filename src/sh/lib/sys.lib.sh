@@ -464,12 +464,12 @@ cwd_path () # ~ ...
 
 cwd_arr () # ~ <Arr-name>
 {
-  sys_execmap "${1:?}" cwd_path
+  sys_exec_mapfile "${1:?}" cwd_path
 }
 
 cwd_rarr () # ~ <Arr-name>
 {
-  sys_execmap "${1:?}" cwd_path &&
+  sys_exec_mapfile "${1:?}" cwd_path &&
   sys_rarr "${1:?}"
 }
 
@@ -1232,7 +1232,7 @@ sys_exec_mapfile () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
   : "${2:?"$(sys_exc sys-exec-mapfile:command)"}"
   local outname=${1} offset
   local -n __sys_exec_mapfile_arr=${outname}
-  #: "${__sys_execmap_arr[*]?"$(sys_exc sys-execmap:array $1)"}"
+  #: "${__sys_exec_mapfile_arr[*]?"$(sys_exc sys-execmap:array $1)"}"
   [[ ${__sys_exec_mapfile_arr[*]:+set} ]] &&
   offset=${#__sys_exec_mapfile_arr[@]} || offset=0
   if_ok "$("${@:2}")" &&
@@ -1244,7 +1244,7 @@ sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
 {
   : source "sys.lib.sh"
   "${UC_STATIC_ENV:-true}" && {
-    sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}" || return
+    sys_exec_mapfile "${1:?}" eval "printf '%s\n' ${2:?}" || return
   } || {
     #shellcheck disable=2162
     test -n "$2" &&
@@ -1258,8 +1258,8 @@ sys_patharr () # ~ <Arr> <Lookup-path-or-expr>
 sys_exparr () # ~ <Arr> <Expr>
 {
   : source "sys.lib.sh"
-  #sys_execmap "${1:?}" eval "printf '%s\n' ${2@Q}"
-  sys_execmap "${1:?}" eval "printf '%s\n' ${2:?}"
+  #sys_exec_mapfile "${1:?}" eval "printf '%s\n' ${2@Q}"
+  sys_exec_mapfile "${1:?}" eval "printf '%s\n' ${2:?}"
 }
 
 # XXX: remove this, probably one usage
