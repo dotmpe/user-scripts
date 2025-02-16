@@ -130,7 +130,8 @@ us_env_loadenv ()
   add_path "${U_S?}/tool/us/exec" &&
   uc_script_load us-env.node &&
   us-env:define-env &&
-    true || return
+  true || return
+  #$LOG error : "Failed $FUNCNAME" E$? $? || return
 
   return ${_E_continue:-195}
 }

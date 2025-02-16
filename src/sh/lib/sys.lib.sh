@@ -48,6 +48,7 @@ sys_lib__init ()
 add_env_path() # Prepend-Value Append-Value
 {
   : source "sys.lib.sh"
+  >&2 echo "sys.lib:add-env-path: deprecated"
   test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return 64
   test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2
@@ -1053,13 +1054,13 @@ sys_assert_nz () # ~ <Var-name> <Value> ...
 # XXX: new function: ignore last status if test succeeds, or return it
 sys_astat () # ~ ( <Test-flag> <Test-value> )*
 {
-  : source "sys.lib.sh"
   local stat=$?
   while [[ $# -gt 0 ]]
   do
     test $stat "$1" "$2" || return $stat
     shift 2
   done
+  : source "sys.lib.sh"
 }
 
 # Return function call stack
