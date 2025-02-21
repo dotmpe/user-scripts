@@ -625,7 +625,7 @@ getidx() # ~ <Array> <Key>
 init_user_env()
 {
   local key= value=
-  for key in UCONF HTDIR DCKR_VOL TMPDIR
+  for key in UCONF HTDIR DCKR_VOL TMPDIR RAM_TMPDIR
   do
     value=$(eval echo \$$key)
     default=$(eval echo \$DEFAULT_$key)
@@ -1053,13 +1053,13 @@ sys_assert_nz () # ~ <Var-name> <Value> ...
 # XXX: new function: ignore last status if test succeeds, or return it
 sys_astat () # ~ ( <Test-flag> <Test-value> )*
 {
-  : source "sys.lib.sh"
   local stat=$?
   while [[ $# -gt 0 ]]
   do
     test $stat "$1" "$2" || return $stat
     shift 2
   done
+  : source "sys.lib.sh"
 }
 
 # Return function call stack
@@ -1635,8 +1635,8 @@ sys_tmp_init () # DIR
     unset _RAM_TMPDIR
   }
 
-  [[ -e "${1-}" && -z "${RAM_TMPDIR-}" ]] || set -- "$RAM_TMPDIR"
-  [[ -e "${1-}" && -z "${TMPDIR-}" ]] || set -- "$TMPDIR"
+  [[ -e "${1-}" || -z "${RAM_TMPDIR-}" ]] || set -- "$RAM_TMPDIR"
+  [[ -e "${1-}" || -z "${TMPDIR-}" ]] || set -- "$TMPDIR"
   [[ "${1-}" ]] && {
     [[ "${TMPDIR-}" ]] || export TMPDIR=$1
   }

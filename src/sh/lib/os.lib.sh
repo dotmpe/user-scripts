@@ -1093,13 +1093,23 @@ os_file_mode ()
   stat -L -c "%a" "${@:?}"
 }
 
-os_private () # ~ <File> # True if current user only has at least read rights
+os_private () # ~ <File> [<Var>] # True if current user only has at least read rights
 {
   test -f "${1:?}" && {
     test -z "${2-}" && local mode || local -n mode=${2:?}
     test -O "$1" &&
     sys_out mode stat -L -c "%a" "$1" &&
     case "$mode" in ( [4-7]00 ) true;; ( * ) false; esac
+  }
+}
+
+os_privategroup () # ~ <File> [<Var>] # True if current user/group only, have at least read rights
+{
+  test -f "${1:?}" && {
+    test -z "${2-}" && local mode || local -n mode=${2:?}
+    test -O "$1" &&
+    sys_out mode stat -L -c "%a" "$1" &&
+    case "$mode" in ( [4,6][0,4,6]0 ) true;; ( * ) false; esac
   }
 }
 

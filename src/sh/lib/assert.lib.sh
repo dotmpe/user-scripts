@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 assert_lib__load ()
 {
   lib_require os &&
@@ -11,6 +13,7 @@ assert_lib__load ()
     [ispath]=os
     [issymlink]=os
     [private]=os
+    [privategroup]=os
 
     #[isdigit]=sys/test
     #[isfloat]=sys/test
@@ -22,12 +25,18 @@ assert_lib__load ()
   )
 }
 
+assert_lib__init ()
+{
+  : "${ENV_CTX:=$0[$$]:assert.lib.sh}"
+}
 
 assert () # ~ <Test args...> [ -- <Argv> ]
 {
   ! sys_debug assert || {
 
-    assert_${1:?} "${@:2}"
+    : "${1:?$ENV_CTX:$FUNCNAME:Test args expected}"
+    : "${_//[^A-Za-z0-9_]}"
+    assert_${_} "${@:2}"
     return
   }
 
@@ -130,6 +139,18 @@ assert_private () # ~ <File>
     local assert_mode
     : "${1:?$lk: Path name expected}"
     os_private "$_" assert_mode ||
+      $LOG warn "$lk" "File access too open" "E$?:name=$1:$assert_mode" ${_E_fail:?}
+  }
+}
+
+assert_privategroup () # ~ <File>
+{
+  declare lk=${lk:-}:assert-private-group
+  assert_isfile "${1:?}" && {
+
+    local assert_mode
+    : "${1:?$lk: Path name expected}"
+    os_privategroup "$_" assert_mode ||
       $LOG warn "$lk" "File access too open" "E$?:name=$1:$assert_mode" ${_E_fail:?}
   }
 }
