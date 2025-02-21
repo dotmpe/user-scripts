@@ -48,6 +48,7 @@ sys_lib__init ()
 add_env_path() # Prepend-Value Append-Value
 {
   : source "sys.lib.sh"
+  >&2 echo "sys.lib:add-env-path: deprecated"
   test $# -ge 1 -a -n "${1-}" -o -n "${2-}" || return 64
   test -e "$1" -o -e "${2-}" || {
     echo "No such file or directory '$*'" >&2

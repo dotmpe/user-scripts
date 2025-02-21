@@ -1523,6 +1523,30 @@ os_dirs_exist () # ~ <Names...>
   done
 }
 
+os_lookup_add () # ~ <Var> <Prepend> <Append>
+{
+  : source "os.lib.sh"
+  [ -e "$2" -o -e "${3-}" ] || {
+    >&2 echo "os_path_add: No such file or directory '$*'"
+    return 1
+  }
+  local -n __path=${1?}
+  [ -n "${2-}" ] && {
+    case "$__path" in
+      $2:* | *:$2 | *:$2:* ) ;;
+      * ) __path=$2${__path:+:}$__path ;;
+    esac
+  } || {
+    test -n "${2:?}" && {
+      case "$__path" in
+        $3:* | *:$3 | *:$3:* ) ;;
+        * ) __path=$__path${__path:+:}}$3 ;;
+      esac
+    }
+  }
+}
+
+# TODO: cleanup add-env-path
 os_path_add () # <Prepend-Value> <Append-Value>
 {
   : source "os.lib.sh"

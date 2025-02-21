@@ -132,9 +132,9 @@ __log() # [Line-Type] [Header] [Msg] [Ctx] [Exit]
   test -z "$4" && suffix="" || suffix="$4"
 
   test -n "$suffix" && {
-    printf "%s%s %s <%s>\n" "$indent" "$prefix" "$3" "$suffix" >&2
+    printf -- "%s%s %s <%s>\n" "$indent" "$prefix" "$3" "$suffix" >&2
   } || {
-    printf "%s%s %s\n" "$indent" "$prefix" "$3" >&2
+    printf -- "%s%s %s\n" "$indent" "$prefix" "$3" >&2
   }
 
   unset lvl linetype prefix indent suffix
