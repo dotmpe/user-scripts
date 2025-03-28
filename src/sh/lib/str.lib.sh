@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+
 # Set env for str.lib.sh
 str_lib__load()
 {
@@ -155,9 +156,10 @@ x_re()
 
 # Use this to easily matching strings based on glob pettern, without
 # adding a Bash dependency (keep it vanilla Bourne-style shell).
-fnmatch() # PATTERN STRING
+fnmatch () # ~ <PATTERN> <STRING>
 {
   : source "str.lib.sh"
+  _IFDBG _ALERT "Deprecated: ${FUNCNAME[*]}"
   case "$2" in $1 ) return 0 ;; *) return 1 ;; esac
 }
 # Derive: str-globmatch
