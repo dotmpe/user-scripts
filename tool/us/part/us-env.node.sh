@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# companion specs for us-env exec
+
 us-env:meta ()
 {
   : group us
@@ -40,7 +42,6 @@ us-env:define-env ()
   us_env_fun=$(eval "echo ${us_env_funspec:?}")
 
   uc_env_fun=add_path,str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
-
 }
 
 #us-env:fun ()

@@ -33,7 +33,7 @@ us-env ()
   local args
   # XXX: compiled help for static function export, outer script will use
   # user-script-help functions
-  case "${*:?}" in
+  case "${*:?${ENV_CTX:-$0[$$]}:us-env Arguments expected}" in
   ( -h|-?|--help )
       cat <<EOM
 Command
@@ -128,7 +128,7 @@ us_env_loadenv ()
   # XXX: do proper build and then graph init
   add_path "${U_S?}/tool/us/part" &&
   add_path "${U_S?}/tool/us/exec" &&
-  uc_script_load us-env.node &&
+  uc_script_load "us-env.node" &&
   us-env:define-env &&
   true || return
   #$LOG error : "Failed $FUNCNAME" E$? $? || return
