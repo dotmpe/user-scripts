@@ -25,7 +25,18 @@ us_env_shortdescr=
 
 us-env ()
 {
+  if [ -z "${BASH-}" ]
+  then
+    _ERROR "us-env is not compatible with shell '${SHELL-(unspecified)}'"
+    return
+  elif [ "${BASH-}" ] && [ "$BASH" = "/bin/sh" ]; then
+    # DEBUG
+    _WARN "us-env was loaded in sh-mode!? (impossible) shell: '${SHELL:-(unspecified)}'"
+  else
+    _INFO "'us-env $*' starting in shell '${SHELL:-(unspecified)}'"
+  fi
   : source "us-env.sh"
+
   [[ ${us_node[*]+set} ]] || us_env_loadenv ||
     test ${_E_continue:-195} -eq $? ||
     $LOG error ":us-env" "Illegal status" "E$_" $_ || return
@@ -126,10 +137,12 @@ us_env_loadenv ()
   : source "us-env.sh"
 
   # XXX: do proper build and then graph init
-  add_path "${U_S?}/tool/us/part" &&
-  add_path "${U_S?}/tool/us/exec" &&
-  uc_script_load "us-env.node" &&
-  us-env:define-env &&
+  add_path "${U_S?}/tool/us/part"
+  add_path "${U_S?}/tool/us/exec"
+  {
+    uc_fun us-env:define-env ||
+      uc_script_load "us-env.node" || return
+  } && us-env:define-env &&
   true || return
   #$LOG error : "Failed $FUNCNAME" E$? $? || return
 
