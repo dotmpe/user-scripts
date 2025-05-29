@@ -101,6 +101,7 @@ us_env_source ()
     vid="${name//[^A-Za-z0-9_]/_}"
     : "${vid}_fun"
     [[ ${!_-} ]] && continue
+    $LOG debug "" "Sourcing env part" "$name"
     : "${us_env_srcname["$name"]:-$name}" &&
     us_env_src__"${us_env_srctype["$_"]:-lib}" "$_" ||
       $LOG error "" "Loading env part" "E$?:$name" $? || return
@@ -109,8 +110,9 @@ us_env_source ()
 
 us_env_src__lib ()
 {
-  : "${1:?}" &&
-  lib_uc_require "${_%.lib}" &&
+  : "${1:?}"
+  : "${_%.lib}"
+  lib_uc_require "${_:?}" &&
   lib_uc_init "$_"
 }
 
