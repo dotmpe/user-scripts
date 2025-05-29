@@ -1517,6 +1517,7 @@ os_ispath () # ~ <Name>
 
 os_dirs_exist () # ~ <Names...>
 {
+  : source "os.lib.sh"
   local _dir
   for _dir
   do [[ -d $_dir ]] || return
@@ -1526,7 +1527,7 @@ os_dirs_exist () # ~ <Names...>
 os_lookup_add () # ~ <Var> <Prepend> <Append>
 {
   : source "os.lib.sh"
-  [ -e "$2" -o -e "${3-}" ] || {
+  [ -e "${2}" -o -e "${3-}" ] || {
     >&2 echo "os_path_add: No such file or directory '$*'"
     return 1
   }
@@ -1537,7 +1538,7 @@ os_lookup_add () # ~ <Var> <Prepend> <Append>
       * ) __path=$2${__path:+:}$__path ;;
     esac
   } || {
-    test -n "${2:?}" && {
+    [ -n "${3:?}" ] && {
       case "$__path" in
         $3:* | *:$3 | *:$3:* ) ;;
         * ) __path=$__path${__path:+:}}$3 ;;
@@ -1547,37 +1548,33 @@ os_lookup_add () # ~ <Var> <Prepend> <Append>
 }
 
 # TODO: cleanup add-env-path
-os_path_add () # <Prepend-Value> <Append-Value>
+os_path_add () # ~ <Prepend-Value> <Append-Value>
 {
   : source "os.lib.sh"
-  test $# -ge 1 -a -n "$1" -o -n "${2:-}" || return 64
-  test -e "$1" -o -e "${2-}" || {
-    echo "os_path_add: No such file or directory '$*'" >&2
-    return 1
+  [ $# -ge 1 ] && [ -n "$1" ] || [ -n "${2-}" ] || return 64
+  [ -e "$1" ] || [ -e "${2-}" ] || {
+    >&2 echo "os_path_add: No such file or directory '$*'"
+    return ${_E_no_path:-120}
   }
-  test -n "${1:-}" && {
+  [ -n "${1:-}" ] && {
     case "$PATH" in
       $1:* | *:$1 | *:$1:* ) ;;
       * ) eval PATH=$1:$PATH ;;
     esac
   } || {
-    test -n "${2:?}" && {
+    [ -n "${2:?}" ] && {
       case "$PATH" in
         $2:* | *:$2 | *:$2:* ) ;;
         * ) eval PATH=$PATH:$2 ;;
       esac
     }
   }
-  # XXX: to export or not to launchctl
-  #test "$OS_UNAME" != "Darwin" || {
-  #  launchctl setenv "$1" "$(eval echo "\$$1")" ||
-  #    echo "Darwin setenv '$1' failed ($?)" >&2
-  #}
 }
 
 os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
 {
   : source "os.lib.sh"
+  : description "Read PATH-type variable into Bash array"
   : "${1:?"os-lookuppaths: Expected variable reference"}"
   : "${2:?"os-lookuppaths: Expected variable reference"}"
 
@@ -1611,6 +1608,7 @@ os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
 os_path () # ~ <Path-var> [<Arr-var>]
 {
   : source "os.lib.sh"
+  : description "XXX: copy PATH-type value to Bash array"
   : "${1:?"os-path: Expected variable reference"}"
   local __os_path_out=${2:-${1}_arr}
   sys_is_ar "$1" && {
@@ -1638,7 +1636,7 @@ os_pathcb () # ~ <Path-var> <Cmd...>
   done
 }
 
-os_sourceif ()
+os_sourceif () # ~ <Name> # Source if non-empty
 {
   : source "os.lib.sh"
   [[ -s "${1:?}" ]] || return 0
