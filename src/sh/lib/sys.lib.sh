@@ -1395,8 +1395,10 @@ sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
 }
 
 # XXX: sys-nconcatl renamed from str-vconcat
-sys_nconcatl () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero values using str-fs=' as separator
+sys_nconcatl () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero values using str-fs=' ' as separator
 {
+  : param "<Var-name> <Str> ..."
+  : description "Append Str-fs separated Str value to <Var-name>"
   : source "sys.lib.sh"
   : "${1:?"$(sys_exc sys/-nconcatl:ref@_1 "Variable name expected")"}"
   : "${2?"$(sys_exc sys/-nconcatl:str2@_2 "String value expected")"}"
@@ -1406,6 +1408,8 @@ sys_nconcatl () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero v
 
 sys_nconcatn () # ~ <Var-name> <Var-name-2> ... # Append at end, concatenating with str-fs=' as separator
 {
+  : param "<Var-name> <Var-name-2> ..."
+  : description "Append Str-fs separated values <Var-name-2> to <Var-name>"
   : source "sys.lib.sh"
   declare -n \
     __ref=${1:?"$(sys_exc sys/-nconcatn:ref@_1 "Variable name expected")"} \

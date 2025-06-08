@@ -1,7 +1,34 @@
 ## Local mapping rules and development for new inline default.do parts.
 
-case "${1:?}" in
+sh_mode strict
 
+us_env_build
+
+# Canonical, localized path
+: "${XREDO_TARGET#"$XREDO_BUILD"}"
+XREDO_BUILD_TARGET=$B/${XREDO_NODE:?}
+
+
+# Inline: -xredo-env,uc.sh
+
+case "${XREDO_TARGET}" in
+#case "${1:?}" in
+
+  +* )
+        proj=${REDO_TARGET%%:*}
+        subtarget=${REDO_TARGET#*:}
+        (
+          set -- "$subtarget"
+					xredo_unset_buildvars
+					cd "$HOME/htdocs" && redo "$@"
+			  )
+			  # XXX: there is no way currently to get actual build-changes (using
+        # redo-stamp), could want/need some sort of access but this build
+        # should probably know about that internally
+			  redo-always
+    ;;
+
+  -* ) false ;;
   # - ) ;;
 
 

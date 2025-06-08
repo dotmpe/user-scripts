@@ -4,15 +4,60 @@
 # normally compiled into bootstrap/default.do
 
 
-build_lib__load ()
+us_env_static ()
 {
-  return 0
-
+  us_env_std
   # XXX:
-  build_install_parts \
-      concat-rules .list "&build-rules"
+  #build_install_parts \
+  #    concat-rules .list "&build-rules"
+  #_IFDBG _IFVBS @Std:errln "Static init: $FUNCNAME: env-base: ${ENV_BASE-}"
+  >&2 _IFDBG _IFVBS echo "Static init: $FUNCNAME: env-base: ${ENV_BASE-}"
+
+  export \
+    ENV_BASE EWD=${EWD:-$PWD} METADIR \
+    _E_missing=125 \
+    SI=$EWD/$METADIR/stat/index \
+    C=$EWD/$METADIR/cache \
+    B=$EWD/$METADIR/build \
+    BUILD_TARGETS=$(realpath "${BUILD_TARGETS:-$PWD/.targets}") &&
+
+  for f in \
+    _{IF{DBG,VBS},ALERT,ERR,WARN,NOTICE,INFO,DEBUG,STAT} \
+    TODO \
+    us_env_{build,std} \
+    sh_mapfile \
+    xredo_unset_buildvars
+  do
+    declare -xf "$f" ||
+      >&2 echo "Failed: E$? exporting function '$f'"
+  done
 }
 
+
+us_env_std ()
+{
+  [[ ${VERBOSE:-false} != true ]] ||
+  [[ ${QUIET:-true} = false ]] || QUIET=false
+}
+
+us_env_build ()
+{
+  us_env_std
+
+  set -eETuo pipefail
+
+  # Actual build target
+  XREDO_TARGET="${REDO_PWD:+$REDO_PWD/}${REDO_TARGET:?}"
+  # XRedo/Base: Actual initial (path, name or id) spec for target
+  #XREDO_BASE=${XREDO_TARGET%%[+:\/]*}
+  XREDO_BASE=${XREDO_TARGET%%:*}
+  XREDO_NODE=${XREDO_TARGET%:*}
+
+  _NOTICE "Starting... v=${verbosity:-${v-(unset)}}"
+
+  . ${REDO_BASE:?}/.build-env.sh &&
+  true || _ERR E$?
+}
 
 . "${U_S:?}/commands/u_s-stats.lib.sh"
 
@@ -362,6 +407,33 @@ build__usage_help ()
   echo "For more complete listings of profile, sources and targets see '${BUILD_TOOL:?} -- -info'" >&2
 }
 
+# FIXME: NONE OF THIS CAN BE COMPLETE! Need to fully isolate env.
+xredo_unset_buildvars ()
+{
+  local vars bv
+  sh_mapfile vars compgen -A variable &&
+  declare -a buildvars &&
+  for bv in "${vars[@]}"
+  do
+    [[ ${bv^^} =~ .*REDO.* ]] ||
+    [[ ${bv^^} =~ .*BUILD.* ]] ||
+    [[ ${bv^^} =~ .*TARGET.* ]] ||
+    [[ ${bv^^} =~ .*RECIPE.* ]] ||
+    [[ ${bv^^} =~ .*RULE.* ]] ||
+    [[ ${bv^^} =~ .*META.* ]] ||
+    [[ ${bv^^} =~ .*DEFAULT.* ]] || continue
+    buildvars+=( "$bv" )
+  done &&
+  [[ ${#buildvars[*]} -gt 0 ]] &&
+  >&2 _IFDBG _IFVBS echo unsetting: "${buildvars[@]}" &&
+  unset "${buildvars[@]}"
+}
 
+
+TODO () {
+  test -z "$*" || >&2 echo "To-Do: $*"
+  _IFDBG _WARN "To-Do: ${*:-${FUNCNAME[1]}}"
+  return ${_E_missing:-125}
+}
 
 # Id: User-Scripts/ build-lib.sh  ex:ft=bash:

@@ -1,42 +1,50 @@
 #!/usr/bin/env bash
 
-! "${DEV_US:-false}" || {
+# Created: 2025-06-09
 
-  build-ifdone "${BUILD_CACHE:-${U_S:?}/.meta/cache}/us-profile.sh" &&
-  . "$_"
+[[ ${BASH+set} ]] ||
+  _CRIT "-us-build-default.do is incompatible with shell ${SHELL:-(unspecified)}" ||
+  return
+
+[[ ${uc_env_parts[*]+set} ]] &&
+[[ ${uc_env_type["uc_fun"]+set} ]] &&
+[[ ${uc_env_parts["us-system.G"]+set} ]] ||
+  _CRIT "-us-build-default.do requires uc-env, base: ${ENV_BASE:-(unspecified)}" ||
+  return
+
+sh_mode strict
+uc_env +continue
+uc_env @part G redo
+uc_env @exports \
+  REDO{,_{BASE,CHEATFDS,COLOR,CYCLES,DEPTH,LOG{,_INODE},NO_OOB,PRETTY,PWD,RUNID,STARTID,TARGET,UNLOCKED}
+uc_env @part G default-do
+
+default_do_main ()
+{
+  BUILD_TARGET=${1:?}
+  BUILD_TARGET_BASE=$2
+  BUILD_TARGET_TMP=$3
+
+  declare ERROR STATUS BUILD_SELECT_SH
+
+  [[ ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" ]] &&
+  unset BUILD_SELECT_SH || {
+    . "${BUILD_SELECT_SH:?}" && STATUS=0 ||
+    test "${_E_next:-196}" -eq $? || return $_
+  }
+
+  [[ 0 -eq ${STATUS:-1} ]] || case "${1:?}" in
+
+    * ) >&2 echo "? $1"
+        false
+      ;;
+
+  esac
+
+  # End build if handler has not exit already
+  exit $?
 }
-#bool return ${REDO_DEBUG:-0}
 
-export SCRIPTNAME=us:default.do
-lk=$SCRIPTNAME[$$]
-export UC_LOG_BASE=$lk
+[[ ! ${REDO_RUNID+set} ]] ||
+  default_do_main "$@"
 
-sh_mode build strict
-
-lib_require str script-mpe us-build log shell ||
-  stderr echo E$?:lib-require
-
-lib_init str log script-mpe shell us-build ||
-  stderr echo E$?:lib-init
-
-us_preproc_vardefs[":"]=u-s
-us_preproc_vardefs["u-s"]="$U_S"
-
-lib_init us-build
-
-##resolve fun sh-exception
-##resolve fun sh-error
-#XXX: unset -f sh_{fun,error,exception}
-. ./tool/sh/part/sh-fun.sh
-: "${_E_fail:=1}"
-: "${_E_GAE:=193}" # Generic Argument Error
-: "${_E_ok:=195}" # Explicit OK (finished step, continue batch)
-: "${_E_next:=196}" # Try next (unfinished: missing alt or partial batch)
-#: "${_E_break:=197}" # success; last step, finish batch, ie. stop loop now and wrap-up
-# Failure, but check keep-going
-
-
-us_build_trgt_ext=.do \
-us_build_main tool/redo/default.do "$@"
-
-# Id: U-s:default.do                                               ex:ft=bash:
