@@ -623,36 +623,6 @@ getidx() # ~ <Array> <Key>
   sys_get "$@"
 }
 
-init_user_env()
-{
-  local key= value=
-  for key in UCONF HTDIR DCKR_VOL TMPDIR RAM_TMPDIR
-  do
-    value=$(eval echo \$$key)
-    default=$(eval echo \$DEFAULT_$key)
-    test -n "$value" || value=$default
-    test -n "$value" || continue
-    export $key=$value
-    test -e "$value" || {
-      $sys_lib_log warn sys "path for $key does not exist: $value"
-    }
-  done
-}
-
-init_uconfdir_path()
-{
-  # Add path dirs in $UCONF to $PATH
-  local name
-  for name in ${OS_NAME-} ${OS_UNAME:?} Generic
-  do
-    local user_PATH=$UCONF/path/$name
-    if test -d "$user_PATH"
-    then
-      add_env_path $user_PATH
-    fi
-  done
-}
-
 # Sh var-based increment
 incr () # ~ <Var-name> [<Amount=1>] [<Default=0>]
 {

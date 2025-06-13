@@ -1,4 +1,4 @@
-nit.
+
 ### us-build: a simple file-preprocessor for assembling scripts
 
 
@@ -65,7 +65,7 @@ us_build_init () # ~
 
     us_preproc_src+=( "$us_preproc_initimport.sh" )
   } || {
-    stderr echo Need context "${us_preproc_initbase}"
+    >&2 echo Need context "${us_preproc_initbase}"
     us_build_context "${us_preproc_initbase}" ||
       return
     us_preproc_src+=( "$ctx_dir/$us_preproc_initimport.sh" )
@@ -75,8 +75,8 @@ us_build_init () # ~
   . "$us_preproc_initimport.sh" || return
   # uc_script_load $us_preproc_initimport.sh
 
-  stderr echo us-build init PID $$
-  stderr declare -p \
+  >&2 echo us-build init PID $$
+  >&2 declare -p \
     PWD BASH_COMMAND BASH_ARGV \
     us_preproc_vardefs \
     us_build_proc_default us_preproc_init{base,import} us_preproc_context us_preproc_src
@@ -90,7 +90,7 @@ us_build__template_set () # ~ <Target> <...>
   templateref=${1:?}
   template=$(us_build_value "$templateref") || return
   str_globmatch "$template" "/*" || {
-    stderr echo "Expected global template (build-base=$bbase), proceeding with PWD/$template"
+    >&2 echo "Expected global template (build-base=$bbase), proceeding with PWD/$template"
     template="$PWD/$template"
   }
   : "${template%$ext}"
@@ -99,8 +99,8 @@ us_build__template_set () # ~ <Target> <...>
   template="${template%$ext}$ext"
   tpl=$template.build
 
-  stderr echo Target set
-  stderr declare -p template{,ref} PWD cached meta tpl
+  >&2 echo Target set
+  >&2 declare -p template{,ref} PWD cached meta tpl
   us_preproc_src+=( "$tpl" )
   sys_debug &&
     $LOG debug ":us-build[$templateref]" "Env established" "$tpl:meta:$meta" ||
@@ -164,7 +164,7 @@ us_build () # ~ <Target> # Assemble if missing or out-of-date
       return
     }
   } || {
-    stderr echo "Target (or cache) missing" "$templateref:$meta"
+    >&2 echo "Target (or cache) missing" "$templateref:$meta"
     # FIXME
     #us_debuglog_info "Target (or cache) missing" "$templateref:$meta"
   }
@@ -206,8 +206,8 @@ us_build_value () # ~ <...
 {
   ! str_globmatch "$1" "*:*" || {
     [[ ${1:0:1} = : ]] && {
-      stderr echo Local namespace
-      stderr declare -p PWD
+      >&2 echo Local namespace
+      >&2 declare -p PWD
       set -- "$PWD/${1:1}"
     } || {
       # Expand '*:' prefix using either vardefs table or env variable
@@ -423,7 +423,7 @@ us_main_devenv ()
       ;;
     ( *" strict "* )
         us_preproc_src+=( "$0" )
-        #stderr us-main:strict echo 0=$0
+        #>&2 us-main:strict echo 0=$0
       ;;
     ( *" dev "* )
         export -f us_debug{,log}
@@ -441,9 +441,22 @@ us_run () # ~ <Target> [<Args...>]
 {
   local template templateref=${1:?}
   shift
-  us_build_v "$templateref" || return
-
-  ! "${us_fork:-false}" && {
+  _IFDBG && {
+    us_build_v "$templateref" || return
+  } ||
+    us_build "$templateref" || return
+  "${us_fork:-false}" && {
+    test -x "$template" &&
+      set -- "$template" "$@" ||
+      set -- bash -a "$base" "$template" "$@"
+    us_notice "Forking to template" "$*"
+    "${NOACT:-false}" && {
+      llk=:exec
+      us_notice "*** NOACT ***: Exec template" "$template"
+      return
+    }
+    exec "$@"
+  } || {
     "${NOACT:-false}" &&  {
       llk=:source
       us_notice "*** NOACT ***: Source template" "$template"
@@ -454,16 +467,6 @@ us_run () # ~ <Target> [<Args...>]
     us_notice "Returned from template" "E$?:$templateref" $?
     return
   }
-  test -x "$template" &&
-    set -- "$template" "$@" ||
-    set -- bash -a "$base" "$template" "$@"
-  us_notice "Forking to template" "$*"
-  "${NOACT:-false}" && {
-    llk=:exec
-    us_notice "*** NOACT ***: Exec template" "$template"
-    return
-  }
-  exec "$@"
 }
 
 us_ifdev ()

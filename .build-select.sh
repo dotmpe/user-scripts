@@ -14,6 +14,10 @@ XREDO_BUILD_TARGET=$B/${XREDO_NODE:?}
 case "${XREDO_TARGET}" in
 #case "${1:?}" in
 
+  ?* )
+        uc_env -Q "${XREDO_TARGET:1}"
+    ;;
+
   +* )
         proj=${REDO_TARGET%%:*}
         subtarget=${REDO_TARGET#*:}

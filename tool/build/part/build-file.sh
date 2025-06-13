@@ -2,7 +2,7 @@
 
 : "${0%%.sh}"
 : "${_##*/}"
-stderr echo running $_
+>&2 echo running $_
 case "$_" in
   ( build-* )
       script="${_#build-}"
@@ -14,19 +14,24 @@ case "$_" in
       base=run:
       run=true
     ;;
-  * ) stderr echo "! $0: Expected {build,run}-* frontend"; exit 1
+  * ) >&2 echo "! $0: Expected {build,run}-* frontend"; exit 1
 esac
 export UC_LOG_BASE=$base$script
 
-stderr echo running script=$script
+>&2 echo running script=$script
 
 sh_mode dev
+pass () { return; }
+:pass () { return; }
+uc_env +if-init
+uc_env -r uconf-shell-core-dsl
+#uconf-shell-log
 
 #. ./tool/sh/part/sh-fun.sh &&
 lib_require script-mpe us-build log shell-uc &&
-stderr echo libs loaded &&
+>&2 echo libs loaded &&
 lib_init shell-uc us-build &&
-stderr echo libs initialized &&
+>&2 echo libs initialized &&
 true
 
 base=u-s

@@ -1,5 +1,7 @@
 ### Shell mode helper part
 
+#uc_env -r uc:shell:core
+
 # See also us-mode, sys-debug.
 
 # In general this gets called once per shell script, and usually exactly at
@@ -59,10 +61,9 @@ sh_mode ()
           ( dev )
                 # XXX: should this not set DEBUG=true. It wil slow down many
                 # things, need to get sys_debug alike in here...
-                sh_fun stderr || stderr () { "$@" >&2; }
                 test -n "${LOG-}" &&
                   $LOG info :sh-mode@dev "Development mode enabled" ||
-                  stderr echo "Development mode enabled"
+                  >&2 echo "Development mode enabled"
                 test -n "${U_S-}" -a -d "${U_S-}" &&
                   set -- dev-us "$@" ||
                   set -- build "$@"
@@ -72,7 +73,7 @@ sh_mode ()
 
                   trap '{ return $?; }' INT
                   # Override sleep with function
-                  fun_def sleep stderr_sleep_int \"\$@\"\;
+                  _Sh_Fun_Eval sleep 'stderr_sleep_int "$@"'
               ;;
 
           ( logger )
@@ -104,10 +105,9 @@ sh_mode ()
 
           ( log-tmp )
                 # "LOG" setup with no deps
-                stderr () { "$@" >&2; }
                 init_log () # ~ <level> <key-> <msg> [<ctx> [<stat>]]
-                { stderr echo "$@" || return; test -z "${5:-}" || return $5; }
-                export -f stderr init_log
+                { >&2 echo "$@" || return; test -z "${5:-}" || return $5; }
+                export -f init_log
                 export INIT_LOG=init_log LOG=init_log
               ;;
 
@@ -137,7 +137,7 @@ sh_mode ()
                 set -- private-sharegroup "$@"
               ;;
 
-          ( * ) stderr echo "! $0: sh-mode: Unknown mode '$opt'"; return 1 ;;
+          ( * ) >&2 echo "! $0: sh-mode: Unknown mode '$opt'"; return 1 ;;
       esac || return
     done
 }
@@ -166,7 +166,7 @@ sh_mode_exclusive ()
 build_error_handler ()
 {
   local r=$? lastarg=$_
-  #! sh_fun stderr_ ||
+  #! _isFun stderr_ ||
   #  stderr_ "! $0: Error in recipe for '${BUILD_TARGET:?}': E$r" 0
   : "${BUILD_TARGET:-(unset)}"
   : "${_//%/%%}"
