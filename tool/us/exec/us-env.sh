@@ -3,10 +3,6 @@
 
 ## Bootstrap
 
-# XXX: cannot export arrays
-#[[ ${us_node[*]+set} ]] ||
-#  $LOG warn "" "Broken env, repair us-env group or check shell profile"
-
 # us-env obviously cannot recurse on itself to do bootstrap, so it hard codes a
 # sequence of env parts to load for bootstrapping instead.
 #us-env -r user-script || ${us_stat:-exit} $?
@@ -27,7 +23,7 @@ us-env ()
 {
   if [ -z "${BASH-}" ]
   then
-    _ERROR "us-env is not compatible with shell '${SHELL-(unspecified)}'"
+    _ERR "us-env is not compatible with shell '${SHELL-(unspecified)}'"
     return
   elif [ "${BASH-}" ] && [ "$BASH" = "/bin/sh" ]; then
     # DEBUG

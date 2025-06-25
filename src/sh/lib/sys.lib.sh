@@ -282,21 +282,72 @@ arr_sub () # ~ <Array> ( <Match> <Replace> )+
   done
 }
 
+arr_union ()
+{
+  : param "<Arr-in...> <Arr-out>"
+  : description "Merge as if arrays are sets. To modify an existing array,"
+  : description "see arr-make-unique. "
+  : extended "Array out can exist, but it must already be a unique set"
+  : input "${1:?Input arrays expected, $ENV_CTX:$FUNCNAME}"
+  : input "${@: -1}"
+  : "${_:?$*: Output name expected, $ENV_CTX:$FUNCNAME}"
+  local -A __arr_unique
+  local -n __arr_in __arr_out=${@: -1}
+  local item
+  ! [[ ${__arr_out[*]:+set} ]] || {
+    for item in "${__arr_out[@]}"
+    do __arr_unique["$item"]=
+    done
+  }
+  for __arr_in in "${@: 1:$#-1}"
+  do
+    for item in "${__arr_in[@]}"
+    do
+      [[ ${__arr_unique["$item"]+set} ]] || {
+        __arr_out+=( "$item" )
+        __arr_unique["$item"]=
+      }
+    done
+  done
+}
+
+arr_make_unique ()
+{
+  : param "<Arr>"
+  : about 'Remove all duplicate items, leaving first occurence'
+  : XXX would be trivial to write-in option to keep last occurence --last
+  local -A __arr_unique
+  local -n __arr_ref=${1}
+  local key
+  local -n item="__arr_in[\"\$key\"]"
+  for key in "${!__arr_in[@]}"
+  do
+    ! [[ ${__arr_unique["$item"]+set} ]] && {
+      __arr_unique["$item"]=
+    } || {
+      unset __arr_in["$key"] # cannot use by-name to unset, unless we use eval
+    }
+  done
+}
+
 # Use third assoc array to track and add (append) only unique items from arr-in
 # to arr-out
-arr_unique () # ~ <Arr-in> <Arr-out>
+arr_unique_copy () # ~ <Arr-in> <Arr-out>
 {
   : param "<Arr-in> <Arr-out>"
+  : about 'Copy each unique item from in to out'
+  : unused
   : group "sys/arr"
   : source "sys.lib.sh"
-  local -A arr_unique
+  local -A __arr_unique
   local -n __arr_in=${1:?} __arr_out=${2:?}
   local item
   for item in "${__arr_in[@]}"
   do
     [[ ${__arr_unique["$item"]+set} ]] || {
       __arr_unique["$item"]=
-      __arr_out[${#__arr_out[*]}]=$item
+      #__arr_out[${#__arr_out[*]}]=$item
+      __arr_out+=( "$item" )
     }
   done
 }
@@ -1203,7 +1254,6 @@ sys_exec_mapfile () # ~ <Array-name> <Cmd...> # Read stdout (lines) into array
   : "${2:?"$(sys_exc sys-exec-mapfile:command)"}"
   local outname=${1} offset
   local -n __sys_exec_mapfile_arr=${outname}
-  #: "${__sys_exec_mapfile_arr[*]?"$(sys_exc sys-execmap:array $1)"}"
   [[ ${__sys_exec_mapfile_arr[*]:+set} ]] &&
   offset=${#__sys_exec_mapfile_arr[@]} || offset=0
   if_ok "$("${@:2}")" &&
@@ -1293,6 +1343,8 @@ sys_iref () # ~ <Path> [<Var-key=sys_iref_>]
 # system-join-array, system-collapse-array
 sys_join () # ~ <Concat> <Array>
 {
+  : about "Join array values into one string and output"
+  : extended "Output string of all non-zerowidth items. Concat can be empty."
   declare -n __arr=${2:?} &&
   declare _i_ __c=${1?} &&
   : "" &&
@@ -1388,6 +1440,7 @@ sys_nconcatn () # ~ <Var-name> <Var-name-2> ... # Append at end, concatenating w
   __ref="${__ref-}${__ref:+${str_fs- }}${__ref2}"
 }
 
+# XXX: see sys-join
 sys_nejoin () # ~ <Concat> <Array>
 {
   declare -n __arr=${2:?} &&
