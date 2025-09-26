@@ -1172,7 +1172,11 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
   ( verbose )
     "${VERBOSE:-false}" || ! "${QUIET:-false}"  ;;
 
-  ( * ) $LOG alert "$lk" "No such mode" "$1" ${_E_script:?"$(sys_exc "$lk")"}
+  ( * )
+    >&2 echo "sys.lib: No such mode ${1@Q}"
+    return ${_E_script:-2}
+    #$LOG alert "$lk" "No such mode" "$1" ${_E_script:-2}
+    #?"$(sys_exc "$lk")"}
   esac
 }
 
@@ -1330,9 +1334,10 @@ sys_get () # ~ <Var>
   echo "${!_:?}"
 }
 
-sys_iref () # ~ <Path> [<Var-key=sys_iref_>]
+sys_iref () # ~ <Path> [<Var-key=sys_iref_>] # Read inode->mnt map into shell
 {
-  : "${2:-sys_iref_}"
+  : description "Read inode and mount values onto two variables: sys_iref_{ino,mnt}"
+  : input "${2:-sys_iref_}"
   local -n \
     __sys_iref_ino=${_}ino \
     __sys_iref_mnt=${_}mnt
@@ -1646,6 +1651,9 @@ sys_tmp_init () # DIR
     # Set to Linux ramfs path
     [[ -d "/dev/shm" ]] && {
       RAM_TMPDIR=/dev/shm/tmp
+      mkdir -vp "$RAM_TMPDIR" &&
+      test -w "$RAM_TMPDIR" ||
+        $sys_lib_log error "Cannot aquire /dev/shm temp dir" "$RAM_TMPDIR" $? || return
     }
   }
 
