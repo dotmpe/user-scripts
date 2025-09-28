@@ -41,7 +41,7 @@ us-env:define-env ()
   us_env_funspec="us_env_{fun{,sets},generate{,_funs},loadenv,source}"
   us_env_fun=$(eval "echo ${us_env_funspec:?}")
 
-  uc_env_fun=add_path,str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
+  uc_env_fun=str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
 }
 
 #us-env:fun ()

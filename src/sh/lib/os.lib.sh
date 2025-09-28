@@ -1579,7 +1579,7 @@ os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
   : "${2:?"os-lookuppaths: Expected variable reference"}"
 
   local -n __out=${2:?}
-  sys_is_ar "$1" && local -n __arr=$1 || {
+  sys_is_arr "$1" && local -n __arr=$1 || {
     local -n __ref=$1 __arr=${1}_arr
     <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr || return
   }
@@ -1611,7 +1611,7 @@ os_path () # ~ <Path-var> [<Arr-var>]
   : description "XXX: copy PATH-type value to Bash array"
   : "${1:?"os-path: Expected variable reference"}"
   local __os_path_out=${2:-${1}_arr}
-  sys_is_ar "$1" && {
+  sys_is_arr "$1" && {
     declare -gn ${__os_path_out}=${1}
   } || {
     local -n __ref=$1 __arr=${__os_path_out}
@@ -1625,7 +1625,7 @@ os_pathcb () # ~ <Path-var> <Cmd...>
   : source "os.lib.sh"
   : "${1:?"os-pathcb: Expected variable reference"}"
   : "${2:?"os-pathcb: Expected command"}"
-  sys_is_ar "$1" && local -n __arr=$1 || {
+  sys_is_arr "$1" && local -n __arr=$1 || {
     local -n __ref=$1 __arr=${1}_arr
     <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr
   }

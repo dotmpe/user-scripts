@@ -982,7 +982,7 @@ sys_aarrv () # ~ <Array> <Vars...>
 sys_is_arr () # ~ <Arr> # Test if name is declared as array symbol
 {
   : source "sys.lib.sh"
-  : "${1:?"sys-arr: Expected symbol name"}"
+  : input "${1:?"sys-arr: Expected symbol name"}"
   if_ok "$(declare -p ${1})" &&
   case "$_" in
   ( "declare -"*[aA]*" $1" | \
