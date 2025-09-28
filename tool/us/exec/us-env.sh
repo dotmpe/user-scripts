@@ -133,8 +133,8 @@ us_env_loadenv ()
   : source "us-env.sh"
 
   # XXX: do proper build and then graph init
-  os_path "${U_S?}/tool/us/part"
-  os_path "${U_S?}/tool/us/exec"
+  os_path_add "${U_S?}/tool/us/part"
+  os_path_add "${U_S?}/tool/us/exec"
   {
     sh_fun us-env:define-env ||
       uc_script_load "us-env.node" || return
