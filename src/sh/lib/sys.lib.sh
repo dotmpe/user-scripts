@@ -889,23 +889,26 @@ std_lookup_path ()
 
 std_noerr ()
 {
+  #>&2 std_noerr $(sys_sh_ctx) deprecated
   "$@" 2>/dev/null
 }
-
-std_noout ()
-{
-  "$@" >/dev/null
-}
+# alias: std-silent
 
 std_quiet ()
 {
-  "$@" 2>/dev/null
+  "$@" >/dev/null
 }
-# alias for std-noerr
+# alias for std-noout
 
 std_silent ()
 {
-  "$@" >/dev/null 2>&1
+  "$@" 2>/dev/null
+}
+# alias: std-noerr
+
+std_noo ()
+{
+  "$@" >/dev/null 2>/dev/null
 }
 
 std_utf8_en()
