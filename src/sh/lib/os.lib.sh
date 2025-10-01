@@ -1524,11 +1524,11 @@ os_dirs_exist () # ~ <Names...>
   done
 }
 
-os_lookup_add () # ~ <Var> <Prepend> <Append>
+os_lookup_add_old () # ~ <Var> <Prepend> <Append>
 {
   : source "os.lib.sh"
   [ -e "${2}" -o -e "${3-}" ] || {
-    >&2 echo "os_path_add: No such file or directory '$*'"
+    >&2 echo "$FUNCNAME: No such file or directory '$*'"
     return 1
   }
   local -n __path=${1?}
@@ -1548,7 +1548,7 @@ os_lookup_add () # ~ <Var> <Prepend> <Append>
 }
 
 # TODO: cleanup add-env-path
-os_path_add () # ~ <Prepend-Value> <Append-Value>
+os_path_add_old () # ~ <Prepend-Value> <Append-Value>
 {
   : source "os.lib.sh"
   [ $# -ge 1 ] && [ -n "$1" ] || [ -n "${2-}" ] || return 64
