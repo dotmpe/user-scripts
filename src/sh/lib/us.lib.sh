@@ -1,7 +1,7 @@
 
 us_lib__load ()
 {
-  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,os_lookup_add,_OS_Lookup_Add,_OS_Path_Assert,_OS_Path_Add,std_noo,std_quiet,std_silent,stderr,str_globmatch,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
+  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,os_lookup_add,_OS_Lookup_Add,_OS_Path_Assert,_OS_Path_Add,std_noo,std_quiet,std_silent,stderr,str_globmatch,sys_rarr,sys_rarr2,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
 }
 
 us_lib__init ()

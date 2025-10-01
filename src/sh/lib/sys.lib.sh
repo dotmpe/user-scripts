@@ -1578,8 +1578,7 @@ sys_prompt () # ~ <Prompt> <Var> <Read-argv...>
   printf '\n'
 }
 
-# Reverse array items
-sys_rarr () # ~ <Arr-name>
+sys_rarr () # ~ <Arr-name> # Reverse array items
 {
   declare -a temp
   #shellcheck disable=2178 # 'dest' still used as array afaics
@@ -1588,8 +1587,7 @@ sys_rarr () # ~ <Arr-name>
   dest=( "${temp[@]}" )
 }
 
-# Reverse copy items from array to array
-sys_rarr2 () # ~ <Arr-from> <Arr-to>
+sys_rarr2 () # ~ <Arr-from> <Arr-to> # Reverse copy items from array to array
 {
   declare -n __from=${1:?} __to=${2:?}
   local _i_
