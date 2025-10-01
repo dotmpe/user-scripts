@@ -1,7 +1,7 @@
 
 us_lib__load ()
 {
-  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,std_noout,std_quiet,std_silent,stderr,str_globmatch,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
+  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,std_noo,std_quiet,std_silent,stderr,str_globmatch,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
 }
 
 us_lib__init ()

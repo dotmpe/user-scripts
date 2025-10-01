@@ -868,6 +868,15 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
   echo "$3/$2$1"
 }
 
+# XXX: _uconf_shell_core_ = {ba,}sh
+>/dev/null 2>&1 declare -F sh_fun ||
+sh_fun ()
+{
+  : src sys.lib.sh
+  : input "${@:?$FUNCNAME: Function name, $ENV_CTX}"
+  >/dev/null 2>&1 declare -F "${@}"
+}
+
 source_all ()
 {
   while [[ $# -gt 0 ]]
@@ -887,26 +896,34 @@ std_lookup_path ()
   XXX: std_read_path
 }
 
+sh_fun std_noerr ||
 std_noerr ()
 {
+  #>&2 std_noerr $(sys_sh_ctx) deprecated
   "$@" 2>/dev/null
 }
+# alias: std-silent
 
-std_noout ()
-{
-  "$@" >/dev/null
-}
-
-std_quiet ()
-{
-  "$@" 2>/dev/null
-}
-# alias for std-noerr
-
-std_silent ()
+sh_fun std_noo ||
+std_noo () # ~ <Cmd...> # Silence all output (std{out,err})
 {
   "$@" >/dev/null 2>&1
 }
+# old: std-silent
+
+sh_fun std_quiet ||
+std_quiet ()
+{
+  "$@" >/dev/null
+}
+# alias for std-noout
+
+sh_fun std_silent ||
+std_silent ()
+{
+  "$@" 2>/dev/null
+}
+# alias: std-noerr
 
 std_utf8_en()
 {
