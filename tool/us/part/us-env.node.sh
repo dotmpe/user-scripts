@@ -45,7 +45,8 @@ us-env:define-env ()
 
 us_env_node_init ()
 {
-  cache_loadmaps index,env,node,us.sh \
+  cache_loadmaps \
+    index,env,node,us.sh \
     us_env_basemap
 }
 
@@ -63,20 +64,6 @@ us_argv_rev ()
   done
 }
 
-#us-env:fun ()
-us_env_fun ()
-{
-  local -n names
-  if_ok "$(us_env_funsets)" &&
-  for names in $_
-  do
-    : "${names//,/ }" &&
-    test -n "$_" &&
-    echo $_ ||
-    stderr echo "us-env: No funs in set '${!names}'"
-  done
-}
-
 us_env_funsets ()
 {
   : "${us_env_funsets//[:.-]/_}"
@@ -88,7 +75,7 @@ us_env_generate ()
 {
   us_env_source ||
     $LOG error "" "Problem sourcing env part" E$? $? || return
-  us_env_typeset &&
+  us_env_funset &&
   echo "us_env_loadenv || test \${_E_continue:-${_E_continue:-195}} -eq \$?"
 }
 
@@ -149,24 +136,48 @@ us_env_namepath ()
   #_us_env_node_list["$1"]=$inc
 }
 
-us_env_typeset ()
+us_env_funset ()
 {
-  local -a funs
-  if_ok "$(us_env_fun)" &&
-  <<< "${us_env_fun}" mapfile -t funs &&
+  : param ' ~ <Funsets> '
+  : about 'Typeset functions, listing full definition and export declaration is applicable'
+  local -n funset_str=${1//-/_}_funsets
+  local -a funsets=( ${funsets_str//,/ } )
+  local -A funs
+  us_env_funsets_load funs "${funsets[@]}" &&
   [[ ${#funs[@]} -gt 0 ]] ||
     $LOG error "" "No functions" "" 1 || return
-  stderr echo "us-env: Generating from $# funs"
-  local -A funexp &&
-  local fun &&
-  for fun in "${funs[@]}"
+
+  local fun
+  stderr echo "us-env: Generating from ${#funs[@]} funs"
+  for fun in "${!funs[@]}"
   do
-    [[ ${funexp["$fun"]+set} ]] && continue
     declare -f $fun &&
-    echo "declare -fx $fun" &&
-    funexp["$fun"]= ||
-      $LOG error "" "Exporting '$fun'" E$? $? || return
+    echo "declare -fx $fun"
   done
+}
+
+us_env_funsets_load ()
+{
+  : param ' ~ <Id-var> <Name-var> ...'
+  TODO "$FUNCNAME: $*"
+}
+
+us_env_idtoname ()
+{
+  : param ' ~ <Id-var> <Name-var> ...'
+  local -n __idtoname_id=${1}
+  local -n __idtoname_name=${2}
+  globreverse_from "," "$2" "$__idtoname_id" &&
+  __idtoname_name=${__idtoname_name//,/-}
+}
+
+us_env_nametoid ()
+{
+  : param ' ~ <Name-var> <Id-var> ...'
+  local -n __nametoid_name=${1}
+  local -n __nametoid_id=${2}
+  globreverse_from "-" "$2" "$__nametoid_name" &&
+  __nametoid_id=${__nametoid_id//-/,}
 }
 
 us_env_source ()
@@ -186,6 +197,93 @@ us_env_source ()
   done
 }
 
+us_env_typeset_sh ()
+{
+  : param ' ~ <Group> <Deps> ...'
+  local groupname=${1?} groupid
+  us_env_nametoid group{name,id}
+  . "${groupid}.inc" &&
+  . "uc-cmp.inc.sh" &&
+  local _typeset
+  local _{id,group,type} \
+        _{parts,import,export,dynfun,nameals}
+
+  _typeset="$(declare -f ${groupname//-/:})" || return
+
+  us_env_inc_key_value _typeset _ {id,group,type}
+  us_env_inc_key_values _typeset _ {import,export}
+
+  : "${_id:=$groupname}"
+  : "${_type:=group}"
+  : "${_group:=${groupname%-*}}"
+  [[ ${_group} != "${groupname}" ]] || _group=
+  [[ ${_export[@]:+set} ]] || _export=( 'parts' )
+
+  # Now run all parts and sort out which command name aliases can be exported,
+  # and serialize group and parts. Then recurse for all imports as well.
+
+  for k in ${_export[@]}
+  do
+    local -n _k=_${k//-/_}
+    us_env_inc_key_values _typeset _ $k &&
+    us_env_typeset_${k//-/_}_sh __out "${_k[@]:? _k array exp for $k at $groupname}"
+  done
+
+  __out=${__out:+${__out}$'\n'}"${groupname//-/_} () {
+  : id ${_id}
+  : type ${_type}
+  : group ${_group}
+  : parts ${_parts[@]}
+}"
+
+  [[ ! ${_import[@]:+set} ]] || {
+    for name in "${_import[@]}"
+    do
+      fullname="${groupname}-${name#\/}"
+      us_env_nametoid full{name,id}
+      incpath="$(command -v "${fullid}.inc")" &&
+      filepath=${incpath%.inc}.sh &&
+      toolpath=tool${filepath#*/Tool} &&
+      _deps+=( "${toolpath}" ) &&
+      __out=${__out}$'\n'.\ \"${filepath}\" ||
+      >&2 echo "Cannot locate $fullid.inc"
+    done
+  }
+
+  echo "$__out"
+}
+
+us_env_inc_key_value ()
+{
+  local -n _ueikv_typeset=${1:?}
+  local pref=${2:?} key
+  for key in "${@:3}"
+  do
+    <<< "$_ueikv_typeset" uc_cmp :metafor+one ${pref}${key//-/_} ${key}
+  done
+}
+
+us_env_inc_key_values ()
+{
+  local -n _ueikv_typeset=${1:?}
+  local pref=${2:?} key
+  for key in "${@:3}"
+  do
+    <<< "$_ueikv_typeset" uc_cmp :read-field+aliased+all ${pref}${key//-/_} ${key}
+  done
+}
+
+us_env_typeset_nameals_sh ()
+{
+  local __dest=${1:?}
+  >&2 echo $FUNCNAME: $*
+}
+
+us_env_typeset_dynfun_sh ()
+{
+  >&2 echo $FUNCNAME: $*
+}
+
 us_env_src__lib ()
 {
   : "${1:?}"
@@ -199,7 +297,7 @@ us_env_src__scr ()
   uc_script_load "${1:?}"
 }
 
-# profile = bash
+# XXX: revisit classses later, profile = bash
 #us-env.fun ()
 #{
 #  local -n names
