@@ -167,7 +167,7 @@ us_env_idtoname ()
   : param ' ~ <Id-var> <Name-var> ...'
   local -n __idtoname_id=${1}
   local -n __idtoname_name=${2}
-  globreverse_from "," "$2" "$__idtoname_id" &&
+  globreverse_from "," "$__idtoname_id" "$2" &&
   __idtoname_name=${__idtoname_name//,/-}
 }
 
@@ -176,7 +176,7 @@ us_env_nametoid ()
   : param ' ~ <Name-var> <Id-var> ...'
   local -n __nametoid_name=${1}
   local -n __nametoid_id=${2}
-  globreverse_from "-" "$2" "$__nametoid_name" &&
+  globreverse_from "-" "$__nametoid_name" "$2" &&
   __nametoid_id=${__nametoid_id//-/,}
 }
 
