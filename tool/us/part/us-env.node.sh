@@ -81,9 +81,14 @@ us_env_generate ()
 
 us_env_node_baselist ()
 {
+  : about ' ~ <Suite> <Array> [<Env-vars>]'
+  : about "Load every existing tool/$1/part basedir into array"
   local sp=tool/${1:-sh}/part
   local -n _bd _us_env_node_baselist=${2:-us_env_node_bases}
-  for _bd in C_INC UCONF U_C U_S HTDOC PWD
+  ! (($#-2)) &&
+    local -a _us_env_node_bases=( C_INC UCONF U_C U_S HTDOC PWD ) ||
+    local -n _us_env_node_bases=${3:?Basedir array expected}
+  for _bd in "${_us_env_node_bases[@]}"
   do
     [[ -d "$_bd/$sp" ]] || continue
    _us_env_node_baselist+=( "$_bd/$sp" )
@@ -92,10 +97,13 @@ us_env_node_baselist ()
 
 us_env_node_list ()
 {
-  local pd scr_{path,leaf,name,base}
+  : param ' ~ [<Suites...>]'
+  (($#)) || set -- ba{,sh}
+  local suite pd scr_{path,leaf,name,base}
   local -a us_env_node_bases
-  us_env_node_baselist "" us_env_node_bases &&
-  us_env_node_baselist "bash" us_env_node_bases &&
+  for suite
+  do us_env_node_baselist "$suite" us_env_node_bases || return
+  done &&
   for pd in "${us_env_node_bases[@]}"
   do
     for scr_path in $pd/*.{,ba}sh
@@ -105,7 +113,6 @@ us_env_node_list ()
       scr_name=${_%.bash}
       case "$scr_name" in *,* )
         us_env_namepath "$scr_leaf"
-
         ;; * )
         # >&2 declare -p scr_{path,name,base}
       esac
@@ -162,11 +169,24 @@ us_env_funsets_load ()
   TODO "$FUNCNAME: $*"
 }
 
+us_env_cname () # ~ <Name-ref> <Base-ref> <To-var>
+{
+  local nameref=${1:?} baseref=${2:?}
+  local -n _cname=${3:?}
+  case "${nameref}" in
+  ( -* ) _cname=${baseref%:*}:${nameref:1}
+    ;;
+  ( .* ) _cname=${baseref}:${nameref:1}
+    ;;
+  ( * ) _cname=${nameref}
+  esac
+}
+
 us_env_idtoname ()
 {
   : param ' ~ <Id-var> <Name-var> ...'
-  local -n __idtoname_id=${1}
-  local -n __idtoname_name=${2}
+  local -n __idtoname_id=${1:?Id var}
+  local -n __idtoname_name=${2:?Name var}
   globreverse_from "," "$2" "$__idtoname_id" &&
   __idtoname_name=${__idtoname_name//,/-}
 }
@@ -174,10 +194,18 @@ us_env_idtoname ()
 us_env_nametoid ()
 {
   : param ' ~ <Name-var> <Id-var> ...'
-  local -n __nametoid_name=${1}
-  local -n __nametoid_id=${2}
+  local -n __nametoid_name=${1:?Name var}
+  local -n __nametoid_id=${2:?Id var}
   globreverse_from "-" "$2" "$__nametoid_name" &&
   __nametoid_id=${__nametoid_id//-/,}
+}
+
+us_env_partattr ()
+{
+  : about 'Load meta fields into map'
+  : param ' ~ <Part> <Array> <Fields...>'
+  : extended 'This works for fields with single (long) string values'
+  TODO "uses uc-cmp :metafor, see uc-env."
 }
 
 us_env_source ()
@@ -202,8 +230,8 @@ us_env_typeset_sh ()
   : param ' ~ <Group> <Deps> ...'
   local groupname=${1?} groupid
   us_env_nametoid group{name,id}
+
   . "${groupid}.inc" &&
-  . "uc-cmp.inc.sh" &&
   local _typeset
   local _{id,group,type} \
         _{parts,import,export,dynfun,nameals}
@@ -211,7 +239,7 @@ us_env_typeset_sh ()
   _typeset="$(declare -f ${groupname//-/:})" || return
 
   us_env_inc_key_value _typeset _ {id,group,type}
-  us_env_inc_key_values _typeset _ {import,export}
+  us_env_inc_key_all_values _typeset _ {import,export}
 
   : "${_id:=$groupname}"
   : "${_type:=group}"
@@ -225,16 +253,18 @@ us_env_typeset_sh ()
   for k in ${_export[@]}
   do
     local -n _k=_${k//-/_}
-    us_env_inc_key_values _typeset _ $k &&
-    us_env_typeset_${k//-/_}_sh __out "${_k[@]:? _k array exp for $k at $groupname}"
+    us_env_inc_key_all_value_seqs _typeset _ $k &&
+    us_env_typeset_${k//-/_}_sh __out _parts \
+      "${_k[@]:? _k array exp for $k at $groupname}"
   done
 
-  __out=${__out:+${__out}$'\n'}"${groupname//-/_} () {
+  __out="${__out:-}${groupname//-/_} () {
   : id ${_id}
   : type ${_type}
   : group ${_group}
   : parts ${_parts[@]}
-}"
+}
+"
 
   [[ ! ${_import[@]:+set} ]] || {
     for name in "${_import[@]}"
@@ -243,11 +273,12 @@ us_env_typeset_sh ()
       us_env_nametoid full{name,id}
       incpath="$(command -v "${fullid}.inc")" &&
       filepath=${incpath%.inc}.sh &&
-      toolpath=tool${filepath#*/Tool} &&
+      toolpath=tool${filepath#*/[Tt]ool} &&
       _deps+=( "${toolpath}" ) &&
-      __out=${__out}$'\n'.\ \"${filepath}\" ||
+      __out=${__out}.\ \"${filepath}\"$'\n' ||
       >&2 echo "Cannot locate $fullid.inc"
     done
+    >&2 declare -p _import
   }
 
   echo "$__out"
@@ -256,7 +287,7 @@ us_env_typeset_sh ()
 us_env_inc_key_value ()
 {
   local -n _ueikv_typeset=${1:?}
-  local pref=${2:?} key
+  local pref=${2?} key
   for key in "${@:3}"
   do
     <<< "$_ueikv_typeset" uc_cmp :metafor+one ${pref}${key//-/_} ${key}
@@ -266,22 +297,61 @@ us_env_inc_key_value ()
 us_env_inc_key_values ()
 {
   local -n _ueikv_typeset=${1:?}
-  local pref=${2:?} key
+  local pref=${2?} key
   for key in "${@:3}"
   do
-    <<< "$_ueikv_typeset" uc_cmp :read-field+aliased+all ${pref}${key//-/_} ${key}
+    <<< "$_ueikv_typeset" uc_cmp :read-field+aliased ${pref}${key//-/_} ${key}
+  done
+}
+
+us_env_inc_key_all_values ()
+{
+  local -n _ueikav_typeset=${1:?}
+  local pref=${2?} key
+  for key in "${@:3}"
+  do
+    <<< "$_ueikav_typeset" uc_cmp :read-field+aliased+all ${pref}${key//-/_} ${key}
+  done
+}
+
+us_env_inc_key_all_value_seqs ()
+{
+  local -n _ueikav_typeset=${1:?}
+  local pref=${2?} key
+  for key in "${@:3}"
+  do
+    <<< "$_ueikav_typeset" uc_cmp :read-field+aliased+seqs ${pref}${key//-/_} ${key}
   done
 }
 
 us_env_typeset_nameals_sh ()
 {
-  local __dest=${1:?}
-  >&2 echo $FUNCNAME: $*
+  local -n __dest=${1:?} __parts=${2:?}
+  shift 2
+  local argc=0 idx
+  while (($#))
+  do
+    [[ $argc -lt $# && ${!argc} != '--' ]] && {
+      ((argc+=1))
+      continue
+    }
+    [[ ${!argc} == '--' ]] && idx=$argc-1 || idx=$argc
+    __dest=${__dest:+$__dest }"name_alias$(printf ' "%s"' "${@:1:$idx}")"$'\n'
+    __parts+=( "${@:2:$idx-1}" )
+    shift $argc
+  done
 }
 
 us_env_typeset_dynfun_sh ()
 {
-  >&2 echo $FUNCNAME: $*
+  local -n __dest=${1:?} __parts=${2:?}
+  shift 2
+  while (($#))
+  do
+    __dest=${__dest:+$__dest }"${1:?} () { ${2:?}; }"$'\n'
+    __parts+=( "$1" )
+    shift 3
+  done
 }
 
 us_env_src__lib ()
