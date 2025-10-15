@@ -186,18 +186,16 @@ us_env_idtoname ()
 {
   : param ' ~ <Id-var> <Name-var> ...'
   local -n __idtoname_id=${1:?Id var}
-  local -n __idtoname_name=${2:?Name var}
-  globreverse_from "," "$2" "$__idtoname_id" &&
-  __idtoname_name=${__idtoname_name//,/-}
+  : input "${2:?Name var}"
+  globreverse_tr ',' '-' "$__idtoname_id" "${2}"
 }
 
 us_env_nametoid ()
 {
   : param ' ~ <Name-var> <Id-var> ...'
   local -n __nametoid_name=${1:?Name var}
-  local -n __nametoid_id=${2:?Id var}
-  globreverse_from "-" "$2" "$__nametoid_name" &&
-  __nametoid_id=${__nametoid_id//-/,}
+  : input "${2:?Id var}"
+  globreverse_tr '-' ',' "$__nametoid_name" "${2}"
 }
 
 us_env_partattr ()
