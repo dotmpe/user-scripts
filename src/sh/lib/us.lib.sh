@@ -23,7 +23,7 @@ us_env_init ()
   export \
     _E_nsk=67 _E_nsa=68 \
     _E_not_found=124 _E_not_exec=126 _E_not_found=127 \
-    _E_GAE=193 _E_MA=194 _E_continue=195 _E_next=196 _E_stop=197 \
+    _E_GAE=193 _E_MA=194 _E_continue=195 _E_next=196 _E_break=197 \
     _E_done=200
 }
 
