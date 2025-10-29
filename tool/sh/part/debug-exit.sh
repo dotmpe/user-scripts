@@ -4,13 +4,13 @@ sh_debug_exit()
 {
   local exit=$? ; test $exit -gt 0 || return 0
   test ${quiet:-0} -eq 0 && {
-    sync
+    sync;
     {
       echo '------ sh-debug-exit: Exited: '$exit  >&2
       # NOTE: BASH_LINENO is no use at travis, 'secure'
       echo "At $BASH_COMMAND:$LINENO"
       echo "In 0:$0 base:${base-} scriptname:${scriptname-}"
-    } >&2
+    } >&2;
     test "${SUITE-}" = "CI" || return $exit
     # Allow for buffers, terminal connections of CI session to clear?
     # Had some troubles at [Travis]
