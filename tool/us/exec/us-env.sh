@@ -18,21 +18,12 @@ us_env_defcmd=short
 us_env_maincmds=help,load,query,require
 us_env_shortdescr=
 
+. "${UCONF:?}/script/composure/us-env.inc.bash"
+us_env "$@"
+exit
 
-us-env ()
+us-env-old ()
 {
-  if [ -z "${BASH-}" ]
-  then
-    _ERR "us-env is not compatible with shell '${SHELL-(unspecified)}'"
-    return
-  elif [ "${BASH-}" ] && [ "$BASH" = "/bin/sh" ]; then
-    # DEBUG
-    _WARN "us-env was loaded in sh-mode!? (impossible) shell: '${SHELL:-(unspecified)}'"
-  else
-    _INFO "'us-env $*' starting in shell '${SHELL:-(unspecified)}'"
-  fi
-  : source "us-env.sh"
-
   [[ ${us_node[*]+set} ]] || us_env_loadenv ||
     test ${_E_continue:-195} -eq $? ||
     $LOG error ":us-env" "Illegal status" "E$_" $_ || return
@@ -111,6 +102,7 @@ us_env_sh__require () # ~ <Parts...>
 }
 
 
+
 ## Util
 
 if_ok ()
@@ -144,6 +136,7 @@ us_env_loadenv ()
 
   return ${_E_continue:-195}
 }
+
 
 
 # Static bootstrap for us-env: get env up as far as 'user-script' part, and

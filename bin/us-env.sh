@@ -1,1 +1,0 @@
-../tool/us/exec/us-env.sh
