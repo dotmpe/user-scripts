@@ -18,8 +18,19 @@ us_env_defcmd=short
 us_env_maincmds=help,load,query,require
 us_env_shortdescr=
 
-. "${UCONF:?}/script/composure/us-env.inc.bash"
-us_env "$@"
+us_env_ ()
+{
+  # us-env uses cmp ns to look for us-env handlers,
+  # and should find uc-env-cli ... and others
+  # XXX: hardcode to sequence here
+  local -a __cmds{,_{0..3}}
+  #_Sys_NArr_Add __cmds uc_env
+  #_Sys_NArr_Add __cmds uc_env_cli
+  _Sys_NArr_Add __cmds uc_cmp
+  _Sys_NArr_Add __cmds uc_afs
+  _Sys_Try_NArr __cmds "$@"
+}
+us_env_ "$@"
 exit
 
 us-env-old ()
