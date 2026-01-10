@@ -30,6 +30,8 @@
 
 ck_lib__load()
 {
+  declare -ga ck_bi=( b2 git md5 sha{1,2,224,384,512} )
+
   sha256sum_cmd=( "sha256sum" )
   #sha256sum_cmd=( "shasum" "-a" "256" )
 
@@ -71,6 +73,11 @@ ck_sha1 () # File [Check]
 # See ck-git for description.
 ck_sha2 () # File [Check]
 {
+  ck_sha256
+}
+
+ck_sha256 () # File [Check]
+{
   declare cksum_cmd=( "${sha256sum_cmd[@]}" ) ; ck_sum "$@"
 }
 
@@ -92,8 +99,9 @@ ck_sha512 () # File [Check]
   declare cksum_cmd=( "sha512sum" ) ; ck_sum "$@"
 }
 
-# Wrapper for commands that generate or validate checksum for inputs (file or
+# Wrapper for commands that generate checksum for inputs (file or
 # stdin).
+# Validating is done by Bash.
 ck_sum () # ~ [<File>] [<Checksum>]
 {
   test -n "${abbrev-}" || local abbrev=7

@@ -512,7 +512,7 @@ os_filestat_fieldsformat () # ~ <FIELDS...>
 
 os_filestat_getschema () # ~
 {
-  : "${os_filestat_schemafp:=${STATUSDIR_ROOT:?}cache/os-lib-filestat.schema.sh}"
+  : "${os_filestat_schemafp:=${STATUSDIR_ROOT:?os_filestat_schemafp location required}cache/os-lib-filestat.schema.sh}"
   [[ -s "${os_filestat_schemafp:?}" ]] && {
     . "${os_filestat_schemafp:?}" || return
   } ||
@@ -1524,11 +1524,11 @@ os_dirs_exist () # ~ <Names...>
   done
 }
 
-os_lookup_add () # ~ <Var> <Prepend> <Append>
+os_lookup_add_old () # ~ <Var> <Prepend> <Append>
 {
   : source "os.lib.sh"
   [ -e "${2}" -o -e "${3-}" ] || {
-    >&2 echo "os_path_add: No such file or directory '$*'"
+    >&2 echo "$FUNCNAME: No such file or directory '$*'"
     return 1
   }
   local -n __path=${1?}
@@ -1548,7 +1548,7 @@ os_lookup_add () # ~ <Var> <Prepend> <Append>
 }
 
 # TODO: cleanup add-env-path
-os_path_add () # ~ <Prepend-Value> <Append-Value>
+os_path_add_old () # ~ <Prepend-Value> <Append-Value>
 {
   : source "os.lib.sh"
   [ $# -ge 1 ] && [ -n "$1" ] || [ -n "${2-}" ] || return 64
@@ -1579,9 +1579,10 @@ os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
   : "${2:?"os-lookuppaths: Expected variable reference"}"
 
   local -n __out=${2:?}
-  sys_is_ar "$1" && local -n __arr=$1 || {
+  sys_is_arr "$1" && local -n __arr=$1 || {
     local -n __ref=$1 __arr=${1}_arr
-    <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr || return
+    : "${__ref-}"
+    <<< "${_//:/$'\n'}" mapfile -t ${1}_arr || return
   }
   shift 2
   : "${*:?"os-lookuppaths: Expected paths"}"
@@ -1605,17 +1606,18 @@ os_lookuppaths () # ~ <Path-var> <Result-var> <Paths...>
   done
 }
 
-os_path () # ~ <Path-var> [<Arr-var>]
+os_pathvar () # ~ <Path-var> [<Arr-var>]
 {
   : source "os.lib.sh"
   : description "XXX: copy PATH-type value to Bash array"
-  : "${1:?"os-path: Expected variable reference"}"
+  : "${1:?"os-pathvar: Expected variable reference"}"
   local __os_path_out=${2:-${1}_arr}
-  sys_is_ar "$1" && {
+  sys_is_arr "$1" && {
     declare -gn ${__os_path_out}=${1}
   } || {
     local -n __ref=$1 __arr=${__os_path_out}
-    <<< "${__ref//:/$'\n'}" mapfile -t ${__os_path_out}
+    : "${__ref-}"
+    <<< "${_//:/$'\n'}" mapfile -t ${__os_path_out}
   }
 }
 
@@ -1625,9 +1627,10 @@ os_pathcb () # ~ <Path-var> <Cmd...>
   : source "os.lib.sh"
   : "${1:?"os-pathcb: Expected variable reference"}"
   : "${2:?"os-pathcb: Expected command"}"
-  sys_is_ar "$1" && local -n __arr=$1 || {
+  sys_is_arr "$1" && local -n __arr=$1 || {
     local -n __ref=$1 __arr=${1}_arr
-    <<< "${__ref//:/$'\n'}" mapfile -t ${1}_arr
+    : "${__ref-}"
+    <<< "${_//:/$'\n'}" mapfile -t ${1}_arr
   }
   local __path
   for __path in "${__arr[@]}"

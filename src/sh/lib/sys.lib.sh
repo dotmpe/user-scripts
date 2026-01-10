@@ -868,6 +868,15 @@ setup_tmpf() # [Ext [UUID [TMPDIR]]]
   echo "$3/$2$1"
 }
 
+# XXX: _uconf_shell_core_ = {ba,}sh
+>/dev/null 2>&1 declare -F sh_fun ||
+sh_fun ()
+{
+  : src sys.lib.sh
+  : input "${@:?$FUNCNAME: Function name, $ENV_CTX}"
+  >/dev/null 2>&1 declare -F "${@}"
+}
+
 source_all ()
 {
   while [[ $# -gt 0 ]]
@@ -887,26 +896,34 @@ std_lookup_path ()
   XXX: std_read_path
 }
 
+sh_fun std_noerr ||
 std_noerr ()
 {
+  #>&2 std_noerr $(sys_sh_ctx) deprecated
   "$@" 2>/dev/null
 }
+# alias: std-silent
 
-std_noout ()
-{
-  "$@" >/dev/null
-}
-
-std_quiet ()
-{
-  "$@" 2>/dev/null
-}
-# alias for std-noerr
-
-std_silent ()
+sh_fun std_noo ||
+std_noo () # ~ <Cmd...> # Silence all output (std{out,err})
 {
   "$@" >/dev/null 2>&1
 }
+# old: std-silent
+
+sh_fun std_quiet ||
+std_quiet ()
+{
+  "$@" >/dev/null
+}
+# alias for std-noout
+
+sh_fun std_silent ||
+std_silent ()
+{
+  "$@" 2>/dev/null
+}
+# alias: std-noerr
 
 std_utf8_en()
 {
@@ -982,7 +999,7 @@ sys_aarrv () # ~ <Array> <Vars...>
 sys_is_arr () # ~ <Arr> # Test if name is declared as array symbol
 {
   : source "sys.lib.sh"
-  : "${1:?"sys-arr: Expected symbol name"}"
+  : input "${1:?"sys-arr: Expected symbol name"}"
   if_ok "$(declare -p ${1})" &&
   case "$_" in
   ( "declare -"*[aA]*" $1" | \
@@ -1172,7 +1189,11 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
   ( verbose )
     "${VERBOSE:-false}" || ! "${QUIET:-false}"  ;;
 
-  ( * ) $LOG alert "$lk" "No such mode" "$1" ${_E_script:?"$(sys_exc "$lk")"}
+  ( * )
+    >&2 echo "sys.lib: No such mode ${1@Q}"
+    return ${_E_script:-2}
+    #$LOG alert "$lk" "No such mode" "$1" ${_E_script:-2}
+    #?"$(sys_exc "$lk")"}
   esac
 }
 
@@ -1330,9 +1351,10 @@ sys_get () # ~ <Var>
   echo "${!_:?}"
 }
 
-sys_iref () # ~ <Path> [<Var-key=sys_iref_>]
+sys_iref () # ~ <Path> [<Var-key=sys_iref_>] # Read inode->mnt map into shell
 {
-  : "${2:-sys_iref_}"
+  : description "Read inode and mount values onto two variables: sys_iref_{ino,mnt}"
+  : input "${2:-sys_iref_}"
   local -n \
     __sys_iref_ino=${_}ino \
     __sys_iref_mnt=${_}mnt
@@ -1556,8 +1578,7 @@ sys_prompt () # ~ <Prompt> <Var> <Read-argv...>
   printf '\n'
 }
 
-# Reverse array items
-sys_rarr () # ~ <Arr-name>
+sys_rarr () # ~ <Arr-name> # Reverse array items
 {
   declare -a temp
   #shellcheck disable=2178 # 'dest' still used as array afaics
@@ -1566,8 +1587,7 @@ sys_rarr () # ~ <Arr-name>
   dest=( "${temp[@]}" )
 }
 
-# Reverse copy items from array to array
-sys_rarr2 () # ~ <Arr-from> <Arr-to>
+sys_rarr2 () # ~ <Arr-from> <Arr-to> # Reverse copy items from array to array
 {
   declare -n __from=${1:?} __to=${2:?}
   local _i_
@@ -1646,6 +1666,9 @@ sys_tmp_init () # DIR
     # Set to Linux ramfs path
     [[ -d "/dev/shm" ]] && {
       RAM_TMPDIR=/dev/shm/tmp
+      mkdir -vp "$RAM_TMPDIR" &&
+      test -w "$RAM_TMPDIR" ||
+        $sys_lib_log error "Cannot aquire /dev/shm temp dir" "$RAM_TMPDIR" $? || return
     }
   }
 

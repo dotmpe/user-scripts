@@ -70,7 +70,7 @@ git_src_get() # <user>/<repo>
   test -e "$VND_GH_SRC/$1" || {
     note "Creating main user checkout for $1..."
     lib_load volume
-    remote_name=$( get_cwd_volume_id "$SRC_DIR" )
+    path_volume_id remote_name "$SRC_DIR" &&
     test -n "$remote_name" || remote_name=local
 
     git clone "$GIT_SCM_SRV/$1.git" "$VND_GH_SRC/$1" \

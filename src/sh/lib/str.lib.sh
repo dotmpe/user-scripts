@@ -42,8 +42,8 @@ str_lib__init()
   #: "${str_uc_fun:=}"
   #: "${str_htd_fun:=}"
 
-  ! sys_debug -dev -debug -init ||
-    ${INIT_LOG:?} notice "" "Initialized str.lib" "$(sys_debug_tag --oneline)"
+  #! sys_debug -dev -debug -init ||
+  #  ${INIT_LOG:?} notice "" "Initialized str.lib" "$(sys_debug_tag --oneline)"
 }
 
 

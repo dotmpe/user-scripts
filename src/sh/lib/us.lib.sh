@@ -1,7 +1,7 @@
 
 us_lib__load ()
 {
-  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,std_noout,std_quiet,std_silent,stderr,str_globmatch,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
+  us_fun=fnmatch,incr,lib_init,lib_load,lib_require,os_path_add,os_lookup_add,_OS_Lookup_Add,_OS_Path_Assert,_OS_Path_Add,std_noo,std_quiet,std_silent,stderr,str_globmatch,sys_rarr,sys_rarr2,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
 }
 
 us_lib__init ()
@@ -23,7 +23,7 @@ us_env_init ()
   export \
     _E_nsk=67 _E_nsa=68 \
     _E_not_found=124 _E_not_exec=126 _E_not_found=127 \
-    _E_GAE=193 _E_MA=194 _E_continue=195 _E_next=196 _E_stop=197 \
+    _E_GAE=193 _E_MA=194 _E_continue=195 _E_next=196 _E_break=197 \
     _E_done=200
 }
 

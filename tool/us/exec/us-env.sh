@@ -18,21 +18,23 @@ us_env_defcmd=short
 us_env_maincmds=help,load,query,require
 us_env_shortdescr=
 
-
-us-env ()
+us_env_ ()
 {
-  if [ -z "${BASH-}" ]
-  then
-    _ERR "us-env is not compatible with shell '${SHELL-(unspecified)}'"
-    return
-  elif [ "${BASH-}" ] && [ "$BASH" = "/bin/sh" ]; then
-    # DEBUG
-    _WARN "us-env was loaded in sh-mode!? (impossible) shell: '${SHELL:-(unspecified)}'"
-  else
-    _INFO "'us-env $*' starting in shell '${SHELL:-(unspecified)}'"
-  fi
-  : source "us-env.sh"
+  # us-env uses cmp ns to look for us-env handlers,
+  # and should find uc-env-cli ... and others
+  # XXX: hardcode to sequence here
+  local -a __cmds{,_{0..3}}
+  #_Sys_NArr_Add __cmds uc_env
+  #_Sys_NArr_Add __cmds uc_env_cli
+  _Sys_NArr_Add __cmds uc_cmp
+  _Sys_NArr_Add __cmds uc_afs
+  _Sys_Try_NArr __cmds "$@"
+}
+us_env_ "$@"
+exit
 
+us-env-old ()
+{
   [[ ${us_node[*]+set} ]] || us_env_loadenv ||
     test ${_E_continue:-195} -eq $? ||
     $LOG error ":us-env" "Illegal status" "E$_" $_ || return
@@ -111,6 +113,7 @@ us_env_sh__require () # ~ <Parts...>
 }
 
 
+
 ## Util
 
 if_ok ()
@@ -133,10 +136,10 @@ us_env_loadenv ()
   : source "us-env.sh"
 
   # XXX: do proper build and then graph init
-  add_path "${U_S?}/tool/us/part"
-  add_path "${U_S?}/tool/us/exec"
+  os_path_add "${U_S?}/tool/us/part"
+  os_path_add "${U_S?}/tool/us/exec"
   {
-    uc_fun us-env:define-env ||
+    sh_fun us-env:define-env ||
       uc_script_load "us-env.node" || return
   } && us-env:define-env &&
   true || return
@@ -144,6 +147,7 @@ us_env_loadenv ()
 
   return ${_E_continue:-195}
 }
+
 
 
 # Static bootstrap for us-env: get env up as far as 'user-script' part, and

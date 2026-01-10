@@ -205,7 +205,7 @@ env__define__build_env_cache ()
     envd_require build-libs || return
     # Run build routine
     env__build__build_env_cache || return
-    return ${_E_stop:-197}
+    return ${_E_break:-197}
   }
 
   #echo "build-env: ${build_at_build_env_targets:-@build-env}" >&2
@@ -584,7 +584,7 @@ env__define__rule_params ()
   test "${BUILD_TARGET:?}" = "$params_sh" && {
     env__build__rule_params ||
       $LOG error : "Failed to build params from targets" "E$?:$params_sh" $? || return
-    return ${_E_stop:-197}
+    return ${_E_break:-197}
   }
 
   # Build as sub-dependency of @build-env only
