@@ -41,11 +41,11 @@ us-env:define-env ()
   us_env_funspec="us_env_{fun{,sets},generate{,_funs},loadenv,source}"
   us_env_fun=$(eval "echo ${us_env_funspec:?}")
 
-  uc_env_fun=add_path,str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
+  uc_env_fun=add_path,_OS_Path_Add,_OS_Path_Assert,str_word,str_append,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug
 }
 
 #us-env:fun ()
-us_env_fun ()
+us_env_fun () # ~ ... # Iterate over funset variables, listing each name or warning for empty sets
 {
   local -n names
   if_ok "$(us_env_funsets)" &&
@@ -75,12 +75,12 @@ us_env_generate ()
 
 us_env_generate_funs ()
 {
+  local -A funexp
+  local fun
   set -- $(us_env_fun) &&
   [[ $# -gt 0 ]] ||
     $LOG error "" "No functions" "" 1 || return
   stderr echo "us-env: Generating from $# funs" &&
-  local -A funexp &&
-  local fun &&
   for fun
   do
     [[ ${funexp["$fun"]+set} ]] && continue
