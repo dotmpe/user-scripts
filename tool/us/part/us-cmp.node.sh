@@ -2,7 +2,7 @@
 
 # Compiled routines for us-cmp
 
-uc_cmp ()
+us_cmp ()
 {
   local ns_here=$FUNCNAME ctx=${ENV_CTX:-[$$/$0]} lk=${lk:+$lk:$FUNCNAME}
   local ENV_CTX=$ctx
@@ -26,6 +26,6 @@ uc_cmp ()
       : param ':0 ~~ <To-var> <Key> [<Mode>] ...'
       : input ${2:?$FUNCNAME:$1: Destination variable, $ENV_CTX}
       : input ${3:?$FUNCNAME:$1:$2: Field name, $ENV_CTX}
-      uc_cmp :metafor+${4:-one} ${2} "${3}"
+      us_cmp :metafor+${4:-one} ${2} "${3}"
 }
 

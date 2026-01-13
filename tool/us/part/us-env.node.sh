@@ -38,9 +38,22 @@ us-env:define-env ()
   )
   us_env_funsets=lib-uc,str-uc,sys-debug,us-env,uc-env,us
 
-  us_env_funspec="us_env_{fun{,sets},generate{,_funs},loadenv,source}"
+  us_env_funspec="us_env_{funset{,s{,_load}},generate,loadenv,source}"
   us_env_fun=$(eval "echo ${us_env_funspec:?}")
-  uc_env_fun=str_word,str_append,sys_is_arr,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug,std_not,if_ok
+  uc_env_fun=str_word,str_append,sys_is_arr,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug,if_ok
+}
+
+us_env_cname () # ~ <Name-ref> <Base-ref> <To-var>
+{
+  local nameref=${1:?} baseref=${2:?}
+  local -n _cname=${3:?}
+  case "${nameref}" in
+  ( -* ) _cname=${baseref%:*}:${nameref:1}
+    ;;
+  ( .* ) _cname=${baseref}:${nameref:1}
+    ;;
+  ( * ) _cname=${nameref}
+  esac
 }
 
 us_env_node_init ()
@@ -64,6 +77,32 @@ us_argv_rev ()
   done
 }
 
+us_env_funset ()
+{
+: param ' ~ <Funset-base>'
+: about 'Typeset functions, listing full definition and export declaration is applicable'
+: input "${1:?$FUNCNAME: Set base}"
+  local -n funsets_str=${1//-/_}_funsets
+  [[ ${funsets_str:+set} ]] ||
+    failerr "Expected funset value for $1" || return
+  local -a funsets=( ${funsets_str//,/ } )
+  local -A _funs1
+  us_env_funsets_load _funs1 "${funsets[@]}" &&
+  [[ ${#_funs1[@]} -gt 0 ]] ||
+    $LOG error "" "No functions" "" 1 || return
+  local fun
+  local sorted
+  # shellcheck disable=2207
+  sorted=($(printf '%s\n' "${!_funs1[@]}"|sort -u))
+  stderr echo "us-env: Generating from ${#sorted[@]} functions"
+  for fun in "${sorted[@]}"
+  do
+    declare -f $fun &&
+    echo "declare -fx $fun" ||
+      failerr "E$? typesetting function ${fun@Q} (ignored)" || continue
+  done | sed 's/\([^;]\)[; ] *$/\1/g'
+}
+
 us_env_funsets ()
 {
   : "${us_env_funsets//[:.-]/_}"
@@ -71,11 +110,33 @@ us_env_funsets ()
   <<< "$_" str_suffix _fun
 }
 
+us_env_funsets_load ()
+{
+: param ' ~ <Id-var> <Name-var> ...'
+: input "${1:?$FUNCNAME${*:+ $*}: Map var}"
+: input "${2:?$FUNCNAME${*:+ $*}: Set names}"
+  local -n _us_env_funmap=${1}
+  shift
+  local name fun
+  for name
+  do
+    local -n _funs2="${name//[^A-Za-z0-9_]/_}_fun"
+    for fun in ${_funs2//[ ,]/ }
+    do
+      _us_env_funmap["$fun"]=
+    done
+  done
+}
+
 us_env_generate ()
 {
-  us_env_source ||
+  ! (($#)) || return ${_E_GAE:?}
+  : "${us_env_funsets:?}"
+  us_env_source ${_//[ ,]/$'\n'} ||
     $LOG error "" "Problem sourcing env part" E$? $? || return
-  us_env_funset &&
+  echo "#!/usr/bin/env bash"
+  echo export uc_fun_profile=1
+  us_env_funset us-env &&
   echo "us_env_loadenv || test \${_E_continue:-${_E_continue:-195}} -eq \$?"
 }
 
@@ -143,143 +204,12 @@ us_env_namepath ()
   #_us_env_node_list["$1"]=$inc
 }
 
-us_env_funset ()
-{
-  : param ' ~ <Funsets> '
-  : about 'Typeset functions, listing full definition and export declaration is applicable'
-  local -n funset_str=${1//-/_}_funsets
-  local -a funsets=( ${funsets_str//,/ } )
-  local -A funs
-  us_env_funsets_load funs "${funsets[@]}" &&
-  [[ ${#funs[@]} -gt 0 ]] ||
-    $LOG error "" "No functions" "" 1 || return
-
-  local fun
-  stderr echo "us-env: Generating from ${#funs[@]} funs"
-  for fun in "${!funs[@]}"
-  do
-    declare -f $fun &&
-    echo "declare -fx $fun"
-  done
-}
-
-us_env_funsets_load ()
-{
-  : param ' ~ <Id-var> <Name-var> ...'
-  TODO "$FUNCNAME: $*"
-}
-
-us_env_cname () # ~ <Name-ref> <Base-ref> <To-var>
-{
-  local nameref=${1:?} baseref=${2:?}
-  local -n _cname=${3:?}
-  case "${nameref}" in
-  ( -* ) _cname=${baseref%:*}:${nameref:1}
-    ;;
-  ( .* ) _cname=${baseref}:${nameref:1}
-    ;;
-  ( * ) _cname=${nameref}
-  esac
-}
-
 us_env_idtoname ()
 {
   : param ' ~ <Id-var> <Name-var> ...'
   local -n __idtoname_id=${1:?Id var}
   : input "${2:?Name var}"
   globreverse_tr ',' '-' "$__idtoname_id" "${2}"
-}
-
-us_env_nametoid ()
-{
-  : param ' ~ <Name-var> <Id-var> ...'
-  local -n __nametoid_name=${1:?Name var}
-  : input "${2:?Id var}"
-  globreverse_tr '-' ',' "$__nametoid_name" "${2}"
-}
-
-us_env_partattr ()
-{
-  : about 'Load meta fields into map'
-  : param ' ~ <Part> <Array> <Fields...>'
-  : extended 'This works for fields with single (long) string values'
-  TODO "uses uc-cmp :metafor, see uc-env."
-}
-
-us_env_source ()
-{
-  local name vid
-  : "${us_env_funsets:?}"
-  set -- ${_//[ ,]/$'\n'}
-  for name
-  do
-    vid="${name//[^A-Za-z0-9_]/_}"
-    : "${vid}_fun"
-    [[ ${!_-} ]] && continue
-    $LOG debug "" "Sourcing env part" "$name"
-    : "${us_env_srcname["$name"]:-$name}" &&
-    us_env_src__"${us_env_srctype["$_"]:-lib}" "$_" ||
-      $LOG error "" "Loading env part" "E$?:$name" $? || return
-  done
-}
-
-us_env_typeset_sh ()
-{
-  : param ' ~ <Group> <Deps> ...'
-  local groupname=${1?} groupid
-  us_env_nametoid group{name,id}
-
-  . "${groupid}.inc" &&
-  local _typeset
-  local _{id,group,type} \
-        _{parts,import,export,dynfun,nameals}
-
-  _typeset="$(declare -f ${groupname//-/:})" || return
-
-  us_env_inc_key_value _typeset _ {id,group,type}
-  us_env_inc_key_all_values _typeset _ {import,export}
-
-  : "${_id:=$groupname}"
-  : "${_type:=group}"
-  : "${_group:=${groupname%-*}}"
-  [[ ${_group} != "${groupname}" ]] || _group=
-  [[ ${_export[@]:+set} ]] || _export=( 'parts' )
-
-  # Now run all parts and sort out which command name aliases can be exported,
-  # and serialize group and parts. Then recurse for all imports as well.
-
-  for k in ${_export[@]}
-  do
-    local -n _k=_${k//-/_}
-    us_env_inc_key_all_value_seqs _typeset _ $k &&
-    us_env_typeset_${k//-/_}_sh __out _parts \
-      "${_k[@]:? _k array exp for $k at $groupname}"
-  done
-
-  __out="${__out:-}${groupname//-/_} () {
-  : id ${_id}
-  : type ${_type}
-  : group ${_group}
-  : parts ${_parts[@]}
-}
-"
-
-  [[ ! ${_import[@]:+set} ]] || {
-    for name in "${_import[@]}"
-    do
-      fullname="${groupname}-${name#\/}"
-      us_env_nametoid full{name,id}
-      incpath="$(command -v "${fullid}.inc")" &&
-      filepath=${incpath%.inc}.sh &&
-      toolpath=tool${filepath#*/[Tt]ool} &&
-      _deps+=( "${toolpath}" ) &&
-      __out=${__out}.\ \"${filepath}\"$'\n' ||
-      >&2 echo "Cannot locate $fullid.inc"
-    done
-    >&2 declare -p _import
-  }
-
-  echo "$__out"
 }
 
 us_env_inc_key_value ()
@@ -322,33 +252,34 @@ us_env_inc_key_all_value_seqs ()
   done
 }
 
-us_env_typeset_nameals_sh ()
+us_env_nametoid ()
 {
-  local -n __dest=${1:?} __parts=${2:?}
-  shift 2
-  local argc=0 idx
-  while (($#))
-  do
-    [[ $argc -lt $# && ${!argc} != '--' ]] && {
-      ((argc+=1))
-      continue
-    }
-    [[ ${!argc} == '--' ]] && idx=$argc-1 || idx=$argc
-    __dest=${__dest:+$__dest }"name_alias$(printf ' "%s"' "${@:1:$idx}")"$'\n'
-    __parts+=( "${@:2:$idx-1}" )
-    shift $argc
-  done
+  : param ' ~ <Name-var> <Id-var> ...'
+  local -n __nametoid_name=${1:?Name var}
+  : input "${2:?Id var}"
+  globreverse_tr '-' ',' "$__nametoid_name" "${2}"
 }
 
-us_env_typeset_dynfun_sh ()
+us_env_partattr ()
 {
-  local -n __dest=${1:?} __parts=${2:?}
-  shift 2
-  while (($#))
+  : about 'Load meta fields into map'
+  : param ' ~ <Part> <Array> <Fields...>'
+  : extended 'This works for fields with single (long) string values'
+  TODO "uses uc-cmp :metafor, see uc-env."
+}
+
+us_env_source ()
+{
+: input "${*:?$FUNCNAME: Function sets}"
+  local name
+  for name
   do
-    __dest=${__dest:+$__dest }"${1:?} () { ${2:?}; }"$'\n'
-    __parts+=( "$1" )
-    shift 3
+    local -n funs="${name//[^A-Za-z0-9_]/_}_fun"
+    [[ ${funs:+set} ]] && continue
+    $LOG debug "" "Sourcing env part" "$name"
+    : "${us_env_srcname["$name"]:-$name}" &&
+    us_env_src__"${us_env_srctype["$_"]:-lib}" "$_" ||
+      $LOG error "" "Loading env part" "E$?:$name" $? || return
   done
 }
 
@@ -378,3 +309,96 @@ us_env_src__scr ()
 #    stderr echo "us-env: No funs in set '${!names}'"
 #  done
 #}
+#
+us_env_typeset_dynfun_sh ()
+{
+  local -n __dest=${1:?} __parts=${2:?}
+  shift 2
+  while (($#))
+  do
+    __dest=${__dest:+$__dest }"${1:?} () { ${2:?}; }"$'\n'
+    __parts+=( "$1" )
+    shift 3
+  done
+}
+
+us_env_typeset_nameals_sh ()
+{
+  local -n __dest=${1:?} __parts=${2:?}
+  shift 2
+  local argc=0 idx
+  while (($#))
+  do
+    [[ $argc -lt $# && ${!argc} != '--' ]] && {
+      ((argc+=1))
+      continue
+    }
+    [[ ${!argc} == '--' ]] && idx=$argc-1 || idx=$argc
+    __dest=${__dest:+$__dest }"name_alias$(printf ' "%s"' "${@:1:$idx}")"$'\n'
+    __parts+=( "${@:2:$idx-1}" )
+    shift $argc
+  done
+}
+
+us_env_typeset_sh ()
+{
+  : param ' ~ <Group> <Deps> ...'
+  local groupname=${1?} groupid
+  us_env_nametoid group{name,id}
+
+  . "${groupid}.inc" &&
+  local _typeset
+  local _{id,group,type} \
+        _{parts,import,export,dynfun,nameals}
+
+  _typeset="$(declare -f ${groupname//-/:})" || return
+
+  us_env_inc_key_value _typeset _ {id,group,type}
+  us_env_inc_key_all_values _typeset _ {import,export}
+
+  : "${_id:=$groupname}"
+  : "${_type:=group}"
+  : "${_group:=${groupname%-*}}"
+  [[ ${_group} != "${groupname}" ]] || _group=
+  [[ ${_export[*]:+set} ]] || _export=( 'parts' )
+
+  # Now run all parts and sort out which command name aliases can be exported,
+  # and serialize group and parts. Then recurse for all imports as well.
+
+  for k in ${_export[@]}
+  do
+    local -n _k=_${k//-/_}
+    us_env_inc_key_all_value_seqs _typeset _ $k &&
+    us_env_typeset_${k//-/_}_sh __out _parts \
+      "${_k[@]:? _k array exp for $k at $groupname}"
+  done
+
+
+  # shellcheck disable=2124,2154 # erroneous triggers
+  __out="${__out:-}${groupname//-/_} () {
+  : id ${_id}
+  : type ${_type}
+  : group ${_group}
+  : parts ${_parts[@]}
+}
+"
+
+  [[ ! ${_import[*]:+set} ]] || {
+    for name in "${_import[@]}"
+    do
+      fullname="${groupname}-${name#\/}"
+      us_env_nametoid full{name,id}
+      incpath="$(command -v "${fullid}.inc")" &&
+      filepath=${incpath%.inc}.sh &&
+      toolpath=tool${filepath#*/[Tt]ool} &&
+      _deps+=( "${toolpath}" ) &&
+      __out=${__out}.\ \"${filepath}\"$'\n' ||
+      >&2 echo "Cannot locate $fullid.inc"
+    done
+    >&2 declare -p _import
+  }
+
+  echo "$__out"
+}
+
+#

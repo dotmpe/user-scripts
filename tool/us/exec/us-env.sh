@@ -18,21 +18,6 @@ us_env_defcmd=short
 us_env_maincmds=help,load,query,require
 us_env_shortdescr=
 
-us_env_ ()
-{
-  # us-env uses cmp ns to look for us-env handlers,
-  # and should find uc-env-cli ... and others
-  # XXX: hardcode to sequence here
-  local -a __cmds{,_{0..3}}
-  #_Sys_NArr_Add __cmds uc_env
-  #_Sys_NArr_Add __cmds uc_env_cli
-  _Sys_NArr_Add __cmds uc_cmp
-  _Sys_NArr_Add __cmds uc_afs
-  _Sys_Try_NArr __cmds "$@"
-}
-us_env_ "$@"
-exit
-
 us-env-old ()
 {
   [[ ${us_node[*]+set} ]] || us_env_loadenv ||
@@ -136,8 +121,7 @@ us_env_loadenv ()
   : source "us-env.sh"
 
   # XXX: do proper build and then graph init
-  os_path_add "${U_S?}/tool/us/part"
-  os_path_add "${U_S?}/tool/us/exec"
+  append_path "${U_S?}/tool/us/part" "${U_S?}/tool/us/exec" PATH
   {
     sh_fun us-env:define-env ||
       uc_script_load "us-env.node" || return
@@ -148,30 +132,48 @@ us_env_loadenv ()
   return ${_E_continue:-195}
 }
 
+# FIXME: cleanup
+[[ ${0##*/} != us-env.sh ]] || {
 
+  # Static bootstrap for us-env: get env up as far as 'user-script' part, and
+  # load that if not already part of env.
+  test -n "${uc_fun_profile-}" || {
+    [[ ${BASH-} ]] ||
+      $LOG error "" "No implementation for shell" "$SHELL" 201 ||
+      ${us_stat:-exit} $?
 
-# Static bootstrap for us-env: get env up as far as 'user-script' part, and
-# load that if not already part of env.
-test -n "${uc_fun_profile-}" || {
-  [[ ${BASH-} ]] ||
-    $LOG error "" "No implementation for shell" "$SHELL" 201 ||
-    ${us_stat:-exit} $?
+    : "${USER:=$(whoami)}"
+    : "${HOME:=/home/${USER:?}}"
+    : "${UCONF:=${HOME:?}/.conf}"
+  }
 
-  : "${USER:=$(whoami)}"
-  : "${HOME:=/home/${USER:?}}"
-  : "${UCONF:=${HOME:?}/.conf}"
+  # XXX: cleanup
+  #. ${UC_LIB_BASE:?}/../tool/sh/init-uc.sh load &&
+  #. ${UC_LIB_BASE}/../tool/u-c/init.sh load
+  #uc_lib_init || return
+  #true "${lib_load:=uc_lib_load}"
 
-  # TODO: prepare us-env basis env set if not found or ood
-  echo sourcing uc_fun.sh env part >&2
-  . "${UCONF:?}/etc/profile.d/uc_fun.sh" || ${us_stat:-exit} $?
+  [[ ${user_script_uc_fun_profile-} ]] ||
+    uc_script_load user-script || ${us_stat:-exit} $?
+
+  [[ ${uc_fun_profile-} ]] ||
+    . "${UCONF:?}/etc/profile.d/uc_fun.sh" || ${us_stat:-exit} $?
+
+  us_env_ ()
+  {
+    # us-env uses cmp ns to look for us-env handlers,
+    # and should find uc-env-cli ... and others
+    # XXX: hardcode to sequence here
+    local -a __cmds{,_{0..3}}
+    #_Sys_NArr_Add __cmds uc_env
+    #_Sys_NArr_Add __cmds uc_env_cli
+    _Sys_NArr_Add __cmds uc_cmp
+    _Sys_NArr_Add __cmds uc_afs
+    _Sys_Try_NArr __cmds "$@"
+  }
+  us_env_ "$@"
+  exit
 }
-
-test -n "${uc_lib_profile-}" ||
-  . "${UCONF:?}/etc/profile.d/uc_lib.sh" || ${us_stat:-exit} $?
-
-test -n "${user_script_uc_fun_profile-}" ||
-  uc_script_load user-script || ${us_stat:-exit} $?
-
 
 : "${0##*\/}"
 : "${_%.sh}"

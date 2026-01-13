@@ -660,14 +660,15 @@ falseish()
   esac
 }
 
-func_exists()
+func_exists () # ~ <Func-name>
 {
+: input "${1:?$FUNCNAME${*:+ $*}: Function name}"
   type $1 2> /dev/null 1> /dev/null || return $?
   # XXX bash/bsd-darwin: test "$(type -t $1)" = "function" && return
   return 0
 }
 
-getidx() # ~ <Array> <Key>
+getidx () # ~ <Array> <Key>
 {
   test 2 -eq $# || return ${_E_GAE:?}
   set -- "${1:?}[${2:?}]"
