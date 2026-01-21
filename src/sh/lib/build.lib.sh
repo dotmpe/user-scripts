@@ -2901,7 +2901,7 @@ test -n "${lib_loading-}" || {
   #lib_require bash-uc
   #trap 'bash_uc_errexit' ERR
   lib_require sys
-  trap 'sys_exc_trc Bash error 1' ERR EXIT
+  trap 'sys_source_trace Bash error 1' ERR EXIT
 
   ## Env parts
 

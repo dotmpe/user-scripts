@@ -28,8 +28,7 @@ lib_lib__group__base={lib-{path,load,init}}
 lib_lib__group__core={:base,lib-{assert,require}}
 
 
-# Verify lib was loaded or bail out
-lib_assert() # Libs...
+lib_assert() # Libs... # Verify lib was loaded or bail
 {
   local log_key=${scriptname:-$0}/$$:u-s:lib:assert vid
   test $# -gt 0 || return 98

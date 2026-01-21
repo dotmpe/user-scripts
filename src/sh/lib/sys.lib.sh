@@ -663,9 +663,9 @@ falseish()
 func_exists () # ~ <Func-name>
 {
 : input "${1:?$FUNCNAME${*:+ $*}: Function name}"
-  type $1 2> /dev/null 1> /dev/null || return $?
+  declare -F "$1" 2> /dev/null 1> /dev/null || return
+  #type $1 2> /dev/null 1> /dev/null || return $?
   # XXX bash/bsd-darwin: test "$(type -t $1)" = "function" && return
-  return 0
 }
 
 getidx () # ~ <Array> <Key>

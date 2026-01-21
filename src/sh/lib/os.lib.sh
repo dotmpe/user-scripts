@@ -1,5 +1,3 @@
-#!/bin/sh
-
 ## OS - system toolkit/programs, files, paths.
 
 
@@ -512,7 +510,7 @@ os_filestat_fieldsformat () # ~ <FIELDS...>
 
 os_filestat_getschema () # ~
 {
-  : "${os_filestat_schemafp:=${STATUSDIR_ROOT:?os_filestat_schemafp location required}cache/os-lib-filestat.schema.sh}"
+  : "${os_filestat_schemafp:=${STATUSDIR_CACHE:-${STATUSDIR_ROOT:?os_filestat_schemafp location required}cache}/os-lib-filestat.schema.sh}"
   [[ -s "${os_filestat_schemafp:?}" ]] && {
     . "${os_filestat_schemafp:?}" || return
   } ||
@@ -1694,4 +1692,4 @@ ziplists () # [SEP=\t] Rows
   done
 }
 
-#
+# Id: os.lib                                                         ex:ft=bash:
