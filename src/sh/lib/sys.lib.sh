@@ -1667,7 +1667,7 @@ sys_tmp_init () # DIR
     # Set to Linux ramfs path
     [[ -d "/dev/shm" ]] && {
       RAM_TMPDIR=/dev/shm/tmp
-      mkdir -vp "$RAM_TMPDIR" &&
+      >&2 mkdir -vp "$RAM_TMPDIR" &&
       test -w "$RAM_TMPDIR" ||
         $sys_lib_log error "Cannot aquire /dev/shm temp dir" "$RAM_TMPDIR" $? || return
     }
@@ -1677,7 +1677,7 @@ sys_tmp_init () # DIR
     # XXX: find existing parent dir
     _RAM_TMPDIR="$(set -- $RAM_TMPDIR; while [[ ! -e "$1" ]]; do set -- $(dirname "$1"); done; echo "$1")"
     [[ -w "$_RAM_TMPDIR" ]] && {
-      [[ -d "$RAM_TMPDIR" ]] || mkdir $RAM_TMPDIR
+      [[ -d "$RAM_TMPDIR" ]] || >&2 mkdir -vp $RAM_TMPDIR
     } || {
       [[ -d "$RAM_TMPDIR" ]] && {
         $sys_lib_log warn $tag "Cannot access RAM-TmpDir" "$RAM_TMPDIR"

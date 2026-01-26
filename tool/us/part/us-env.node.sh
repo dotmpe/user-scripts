@@ -135,7 +135,7 @@ us_env_generate ()
   us_env_source ${_//[ ,]/$'\n'} ||
     $LOG error "" "Problem sourcing env part" E$? $? || return
   echo "#!/usr/bin/env bash"
-  echo export uc_fun_profile=1
+  echo uc_fun_profile=1
   us_env_funset us-env &&
   echo "us_env_loadenv || test \${_E_continue:-${_E_continue:-195}} -eq \$?"
 }
