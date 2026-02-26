@@ -12,7 +12,7 @@ fnmatch "* uc-env-core *" " ${ENV_BASE-} " ||
 
 # Set session and restart uc-env
 sh_mode strict
-uc_env +continue
+uc_env_2625 +continue
 
 [[ ${uc_env_parts[*]+set} ]] &&
 [[ ${uc_env_type["uc_fun"]+set} ]] &&
@@ -21,11 +21,11 @@ uc_env +continue
   exit
 
 # Setup uc-env for REDO
-uc_env @part G redo
-uc_env @exports \
+uc_env_2625 @part G redo
+uc_env_2625 @exports \
   REDO{,_{BASE,CHEATFDS,COLOR,CYCLES,DEPTH,LOG{,_INODE},NO_OOB,PRETTY,PWD,RUNID,STARTID,TARGET,UNLOCKED}
 
-uc_env @part G default-do
+uc_env_2625 @part G default-do
 default_do_main ()
 {
   BUILD_TARGET=${1:?}

@@ -23,8 +23,8 @@ export UC_LOG_BASE=$base$script
 sh_mode dev
 pass () { return; }
 :pass () { return; }
-uc_env +if-init
-uc_env -r uconf-shell-core-dsl
+uc_env_2625 +if-init
+uc_env_2625 -r uconf-shell-core-dsl
 #uconf-shell-log
 
 #. ./tool/sh/part/sh-fun.sh &&

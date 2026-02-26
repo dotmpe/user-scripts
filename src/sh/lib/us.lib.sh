@@ -1,4 +1,3 @@
-
 us_lib__load ()
 {
   us_fun=fnmatch,func_exists,incr,lib_init,lib_load,lib_require,append_path,lookup_path,std_noo,std_not,std_quiet,std_silent,stderr,str_globmatch,sys_rarr,sys_rarr2,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
@@ -16,9 +15,11 @@ us_lib__init ()
   ${LOG:?} info ":us:lib-load" "Initialized us.lib"
 }
 
-us_env_init ()
+us_lib_man_1__env_init='us-lib:env-init user shell profile helper to get
+shell libraries and some basic variables and function set for user-scripts. XXX: old, ie etc/profile.d/. '
+us_lib__env_init ()
 {
-  : source "us.lib.sh"
+: source "us.lib.sh"
   declare -xgA us_node=() us_src=() &&
   #export us_node &&
   export -f us-env \

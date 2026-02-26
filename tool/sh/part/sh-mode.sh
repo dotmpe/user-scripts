@@ -1,6 +1,6 @@
 ### Shell mode helper part
 
-#uc_env -r uc:shell:core
+#uc_env_2625 -r uc:shell:core
 
 # See also us-mode, sys-debug.
 

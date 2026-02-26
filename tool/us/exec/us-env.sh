@@ -165,7 +165,7 @@ us_env_loadenv ()
     # and should find uc-env-cli ... and others
     # XXX: hardcode to sequence here
     local -a __cmds{,_{0..3}}
-    #_Sys_NArr_Add __cmds uc_env
+    #_Sys_NArr_Add __cmds uc_env_2625
     #_Sys_NArr_Add __cmds uc_env_cli
     _Sys_NArr_Add __cmds uc_cmp
     _Sys_NArr_Add __cmds uc_afs

@@ -15,7 +15,7 @@ case "${XREDO_TARGET}" in
 #case "${1:?}" in
 
   ?* )
-        uc_env -Q "${XREDO_TARGET:1}"
+        uc_env_2625 -Q "${XREDO_TARGET:1}"
     ;;
 
   +* )
