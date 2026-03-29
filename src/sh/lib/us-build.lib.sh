@@ -28,6 +28,10 @@ us_build_lib__load ()
 
   # For DEFINE, define now so seeding is possible before lib-init
   declare -gA us_preproc_vardefs
+
+  #: "${VERBOSE:=0}"
+  : "${QUIET:=0}"
+  #: "${DEV:=0}"
 }
 
 us_build_lib__init ()
@@ -51,7 +55,7 @@ us_build_init () # ~
 {
   : "${us_build_proc_default%/*}"
   : "${_//[/]/:}"
-  us_preproc_vardefs["$_"]=${us_build_proc_default%/*} us_preproc_initbase=$_
+  us_preproc_vardefs["$_"]="${us_build_proc_default%/*}" us_preproc_initbase=$_
   us_preproc_initimport="${us_build_proc_default##*/}"
 
   [[ ${us_preproc_vardefs[":"]-} ]] || {
@@ -59,8 +63,8 @@ us_build_init () # ~
     us_preproc_vardefs[".build"]=${PPBASE:-${PWD}}
   }
 
-  #[[ ${us_preproc_vardefs[":"]} = "${us_preproc_initbase}" ]] && {
-  #  us_preproc_context=${us_preproc_vardefs[":"]}
+  [[ ${us_preproc_vardefs[":"]} = "${us_preproc_initbase}" ]] && {
+    us_preproc_context=${us_preproc_vardefs[":"]}
     #us_build_context "${us_preproc_context:?}"
 
     us_preproc_src+=( "$us_preproc_initimport.sh" )
@@ -496,14 +500,14 @@ us_debuglog_info () # ~ <Message> [<Context>] [<Status>]
 
 us_main_log () # ~ <Level-ref> <Message> <Context>
 {
-  "${QUIET:-false}" ||
+  ((QUIET)) ||
   $LOG "$1" "$lk" "${@:2}"
 }
 
 us_notice ()
 {
-  "${QUIET:-false}" ||
+  ((QUIET)) ||
   $LOG notice "$lk${llk:-:notice}" "$@"
 }
 
-# Id: U-S:us-build.lib
+# Id: U-S:us-build.lib                                             ex:ft=bash:

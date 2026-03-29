@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+#
+# us-pp - super simple shell-script preproc implementation and wrapper
+# 
+# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
+#
+# Distributed under terms of the MIT license.
+
+# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Distributed under terms of the MIT license.
+: "${DEBUG:=0}"
+: "${QUIET:=0}"
+! ((DEBUG)) || {
+  shopt -s extdebug
+  PS4='\[\033[0m\]${BASH_SOURCE:+\[\033[34m\]$BASH_SOURCE\[\033[36m\]:\[\033[32m\]${LINENO}} \[\033[33m\]+\[\033[0m\] '
+  ((QUIET)) ||
+    >&2 echo "$$$-\$ $0 ${*@Q}"
+}
+# Id: debug.sh.h                                vim:set ft=bash sw=2 sts=2 et:
+# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Distributed under terms of the MIT license.
+set -euo pipefail
+IFS=$' \t\n'
+# Id: strict.sh.h                               vim:set ft=bash sw=2 sts=2 et:
+export LOG=$HOME/bin/tool/sh/log.sh
+failerr () 
+{ 
+    userscripts::core::echo_stderr_with_status "$@"
+}
+userscripts::core::echo_stderr_with_status () 
+{ 
+    local stat=${2:-$?};
+    : input "${1:?$FUNCNAME: Failure message, $ENV_CTX}";
+    ((stat)) || stat=1;
+    echo "$1" 1>&2;
+    return ${stat};
+    : alias failerr
+}
+
+_us_pp_init ()
+{
+  # Load parts and generate functions to map some namespaced names
+  
+  PATH+=:$U_S/tool/bash/part
+  . us-core.inc.bash
+  . us-pp-core.inc.bash
+  . us-pp-cli.inc.bash
+  . us-shell.inc.bash
+  . us-str.inc.bash
+  . us-use.inc.bash
+
+  userscripts::use userscripts::core
+  userscripts::use userscripts::string
+  userscripts::use userscripts::preproc
+}
+
+_us_pp_load ()
+{
+  # Make app user-data driven
+  declare -A us_pp_{defs,def_literal}
+  : "${UC_DATA_DIR:=/var/local/statusdir}"
+  : "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}"
+  #cache_loadmaps "$us_pp_data" us_pp_{defs,def_literal,lang}
+  [[ ! -s $us_pp_data ]] || . "$us_pp_data"
+  declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
+}
+
+
+
+
+: "${BASH_SOURCE[0]##*/}"
+if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]
+then
+  script_cmdname="${BASH_SOURCE[0]##*/}"
+  [[ $script_cmdname == *.* ]] &&
+    script_name="${script_cmdname%.*}" ||
+    script_name="${script_cmdname}"
+  script_basename="${script_name%%.*}"
+  #shellcheck disable=1009,1054,1056,1072,1073,1083
+  _us_pp_init && _us_pp_load && us_pp_main "$@"; exit
+fi
+
+# vim:set ft=bash sw=2 sts=2 et:

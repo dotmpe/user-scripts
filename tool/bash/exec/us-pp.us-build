@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# us-pp - super simple shell-script preproc implementation and wrapper
+#
+# Copyright 2026 hari <dev@dotmpe>
+#
+# Distributed under terms of the MIT license.
+
+#&'debug'
+#&'strict'
+#&'log'
+
+# XXX: cleanup
+#:data /var/local/statusdir/pp,uc.data.bash
+# load 'auto' completion and other command, argument and data patterns in 
+# similar fashion. Probably move to main part. And setup commands to push in
+# (and either process or ignore) debug, help and assert type of data here.
+# XXX: probably build all this into one script and build+pack+dist full
+# standalone, but by default or something. 
+_us_pp_init ()
+{
+  # Load parts and generate functions to map some namespaced names
+  
+  PATH+=:$U_S/tool/bash/part
+  . us-core.inc.bash
+  . us-pp-core.inc.bash
+  . us-pp-cli.inc.bash
+  . us-shell.inc.bash
+  . us-str.inc.bash
+  . us-use.inc.bash
+
+  userscripts::use userscripts::core
+  userscripts::use userscripts::string
+  userscripts::use userscripts::preproc
+}
+
+_us_pp_load ()
+{
+  # Make app user-data driven
+  declare -A us_pp_{defs,def_literal}
+  : "${UC_DATA_DIR:=/var/local/statusdir}"
+  : "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}"
+  #cache_loadmaps "$us_pp_data" us_pp_{defs,def_literal,lang}
+  [[ ! -s $us_pp_data ]] || . "$us_pp_data"
+  declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
+}
+
+
+#:include user-script.main.bash.build
+#&'main' _us_pp_init && _us_pp_load && us_pp_main "$@"; exit
+
+#:modeline

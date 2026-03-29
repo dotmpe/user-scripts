@@ -62,7 +62,7 @@ sh_mode ()
                 # XXX: should this not set DEBUG=true. It wil slow down many
                 # things, need to get sys_debug alike in here...
                 test -n "${LOG-}" &&
-                  $LOG info :sh-mode@dev "Development mode enabled" ||
+                $LOG info :sh-mode@dev "Development mode enabled" ||
                   >&2 echo "Development mode enabled"
                 test -n "${U_S-}" -a -d "${U_S-}" &&
                   set -- dev-us "$@" ||

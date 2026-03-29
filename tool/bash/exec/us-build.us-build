@@ -1,0 +1,26 @@
+#!/usr/bin/env us-run.bash
+#
+# us-build, us-run - us-pp wrapper for building and executing user script files
+#
+# Copyright 2026 hari <hari@t470p>
+#
+# Distributed under terms of the MIT license.
+
+#&'debug'
+#&'strict'
+#&'log'
+
+# TODO: build us_build_main () from inc
+
+_us_build_init ()
+{
+  # XXX: build us-pp too...
+  . us-pp &&
+  _us_pp_init &&
+  _us_pp_load ||
+    failerr "E$? Loading script env" || exit
+}
+
+#:include user-script.main.bash.build
+#&'main' _us_build_init && "${script_name//[^A-Za-z0-9_]/_}_main" "$@"
+#:modeline
