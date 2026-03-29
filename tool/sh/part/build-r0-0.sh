@@ -4,7 +4,7 @@
 
 build_r0_0_lib__load ()
 {
-  true #"${GITDIR:=$(git rev-parse --git-dir)}"
+  : # "${GITDIR:=$(git rev-parse --git-dir)}"
 }
 
 
@@ -463,15 +463,15 @@ env__define__log_key ()
     } || {
 
       case "${log_key:-}" in ( *":%%.do"* )
-        # if '%.do[<pid>]' pattern is already present, only add own PID,
+        # NOTE: if '%.do[<pid>]' pattern is already present, only add own PID,
         # and abbreviate prev
         log_key=$( sed -E '
           s/:%%.do\[((([0-9\/-]+\/)?[0-9]{3})[0-9]*)\]/:%%.do[\2-\/'$$']/
         ' <<< "${log_key:?}" )
-        # And at some point concat PID's to fixed with
-        #log_key=$( sed -E '
+        # And at some point concat PID\'s to fixed with
+        # log_key=$( sed -E '
         #    s/([0-9\/]+)(\/[0-9]+)/\3/
-        #' <<< "${log_key:?}" )
+        # ' <<< "${log_key:?}" )
       ;; ( * )
         log_key="${log_key:-}${log_key:+:}${BUILD_SCRIPT//default/%%}[$$]"
       ;; esac
@@ -639,4 +639,4 @@ env__define__us_libs ()
   sh_include lib-load
 }
 
-#
+# Id: build-r0-0  ex:ft=bash:

@@ -310,13 +310,15 @@ userscripts::preproc::_process_loop () {
           current_block+=${us_pp_line}$'\n'
         done
       ;;
-    ( '#!'* )
-      #echo "$us_pp_shebang"
-      echo "#!/usr/bin/env $us_pp_lang"
-      continue ;;
-    ( '##'* ) false ;;
-    ( '#'* ) continue ;;
-    ( * ) false ;;
+    ( '#!'* ) # Replace shebang
+        #echo "$us_pp_shebang"
+        echo "#!/usr/bin/env $us_pp_lang"
+        continue ;;
+    ( '##'* ) # Reformat to normal cpp/gpp directive
+        us_pp_line=${us_pp_line:1}
+        false ;;
+    ( '#'* ) continue ;; # Strip all other comments or directives
+    ( * ) false ;; # Pass-through line, no processing
     esac; then
       #declare -p current_{dir,param,op,block,literal}
       _us_pp_op_${_op} || {

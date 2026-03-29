@@ -6,9 +6,10 @@ userscripts::preproc::build_main ()
 {
 : alias us_build_main
 : about 'Shortcut to build <target> from <target>.build'
-  local exec=0
+  local exec=0 check=1
   while (($#))
   do case "$1" in
+    ( --update ) check=0 ;;
     ( --run | --exec ) exec=1 ;;
     ( * ) false ;;
     esac && shift || break
@@ -25,7 +26,12 @@ userscripts::preproc::build_main ()
     >&2 echo "$script_cmdname $$: Warning: should probably not overwrite currently running script"
     script_build+=.new
   fi
-  if [[ $script_build -ot $1 ]]
+  # TODO: need to check the whole include list here. but not sure where to store
+  # that yet. probably track name/target mapping in user data
+  if ! ((check)) || {
+    # mapfile -t deps < "$us_pp_output.inc.list"
+    [[ $script_build -ot $1 ]]
+  }
   then
     userscripts::preproc::main "$@" ||
       failerr "E$? Building ${script_build}" || return
@@ -36,15 +42,6 @@ userscripts::preproc::build_main ()
   fi
   if ((exec))
   then chmod +x "$script_build" && exec "$script_build" "${@}"; fi
-}
-
-userscripts::preproc::run_main ()
-{
-: alias us_run_main
-: about 'Shortcut for us-build --run'
-# to use in /usr/bin/env shebang if that supports just one argument, but not
-# even sure that applies
-  userscripts::preproc::build_main --run "$@"
 }
 
 userscripts::preproc::gpp ()
@@ -90,8 +87,10 @@ userscripts::preproc::gpp ()
   )
   # Custom mode that seems to work for shell (and strips unix line comments)
   gpp_shell_mode=(
+    # XXX: any \ occurence is captured by the PP unless quoted
     +s "\"" "\"" "\\"
     +s "'" "'" "\\"
+    # XXX: strip comments
     #+c "\n#\b" "\n"
     #+c "\n#\n" ""
   )
@@ -144,6 +143,11 @@ userscripts::preproc::main ()
         then cat "$us_pp_output"
         else [[ ${first_script-} ]] || first_script=$us_pp_output; fi
       else
+        # XXX: script is not compatible with cpp/g++. But need to recurse to
+        # get proper sources list.
+        #cpp -M "$us_pp_output" > "$us_pp_output.inc.list"
+        # List all root includes
+        #grep -Po '^#include <\K.*$' "$us_pp_output" | tr -d '>' > "$us_pp_output.inc.list"
         _us_gpp shell_mode "${gppargs[@]}" -o "$us_pp_output.i" "$us_pp_output" ||
           failerr "$$ us-pp: E$? running gpp ${us_pp_output}" || return
         ((QUIET)) || >&2 echo "$$ us-gpp: ready: $us_pp_output.i"
@@ -151,6 +155,8 @@ userscripts::preproc::main ()
           cat "$us_pp_output.i"
         else [[ ${first_script-} ]] || first_script=$us_pp_output.i; fi; fi
     else
+      #cpp -M "$file" > "$file.inc.list"
+      #grep -Po '^#include <\K.*$' "$file" | tr -d '>' > "$file.inc.list"
       _us_gpp shell_mode "${gppargs[@]}" -o "$file.i" "$file" ||
         failerr "$$ us-pp: E$? running gpp ${file}" || return
       ((QUIET)) || >&2 echo "$$ us-gpp: ready: $file.i"
@@ -203,6 +209,24 @@ TODO: build-in pp main inc docstrings
   echo
   echo "Options:"
   printf.lines.array-map us_pp_main_sub_man
+}
+
+userscripts::preproc::run_main ()
+{
+: alias us_run_main
+: about 'Shortcut for us-build --run'
+# to use in /usr/bin/env shebang if that supports just one argument, but not
+# even sure that applies ever
+  userscripts::preproc::build_main --run "$@"
+}
+
+userscripts::preproc::update_main ()
+{
+: alias us_update_main
+: about 'Shortcut for us-build --update'
+# to use in /usr/bin/env shebang if that supports just one argument, but not
+# even sure that applies ever
+  userscripts::preproc::build_main --update "$@"
 }
 
 # Id: us-pp-cli                                  vim:set ft=bash sw=2 sts=2 et:

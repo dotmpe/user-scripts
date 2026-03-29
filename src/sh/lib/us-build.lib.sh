@@ -71,7 +71,7 @@ us_build_init () # ~
   } || {
     >&2 echo Need context "${us_preproc_initbase}"
     us_build_context "${us_preproc_initbase}" ||
-      return
+      failerr "E$? building context" || return
     us_preproc_src+=( "$ctx_dir/$us_preproc_initimport.sh" )
   }
 

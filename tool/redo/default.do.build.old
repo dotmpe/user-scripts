@@ -1,0 +1,14 @@
+# TODO: clean up old us-build.lib stuff
+
+#define ctx1 "${U_S:?}/tool/sh/part"
+#define ctx2 "${U_S:?}/tool/redo/part"
+#define ctx3 "${U_S:?}/tool/us/part"
+##define ctx0 "${U_S:?}/tool/build/part"
+
+#resolve scr sh-util $ctx3
+
+#resolve scr build-r0.0 $ctx1
+
+#resolve scr default-do $ctx2
+
+#modeline ex:ft=lest-txt:

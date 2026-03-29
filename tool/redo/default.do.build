@@ -1,12 +1,15 @@
-#define ctx1 "${U_S:?}/tool/sh/part"
-#define ctx2 "${U_S:?}/tool/redo/part"
-#define ctx3 "${U_S:?}/tool/us/part"
-##define ctx0 "${U_S:?}/tool/build/part"
+#!/usr/bin/env bash
+#
+# Default redo target/recipe script file for User-Scripts project
+#
+# Copyright 2026 hari <dev@dotmpe>
+#
+# Distributed under terms of the MIT license.
 
-#resolve scr sh-util $ctx3
+##include <build-r0-0.sh>
+##include <sh-error.sh>
 
-#resolve scr build-r0.0 $ctx1
+##include <user-script.build.xredo.bash>
+##include <default-do.sh>
 
-#resolve scr default-do $ctx2
-
-#modeline ex:ft=lest-txt:
+#:modeline

@@ -343,7 +343,7 @@ envd_export ()
 }
 
 # Load parts and track in ENVD_PART
-envd_load ()
+envd_load () # XXX: was env-require
 {
   $LOG debug :env-load "Looking for part filess" "$*"
   declare ENVD_NAME ENVD_SRC ENVD_oldPATH=$PATH
@@ -351,15 +351,15 @@ envd_load ()
   #[[ "${ENVD_PATH+set}" ]] && export PATH=$ENVD_PATH:$ENVD_oldPATH
   for ENVD_NAME
   do
-    $LOG info ":env-require" "Looking for pending env part" "$ENVD_NAME"
+    $LOG info ":env-load" "Looking for pending env part" "$ENVD_NAME"
     envd_lookup ENVD_SRC "$ENVD_NAME" &&
     ENVD_PART["$ENVD_NAME"]=$ENVD_SRC &&
     sys_default ENVD_TYPE["$ENVD_NAME"] "" ||
-        $LOG error :env-require "Unable to locate '$ENVD_NAME'" \
+        $LOG error :env-load "Unable to locate '$ENVD_NAME'" \
             "E$?:${ENVD_PATH:-}" $? || return
   done
   source_all $(for ENVD_NAME; do echo "${ENVD_PART[$ENVD_NAME]}"; done) || {
-    $LOG error :env-require "Unexpected error sourcing '$*'" E$?
+    $LOG error :env-load "Unexpected error sourcing '$*'" E$?
     return 1
   }
   [[ -z "${ENVD_PATH+set}" ]] || export PATH=$ENVD_oldPATH
@@ -452,21 +452,22 @@ envd_restart ()
   lib_init "${LIB_DEP[@]}"
 }
 
+# was env-load/env-require
 envd_require () # ~ <Names...>
 {
   #test -n "${ENVD_TAG-}" || return ${_E_script:?}
   #declare -n env_dep=ENVD_DEP["${ENVD_TAG:?}"]
   #env_dep=${env_dep-}${env_dep:+ }$*
 
-  $LOG debug :env-require "Checking for" "$*"
+  $LOG debug :envd-require "Checking for" "$*"
   set -- $(filter_args "not envd_declared" "$@") &&
   [[ $# -eq 0 ]] && return
   ! "${envd_boot:-false}" || {
-    $LOG debug :env-require "Pending" "$*"
+    $LOG debug :envd-require "Pending" "$*"
     ENVD_PENDING="$*"
     return ${_E_retry:-198}
   }
-  $LOG debug :env-require "Declaring" "$*"
+  $LOG debug :envd-require "Declaring" "$*"
   envd_define "$@"
 }
 
@@ -529,4 +530,4 @@ envd_var_update () # ~ <Name> [<Bases..>]
   esac
 }
 
-#
+# Id: U-S:envd.lib                                                 ex:ft=bash:

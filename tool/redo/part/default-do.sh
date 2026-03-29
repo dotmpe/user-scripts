@@ -19,11 +19,11 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
     test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
   }
 
-  # Use external script during dev
-  . ${U_S:?}/tool/build/part/default-do-env@dev.sh || return
+  # FIXME: dynamic env... Use external script during dev
+  #. ${U_S:?}/tool/build/part/default-do-env@dev.sh || return
 
-  true "${ENV:="@dev"}"
-  true "${APP:="@User-Scripts/0.0.2-dev"}"
+  : "${ENV:="@dev"}"
+  : "${APP:="@User-Scripts/0.0.2-dev"}"
 }
 
 # Log-like handler for main default.do routines
@@ -33,7 +33,7 @@ default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
   test -n "$lk" -a "${lk:0:1}" = '$' && {
     lk="${log_key:-REDO[$$]}${log_key:+}(::${lk:1})"
   } ||
-    true "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
+    : "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
   $LOG "${1:-notice}" "$lk" "${3:?}" "${4:-}" ${5:-}
 }
 # XXX:
@@ -94,6 +94,11 @@ default_do_main ()
         sh_error E_BS -eq "${_E_next:-196}" || return $E_BS
     }
 
+  #PATH+=$U_S/src/sh/lib
+  . os.lib.sh
+  . sys.lib.sh
+  . envd.lib.sh
+
   test 0 -eq ${STATUS:-1} || case "${1:?}" in
 
     # 'all' is the only special redo-builtin (it does not show up in
@@ -117,13 +122,13 @@ default_do_main ()
     # XXX: fix non-recursive env-require
 
     ${HELP_TARGET:-help}|-help|-h ) ${BUILD_TOOL:?}-always &&
-        env_require build-libs || return
+        envd_load build-lib || return
         build__usage_help
       ;;
 
     # Default build target
     all|@all|:all )
-        env_require build-libs || return
+        envd_load build-lib || return
         build__all
       ;;
 
@@ -147,9 +152,12 @@ test -z "${REDO_RUNID:-}" || {
 
   sh_mode strict build || return
 
-  ! "${US_DEBUG:-false}" || $LOG info :default.do:main "Entering build script" \
+  : "${US_DEBUG:=${DEBUG:=0}}"
+
+  ! ((DEBUG)) ||
+    $LOG info :default.do:main "Entering build script" \\
       "build-id:$REDO_RUNID $0:($#) $*"
   default_do_main "$@"
 }
 
-# Id: U-S::default-do
+# Id: U-S::default-do                                             :ex:ft=bash:
