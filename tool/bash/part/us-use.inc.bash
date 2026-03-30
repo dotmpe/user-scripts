@@ -7,7 +7,8 @@ userscripts::use ()
   local _prefix=$1:: _as=${2-}
   local _fullname _localname _privpref _import _funbody
   local -a functions
-  compgen -A function -X "!$1::*" -V functions &&
+  # XXX: newer bash? compgen -A function -X "!$1::*" -V functions &&
+  mapfile -t functions < <(compgen -A function -X "!$1::*")
   for _fullname in "${functions[@]}"
   do
     _localname=${_fullname#"$_prefix"}

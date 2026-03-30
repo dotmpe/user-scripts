@@ -122,7 +122,7 @@ userscripts::preproc::main ()
     ( --exec ) exec=1 ;;
     ( --help ) userscripts::preproc::main_help "${@:2}"; return ;;
     ( -- ) false ;;
-    ( --* ) userscripts::preproc::main_help "$@"; return ;;
+    ( --* ) userscripts::preproc::main_help "$@"; return 1 ;;
     ( -* ) gppargs+=( "$1" ) ;;
     ( * ) [[ -f $1 ]] && files+=( "$1" ) || false
     esac && shift || break
@@ -201,7 +201,7 @@ TODO: build-in pp main inc docstrings
   ! (($#)) || {
     local -n _doc='us_pp_main_sub_man["$sub"]'
     [[ ${_doc:+set} ]] || sub=--$sub
-    [[ ${_doc:+set} ]] || failerr "No such command $cmd ${1@Q}" || return
+    [[ ${_doc:+set} ]] || failerr "$script_cmdname: No such command $cmd ${1@Q}" || return
     echo "$cmd $sub: $_doc"
     return
   }
