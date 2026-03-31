@@ -1,4 +1,5 @@
-# Copyright 2026 hari <dev@dotmpe>
+#
+# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 
@@ -10,8 +11,8 @@ userscripts::preproc::_op_define ()
   [[ ! ${current_param:+set} ]] ||
     failerr "Unexpected parameter(s) ${current_param@Q}" || return
   #us_pp_param["$current_dir"]=$current_param
-  us_pp_defs["$current_dir"]=$current_block
-  us_pp_def_literal["$current_dir"]=$current_literal
+  us_pp_snip["$current_dir"]=$current_block
+  us_pp_snip_literal["$current_dir"]=$current_literal
   ((QUIET)) || >&2 echo "Defined ${current_dir} = ${current_block@Q}"
 }
 
@@ -56,16 +57,16 @@ userscripts::preproc::_op_snippet ()
 
   ( * )
       local -n _dir=current_dir
-      local -n _def='us_pp_defs["$_dir"]'
-      local -n _def_lit='us_pp_def_literal["$_dir"]'
-      [[ ${_def:+set} ]] ||
+      local -n _snip='us_pp_snip["$_dir"]'
+      local -n _snip_lit='us_pp_snip_literal["$_dir"]'
+      [[ ${_snip:+set} ]] ||
         failerr "No such snippet or definition ${_dir@Q}" || return
 
       ((current_literal)) || {
-        ((_def_lit)) || >&2 echo "Warn: Source is not literal ${_dir@Q}"
+        ((_snip_lit)) || >&2 echo "Warn: Source is not literal ${_dir@Q}"
       }
-      local _new="${_def//"{{$_dir.content}}"/"$current_param"}"
-      ((_def_lit)) && echo -n "$_new" || _us_pp_unshift_lineblock _new
+      local _new="${_snip//"{{$_dir.content}}"/"$current_param"}"
+      ((_snip_lit)) && echo -n "$_new" || _us_pp_unshift_lineblock _new
 
   esac
 }
@@ -187,9 +188,14 @@ userscripts::preproc::_prepfile ()
 {
 : private-prefix _us_pp
   us_pp_input=${2}
-  us_pp_shebang=$(head -n 1 "${2}")
-  : "${us_pp_shebang##*/}"
-  us_pp_lang=${_#* }
+  local _firstline="$(head -n 1 "${2}")"
+  [[ $_firstline == "#!"* ]] && {
+    us_pp_shebang=${_firstline:2}
+    : "${us_pp_shebang##*/}"
+    us_pp_lang=${_#* }
+  } || {
+    us_pp_lang=${2##*.}
+  }
   us_pp_inputreal="$(realpath "${2}")"
   : "${us_pp_inputreal%/*}"
   : "${us_pp_inputreal##*/},${_//\//-}${1}"
@@ -251,7 +257,6 @@ userscripts::preproc::_process_loop () {
     ['&']=snippet
     [':']=special
   )
-  local -A us_pp_{defs,def_literal}
   local -n _op='us_pp_op["$current_op"]'
   local current_{block,dir,literal,op,param}
   local us_pp_{line,nest}
@@ -336,10 +341,15 @@ userscripts::preproc::_procfile ()
 {
 : private-prefix _us_pp
   us_pp_input=${1}
-  us_pp_shebang=$(head -n 1 "$1")
-  : "${us_pp_shebang##*/}"
-  us_pp_alias=${_#* }
-  us_pp_lang=${us_pp_alias#*.}
+  local _firstline="$(head -n 1 "${1}")"
+  [[ $_firstline == "#!"* ]] && {
+    us_pp_shebang=${_firstline:2}
+    : "${us_pp_shebang##*/}"
+    us_pp_alias=${_#* }
+    us_pp_lang=${us_pp_alias#*.}
+  } || {
+    us_pp_lang=${1##*.}
+  }
   us_pp_inputreal="$(realpath "${1}")"
   : "${us_pp_inputreal%/*}"
   : "${us_pp_inputreal##*/},${_//\//-}.mpe"

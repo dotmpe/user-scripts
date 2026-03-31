@@ -6,7 +6,8 @@
 #
 # Distributed under terms of the MIT license.
 
-# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 : "${DEBUG:=0}"
@@ -18,7 +19,8 @@
     >&2 echo "$$$-\$ $0 ${*@Q}"
 }
 # Id: debug.sh.h                                vim:set ft=bash sw=2 sts=2 et:
-# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 set -euo pipefail
@@ -59,11 +61,25 @@ _us_pp_init ()
 _us_pp_load ()
 {
   # Make app user-data driven
-  declare -A us_pp_{defs,def_literal}
+  declare -gA us_pp_{snip,snip_literal}
+  declare -ga us_pp_configs us_gpp_{def,inc}s
+
   : "${UC_DATA_DIR:=/var/local/statusdir}"
   : "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}"
-  #cache_loadmaps "$us_pp_data" us_pp_{defs,def_literal,lang}
+  #cache_loadmaps "$us_pp_data" us_pp_{snip,snip_literal,lang}
   [[ ! -s $us_pp_data ]] || . "$us_pp_data"
+
+  #[[ ! ${EWD:+set} ]] || {
+  for config in "${us_pp_configs[@]}"
+  do
+    [[ -e "$config" ]] || continue
+    . "$config" ||
+      failerr "E$? while loading ${config@Q}" || return
+  done
+  [[ ${us_gpp_incs[*]:+set} ]] || {
+    us_gpp_incs+=( "$HOME/bin" "."  )
+  }
+
   declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
 }
 
@@ -73,11 +89,13 @@ _us_pp_load ()
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]
 then
-  script_cmdname="${BASH_SOURCE[0]##*/}"
-  [[ $script_cmdname == *.* ]] &&
-    script_name="${script_cmdname%.*}" ||
-    script_name="${script_cmdname}"
-  script_basename="${script_name%%.*}"
+  script_srcname="${BASH_SOURCE[0]##*/}"
+  script_cmdname="${0##*/}"
+  script_nameexts="${script_cmdname#*.}"
+  # TODO: want may be to recognize current (script) language tag
+  script_name="${script_cmdname%.*}"
+  #[[ $script_name == *.* ]] &&
+  script_basename="${script_srcname%%.*}"
   #shellcheck disable=1009,1054,1056,1072,1073,1083
   _us_pp_init && _us_pp_load && us_pp_main "$@"; exit
 fi

@@ -1,4 +1,5 @@
-# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 
@@ -90,9 +91,11 @@ userscripts::preproc::gpp ()
     # XXX: any \ occurence is captured by the PP unless quoted
     +s "\"" "\"" "\\"
     +s "'" "'" "\\"
+  )
+  gpp_shell_nc_mode=( "${gpp_shell_mode[@]}"
     # XXX: strip comments
-    #+c "\n#\b" "\n"
-    #+c "\n#\n" ""
+    +c "\n#\b" "\n"
+    +c "\n#\n" ""
   )
   # Testing; could not get {% ... %} syntax to work
   gpp_jinja_mode=(
@@ -103,8 +106,20 @@ userscripts::preproc::gpp ()
     -M "{%" " %}" "%" " " "\n" "(" ")"
   )
   declare -n argv=gpp_${1}
-  argv+=( -I$HOME/bin -DLANG=$us_pp_lang )
-  command gpp "${argv[@]:?}" "${@:2}"
+  shift
+  local tag path
+  local -a args
+  for tag in "${us_gpp_defs[@]}" "LANG=$us_pp_lang"
+  do
+    args+=( -D"${tag}" )
+  done
+  for path in "${us_gpp_incs[@]}"
+  do
+    args+=( -I"${path}" )
+  done
+  ! ((DEBUG)) ||
+    >&2 echo "> command gpp ${args[*]@Q} ${argv[*]@Q} ${*@Q}"
+  command gpp "${args[@]}" "${argv[@]}" "${@}"
 }
 
 userscripts::preproc::main ()
@@ -112,9 +127,11 @@ userscripts::preproc::main ()
 : alias us_pp_main
   local -a files=() gppargs=()
   local run_gpp=1 run_us_pp=1 output=0 exec=0 file first_script
+  local -I us_gpp_mode
   while (($#))
   do case "$1" in
     ( --gpp ) ;;
+    ( --gpp=* ) us_gpp_mode=${1:6} ;;
     ( --no-gpp ) run_gpp=0 ;;
     ( --no-process ) run_us_pp=0 ;;
     ( --output ) output=1 ;;
@@ -127,6 +144,7 @@ userscripts::preproc::main ()
     ( * ) [[ -f $1 ]] && files+=( "$1" ) || false
     esac && shift || break
   done
+  : "${us_gpp_mode:=shell_mode}"
   ((${#files[*]})) ||
     failerr "$$ us-pp: Preprocessor expects input file argument" || return
   # XXX: want to share/access some, output in particular
@@ -148,7 +166,7 @@ userscripts::preproc::main ()
         #cpp -M "$us_pp_output" > "$us_pp_output.inc.list"
         # List all root includes
         #grep -Po '^#include <\K.*$' "$us_pp_output" | tr -d '>' > "$us_pp_output.inc.list"
-        _us_gpp shell_mode "${gppargs[@]}" -o "$us_pp_output.i" "$us_pp_output" ||
+        _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$us_pp_output.i" "$us_pp_output" ||
           failerr "$$ us-pp: E$? running gpp ${us_pp_output}" || return
         ((QUIET)) || >&2 echo "$$ us-gpp: ready: $us_pp_output.i"
         if ((output)); then
@@ -157,7 +175,7 @@ userscripts::preproc::main ()
     else
       #cpp -M "$file" > "$file.inc.list"
       #grep -Po '^#include <\K.*$' "$file" | tr -d '>' > "$file.inc.list"
-      _us_gpp shell_mode "${gppargs[@]}" -o "$file.i" "$file" ||
+      _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$file.i" "$file" ||
         failerr "$$ us-pp: E$? running gpp ${file}" || return
       ((QUIET)) || >&2 echo "$$ us-gpp: ready: $file.i"
       if ((output)); then

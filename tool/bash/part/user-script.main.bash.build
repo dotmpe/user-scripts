@@ -6,11 +6,13 @@
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]
 then
-  script_cmdname="${BASH_SOURCE[0]##*/}"
-  [[ $script_cmdname == *.* ]] &&
-    script_name="${script_cmdname%.*}" ||
-    script_name="${script_cmdname}"
-  script_basename="${script_name%%.*}"
+  script_srcname="${BASH_SOURCE[0]##*/}"
+  script_cmdname="${0##*/}"
+  script_nameexts="${script_cmdname#*.}"
+  # TODO: want may be to recognize current (script) language tag
+  script_name="${script_cmdname%.*}"
+  #[[ $script_name == *.* ]] &&
+  script_basename="${script_srcname%%.*}"
   #shellcheck disable=1009,1054,1056,1072,1073,1083
   {{main.content}}
 fi

@@ -6,7 +6,8 @@
 #
 # Distributed under terms of the MIT license.
 
-# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 : "${DEBUG:=0}"
@@ -18,7 +19,8 @@
     >&2 echo "$$$-\$ $0 ${*@Q}"
 }
 # Id: debug.sh.h                                vim:set ft=bash sw=2 sts=2 et:
-# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 set -euo pipefail
@@ -54,11 +56,13 @@ _us_build_init ()
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]
 then
-  script_cmdname="${BASH_SOURCE[0]##*/}"
-  [[ $script_cmdname == *.* ]] &&
-    script_name="${script_cmdname%.*}" ||
-    script_name="${script_cmdname}"
-  script_basename="${script_name%%.*}"
+  script_srcname="${BASH_SOURCE[0]##*/}"
+  script_cmdname="${0##*/}"
+  script_nameexts="${script_cmdname#*.}"
+  # TODO: want may be to recognize current (script) language tag
+  script_name="${script_cmdname%.*}"
+  #[[ $script_name == *.* ]] &&
+  script_basename="${script_srcname%%.*}"
   #shellcheck disable=1009,1054,1056,1072,1073,1083
   _us_build_init && "${script_name//[^A-Za-z0-9_]/_}_main" "$@"
 fi
