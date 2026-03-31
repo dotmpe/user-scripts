@@ -37,11 +37,25 @@ _us_pp_init ()
 _us_pp_load ()
 {
   # Make app user-data driven
-  declare -A us_pp_{defs,def_literal}
+  declare -gA us_pp_{snip,snip_literal}
+  declare -ga us_pp_configs us_gpp_{def,inc}s
+
   : "${UC_DATA_DIR:=/var/local/statusdir}"
   : "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}"
-  #cache_loadmaps "$us_pp_data" us_pp_{defs,def_literal,lang}
+  #cache_loadmaps "$us_pp_data" us_pp_{snip,snip_literal,lang}
   [[ ! -s $us_pp_data ]] || . "$us_pp_data"
+
+  #[[ ! ${EWD:+set} ]] || {
+  for config in "${us_pp_configs[@]}"
+  do
+    [[ -e "$config" ]] || continue
+    . "$config" ||
+      failerr "E$? while loading ${config@Q}" || return
+  done
+  [[ ${us_gpp_incs[*]:+set} ]] || {
+    us_gpp_incs+=( "$HOME/bin" "."  )
+  }
+
   declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
 }
 
