@@ -43,14 +43,15 @@ userscripts::preproc::_op_generate ()
 userscripts::preproc::_op_snippet ()
 {
 : private-prefix _us_pp
+  local lk=snippet:${current_dir}
   case "$current_dir" in
   ( debug ) echo '#include <debug.sh.h>' ;;
 
-  ( log ) [[ ${us_pp_lang} = bash ]] && {
-          echo "export LOG=\$HOME/bin/tool/sh/log.sh"
-          declare -f failerr userscripts::core::echo_stderr_with_status
-          #declare -f failerr User-Script.Core.echo-stderr-with-status
-        }
+  ( log ) [[ ${us_pp_lang} = bash ]] ||
+          failerr "$lk: Unsupported build langauge ${us_pp_lang}" || return
+        echo "export LOG=\$HOME/bin/tool/sh/log.sh"
+        declare -f failerr userscripts::core::echo_stderr_with_status
+        #declare -f failerr User-Script.Core.echo-stderr-with-status
       ;;
 
   ( strict ) echo '#include <strict.sh.h>' ;;
@@ -74,11 +75,12 @@ userscripts::preproc::_op_snippet ()
 userscripts::preproc::_op_special ()
 {
 : private-prefix _us_pp
+  local lk=special:$current_dir
   case "$current_dir" in
 
   ( data )
       [[ ${current_param:+set} ]] ||
-        failerr "Expected parameter(s) ${current_dir@Q}" || return
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
       local file rest
       read -r file rest <<< "$current_param"
       [[ ! ${rest:+set} ]] || failerr "Surplus parameter(s) ${rest@Q}" || return
@@ -88,7 +90,7 @@ userscripts::preproc::_op_special ()
 
   ( declare )
       [[ ${current_param:+set} ]] ||
-        failerr "Expected parameter(s) ${current_dir@Q}" || return
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
       local -a args
       read -r -a args <<< "$current_param"
       # XXX: bash format
@@ -96,25 +98,33 @@ userscripts::preproc::_op_special ()
       declare "${args[@]}"
     ;;
 
+  ( generator )
+      # ((DEV))
+      #echo "GENERATOR=\"$$/$0 from ${us_pp_input@Q} at $(date --iso=sec)\""
+      echo "GENERATOR=\"$$/$script_cmdname from ${us_pp_input@Q} at $(date --iso=sec)\""
+    ;;
+
   ( include )
       [[ ${current_param:+set} ]] ||
-        failerr "Expected parameter(s) ${current_dir@Q}" || return
-      local name rest path ext
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      : "${us_pp_incs[*]}"
+      local name rest src ext path=${_// /:}
       read -r name rest <<< "$current_param"
-      [[ ! ${rest:+set} ]] || failerr "Surplus parameter(s) ${rest@Q}" || return
+      [[ ! ${rest:+set} ]] ||
+        failerr "Surplus parameter(s) ${rest@Q}" || return
       ! ((DEBUG)) || ((QUIET)) ||
         >&2 echo "Resolving $current_dir $name"
       for ext in .build "" .bash
-      do path=$(command -v "$name$ext") && break
+      do src=$(PATH=$path command -v "$name$ext") && break
       done
-      [[ -f "$path" ]] ||
+      [[ -f "$src" ]] ||
         failerr "Unable to resolve ${name@Q}" || return
-      _us_pp_unshift_source "$path"
+      _us_pp_unshift_source "$src"
     ;;
 
   ( license )
       [[ ! ${current_param:+set} ]] ||
-        failerr "Unexpected parameter(s) ${current_param@Q}" || return
+        failerr "$lk: Unexpected parameter(s) ${current_param@Q}" || return
       # Generate from template if set empty or LICENSE.head is missing
       [[ ${PROJECT_LICENSE_HEAD+set} ]] || {
         [[ ! -e LICENSE.head ]] || PROJECT_LICENSE_HEAD=$(< LICENSE.head)
@@ -137,7 +147,9 @@ EOM
         }
     ;;
 
-  ( modeline ) [[ ${us_pp_lang} = bash ]] && {
+  ( modeline ) [[ ${us_pp_lang} = bash ]] ||
+          failerr "$lk: Unsupported build langauge ${us_pp_lang}" || return
+        [[ ${us_pp_lang} = bash ]] && {
           #echo "# ex:ft=bash:"
           echo "# ${current_param:-vim:set ft=bash sw=2 sts=2 et:}"
         }
@@ -192,9 +204,19 @@ userscripts::preproc::_prepfile ()
   [[ $_firstline == "#!"* ]] && {
     us_pp_shebang=${_firstline:2}
     : "${us_pp_shebang##*/}"
-    us_pp_lang=${_#* }
+    : ${_#* }
+    us_pp_alias=$_
+    if [[ $us_pp_alias == *.* ]]
+    then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
+    else us_pp_lang=${us_pp_alias}
+    fi
   } || {
     us_pp_lang=${2##*.}
+    case "$us_pp_lang" in ( build | us-build )
+        : "${2%.*}"
+        : "${_##*.}"
+        us_pp_lang=${_}
+    esac
   }
   us_pp_inputreal="$(realpath "${2}")"
   : "${us_pp_inputreal%/*}"
@@ -205,9 +227,11 @@ userscripts::preproc::_prepfile ()
 
 userscripts::preproc::_process_loop () {
 : private-prefix _us_pp
+  declare -ga us_pp_sources
   _us_pp_open_filesource () {
     exec {new_fd}<"$1" ||
         failerr "E$? opening FD for file ${1@Q}" || return
+    us_pp_sources+=( "$1" )
     ! ((DEBUG)) || ((QUIET)) ||
       >&2 echo "Reading from ${1@Q} (FD #${new_fd})"
   }
@@ -316,7 +340,8 @@ userscripts::preproc::_process_loop () {
         done
       ;;
     ( '#!'* ) # Replace shebang
-        #echo "$us_pp_shebang"
+        >/dev/null 2>&1 command -v $us_pp_lang ||
+          >&2 echo "$lk: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
         echo "#!/usr/bin/env $us_pp_lang"
         continue ;;
     ( '##'* ) # Reformat to normal cpp/gpp directive
@@ -332,7 +357,13 @@ userscripts::preproc::_process_loop () {
       unset current_{block,dir,literal,op,param}
       continue
     fi
-
+    # XXX: another feature; accept bash \-continuations
+    ! ((${run_gpp:-0})) || {
+      # escape unquated? continuations so they do not get lost
+      [[ ${us_pp_line: -1:1} != "\\" ]] || {
+        us_pp_line="$us_pp_line\\"
+      }
+    }
     echo "$us_pp_line"
   done
 }
@@ -342,18 +373,29 @@ userscripts::preproc::_procfile ()
 : private-prefix _us_pp
   us_pp_input=${1}
   local _firstline="$(head -n 1 "${1}")"
-  [[ $_firstline == "#!"* ]] && {
+  if [[ $_firstline == "#!"* ]]
+  then
     us_pp_shebang=${_firstline:2}
     : "${us_pp_shebang##*/}"
-    us_pp_alias=${_#* }
-    us_pp_lang=${us_pp_alias#*.}
-  } || {
+    : ${_#* }
+    us_pp_alias=$_
+    if [[ $us_pp_alias == *.* ]]
+    then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
+    else us_pp_lang=${us_pp_alias}
+    fi
+  else
     us_pp_lang=${1##*.}
-  }
-  us_pp_inputreal="$(realpath "${1}")"
-  : "${us_pp_inputreal%/*}"
-  : "${us_pp_inputreal##*/},${_//\//-}.mpe"
-  us_pp_output=/tmp/${_}
+  fi
+  # XXX: us-build CLI is too primitive but dont feel like focussing on that rn
+  >/dev/null 2>&1 command -v $us_pp_lang ||
+    >&2 echo "$lk: Language set inaccessible interpreter ${us_pp_lang@Q}, use shebang for correct language"
+  if [[ ! ${us_pp_output:+set} ]]
+  then
+    us_pp_inputreal="$(realpath "${1}")"
+    : "${us_pp_inputreal%/*}"
+    : "${us_pp_inputreal##*/},${_//\//-}.mpe"
+    us_pp_output=/tmp/${_}
+  fi
   _us_pp_run
 }
 

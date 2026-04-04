@@ -105,7 +105,9 @@ userscripts::preproc::gpp ()
     -U "${default_user_mode[@]}"
     -M "{%" " %}" "%" " " "\n" "(" ")"
   )
-  declare -n argv=gpp_${1}
+  declare -n argv=gpp_${1}_mode
+  [[ ${argv:+set} ]] ||
+    failerr "us:gpp: No such mode ${1@Q}" || return
   shift
   local tag path
   local -a args
@@ -113,7 +115,7 @@ userscripts::preproc::gpp ()
   do
     args+=( -D"${tag}" )
   done
-  for path in "${us_gpp_incs[@]}"
+  for path in "${us_pp_incs[@]}"
   do
     args+=( -I"${path}" )
   done
@@ -126,25 +128,25 @@ userscripts::preproc::main ()
 {
 : alias us_pp_main
   local -a files=() gppargs=()
-  local run_gpp=1 run_us_pp=1 output=0 exec=0 file first_script
+  local run_gpp=1 run_us_pp=1 output=0 exec=0 {dest,srcs,}file first_script
   local -I us_gpp_mode
   while (($#))
   do case "$1" in
-    ( --gpp ) ;;
+    ( --exec ) exec=1 ;;
     ( --gpp=* ) us_gpp_mode=${1:6} ;;
+    ( --help ) userscripts::preproc::main_help "${@:2}"; return ;;
     ( --no-gpp ) run_gpp=0 ;;
     ( --no-process ) run_us_pp=0 ;;
     ( --output ) output=1 ;;
-    ( --process ) ;;
-    ( --exec ) exec=1 ;;
-    ( --help ) userscripts::preproc::main_help "${@:2}"; return ;;
+    ( --output=* ) destfile=${1:9} ;;
+    ( --sources=* ) srcsfile=${1:10} ;;
     ( -- ) false ;;
     ( --* ) userscripts::preproc::main_help "$@"; return 1 ;;
     ( -* ) gppargs+=( "$1" ) ;;
     ( * ) [[ -f $1 ]] && files+=( "$1" ) || false
     esac && shift || break
   done
-  : "${us_gpp_mode:=shell_mode}"
+  : "${us_gpp_mode:=shell}"
   ((${#files[*]})) ||
     failerr "$$ us-pp: Preprocessor expects input file argument" || return
   # XXX: want to share/access some, output in particular
@@ -161,11 +163,6 @@ userscripts::preproc::main ()
         then cat "$us_pp_output"
         else [[ ${first_script-} ]] || first_script=$us_pp_output; fi
       else
-        # XXX: script is not compatible with cpp/g++. But need to recurse to
-        # get proper sources list.
-        #cpp -M "$us_pp_output" > "$us_pp_output.inc.list"
-        # List all root includes
-        #grep -Po '^#include <\K.*$' "$us_pp_output" | tr -d '>' > "$us_pp_output.inc.list"
         _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$us_pp_output.i" "$us_pp_output" ||
           failerr "$$ us-pp: E$? running gpp ${us_pp_output}" || return
         ((QUIET)) || >&2 echo "$$ us-gpp: ready: $us_pp_output.i"
@@ -173,8 +170,6 @@ userscripts::preproc::main ()
           cat "$us_pp_output.i"
         else [[ ${first_script-} ]] || first_script=$us_pp_output.i; fi; fi
     else
-      #cpp -M "$file" > "$file.inc.list"
-      #grep -Po '^#include <\K.*$' "$file" | tr -d '>' > "$file.inc.list"
       _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$file.i" "$file" ||
         failerr "$$ us-pp: E$? running gpp ${file}" || return
       ((QUIET)) || >&2 echo "$$ us-gpp: ready: $file.i"
@@ -182,6 +177,10 @@ userscripts::preproc::main ()
         cat "$file.i"
       else [[ ${first_script-} ]] || first_script=$file.i; fi; fi
   done
+  if [[ ${srcsfile:+set} ]]
+  then > "$srcsfile" printf '%s\n' "${us_pp_sources[@]}"; fi
+  if [[ ${destfile:+set} ]]
+  then < "$first_script" > "$destfile" cat; fi
   if ((exec))
   then chmod +x "$first_script" && exec "$first_script" "${@}"; fi
 }

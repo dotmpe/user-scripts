@@ -62,29 +62,41 @@ _us_pp_load ()
 {
   # Make app user-data driven
   declare -gA us_pp_{snip,snip_literal}
-  declare -ga us_pp_configs us_gpp_{def,inc}s
+  declare -ga us_pp_{config,inc}s us_gpp_defs
 
   : "${UC_DATA_DIR:=/var/local/statusdir}"
-  : "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}"
-  #cache_loadmaps "$us_pp_data" us_pp_{snip,snip_literal,lang}
-  [[ ! -s $us_pp_data ]] || . "$us_pp_data"
+  assert_absolute "${us_pp_data:=$UC_DATA_DIR/pp,uc.data.bash}" \
+    "Use absolute paths for configuration (us-pp-data = ${us_pp_data@Q})" || return
 
-  #[[ ! ${EWD:+set} ]] || {
+  #cache_loadmaps "$us_pp_data" us_pp_{snip,snip_literal,lang}
+  [[ ! -s $us_pp_data ]] || . "$us_pp_data" ||
+    failerr "E$? while loading us-pp-data ${us_pp_data@Q}" || return
+
+  # NOTE: wont load relative paths unless caller sets up EWD to indicate
+  # basedir, not going to assume implied PWD as basedir.
   for config in "${us_pp_configs[@]}"
   do
+    [[ "${config:0:1}" == / ]] || {
+      [[ ${EWD:+set} ]] || {
+        failerr "Set EWD for relative path config (ignored: '${config@Q}')"
+        continue
+      }
+      config=$EWD/$config
+    }
+
     [[ -e "$config" ]] || continue
     . "$config" ||
       failerr "E$? while loading ${config@Q}" || return
   done
-  [[ ${us_gpp_incs[*]:+set} ]] || {
-    us_gpp_incs+=( "$HOME/bin" "."  )
+
+  # Default or additional defines (for GPP) are set per invocations. Default
+  # includes (for both PP and GPP) we can add already here.
+  [[ ${us_pp_incs[*]:+set} ]] || {
+    us_pp_incs+=( "$HOME/bin" "."  )
   }
 
   declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
 }
-
-
-
 
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]

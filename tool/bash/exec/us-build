@@ -41,7 +41,6 @@ userscripts::core::echo_stderr_with_status ()
     : alias failerr
 }
 
-
 _us_build_init ()
 {
   # XXX: build us-pp too...
@@ -50,8 +49,6 @@ _us_build_init ()
   _us_pp_load ||
     failerr "E$? Loading script env" || exit
 }
-
-
 
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]

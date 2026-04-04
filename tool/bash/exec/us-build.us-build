@@ -10,8 +10,12 @@
 #&'strict'
 #&'log'
 
-# TODO: build us_build_main () from inc
-
+# TODO: build us_build_main () from inc, see also us-pp
+#
+# NOTE: this main is dynamic based on the executable name, and multiple us_*_main
+# entry points exist. See userscript::use and its invocation in _us_pp_init for
+# how and where the import of functions from userscripts::* happens
+#
 _us_build_init ()
 {
   # XXX: build us-pp too...

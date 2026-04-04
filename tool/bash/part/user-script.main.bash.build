@@ -1,7 +1,7 @@
 # Copyright: (C) 2026 hari <hari@t470p>
 #
 # Distributed under terms of the MIT license.
-
+#
 #%'main'
 : "${BASH_SOURCE[0]##*/}"
 if [[ ${0##*/} == "${_%%.*}" || "${0##*/}" == "${_%%.*}".* ]]
@@ -17,5 +17,5 @@ then
   {{main.content}}
 fi
 #/main
-
+#
 # Id: user-script.main                           vim:set ft=bash sw=2 sts=2 et:
