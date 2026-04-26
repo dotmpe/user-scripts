@@ -1,17 +1,9 @@
 sh_error () # ~
 {
-  exit 202
-  STATUS=${?:-0}
-
-  test $# -eq 0 && {
-    return ${STATUS:?}
-  } || {
-    # TODO: env-symbol "${1:?}" && { "${BIN}" "$STATUS" "$@" && ... ; return; }
-    test "${STATUS:?}" "${@:?}" && {
-      ERROR=$STATUS
-      return ${STATUS:?}
-    }
-    return 0
-  }
+  local status=$?
+  local -n _STATUS=${1}
+  test "${status:?}" "${@:2}" && return
+  _STATUS=$status
+  return ${_STATUS:?}
 }
 # Copy: INC:

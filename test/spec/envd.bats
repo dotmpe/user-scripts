@@ -1,13 +1,12 @@
 #!/usr/bin/env bats
 
 base=envd
-load ../init
 
 setup ()
 {
-  sh_mode dev strict build
-  init &&
-  load assert extra stdtest &&
+  # XXX: sh_mode dev strict build
+  . ./env.bash &&
+  load ../helper/{assert,extra,stdtest} &&
   lib_load envd
 }
 

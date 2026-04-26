@@ -1227,9 +1227,9 @@ sys_debug_tag ()
 # Ensure variable is set or use argument(s) as value
 sys_default () # ~ <Name> <Value> ...
 {
-  : source "sys.lib.sh"
+: source "sys.lib.sh"
   declare -n ref=${1:?"$(sys_exc sys:default:ref@_1 "Variable name expected")"}
-  [[ "set" = "${ref+set}" ]] || ref=${2-}
+  [[ ${ref+set} ]] || ref=${2-}
 }
 
 # XXX: alias sys-each-cmd?

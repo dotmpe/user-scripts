@@ -19,12 +19,38 @@
 _us_build_init ()
 {
   # XXX: build us-pp too...
-  . us-pp &&
-  _us_pp_init &&
-  _us_pp_load ||
-    failerr "E$? Loading script env" || exit
+  . us-pp && _us_pp_init || failerr "E$? Loading script env" || exit
+  # Integrate env 
+  # loading additional scripts for preprocessor definitions
+  if [[ ${ENV:+set} && ( ${ENV_PARTS:+pend} || ${ENV_PEND:+set} ) ]]
+  then
+    : # us_std_env || failerr "E$? setting up build env" || return
+  else
+    if [[ ${EWD:+set} ]]
+    then
+      export ENV=local ENV_PEND=local
+      _us_pp_notice "Set local build env"
+    else
+      _us_pp_debug "No recognized build environment, continue with default us-pp"
+    fi
+  fi
+}
+
+_us_build_load ()
+{
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  _us_pp_load "$@" || return
+  local _arg
+  for _arg
+  do case "$_arg" in
+  ( *.h )
+      _us_pp_notice "PP off $_arg"
+      us_pp_off=1
+      us_gpp_mode=c_compat
+    ;; esac
+  done
 }
 
 #:include user-script.main.bash.build
-#&'main' _us_build_init && "${script_name//[^A-Za-z0-9_]/_}_main" "$@"
-#:modeline
+#&'main' _us_build_init && _us_build_load "$@" && "${script_name//[^A-Za-z0-9_]/_}_main" "$@"
+#:modeline vim:set ft=bash sw=2 sts=2 et:

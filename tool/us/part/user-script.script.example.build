@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#:include user-script.script.bash.build
+userscript-example-main ()
+{
+  (($#)) && : "$#" || : no
+  >&2 echo This is $FUNCNAME, "$_ arguments provided"
+  for (( i = 0; i <= $#; i++ ))
+  do
+    >&2 echo "$i: ${!i}"
+  done
+  >&2 echo "Functions: $(declare -F | line_count)"
+  >&2 echo "Variables: $(declare -p | line_count)"
+  >&2 echo "DEBUG: ${DEBUG:-(unset)}"
+  >&2 echo "LOG: ${LOG:-(unset)}"
+  >&2 echo "VERBOSE: ${VERBOSE:-(unset)}"
+  >&2 echo "QUIET: ${QUIET:-(unset)}"
+  >&2 echo "Mode flags: $-"
+  >&2 echo "Traps:"
+  trap
+}
+#&script userscript-example-main

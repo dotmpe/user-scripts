@@ -1,0 +1,18 @@
+#
+# Copyright: (C) 2026 hari <hari@t470p>
+#
+# Distributed under terms of the MIT license.
+#
+#:license
+#:generator
+#%script
+
+#&'debug'
+#&'strict'
+#:include us-env.sh.h
+
+#:include user-script.main.bash.build
+#&'main' {{script.content}} "$@"
+#/script
+#
+# Id: user-script.script                         vim:set ft=bash sw=2 sts=2 et:

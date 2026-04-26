@@ -86,20 +86,21 @@ default_do_main ()
   # default.do part we want these elsewhere where we can better control their
   # dependencies and effects.
 
-  declare ERROR STATUS BUILD_SELECT_SH
+  declare -I BUILD_SELECT_SH
+  if test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}"
+  then unset BUILD_SELECT_SH
+  else
+    . "${BUILD_SELECT_SH:?}" && exit ||
+      sh_error E_BS -eq "${_E_next:-196}" || exit $E_BS
+  fi
 
-  test ! -e "${BUILD_SELECT_SH:=./.build-select.sh}" &&
-    unset BUILD_SELECT_SH || {
-      . "${BUILD_SELECT_SH:?}" && STATUS=0 ||
-        sh_error E_BS -eq "${_E_next:-196}" || return $E_BS
-    }
-
+  # XXX: cleanup
   #PATH+=$U_S/src/sh/lib
-  . os.lib.sh
-  . sys.lib.sh
-  . envd.lib.sh
+  #. os.lib.sh
+  #. sys.lib.sh
+  #. envd.lib.sh
 
-  test 0 -eq ${STATUS:-1} || case "${1:?}" in
+  case "${1:?}" in
 
     # 'all' is the only special redo-builtin (it does not show up in
     # redo-{targets,sources}), everything else are proper targets. Anything
@@ -113,15 +114,15 @@ default_do_main ()
     -ood )          ${BUILD_TOOL:?}-always && build-ood >&2 ;;
     -sources )      ${BUILD_TOOL:?}-always && build-sources >&2 ;;
     -targets )      ${BUILD_TOOL:?}-always && build-targets >&2 ;;
-    "?"*|-show )    ${BUILD_TOOL:?}-always && build_ show-recipe >&2 ;;
-    "??"*|-which )  ${BUILD_TOOL:?}-always && build_ which-names >&2 ;;
     "???"*|-what )  ${BUILD_TOOL:?}-always && build_ what-parts >&2 ;;
+    "??"*|-which )  ${BUILD_TOOL:?}-always && build_ which-names >&2 ;;
+    "?"*|-show )    ${BUILD_TOOL:?}-always && build_ show-recipe >&2 ;;
 
     # These directly call functions are defined at the project level, but can
     # be inherited.
     # XXX: fix non-recursive env-require
 
-    ${HELP_TARGET:-help}|-help|-h ) ${BUILD_TOOL:?}-always &&
+    "${HELP_TARGET:-help}"|-help|-h ) ${BUILD_TOOL:?}-always &&
         envd_load build-lib || return
         build__usage_help
       ;;

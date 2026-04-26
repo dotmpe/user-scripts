@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Compiled routines for us-cmp
+# TODO: Compiled routines for us-cmp
 
 us_cmp ()
 {

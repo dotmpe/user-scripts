@@ -305,7 +305,7 @@ envd_define__pathref ()
 {
   envd_defined "${1##*/}" && return
   #envd_define_from_path "${1#/*}" || return
-  stderr echo ENVD_TAG=${1##*/} envd_require "${1%/*}"
+  ! ((DEBUG)) || ((QUIET)) || >&2 echo ENVD_TAG=${1##*/} envd_require "${1%/*}"
   ENVD_TAG=${1##*/} envd_require "${1%/*}"
 }
 
@@ -397,14 +397,14 @@ envd_loadenv () # ~
   envd_var_update us-def envd &&
   envd_var_update envd-var-update envd || return
 
-  #stderr declare -p US_DEF envd_var_update
+  #! ((DEBUG)) || ((QUIET)) || >&2 declare -p US_DEF envd_var_update
 
   #declare pn pw pf fn
   #for pn in "${US_DEF[@]}_"
   #do
   #  pw="${pn:13}"
   #  pw="${pw//_/-}"
-  #  stderr echo "pw:$pw pn:$pn"
+  #  ! ((DEBUG)) || ((QUIET)) || >&2 echo "pw:$pw pn:$pn"
   #  [[ "set" = "${ENVD_TYPE["$pw"]+set}" ]] && continue
   #  read -r _ _ pf <<< "$(declare -F "$pn")"
   #  ENVD_PART["$pw"]=$pf
@@ -501,9 +501,9 @@ envd_var_update () # ~ <Name> [<Bases..>]
   local id
   id=${1:?"$(sys_exc envd:var-update:id@_1 "Name for type expected")"}
   declare -n type=ENVD_PART["$id"]
-  [[ "set" = ${type+set} ]] &&
+  [[ ${type+set} ]] || failerr "No type for $id" || return
   wid=$(str_word "$id") &&
-    # XXX:
+  # XXX:
   : ${type%.envd} &&
   typename=${_%.*} vartype=${_#*.} &&
   case "$vartype" in

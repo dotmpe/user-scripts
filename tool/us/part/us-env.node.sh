@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# companion specs for us-env exec
+# TODO: companion specs for us-env exec
 
 us-env:meta ()
 {

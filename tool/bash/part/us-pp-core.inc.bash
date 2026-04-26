@@ -6,6 +6,7 @@
 userscripts::preproc::_op_define ()
 {
 : private-prefix _us_pp
+  local lk=define:${current_dir}
 
 # TODO: use param for lang or other keys/attrs
   [[ ! ${current_param:+set} ]] ||
@@ -19,6 +20,7 @@ userscripts::preproc::_op_define ()
 userscripts::preproc::_op_generate ()
 {
 : private-prefix _us_pp
+  local lk=generate:${current_dir}
   case "$current_dir" in
 
   ( about )
@@ -45,16 +47,23 @@ userscripts::preproc::_op_snippet ()
 : private-prefix _us_pp
   local lk=snippet:${current_dir}
   case "$current_dir" in
-  ( debug ) echo '#include <debug.sh.h>' ;;
+  ( debug ) echo '#include <user-script.debug.sh.h>' ;;
 
   ( log ) [[ ${us_pp_lang} = bash ]] ||
           failerr "$lk: Unsupported build langauge ${us_pp_lang}" || return
-        echo "export LOG=\$HOME/bin/tool/sh/log.sh"
+        [[ ! -x ~/bin/tool/sh/log.sh ]] ||
+          printf ': "%s"\n' '${LOG:=$HOME/bin/tool/sh/log.sh}'
+        # echo "export LOG=\$HOME/bin/tool/sh/log.sh"
         declare -f failerr userscripts::core::echo_stderr_with_status
         #declare -f failerr User-Script.Core.echo-stderr-with-status
       ;;
 
-  ( strict ) echo '#include <strict.sh.h>' ;;
+  ( strict ) echo '#include <user-script.strict.sh.h>' ;;
+  ( us-host ) echo '#include <user-script.host-profile.sh.h>' ;;
+  ( us-basedir ) echo '#include <user-script.ewd.bash.h>' ;;
+  ( us-config ) echo '#include <user-script.configure.bash.h>' ;;
+  ( us-package ) echo '#include <user-script.package.bash.h>' ;;
+  ( verbosity ) echo '#include <user-script.build-verbosity.bash>' ;;
 
   ( * )
       local -n _dir=current_dir
@@ -93,9 +102,28 @@ userscripts::preproc::_op_special ()
         failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
       local -a args
       read -r -a args <<< "$current_param"
+      _us_pp_debug ":declare ${args[*]@Q}"
+      # TODO: parse flags, see define
       # XXX: bash format
-      #>&2 echo declare "${args[@]}"
       declare "${args[@]}"
+    ;;
+
+  ( define )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local -a args
+      read -r -a args <<< "$current_param"
+      [[ ${#args[*]} -gt 0 ]] ||
+        failerr "$lk: Cannot parse parameter(s)" || return
+      [[ ${#args[*]} -eq 1 ]] || {
+        [[ ${args[1]:0:1} != '(' ]] || failerr "TODO macro functions" || return
+      }
+      # TODO: parse flags
+      local -n _tag='args[0]'
+      local -n _sub='us_gpp_subs["$_tag"]'
+      [[ ${_sub:+set} ]] || us_gpp_defs+=( "$_tag" )
+      [[ ${#args[*]} -eq 1 ]] &&
+      _sub= || _sub="${args[*]:2}"
     ;;
 
   ( generator )
@@ -162,6 +190,7 @@ EOM
 userscripts::preproc::_op_template ()
 {
 : private-prefix _us_pp
+  local lk=template:${current_dir}
   case "$current_dir" in
     ( expand )
         local {key,value,map}name _x rest
@@ -196,6 +225,7 @@ userscripts::preproc::_op_template ()
   esac
 }
 
+# XXX: only bashunit.mpe still uses this, see _procfile
 userscripts::preproc::_prepfile ()
 {
 : private-prefix _us_pp
@@ -258,12 +288,16 @@ userscripts::preproc::_process_loop () {
   }
   _us_pp_readline ()
   {
+    local _cur_fd=${us_pp_fd}
     if ! IFS= read -r us_pp_line <&$us_pp_fd
     then
       #XXX: try: close
       exec {us_pp_fd}<&- &&
-      unset ${!us_pp_fd} ||
-        failerr "E$? closing FD $us_pp_fd" || return
+      unset ${!us_pp_fd} || {
+        us_pp_fail_stat=$?
+        us_pp_fail_fd=$_cur_fd
+        failerr "E$? closing FD $_cur_fd" $us_pp_fail_stat || return
+      }
       #/
       (( ${#us_pp_input_stack[*]} == 0 )) && return ${_E_break:?}
       return ${_E_next:?}
@@ -273,7 +307,6 @@ userscripts::preproc::_process_loop () {
   }
 
   # Prepare to run different directives
-#:declare -p us_pp_op
   local -A us_pp_op=(
     ['%']=define
     ['<']=template
@@ -295,12 +328,19 @@ userscripts::preproc::_process_loop () {
   else
     exec {new_fd}< <(< "$us_pp_input" . <(echo "${us_pp_filter}"))
   fi
+  us_pp_sources+=( "$us_pp_input" )
   us_pp_input_stack=( "$new_fd" )
+  if ((do_outline))
+  then
+    declare -ga us_pp_outline{,_tags}
+    us_pp_outline_level=0
+  fi
   # Main processing loop: read one line at a time, from last FD on stack until
   # all inputs are read
   while true
   do
     _us_pp_readline || {
+      # TODO: when in outliner, do individual SOF/EOF plus final end-of-input event
       test $_E_next -eq $? && continue || {
         test $_E_break -eq $_ && break || return $_
       }
@@ -326,7 +366,8 @@ userscripts::preproc::_process_loop () {
           _us_pp_readline || {
             test $_E_next -eq $? && continue || {
               test $_E_break -eq $_ || return $_
-              failerr "EOF while reading $current_dir block" || return
+              failerr "E$_ while reading $current_dir block" $_ || return
+              failerr "EOF while reading $current_dir block from $us_pp_fail_fd" $_ || return
             }
           }
           if [[ ${us_pp_line} == "#$current_op$current_dir"* ||
@@ -339,9 +380,14 @@ userscripts::preproc::_process_loop () {
           current_block+=${us_pp_line}$'\n'
         done
       ;;
+    ( '#!'[\!\ ]* ) # Interpret or discard outline header text lines
+        ((do_outline)) || continue
+        _us_pp_scan_${us_pp_outliner:?} || return
+        continue
+      ;;
     ( '#!'* ) # Replace shebang
         >/dev/null 2>&1 command -v $us_pp_lang ||
-          >&2 echo "$lk: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
+          >&2 echo "Warning: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
         echo "#!/usr/bin/env $us_pp_lang"
         continue ;;
     ( '##'* ) # Reformat to normal cpp/gpp directive
@@ -350,7 +396,6 @@ userscripts::preproc::_process_loop () {
     ( '#'* ) continue ;; # Strip all other comments or directives
     ( * ) false ;; # Pass-through line, no processing
     esac; then
-      #declare -p current_{dir,param,op,block,literal}
       _us_pp_op_${_op} || {
         test $_E_next -eq $? || return $_
       }
@@ -371,31 +416,71 @@ userscripts::preproc::_process_loop () {
 userscripts::preproc::_procfile ()
 {
 : private-prefix _us_pp
-  us_pp_input=${1}
-  local _firstline="$(head -n 1 "${1}")"
-  if [[ $_firstline == "#!"* ]]
+: about 'Setup input and output and invoke _run to process and write files'
+: extended 'Helper for us-pp main. '
+  # XXX: do shebang AND modeline scanning if process mode is not entirely clear
+  us_pp_input=${1:?}
+  us_pp_output=${2-}
+  if [[ $us_pp_input == - ]]
   then
-    us_pp_shebang=${_firstline:2}
-    : "${us_pp_shebang##*/}"
-    : ${_#* }
-    us_pp_alias=$_
-    if [[ $us_pp_alias == *.* ]]
-    then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
-    else us_pp_lang=${us_pp_alias}
-    fi
+    us_pp_input=/dev/stdin
+    ! ((DEBUG)) || ((QUIET)) ||
+      >&2 echo "Reading from standard input"
+    ! ((do_modeline)) ||
+      _ failerr "Cannot read modeline from standard input (ignored)"
   else
-    us_pp_lang=${1##*.}
+    if ((do_modeline)); then
+      if_ok "$(tail -n 1 "$us_pp_input")" &&
+      _us_pp_scan_modeline "${_:1}" ||
+        failerr "E$? file peek for ${us_pp_input@Q} modeline" || return
+    fi
   fi
+
+  if [[ ! ${us_pp_lang:+set} ]]; then
+    if [[ $us_pp_input == /dev/stdin ]]
+    then
+      failerr "Cannot read shebang from standard input" || return
+    fi
+    if [[ ${us_pp_output:+set} && "$us_pp_output" == *.* ]]
+    then us_pp_lang=${us_pp_output##*.}
+    else
+      local _firstline="$(head -n 1 "${1}")"
+      if [[ $_firstline == "#!"* ]]
+      then
+        us_pp_shebang=${_firstline:2}
+        : "${us_pp_shebang##*/}"
+        local arg _cmdline=( ${_#* } )
+        for arg in "${_cmdline[@]}"
+        do
+          case "$arg" in
+          ( env ) ;;
+          ( -* ) ;;
+          ( * ) us_pp_alias=$arg; break ;;
+          esac
+        done
+
+        if [[ $us_pp_alias == *.* ]]
+        then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
+        else us_pp_lang=${us_pp_alias}
+        fi
+      else
+        us_pp_lang=${us_pp_input##*.}
+      fi
+    fi
+  fi
+
   # XXX: us-build CLI is too primitive but dont feel like focussing on that rn
   >/dev/null 2>&1 command -v $us_pp_lang ||
-    >&2 echo "$lk: Language set inaccessible interpreter ${us_pp_lang@Q}, use shebang for correct language"
+    >&2 echo "us-pp: Warning: Inaccessible language interpreter ${us_pp_lang@Q}"
+
   if [[ ! ${us_pp_output:+set} ]]
   then
-    us_pp_inputreal="$(realpath "${1}")"
+    us_pp_inputreal="$(realpath "${us_pp_input}")"
     : "${us_pp_inputreal%/*}"
-    : "${us_pp_inputreal##*/},${_//\//-}.mpe"
+    : "${us_pp_inputreal##*/},${_//\//-}.mpe.$us_pp_lang"
     us_pp_output=/tmp/${_}
   fi
+
   _us_pp_run
 }
 
@@ -405,6 +490,54 @@ userscripts::preproc::_run ()
   ((QUIET)) || >&2 echo "$$ us-pp: reading: $us_pp_input"
   _us_pp_writefile || return
   ((QUIET)) || >&2 echo "$$ us-pp: done: $us_pp_output"
+}
+
+userscripts::preproc::_scan_default_outliner ()
+{
+: private-prefix _us_pp
+: about 'Read text into level headers and parse roles and tags format'
+  local word headerread=0
+  local -n _tags='us_pp_outline_tags[$us_pp_outline_level]'  _header='us_pp_outline[-1]'
+  : "${us_pp_line:1}"
+  : "${_//[^A-Za-z0-9_()#\!\$@%\&*|,\.:=+-]/ }"
+  for word in $_
+  do case "$word" in
+      ( "!"* )
+          : "${word##[^!]*}"
+          ((us_pp_outline_level+=${#_}))
+          us_pp_outline+=( "" )
+        ;;
+      ( "~"* ) ;;
+      ( "+"* )
+          TODO "Add project context tag"
+          _tags+=( "$word" )
+        ;;
+      ( "@"* )
+          TODO "Add generic context tag"
+          _tags+=( "$word" )
+        ;;
+      ( * ) _header+="${_header:+ }$word" ;;
+    esac
+  done
+}
+
+userscripts::preproc::_scan_modeline ()
+{
+: private-prefix _us_pp
+: about 'Parse language and outliner info from text'
+  local word
+  local -n _tags
+  : "${_//[^A-Za-z0-9_=:-]/ }"
+  for word in $_
+  do case "$word" in
+      ( ft=* ) us_pp_lang=${word:3}; return ;;
+      ( *:ft=*:* )
+          : "${word##*:ft=}"
+          : "${_%% *}"
+          us_pp_lang=$_; return ;;
+      ( * ) ;;
+    esac
+  done
 }
 
 userscripts::preproc::_writefile ()

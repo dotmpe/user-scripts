@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-#
-# us-pp - super simple shell-script preproc implementation and wrapper
-# 
-# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
-#
-# Distributed under terms of the MIT license.
 
 #
 # Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
@@ -18,7 +12,7 @@
   ((QUIET)) ||
     >&2 echo "$$$-\$ $0 ${*@Q}"
 }
-# Id: debug.sh.h                                vim:set ft=bash sw=2 sts=2 et:
+# Id: user-script.debug.sh.h                    vim:set ft=bash sw=2 sts=2 et:
 #
 # Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
@@ -26,7 +20,7 @@
 set -euo pipefail
 IFS=$' \t\n'
 # Id: strict.sh.h                               vim:set ft=bash sw=2 sts=2 et:
-export LOG=$HOME/bin/tool/sh/log.sh
+: "${LOG:=$HOME/bin/tool/sh/log.sh}"
 failerr () 
 { 
     userscripts::core::echo_stderr_with_status "$@"
@@ -43,25 +37,46 @@ userscripts::core::echo_stderr_with_status ()
 
 _us_pp_init ()
 {
-  # Load parts and generate functions to map some namespaced names
-  
-  PATH+=:$U_S/tool/bash/part
-  . us-core.inc.bash
-  . us-pp-core.inc.bash
-  . us-pp-cli.inc.bash
-  . us-shell.inc.bash
-  . us-str.inc.bash
-  . us-use.inc.bash
+  if [[ ${U_S:+set} ]]
+  then
+    # Load parts and generate functions to map some namespaced names
+    
+    PATH+=:$U_S/tool/bash/part
+    . us-core.inc.bash
+    . us-pp-core.inc.bash
+    . us-pp-cli.inc.bash
+    . us-shell.inc.bash
+    . us-str.inc.bash
+    . us-use.inc.bash
+    . us-std-env.inc.bash
 
-  userscripts::use userscripts::core
-  userscripts::use userscripts::string
-  userscripts::use userscripts::preproc
+    userscripts::use userscripts::core
+    userscripts::use userscripts::string
+    userscripts::use userscripts::preproc
+    if [[ ${ENV:+set} ]]; then
+      userscripts::use userscripts::stdenv
+    fi
+  else
+    >&2 echo "$$ us-pp: cannot continue without User-Script env"
+  fi
 }
 
 _us_pp_load ()
 {
-  # Make app user-data driven
-  declare -gA us_pp_{snip,snip_literal}
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  local _arg
+  for _arg
+  do case "$_arg" in
+  ( --lang=* )
+      us_pp_lang=${_arg:7}
+    ;;
+  ( --pwd )
+      export EWD=$PWD
+    ;; esac
+  done
+
+  # Make app user-data driven (load data into these from config)
+  declare -gA us_pp_{snip,snip_literal} us_gpp_subs
   declare -ga us_pp_{config,inc}s us_gpp_defs
 
   : "${UC_DATA_DIR:=/var/local/statusdir}"
@@ -73,28 +88,31 @@ _us_pp_load ()
     failerr "E$? while loading us-pp-data ${us_pp_data@Q}" || return
 
   # NOTE: wont load relative paths unless caller sets up EWD to indicate
-  # basedir, not going to assume implied PWD as basedir.
-  for config in "${us_pp_configs[@]}"
+  # basedir, not going to assume implied PWD as basedir for current env.
+  #local -n ref=us_pp_config
+  local ref
+  for ref in "${us_pp_configs[@]}"
   do
-    [[ "${config:0:1}" == / ]] || {
+    [[ "${ref:0:1}" == / ]] || {
       [[ ${EWD:+set} ]] || {
-        failerr "Set EWD for relative path config (ignored: '${config@Q}')"
+        [[ ! -e "$ref" ]] ||
+        >&2 echo "Set EWD for relative path config (ignored: ${ref@Q})"
         continue
       }
-      config=$EWD/$config
+      ref=$EWD/$ref
     }
 
-    [[ -e "$config" ]] || continue
-    . "$config" ||
-      failerr "E$? while loading ${config@Q}" || return
+    [[ -e "$ref" ]] || continue
+    us_pp_config=$ref
+    . "$ref" ||
+      failerr "E$? while loading ${ref@Q}" || return
   done
 
   # Default or additional defines (for GPP) are set per invocations. Default
   # includes (for both PP and GPP) we can add already here.
-  [[ ${us_pp_incs[*]:+set} ]] || {
-    us_pp_incs+=( "$HOME/bin" "."  )
-  }
+  [[ ${us_pp_incs[*]:+set} ]] || us_pp_incs+=( "$HOME/bin" "."  )
 
+  [[ ! ${us_pp_lang:+set} ]] ||
   declare -gn us_pp_filter='uc_pp_prefilter["$us_pp_lang"]'
 }
 
@@ -109,7 +127,7 @@ then
   #[[ $script_name == *.* ]] &&
   script_basename="${script_srcname%%.*}"
   #shellcheck disable=1009,1054,1056,1072,1073,1083
-  _us_pp_init && _us_pp_load && us_pp_main "$@"; exit
+  _us_pp_init && _us_pp_load "$@" && us_pp_main "$@"; exit
 fi
 
 # vim:set ft=bash sw=2 sts=2 et:

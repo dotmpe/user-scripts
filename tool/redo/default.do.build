@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S us-build.bash --pwd --modeline
 #
 # Default redo target/recipe script file for User-Scripts project
 #
@@ -6,8 +6,14 @@
 #
 # Distributed under terms of the MIT license.
 
+#:generator
+#&'strict'
+#&'verbosity'
+#&'debug'
+#&'log'
 ##include <build-r0-0.sh>
 ##include <sh-error.sh>
+##include <sh-mode.sh>
 
 ##include <user-script.build.xredo.bash>
 ##include <default-do.sh>
