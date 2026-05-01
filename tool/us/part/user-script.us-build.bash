@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# This is a few old build recipe related routines.
+#
 # Copyright B. van Berkum 2023-2026 <berend@dotmpe.com>
 #
 # Private data repository. No distribution.

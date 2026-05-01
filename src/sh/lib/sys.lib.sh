@@ -19,7 +19,7 @@ sys_lib__load ()
   if_ok "${OS_UNAME:=$(uname -s)}" &&
   if_ok "${OS_HOSTNAME:=$(hostname -s)}" || return
 
-  sys_debug_fun=sys_debug,sys_debug_tag,sys_selector_tag,sys_match_select,sys_debug_mode,sys_exc,sys_source_trace,sys_varf,sys_vfl,std_findent,sys_callers,if_ok,fnmatch,str_prefix
+  sys_debug_fun=sys_boolenv,sys_debug,sys_debug_tag,sys_selector_tag,sys_match_select,sys_debug_mode,sys_exc,sys_source_trace,sys_varf,sys_vfl,std_findent,sys_callers,if_ok,fnmatch,str_prefix
 }
 
 sys_lib__init ()
@@ -1102,6 +1102,25 @@ sys_astat () # ~ ( <Test-flag> <Test-value> )*
   : source "sys.lib.sh"
 }
 
+# Turn readable string into numeric normal bit boolean. Note return status for
+# true/false gives inverted boolean.
+# For use in ((...)) shell syntax except this does not set defaults.
+# Turn 1/yes/on/true (ie. truish) to 1, and 0/no/off/false into 0.
+# Use prefix to store result.
+sys_boolenv () # ~ <Prefix> <Vars...>
+{
+  local pref=$1
+  shift
+  local -n val
+  for val
+  do [[ ${val:+set} ]] || continue
+    case "${val,,}" in
+      ( 1 | true | on | yes | y | i ) declare -g ${pref}${!val}=1 ;;
+      ( 0 | false | off | no | n | o ) declare -g ${pref}${!val}=0 ;;
+    esac
+  done
+}
+
 # Return function call stack
 sys_callers () # ~ [<Frame>]
 {
@@ -1153,42 +1172,44 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
 {
   : source "sys.lib.sh"
   local lk=${lk-}:us:sys.lib:debug-mode
+  local _{VERBOSE,QUIET,ASSERT,DIAG,DEBUG,DEV}
+  sys_boolenv _ VERBOSE QUIET ASSERT DIAG DEBUG DEV
   case "$1" in
   ( assert ) ## \
     # Trigger more verbose responses about what exactly precipitates failures,
     # maybe do a bit more checking in the meanwhile but such actions normally
     # should be triggered by DIAG instead.
-    ! "${QUIET:-false}" && "${ASSERT:-${DIAG:-${DEBUG:-${DEV:-false}}}}" ;;
+    ! "${_QUIET:-false}" && "${_ASSERT:-${_DIAG:-${_DEBUG:-${_DEV:-false}}}}" ;;
   ( debug ) ## \
     # Provide more log level events, especially info and debug level
     # messages which would be far to verbose and many to generate normally.
     # Still, more detail should be configured on a per-script basis.
-    ! "${QUIET:-false}" && "${DEBUG:-${DEV:-false}}" ;;
+    ! "${_QUIET:-false}" && "${_DEBUG:-${_DEV:-false}}" ;;
   ( dev ) ## \
     # Its not production, it just has to work and act sensibly and without
     # pressure. Dev also triggers assert and debug modes.
-    ! "${RELEASE:-false}" && "${DEV:-false}" ;;
+    ! "${_RELEASE:-false}" && "${_DEV:-false}" ;;
   ( diag ) ## \
     # Go further than assert, and perform additional checks during normal
     # scripts, and even trigger completely diagnostic script branches.
-    "${DIAG:-${INIT:-${DEBUG:-false}}}" ;;
+    "${_DIAG:-${_INIT:-${_DEBUG:-false}}}" ;;
   ( exceptions )## \
     # To provide some very specific but verbose (stack) data for a user to see,
     # but normally turned off at quiet runs.
-    "${VERBOSE:-false}" || "${DIAG:-true}" || ! "${QUIET:-false}" ;;
+    "${_VERBOSE:-false}" || "${_DIAG:-true}" || ! "${_QUIET:-false}" ;;
   ( init ) ## \
   # Like debug, but specifically to distinguish 'init' scripts that do setup,
   # from parts actually in the sub command run.
-    "${INIT:-false}" ;;
+    "${_INIT:-false}" ;;
   ( quiet ) ## \
     # Setting verbose is the only env that overrides the quiet setting.
-    ! "${VERBOSE:-false}" || "${QUIET:-false}" ;;
+    ! "${_VERBOSE:-false}" || "${_QUIET:-false}" ;;
   ( release ) ## \
     # Its not production, it just has to work and act sensibly and without
     # pressure. Dev also triggers assert and debug modes.
-    "${RELEASE:-false}" && ! "${DEV:-false}" ;;
+    "${_RELEASE:-false}" && ! "${_DEV:-false}" ;;
   ( verbose )
-    "${VERBOSE:-false}" || ! "${QUIET:-false}"  ;;
+    "${_VERBOSE:-false}" || ! "${_QUIET:-false}"  ;;
 
   ( * )
     >&2 echo "sys.lib: No such mode ${1@Q}"

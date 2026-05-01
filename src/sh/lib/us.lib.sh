@@ -11,8 +11,10 @@ us_lib__init ()
 {
   #test -z "${ansi_uc_lib_init-}" || return $_
   lib_require sys str || return
-  ! { "${DEBUG:-false}" || "${DEV:-false}" || "${INIT:-false}"; } ||
-  ${LOG:?} info ":us:lib-load" "Initialized us.lib"
+  ! ((DEBUG)) || {
+    ! ((INIT)) && ! ((DEV))
+  } ||
+    ${LOG:?} info ":us:lib-load" "Initialized us.lib"
 }
 
 us_lib_man_1__env_init='us-lib:env-init user shell profile helper to get

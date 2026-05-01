@@ -12,4 +12,4 @@
 #endif
 #endif
 #
-# Id: user-script.env.bash                       vim:set ft=bash sw=2 sts=2 et:
+# Id: user-script.env.sh.h                       vim:set ft=bash sw=2 sts=2 et:

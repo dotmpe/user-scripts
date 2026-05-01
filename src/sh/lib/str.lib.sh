@@ -417,7 +417,7 @@ str_rematch ()
   [[ $1 =~ $2 ]]
 }
 
-str_trim () # ~ <Strings...> # Remove str-sws from both ends of each string
+str_trim0 () # ~ <Strings...> # Remove str-sws from both ends of each string
 {
   : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
@@ -449,7 +449,7 @@ str_trim () # ~ <Strings...> # Remove str-sws from both ends of each string
   : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   declare str_sws=${str_sws:-"[\n\t ]"}
-  while [[ 0 -lt $# ]]
+  while (($#))
   do
     : "${1##$str_sws}" &&
     : "${_%%$str_sws}" &&
@@ -457,17 +457,22 @@ str_trim () # ~ <Strings...> # Remove str-sws from both ends of each string
   done
 }
 
-strvar_trim () # ~ <String-vars...> # Remove str-sws from both ends of each string
+strvar_trim () # ~ <String-vars...> # Strip str-sws from both ends of each string
 {
   : source "str.lib.sh"
   [[ 0 -lt $# ]] || return ${_E_MA:-194}
   local -n __strvar
-  declare str_exp=${str_exp:-${str_sws:-"[\n\t ]"}}
+  declare str_exp="[${str_sws:-$' \t\n\r'}]"
   for __strvar
   do
-    : "${__strvar##$str_exp}" &&
-    : "${_%%$str_exp}" &&
-    __strvar="$_"
+    while [[ $__strvar == $str_exp* ]]
+    do
+      __strvar="${__strvar#$str_exp}"
+    done
+    while [[ $__strvar == *$str_exp ]]
+    do
+      __strvar="${__strvar%$str_exp}"
+    done
   done
 }
 
