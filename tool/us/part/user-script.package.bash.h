@@ -27,6 +27,20 @@
 
   package_writescripts
 
+  set +E
+  command_exists ()
+  {
+    : "${1:?Command name required}"
+    local _type results
+    for _type in builtin keyword
+    do
+      mapfile -t results < <(compgen -A $_type "$1") &&
+      [[ ${results[*]:+set} ]] && return
+      continue
+    done
+    false
+  }
+
   config_assertlocal <<EOM
 package_id=$package_id
 PACK_SH=$PACK_SH
@@ -35,7 +49,12 @@ do
   chmod +x "$script"
   : "${script##*/}"
   : "${_%.sh}"
-  echo declare -xf "$_"
+  cmdname=$_
+  if command_exists "$cmdname"
+  then >&2 echo "Command name ${cmdname@Q} is reserved, not adding script $script to local command env"
+    continue
+  fi
+  echo declare -xf "$cmdname"
   echo "$_ () { $script \"\$@\"; }"
 done)
 EOM
