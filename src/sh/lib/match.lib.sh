@@ -64,7 +64,7 @@ match_egrep () # ~ <String> <...>
 # match-egrep for 'extended' regular expressions.
 match_grep () # ~ <String> <...>
 {
-  local old_lc_collate=$LC_COLLATE
+  local old_lc_collate=${LC_COLLATE-}
   LC_COLLATE=C
   local length="${#1}"
   for (( i = 0; i < length; i++ )); do
@@ -74,7 +74,7 @@ match_grep () # ~ <String> <...>
       ( * ) printf '\%s' "$c" ;;
     esac
   done
-  LC_COLLATE=$old_lc_collate
+  [[ ${old_lc_collate:+set} ]] && LC_COLLATE=$old_lc_collate || unset LC_COLLATE
 }
 
 match_grep_old ()

@@ -48,7 +48,7 @@ _us_pp_init ()
     . us-shell.inc.bash
     . us-str.inc.bash
     . us-use.inc.bash
-    . us-std-env.inc.bash
+    # . us-std-env.inc.bash
 
     userscripts::use userscripts::core
     userscripts::use userscripts::string
