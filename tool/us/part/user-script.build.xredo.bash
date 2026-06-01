@@ -5,8 +5,8 @@ XREDO_TARGET="${REDO_PWD:+$REDO_PWD/}${REDO_TARGET:?}"
 XREDO_BASE=${XREDO_TARGET%%:*}
 XREDO_NODE=${XREDO_TARGET%:*}
 
-: "${EWD:=$REDO_STARTDIR}"
-: "${METADIR:=$EWD/.meta}"
+# : "${EWD:=$REDO_STARTDIR}"
+# : "${METADIR:=$EWD/.meta}"
 : "${LCACHE:=$METADIR/cache}"
 
 # Virtual ref for build root

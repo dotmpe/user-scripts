@@ -1,0 +1,50 @@
+#!/usr/bin/env -S us-build.bash --pwd --modeline --exec
+#
+# Build environment for User-Script
+#
+# XXX: the --exec flag is just for easy testing; once us is setup
+# the script should be inserted/sourced into custom env(s) for proper
+# testing and the flag and exec bits be removed.
+#
+# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
+# 
+# Distributed under terms of the MIT license.
+redo-ifdone "${US_LOCAL_ENV_BUILD}" &&
+. ./"${US_ENV_LOCAL}"
+#
+: "${SUITE:="Main"}"
+#
+: "${PROJECT_CACHE:=".meta/cache"}"
+: "${BUILD_RULES_BUILD:="${PROJECT_CACHE:?}/build-rules.list"}"
+: "${BUILD_RULES:=".meta/stat/index/build-rules-us.list"}"
+# New format in-line with stattab
+: "${BUILD_TARGETS:=".meta/stat/index/build-targets-us.list"}"
+# : "${BUILD_ENV_STATIC:=build-boot}"
+# : "${BUILD_TARGET_METHODS:=env context}"
+BUILD_ENV="build-rules rule-params from-local stderr- argv"
+# : "${BUILD_ENV:=stderr_ build-rules build-lib rule-params from-dist args}"
+# : "${BUILD_ENV_STATIC:=log-key build-env-cache}"
+# BUILD_UNRECURSE=true
+# XXX: for part:.meta/cache/components.list
+BUILD_ENV_FUN=build_copy_changed
+: "${LCACHE:=$METADIR/cache}"
+# Virtual ref for build root
+: "${XREDO_GLOBAL:=@}"
+: "${XREDO_BUILD:=${XREDO_GLOBAL}build:/}"
+: "${XREDO_DATA:=$METADIR/build}"
+: "${XREDO_CACHE:=$METADIR/build/cache}"
+# Aliases
+: "${A:=$XREDO_GLOBAL}"
+: "${At_Build:=$XREDO_BUILD}"
+: "${B:=$XREDO_DATA}"
+: "${C:=$XREDO_CACHE}"
+
+export verbosity="${verbosity:=${v:-4}}"
+
+: "${redo_opts:="-j4 --debug-pids"}"
+# build_env_targets="@config @env"
+build_all_targets="@test"
+: "${CTX:=@Strict @Dev @Online @Tidy}"
+C=${BUILD_CACHE:-.meta/cache}
+
+#:modeline Id: build.bash.build                  vim:set ft=bash sw=2 sts=2 et:

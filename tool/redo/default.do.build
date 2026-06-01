@@ -10,12 +10,12 @@
 #&'strict'
 #&'verbosity'
 #&'debug'
-#&'log'
+#&log
+#&us-build-config
+# include <user-script.build.config.bash.h>
 ##include <build-r0-0.sh>
 ##include <sh-error.sh>
 ##include <sh-mode.sh>
-
 ##include <user-script.build.xredo.bash>
 ##include <default-do.sh>
-
 #:modeline

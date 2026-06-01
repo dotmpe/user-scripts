@@ -12,19 +12,26 @@
   ((QUIET)) ||
     >&2 echo "$$$-\$ $0 ${*@Q}"
 }
-# Id: user-script.debug.sh.h                    vim:set ft=bash sw=2 sts=2 et:
+# Id: user-script.debug.sh.h                     vim:set ft=bash sw=2 sts=2 et:
 #
 # Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
 # Distributed under terms of the MIT license.
 set -euo pipefail
 IFS=$' \t\n'
-# Id: strict.sh.h                               vim:set ft=bash sw=2 sts=2 et:
-: "${LOG:=$HOME/bin/tool/sh/log.sh}"
+# Id: strict.sh.h                                vim:set ft=bash sw=2 sts=2 et:
+if [ -z "${LOG-}" ]
+then
+  if [ -x ~/bin/tool/sh/log.sh ]
+  then LOG=$HOME/bin/tool/sh/log.sh
+  fi
+fi
+if_ok "$(declare -F "failerr")" ||
 failerr () 
 { 
     userscripts::core::echo_stderr_with_status "$@"
 }
+if_ok "$(declare -F "userscripts::core::echo_stderr_with_status")" ||
 userscripts::core::echo_stderr_with_status () 
 { 
     local stat=${2:-$?};
@@ -48,7 +55,6 @@ _us_pp_init ()
     . us-shell.inc.bash
     . us-str.inc.bash
     . us-use.inc.bash
-    # . us-std-env.inc.bash
 
     userscripts::use userscripts::core
     userscripts::use userscripts::string

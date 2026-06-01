@@ -2,41 +2,52 @@
 
 # Created: 2018-11-14
 
-#require fnmatch sh-fun sh-mode sh-error
+default_do_default_env ()
+{
+  :
+#include <user-script.build.env.local.bash.h>
+}
 
 default_do_env () # ~ # Prepare shell profile with build-target handler
 {
-  test -n "${BUILD_ID:-}" || {
-    # . ${U_S:?}/tool/build/part/build-static.sh
-    CWD=${REDO_STARTDIR:?}
-    BUILD_TOOL=redo
-    BUILD_ID=$REDO_RUNID
-    BUILD_STARTDIR=$CWD
-    BUILD_BASE=${REDO_BASE:?}
-    BUILD_PWD="${CWD:${#BUILD_BASE}}"
-    test -z "$BUILD_PWD" || BUILD_PWD=${BUILD_PWD:1}
-    BUILD_SCRIPT=${BUILD_PWD}${BUILD_PWD:+/}default.do
-    test -z "$BUILD_PWD" && BUILD_PATH=$CWD || BUILD_PATH=$CWD:$BUILD_BASE
+  [[ ${BUILD_ID-} ]] || {
+    :
+#include <user-script.build.xredo.runtime.bash>
   }
 
-  # FIXME: dynamic env... Use external script during dev
-  #. ${U_S:?}/tool/build/part/default-do-env@dev.sh || return
+  # build_ do-env ||
+  #  default_do_ error \$do-env "Error getting %%.do env" "E$?" $?
 
-  : "${ENV:="@dev"}"
-  : "${APP:="@User-Scripts/0.0.2-dev"}"
+  if [[ ${BUILD_TARGET} = "$ENV_TARGET" ]]
+  then
+    default_do_default_env || return
+  elif [[ ${BUILD_TARGET} != "$ENV_TARGET" && ${BUILD_TARGET} != "$CONF_TARGET" ]]
+  then
+    declare -I BUILD_ENV_SH
+    if [[ ! -e "${BUILD_ENV_SH:=./.build-env.sh}" ]]
+    then
+      unset BUILD_ENV_SH
+      redo-ifchange "$ENV_TARGET" &&
+      . "$ENV_BASH" &&
+      redo-ifchange "$BUILD_ENV_TARGET" &&
+      . "$BUILD_ENV_BASH"
+    else
+      . "${BUILD_ENV_SH:?}" && exit ||
+        sh_error E_BS -eq "${_E_next:-196}" || exit $E_BS
+    fi
+  fi
 }
 
 # Log-like handler for main default.do routines
-default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
-{
-  declare lk=${2:-}
-  test -n "$lk" -a "${lk:0:1}" = '$' && {
-    lk="${log_key:-REDO[$$]}${log_key:+}(::${lk:1})"
-  } ||
-    : "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
-  $LOG "${1:-notice}" "$lk" "${3:?}" "${4:-}" ${5:-}
-}
-# XXX:
+# default_do_ () # ~ <1:Level-name> <2:Key> <3:Msg> <4:Ctx> <5:Stat>
+# {
+#   declare lk=${2:-}
+#   test -n "$lk" -a "${lk:0:1}" = '$' && {
+#     lk="${log_key:-REDO[$$]}${log_key:+}(::${lk:1})"
+#   } ||
+#     : "${lk:=${log_key:-REDO[$$]}${log_key:+}(::do-env)}"
+#   $LOG "${1:-notice}" "$lk" "${3:?}" "${4:-}" ${5:-}
+# }
 
 default_do_main ()
 {
@@ -72,9 +83,6 @@ default_do_main ()
   BUILD_TARGET_BASE=$2
   BUILD_TARGET_TMP=$3
 
-  #build_ do-env ||
-  #  default_do_ error \$do-env "Error getting %%.do env" "E$?" $?
-
   # Perform a standard ENV_BUILD build (with ENV_BUILD_ENV) if needed, and
   # source profile.
   default_do_env ||
@@ -94,11 +102,8 @@ default_do_main ()
       sh_error E_BS -eq "${_E_next:-196}" || exit $E_BS
   fi
 
-  # XXX: cleanup
-  #PATH+=$U_S/src/sh/lib
-  #. os.lib.sh
-  #. sys.lib.sh
-  #. envd.lib.sh
+  lib_load envd ||
+    failerr "E$? env failure" || return
 
   case "${1:?}" in
 

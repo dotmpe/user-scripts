@@ -24,22 +24,22 @@ userscripts::core::globmatch () {
   [[ ${2:+set} ]] && userscripts::string::globmatch "${@}"
 }
 
-userscripts::core::ignore-status () {
+userscripts::core::ignore_status () {
   "${@:?$FUNCNAME: Command arguments, $ENV_CTX}" || true
 : alias ignore
 }
 
-userscripts::core::not-status () {
+userscripts::core::not_status () {
   ! "${@:?$FUNCNAME: Command arguments, $ENV_CTX}"
 : alias not
 }
 
-userscripts::core::pass-status () {
+userscripts::core::pass_status () {
   return
 : alias if_ok
 }
 
-userscripts::core::set-status () {
+userscripts::core::set_status () {
   return ${1:?$FUNCNAME: Status number, $ENV_CTX}
 : alias status
 }

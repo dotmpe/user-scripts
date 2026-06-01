@@ -1,20 +1,17 @@
 ## Local mapping rules and development for new inline default.do parts.
 
-sh_mode strict
-
-us_env_build
+# XXX: cleanup us_env_build
 
 # Canonical, localized path
 : "${XREDO_TARGET#"$XREDO_BUILD"}"
 XREDO_BUILD_TARGET=$B/${XREDO_NODE:?}
-
 
 # Inline: -xredo-env,uc.sh
 
 case "${XREDO_TARGET}" in
 #case "${1:?}" in
 
-  ?* )
+  "?"* )
         uc_env_2625 -Q "${XREDO_TARGET:1}"
     ;;
 
@@ -34,7 +31,6 @@ case "${XREDO_TARGET}" in
 
   -* ) false ;;
   # - ) ;;
-
 
   .build/tests/*.tap )
         build_target__seq__source_do "tool/redo/recipe/_build_tests_*.tap.do" ;;

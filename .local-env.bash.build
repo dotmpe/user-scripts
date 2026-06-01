@@ -1,0 +1,27 @@
+#!/usr/bin/env -S us-build.bash --pwd --modeline --exec
+#
+# Environment for User-Script
+#
+# XXX: the --exec flag is just for easy testing; once us is setup
+# the script should be inserted/sourced into custom env(s) for proper
+# testing and the flag and exec bits be removed.
+#
+# Copyright 2018-2026 B. van Berkum <dev@dotmpe.com>
+# 
+# Distributed under terms of the MIT license.
+#
+#&'strict'
+#&'verbosity'
+#&'debug'
+#&us-configure
+#&'us-host-profile'
+#&log
+# XXX: maybe want configure to build ie. meta/config/... something
+# but do package first
+#&'us-basedir'
+#:include user-script.vnd.bash.h
+$LOG info :$0 "Ready"
+
+: "${APP:="@User-Scripts/0.0.2-dev"}"
+
+#:modeline Id: build   vim:set ft=bash sw=2 sts=2 et:

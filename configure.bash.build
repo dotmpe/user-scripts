@@ -2,36 +2,23 @@
 #
 # configure.bash{,.build} - Configuration generator for User-Script
 #
-# Copyright B. van Berkum  2018-2026 <dev@dotmpe.com>
+# Copyright 2018-2026 B. van Berkum  <dev@dotmpe.com>
 # 
 # Distributed under terms of the MIT license.
-
+#
+##define US_CONFIGURE
+#:include us.cfg
+#
 #:generator
 #&'strict'
 #&'verbosity'
 #&'debug'
-#&'us-config'
-#&'us-host'
-#&'log'
+#&us-configure
+#&'us-host-profile'
+#&log
 # ! ((DEBUG)) || set -x
 #&'us-basedir'
 # FIXME: &'us-package'
-
->&2 mkdir -vp tool/redo/recipe tool/us/part
-
-assert_symlink \\
-  "tool/redo/recipe/&build-alias.us-build.do" \\
-  "$U_S"/tool/us/part/user-script.build-alias.us-build.do
-
-assert_symlink @config.do.do "tool/redo/recipe/&build-alias.us-build.do"
-assert_symlink @env.do.do "tool/redo/recipe/&build-alias.us-build.do"
-assert_symlink @build.do.do "tool/redo/recipe/&build-alias.us-build.do"
-assert_symlink @test.do.do "tool/redo/recipe/&build-alias.us-build.do"
-
-#us-build ./env.bash.build &&
-#. ./env.bash
-#
-#redo @{env,test,config}.do
-
+#&us-build-config
 #:modeline
 # pp:pwd:gpp-mode=shell_nc:

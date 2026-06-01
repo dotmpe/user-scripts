@@ -7,23 +7,23 @@ build_lib__load ()
 {
   lib_require envd || return
 
-  true "${BUILD_TOOL:=null}"
+  : "${BUILD_TOOL:=null}"
 
-  true "${build_rules_defnames:=$(echo {,.}build-rules.{txt,list} .components.txt .meta/stat/index/components-local.list)}"
+  : "${build_rules_defnames:=$(echo {,.}build-rules.{txt,list} .components.txt .meta/stat/index/components-local.list)}"
 
-  true "${build_tools_parts:=sh build ci ${BUILD_TOOL:?}}"
-  true "${build_tools_src_specs:=${build_tools_parts// /,}}"
+  : "${build_tools_parts:=sh build ci ${BUILD_TOOL:?}}"
+  : "${build_tools_src_specs:=${build_tools_parts// /,}}"
 
   # A bunch of names for sh files to inject, if found for cold bootstraps
   # Hidden first, then normal, generic local first, then more specifc, or shared
-  true "${build_envs_defnames:=$(echo {.,}{properties,package,env,params,build-env})}"
+  : "${build_envs_defnames:=$(echo {.,}{properties,package,env,params,build-env})}"
   #shellcheck disable=SC1083 # Yes, these are literal braces patterns, expanded
   # by echo
-  true "${build_libs_defnames:=$(echo {.,}lib {.,}build-lib tools/{${build_tools_src_specs}}/lib)}"
+  : "${build_libs_defnames:=$(echo {.,}lib {.,}build-lib tools/{${build_tools_src_specs}}/lib)}"
 
-  true "${sh_file_exts:=.sh .bash}"
+  : "${sh_file_exts:=.sh .bash}"
 
-  true "${sh_exts:=${sh_file_exts:?}}"
+  : "${sh_exts:=${sh_file_exts:?}}"
 
   # Not sure what shells to restrict to, so setting it very liberal
   test -n "${sh_shebang_re-}" || sh_shebang_re='^\#\!\/bin\/.*sh\>'
@@ -47,7 +47,7 @@ build_lib__init () # ~
   #test -n "${BUILD_RULES_BUILD-}" ||
   #  BUILD_RULES_BUILD=${COMPONENTS_TXT_BUILD:-"1"}
 
-  true "${COMPONENT_TARGETS:="$PROJECT_CACHE/component-targets.list"}"
+  : "${COMPONENT_TARGETS:="$PROJECT_CACHE/component-targets.list"}"
 
   # Targets for CI jobs
   test -n "${build_txt-}" || build_txt="${BUILD_TXT:-"build.txt"}"
@@ -97,7 +97,7 @@ build_add_source ()
 build_alias_part ()
 {
   [[ -z "${TARGET_ALIAS:-}" ]] || {
-    true "${part:?Aliased build with tools part needs path to recipe}"
+    : "${part:?Aliased build with tools part needs path to recipe}"
     declare pnals alsp
     pnals=$(echo "${BUILD_TARGET:?}" | tr './' '_')
     alsp="${REDO_STARTDIR:?}/tool/redo/recipe/$pnals.do"
@@ -313,43 +313,12 @@ build_env () # ~ [<Handler-tags...>]
   echo "# Build env OK: '$*' completed"
 }
 
-# TODO: Provide boostrap for default.do tool/sh/part/default-do-env@dev
-build_env_build ()
-{
-  #mkdir -vp ${PROJECT_CACHE:?} >&2 || return
-  #test -e .properties && set -- properties
-  #test -e ${BUILD_RULES:?} && set -- "$@" rule-params
-
-  declare r
-  build_boot "$@" build-env-cache || r=$?
-  [[ ${r:-0} -eq ${_E_break:-197} ]] && {
-
-    [[ "${BUILD_TARGET:?}" = "${BUILD_ENV_CACHE:-}" ]] && {
-      [[ -z "${BUILD_ENV_CACHES?}" ]] || {
-        build-ifchange ${BUILD_ENV_CACHES//:/ } || return
-        echo BUILD_ENV_CACHE[$BUILD_TARGET]: caches: ${BUILD_ENV_CACHES:-} >&2
-      }
-      [[ -z "${ENV_BUILD_ENV?}" ]] || {
-        build-ifchange ${ENV_BUILD_ENV//:/ } || return
-        echo BUILD_ENV_CACHE[$BUILD_TARGET]: seed: ${ENV_BUILD_ENV:-} >&2
-      }
-    }
-    return ${r:-}
-  }
-
-  #build_boot default-do-env-default
-  #build_boot default-redo-env
-  [[ -z "${BUILD_ENV:-}" ]] || build_boot $BUILD_ENV || return
-  return ${r:-0}
-}
-
-
 build_env_init ()
 {
-  true "${BUILD_ENV_CACHES:=}"
-  true "${BUILD_ENV_FUN:=}"
-  true "${BUILD_ENV_DEP:=}"
-  true "${BUILD_ENV_SRC:=}"
+  : "${BUILD_ENV_CACHES:=}"
+  : "${BUILD_ENV_FUN:=}"
+  : "${BUILD_ENV_DEP:=}"
+  : "${BUILD_ENV_SRC:=}"
   #declare -g \
   #  BUILD_ENV_CACHES= BUILD_ENV_FUN= BUILD_ENV_DEP= BUILD_ENV_SRC=
 }
@@ -434,7 +403,7 @@ build_env_sources ()
   $LOG info ":build-env-sources" "Sourcing function libs..." "${BUILD_TARGET//%/%%}"
   [[ "unset" != ${CWD-unset} ]] || declare -l CWD
   [[ -n "${BUILD_PATH:-}" ]] || declare -l BUILD_PATH
-  true "${CWD:=$PWD}"
+  : "${CWD:=$PWD}"
   [[ "unset" != "${build_source[*]-unset}" ]] || env__define__build_source
 
   declare rp
@@ -459,7 +428,7 @@ build_env_sources ()
     build_source "$1/build-lib.sh" || return
   }
 
-  # true "${BUILD_PATH:=$CWD ${BUILD_BASE:?} ${BUILD_STARTDIR:?}}"
+  # : "${BUILD_PATH:=$CWD ${BUILD_BASE:?} ${BUILD_STARTDIR:?}}"
 
   declare -l dir
   for dir in ${BUILD_PATH:?}
@@ -2210,7 +2179,7 @@ build_which__filepath ()
   declare p n
   fnmatch "*/*" "${1:?}" && {
     fnmatch "*/" "$1" && p="${1}" || n=$(basename "$1")
-    true "${p:=$(dirname "$1")}"
+    : "${p:=$(dirname "$1")}"
   } || n=$1
 
   declare path name
@@ -2441,7 +2410,7 @@ read_escaped ()
 # XXX: functions and variables have different namespaces
 sh_clear ()
 {
-  true "${@:?}"
+  : "${@:?}"
   declare vardecl exectype
   while test $# -gt 0
   do
@@ -2496,7 +2465,7 @@ sh_lookup () # ~ <Paths...> # Lookup paths at PATH.
         test -e "$bd/$n$e" || continue
         echo "$bd/$n$e"
         found=true
-        true "${foundany:=true}"
+        : "${foundany:=true}"
         ${any:-false} && continue
         break 2
       done
@@ -2525,7 +2494,7 @@ sh_null ()
 
 sh_type_clear () # [exectype] ~ <Sym>
 {
-  true "${exectype:=$(type -t "${1:?}")}"
+  : "${exectype:=$(type -t "${1:?}")}"
   case "$exectype" in
   ( "function" ) unset -f "$1" ;;
   ( "alias" ) unalias "$1" ;;
@@ -2542,7 +2511,7 @@ sh_unset () # ~ <Var-name>
 
 sh_unset_ifset () # ~ <Sym <...>>
 {
-  true "${@:?}"
+  : "${@:?}"
   declare vardecl
   while test $# -gt 0
   do
@@ -2765,7 +2734,7 @@ build-show ()
 # XXX: see build-symbolic-target
 build-symbol ()
 {
-  true "${@:?}"
+  : "${@:?}"
   while test $# -gt 0
   do
     ${quiet:-true} || {
@@ -2818,7 +2787,7 @@ build-symbolic-target ()
 # XXX: this stamps file list but only name, not all attributes, times
 build-ifdirchange ()
 {
-  true "${@:?}"
+  : "${@:?}"
   while test $# -gt 0
   do
     TARGET_ALIAS=os-dir-index redo-ifchange "$1" || return
@@ -2830,7 +2799,7 @@ build_env__boot__ood=BUILD_TOOL
 
 build-ifglobchange ()
 {
-  true "${@:?}"
+  : "${@:?}"
   while test $# -gt 0
   do
     TARGET_ALIAS=os-path-glob redo-ifchange "$1" || return

@@ -45,25 +45,32 @@ userscripts::preproc::_op_generate ()
 userscripts::preproc::_op_snippet ()
 {
 : private-prefix _us_pp
-  local lk=snippet:${current_dir}
+  local lk=snippet:${current_dir} us_part=${U_S:?}/tool/us/part
+  _pp_inc () {
+    if ((current_literal))
+    then if ((run_gpp))
+      then echo "#include <user-script.$1>"
+      else cat "$us_part/user-script.$1"
+      fi
+    else
+      _us_pp_unshift_source "$us_part/user-script.$1"
+    fi
+  }
+  _pp_inc_src () {
+    ! ((current_literal)) || >&2 echo "Warn: Source is not literal: ${current_dir@Q}: $1"
+    _us_pp_unshift_source "$us_part/user-script.$1"
+  }
   case "$current_dir" in
-  ( debug ) echo '#include <user-script.debug.sh.h>' ;;
-
-  ( log ) [[ ${us_pp_lang} = bash ]] ||
-          failerr "$lk: Unsupported build langauge ${us_pp_lang}" || return
-        [[ ! -x ~/bin/tool/sh/log.sh ]] ||
-          printf ': "%s"\n' '${LOG:=$HOME/bin/tool/sh/log.sh}'
-        # echo "export LOG=\$HOME/bin/tool/sh/log.sh"
-        declare -f failerr userscripts::core::echo_stderr_with_status
-        #declare -f failerr User-Script.Core.echo-stderr-with-status
-      ;;
-
-  ( strict ) echo '#include <user-script.strict.sh.h>' ;;
-  ( us-host ) echo '#include <user-script.host-profile.sh.h>' ;;
-  ( us-basedir ) echo '#include <user-script.ewd.bash.h>' ;;
-  ( us-config ) echo '#include <user-script.configure.bash.h>' ;;
-  ( us-package ) echo '#include <user-script.package.bash.h>' ;;
-  ( verbosity ) echo '#include <user-script.build-verbosity.bash>' ;;
+  ( debug | us-debug )    _pp_inc       'debug.sh.h' ;;
+  ( log | us-log )        _pp_inc_src   'log.sh.h' ;;
+  ( strict | us-strict )  _pp_inc       'strict.sh.h' ;;
+  ( us-host-profile )     _pp_inc       'host-profile.sh.h' ;;
+  ( us-basedir )          _pp_inc       'ewd.bash.h' ;;
+  ( us-build-config )     _pp_inc       'build.config.bash.h' ;;
+  ( us-configure )        _pp_inc_src   'configure.bash.h' ;;
+  ( us-package )          _pp_inc       'package.bash.h' ;;
+  ( verbosity | us-build-verbosity )
+                          _pp_inc       'build-verbosity.bash' ;;
 
   ( * )
       local -n _dir=current_dir
@@ -95,6 +102,38 @@ userscripts::preproc::_op_special ()
       [[ ! ${rest:+set} ]] || failerr "Surplus parameter(s) ${rest@Q}" || return
       . "$file" ||
         failerr "E$? while loading ${file@Q}"
+    ;;
+
+  ( declare-ifndef )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local -a args
+      read -r -a args <<< "$current_param"
+      _us_pp_debug ":declare-ifndef ${args[*]@Q}"
+      # XXX: see :declare for latest routine
+      # sh_generate_declare ...
+      [[ $us_pp_lang = bash ]] ||
+        failerr "TODO: Conditional declare for $us_pp_lang" 125 || return
+      local a k v
+      case "${args[0]}" in
+        ( -p )
+            for a in "${args[@]:1}"
+            do
+              k=${a%%=*}
+              [[ $k != "$a" ]] ||
+                failerrr "Key=value pattern expected: ${a@Q}" || return
+              v=${a: ${#k}+1}
+              printf ': "${%s:=%s}"\n' "$k" "$v"
+            done ;;
+        ( -f )
+            for a in "${args[@]:1}"
+            do
+              if_ok "$(declare -f "$a")" ||
+                failerrr "Function not found: ${a@Q}" || return
+              printf 'if_ok "$(declare -F "%s")" ||\n%s\n' "$a" "$_"
+            done ;;
+        ( * ) failerr "Ilegal $current_dir flag ${args[0]}" || return
+      esac
     ;;
 
   ( declare )
@@ -319,6 +358,7 @@ userscripts::preproc::_process_loop () {
   local us_pp_{line,nest}
   local -n us_pp_fd='us_pp_input_stack[-1]'
   local -a us_pp_input_stack
+
   # First apply static script as filter on input
   [[ ${us_pp_lang-} ]] ||
     failerr "Language expected for prefilter" || return
@@ -330,11 +370,13 @@ userscripts::preproc::_process_loop () {
   fi
   us_pp_sources+=( "$us_pp_input" )
   us_pp_input_stack=( "$new_fd" )
+
   if ((do_outline))
   then
     declare -ga us_pp_outline{,_tags}
     us_pp_outline_level=0
   fi
+
   # Main processing loop: read one line at a time, from last FD on stack until
   # all inputs are read
   while true
@@ -346,14 +388,14 @@ userscripts::preproc::_process_loop () {
       }
     }
     if case "$us_pp_line" in
-    ( \#[\&:]* )
+    ( \#[\&:]* ) # Match aliases
         current_op=${us_pp_line:1:1}
         read -r current_dir current_param <<< "${us_pp_line:2}"
         [[ ${current_dir:0:1} == "'" ]] &&
         current_dir=${current_dir:1:-1} current_literal=1 ||
           current_literal=0
       ;;
-    ( \#[\<\>%]* )
+    ( \#[\<\>%]* ) # Match block definitions
         current_op=${us_pp_line:1:1}
         read -r current_dir current_param <<< "${us_pp_line:2}"
         [[ ${current_dir:0:1} == "'" ]] &&
@@ -481,6 +523,7 @@ userscripts::preproc::_procfile ()
     us_pp_output=/tmp/${_}
   fi
 
+  # Generate and return status
   _us_pp_run
 }
 
@@ -527,13 +570,25 @@ userscripts::preproc::_scan_modeline ()
 : about 'Parse language and outliner info from text'
   local word
   local -n _tags
-  : "${_//[^A-Za-z0-9_=:-]/ }"
-  for word in $_
+  # FIXME: parse prefixed blocks properly
+  : "${*//[^A-Za-z0-9_=:-]/ }"
+  for word in ${_//:/ }
   do case "$word" in
+
+      ( pwd ) : "${EWD:=$PWD}"
+          declare -x EWD
+        ;;
+
+      ( gpp-mode=* ) us_gpp_mode=${word:9}; return ;;
+      ( *:gpp-mode=*:* )
+          : "${word##*:gpp-mode=}"
+          : "${_%%[: ]*}"
+          us_gpp_mode=$_; return ;;
+
       ( ft=* ) us_pp_lang=${word:3}; return ;;
       ( *:ft=*:* )
           : "${word##*:ft=}"
-          : "${_%% *}"
+          : "${_%%[: ]*}"
           us_pp_lang=$_; return ;;
       ( * ) ;;
     esac

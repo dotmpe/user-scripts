@@ -30,7 +30,6 @@ _us_pp_init ()
     . us-shell.inc.bash
     . us-str.inc.bash
     . us-use.inc.bash
-    . us-std-env.inc.bash
 
     userscripts::use userscripts::core
     userscripts::use userscripts::string
@@ -102,3 +101,4 @@ _us_pp_load ()
 #&'main' _us_pp_init && _us_pp_load "$@" && us_pp_main "$@"; exit
 
 #:modeline vim:set ft=bash sw=2 sts=2 et:
+# pp:pwd:gpp-mode=shell_nc:

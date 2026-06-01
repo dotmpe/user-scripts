@@ -211,6 +211,9 @@ userscripts::preproc::main ()
     ( --outline=* ) do_outline=1 do_modeline=1 us_pp_outliner=${1:9} ;;
     ( --output ) output=1 ;;
     ( --output=* ) destfile=${1:9} ;;
+    # TODO: find other places and try to build from parts/rules+ constraints
+    ( --debug ) declare -x DEBUG=1 ;;
+    ( --verbose ) declare -x VERBOSE=1 ;;
     ( --pwd ) : "${EWD:=$PWD}"
         declare -x EWD
       ;;
