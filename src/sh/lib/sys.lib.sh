@@ -1173,6 +1173,7 @@ sys_debug_mode () # (y) ~ <Mode> # Determine wheter given mode is active
   : source "sys.lib.sh"
   local lk=${lk-}:us:sys.lib:debug-mode
   local _{VERBOSE,QUIET,ASSERT,DIAG,DEBUG,DEV}
+  # Set <NAME> for bool true/false strings and _<NAME> for numeric 0/1 bits
   sys_boolenv _ VERBOSE QUIET ASSERT DIAG DEBUG DEV
   case "$1" in
   ( assert ) ## \
@@ -1241,7 +1242,7 @@ sys_debug_tag ()
   [[ ! ${v:-${verbosity-}} ]] && {
     echo "$tagstr"
   } || {
-    ! "${DEBUG:-false}" || printf '%s,v=%i' "$tagstr" "${v:-$verbosity}"
+    ! ((DEBUG)) || printf '%s,v=%i' "$tagstr" "${v:-$verbosity}"
   }
 }
 
@@ -1270,7 +1271,8 @@ sys_exc () # ~ <Head>: <Label> <Vars...> # Format exception-id and message
   local \
     sys_exc_id=${1:-us:exc:$0:${*// /:}} \
     sys_exc_msg=${2-Expected}
-  ! "${DEBUG:-$(sys_debug_ exceptions)}" &&
+  # XXX cleanup "${DEBUG:-$(sys_debug_ exceptions)}" &&
+  ! ((DEBUG)) &&
   echo "$sys_exc_id${sys_exc_msg:+: $sys_exc_msg}" ||
     "${sys_on_exc:-sys_source_trace}" "$sys_exc_id" "$sys_exc_msg" 3 "${@:3}"
 }
