@@ -1,6 +1,6 @@
 us_lib__load ()
 {
-  us_fun=fnmatch,func_exists,incr,lib_init,lib_load,lib_require,append_path,lookup_path,std_noo,std_not,std_quiet,std_silent,stderr,str_globmatch,sys_rarr,sys_rarr2,sys_default,sys_astat,sys_loop,sys_nconcatl,us_debug,us-env
+  us_fun=fnmatch,func_exists,incr,lib_init,lib_load,lib_require,append_path,lookup_path,std_noo,std_not,std_quiet,std_silent,stderr,str_globmatch,sys_rarr,sys_rarr2,sys_default,sys_astat,sys_loop,sys_nconcat1r,us_debug,us-env
   lib_init () { lib_uc_init "$@"; }
   lib_load () { lib_uc_load "$@"; }
   lib_require () { lib_uc_require "$@"; }
@@ -25,7 +25,7 @@ us_lib__env_init ()
   declare -xgA us_node=() us_src=() &&
   #export us_node &&
   export -f us-env \
-    sys_nconcat{n,l} \
+    sys_nconcat{n,1r} \
     sys_exc &&
   export \
     _E_nsk=67 _E_nsa=68 \

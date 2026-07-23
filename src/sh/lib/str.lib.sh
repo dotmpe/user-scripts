@@ -50,7 +50,7 @@ str_lib__init()
 str_append () # ~ <Var-name> <Value> ... # Concat value to string at var, using str-fs=' '
 {
   : source "str.lib.sh"
-  sys_nconcatl "$@"
+  sys_nconcat1r "$@"
 }
 
 # Turn '--' seperated argument seq. into lines

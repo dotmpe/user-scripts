@@ -121,7 +121,7 @@ userscripts::preproc::_op_special ()
             do
               k=${a%%=*}
               [[ $k != "$a" ]] ||
-                failerrr "Key=value pattern expected: ${a@Q}" || return
+                failerr "Key=value pattern expected: ${a@Q}" || return
               v=${a: ${#k}+1}
               printf ': "${%s:=%s}"\n' "$k" "$v"
             done ;;
@@ -129,7 +129,7 @@ userscripts::preproc::_op_special ()
             for a in "${args[@]:1}"
             do
               if_ok "$(declare -f "$a")" ||
-                failerrr "Function not found: ${a@Q}" || return
+                failerr "Function not found: ${a@Q}" || return
               printf 'if_ok "$(declare -F "%s")" ||\n%s\n' "$a" "$_"
             done ;;
         ( * ) failerr "Ilegal $current_dir flag ${args[0]}" || return

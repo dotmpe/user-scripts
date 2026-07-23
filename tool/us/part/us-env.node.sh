@@ -40,7 +40,7 @@ us-env:define-env ()
 
   us_env_funspec="us_env_{funset{,s{,_load}},generate,loadenv,source}"
   us_env_fun=$(eval "echo ${us_env_funspec:?}")
-  uc_env_fun=str_word,str_append,sys_is_arr,sys_nconcatl,sys_nconcatn,uc_fun,uc_debug,if_ok
+  uc_env_fun=str_word,str_append,sys_is_arr,uc_fun,uc_debug,if_ok
 }
 
 us_env_cname () # ~ <Name-ref> <Base-ref> <To-var>

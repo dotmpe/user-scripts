@@ -1462,14 +1462,15 @@ sys_match_select () # ~ <inc="-"> <exc="+"> <fun> <inputs...>
   ! "${fail:-true}"
 }
 
-# XXX: sys-nconcatl renamed from str-vconcat
-sys_nconcatl () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero values using str-fs=' ' as separator
+sys_nconcat1r () # ~ <Var-name> <Str> ... # Append at end; concatenate non-zero values using str-fs=' ' as separator
 {
   : param "<Var-name> <Str> ..."
   : description "Append Str-fs separated Str value to <Var-name>"
   : source "sys.lib.sh"
-  : "${1:?"$(sys_exc sys/-nconcatl:ref@_1 "Variable name expected")"}"
-  : "${2?"$(sys_exc sys/-nconcatl:str2@_2 "String value expected")"}"
+  : id shell/sys/name-concat-1-right
+  : alias -nconcat1r
+  : "${1:?"$(sys_exc sys/-nconcat1r:ref@_1 "Variable name expected")"}"
+  : "${2?"$(sys_exc sys/-nconcat1r:str2@_2 "String value expected")"}"
   declare -n __ref=$1
   __ref="${__ref-}${__ref:+${str_fs- }}$2"
 }
@@ -1479,6 +1480,7 @@ sys_nconcatn () # ~ <Var-name> <Var-name-2> ... # Append at end, concatenating w
   : param "<Var-name> <Var-name-2> ..."
   : description "Append Str-fs separated values <Var-name-2> to <Var-name>"
   : source "sys.lib.sh"
+  : id shell/sys/name-concat-name-right
   declare -n \
     __ref=${1:?"$(sys_exc sys/-nconcatn:ref@_1 "Variable name expected")"} \
     __ref2=${2:?"$(sys_exc sys/-nconcatn:ref2@_1 "Variable name expected")"}
