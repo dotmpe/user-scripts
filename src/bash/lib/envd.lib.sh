@@ -367,7 +367,7 @@ envd_load () # XXX: was env-require
 
 envd_load_if ()
 {
-  set -- $(filter_args "not envd_declared" "$@") &&
+  set -- $(filter_args ': not envd_declared' "" "$@") &&
   [[ $# -eq 0 ]] || envd_load "$@"
 }
 
@@ -460,7 +460,7 @@ envd_require () # ~ <Names...>
   #env_dep=${env_dep-}${env_dep:+ }$*
 
   $LOG debug :envd-require "Checking for" "$*"
-  set -- $(filter_args "not envd_declared" "$@") &&
+  set -- $(filter_args ': not envd_declared' "" "$@") &&
   [[ $# -eq 0 ]] && return
   ! "${envd_boot:-false}" || {
     $LOG debug :envd-require "Pending" "$*"

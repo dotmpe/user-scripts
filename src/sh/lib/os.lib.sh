@@ -736,21 +736,6 @@ filter () # (Std:0:) ~ <Test-handler>
   done
 }
 
-filter_args () # ~ <Test-cmd> <Args...> # Print args for which test pass
-{
-  local value test=${1:?}
-  for value in "${@:2}"
-  do
-    $test "$value" || {
-      continue
-      # TODO: make test functions discern between error and test failure/pass
-      #test ${_E_next:?} -eq $? && continue
-      #return $_
-    }
-    echo "$value"
-  done
-}
-
 # Strip comments lines, including pre-proc directives and empty lines.
 filter_content_lines () # (s) ~ [<Marker-Regex>] # Remove marked or empty lines from stream
 {
