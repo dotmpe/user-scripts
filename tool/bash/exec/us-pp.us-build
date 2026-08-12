@@ -9,6 +9,11 @@
 #&'debug'
 #&'strict'
 #&'log'
+    
+#:include us-core.inc.bash
+#:include us-shell.inc.bash
+#:include us-str.inc.bash
+#:include us-use.inc.bash
 
 # XXX: cleanup
 #:data /var/local/statusdir/pp,uc.data.bash
@@ -22,14 +27,11 @@ _us_pp_init ()
   if [[ ${U_S:+set} ]]
   then
     # Load parts and generate functions to map some namespaced names
-    
+
+    # FIXME: these are not exactly include syntax, need a linter/syntax checker
     PATH+=:$U_S/tool/bash/include
-    . us-core.inc.bash
     . us-pp-core.inc.bash
     . us-pp-cli.inc.bash
-    . us-shell.inc.bash
-    . us-str.inc.bash
-    . us-use.inc.bash
 
     userscripts::use userscripts::core
     userscripts::use userscripts::string
