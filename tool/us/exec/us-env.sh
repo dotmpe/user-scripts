@@ -121,10 +121,12 @@ us_env_loadenv ()
   : source "us-env.sh"
 
   # XXX: do proper build and then graph init
-  append_path "${U_S?}/tool/us/part" "${U_S?}/tool/us/exec" PATH
+  #append_path "${U_S?}/tool/us/part" "${U_S?}/tool/us/exec" PATH
   {
-    sh_fun us-env:define-env ||
+    sh_fun us-env:define-env || {
+      append_path "${U_S:?}/tool/us/include" PATH
       uc_script_load "us-env.node" || return
+    }
   } && us-env:define-env &&
   true || return
   #$LOG error : "Failed $FUNCNAME" E$? $? || return
