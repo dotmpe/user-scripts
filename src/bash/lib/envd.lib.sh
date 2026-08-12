@@ -14,7 +14,7 @@ envd_lib__init ()
   declare -g ENVD_{PATH,SLICE} &&
   declare -ga ENVD_{D,PATHA,SLICEA} &&
   declare -gA \
-    ENVD_{DECL,DEF,DEP,FUN,HOOK,PART,TYPE,VAR} \
+    ENVD_{DEF,DEP,FUN,HOOK,PART,TYPE,VAR} \
     LIB_{PRE,DEP} &&
   # Expose type array so (user) scripts can check for presence of env mngmnt
   declare -n \
@@ -249,8 +249,7 @@ envd_define ()
       ENVD_TWORD="${ENVD_TAG//[^A-Za-z0-9_]/_}"
       declare -n \
         envd_def=ENVD_DEF["$ENVD_TAG"] \
-        envd_part=ENVD_PART["$ENVD_TAG"] \
-        envd_decl=ENVD_DECL["$ENVD_TAG"]
+        envd_part=ENVD_PART["$ENVD_TAG"]
 
       #! envd_declared "$ENVD_TAG" || {
 
