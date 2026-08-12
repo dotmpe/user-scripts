@@ -48,7 +48,7 @@ _us_pp_init ()
   then
     # Load parts and generate functions to map some namespaced names
     
-    PATH+=:$U_S/tool/bash/part
+    PATH+=:$U_S/tool/bash/include
     . us-core.inc.bash
     . us-pp-core.inc.bash
     . us-pp-cli.inc.bash
