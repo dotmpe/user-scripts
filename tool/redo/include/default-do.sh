@@ -18,22 +18,25 @@ default_do_env () # ~ # Prepare shell profile with build-target handler
   # build_ do-env ||
   #  default_do_ error \$do-env "Error getting %%.do env" "E$?" $?
 
-  if [[ ${BUILD_TARGET} = "$ENV_TARGET" ]]
-  then
-    default_do_default_env || return
-  elif [[ ${BUILD_TARGET} != "$ENV_TARGET" && ${BUILD_TARGET} != "$CONF_TARGET" ]]
-  then
-    declare -I BUILD_ENV_SH
-    if [[ ! -e "${BUILD_ENV_SH:=./.build-env.sh}" ]]
+  if [[ ${ENV_TARGET:+set} || ${CONF_TARGET:+set} ]]; then
+    if [[ ${ENV_TARGET:+set} && ${BUILD_TARGET} = "${ENV_TARGET-}" ]]
     then
-      unset BUILD_ENV_SH
-      redo-ifchange "$ENV_TARGET" &&
-      . "$ENV_BASH" &&
-      redo-ifchange "$BUILD_ENV_TARGET" &&
-      . "$BUILD_ENV_BASH"
-    else
-      . "${BUILD_ENV_SH:?}" && exit ||
-        sh_error E_BS -eq "${_E_next:-196}" || exit $E_BS
+      default_do_default_env || return
+    elif [[ ${ENV_TARGET:+set} && ${BUILD_TARGET} != "${ENV_TARGET-}" &&
+      ${CONF_TARGET:+set} && ${BUILD_TARGET} != "${CONF_TARGET-}" ]]
+    then
+      declare -I BUILD_ENV_SH
+      if [[ ! -e "${BUILD_ENV_SH:=./.build-env.sh}" ]]
+      then
+        unset BUILD_ENV_SH
+        redo-ifchange "$ENV_TARGET" &&
+        . "$ENV_BASH" &&
+        redo-ifchange "$BUILD_ENV_TARGET" &&
+        . "$BUILD_ENV_BASH"
+      else
+        . "${BUILD_ENV_SH:?}" && exit ||
+          sh_error E_BS -eq "${_E_next:-196}" || exit $E_BS
+      fi
     fi
   fi
 }

@@ -45,20 +45,20 @@ userscripts::preproc::_op_generate ()
 userscripts::preproc::_op_snippet ()
 {
 : private-prefix _us_pp
-  local lk=snippet:${current_dir} us_part=${U_S:?}/tool/us/part
+  local lk=snippet:${current_dir} us_include=${U_S:?}/tool/us/include
   _pp_inc () {
     if ((current_literal))
     then if ((run_gpp))
       then echo "#include <user-script.$1>"
-      else cat "$us_part/user-script.$1"
+      else cat "$us_include/user-script.$1"
       fi
     else
-      _us_pp_unshift_source "$us_part/user-script.$1"
+      _us_pp_unshift_source "$us_include/user-script.$1"
     fi
   }
   _pp_inc_src () {
     ! ((current_literal)) || >&2 echo "Warn: Source is not literal: ${current_dir@Q}: $1"
-    _us_pp_unshift_source "$us_part/user-script.$1"
+    _us_pp_unshift_source "$us_include/user-script.$1"
   }
   case "$current_dir" in
   ( debug | us-debug )    _pp_inc       'debug.sh.h' ;;
