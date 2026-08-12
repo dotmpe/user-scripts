@@ -6,11 +6,18 @@
 #
 # Distributed under terms of the MIT license.
 
+if [[ ${US_PP_BASH_DEBUG:+set} ]]; then
+  DEBUG=1
+  set -x
+fi
+
 #&'debug'
 #&'strict'
 #&'log'
-    
+
 #:include us-core.inc.bash
+#:include us-pp-cli.inc.bash
+#:include us-pp-core.inc.bash
 #:include us-shell.inc.bash
 #:include us-str.inc.bash
 #:include us-use.inc.bash
@@ -28,19 +35,21 @@ _us_pp_init ()
   then
     # Load parts and generate functions to map some namespaced names
 
-    # FIXME: these are not exactly include syntax, need a linter/syntax checker
-    PATH+=:$U_S/tool/bash/include
-    . us-pp-core.inc.bash
-    . us-pp-cli.inc.bash
+    # XXX: use when they are not exactly include syntax, need a linter/syntax checker
+    #PATH+=:$U_S/tool/bash/include
+    #. us-pp-core.inc.bash &&
+    #. us-pp-cli.inc.bash || exit
 
-    userscripts::use userscripts::core
-    userscripts::use userscripts::string
-    userscripts::use userscripts::preproc
+    userscripts::use userscripts::core &&
+    userscripts::use userscripts::string &&
+    userscripts::use userscripts::preproc || exit
+
     if [[ ${ENV:+set} ]]; then
-      userscripts::use userscripts::stdenv
+      userscripts::use userscripts::stdenv || exit
     fi
   else
-    >&2 echo "$$ us-pp: cannot continue without User-Script env"
+    >&2 echo "$$"'$'"$-/${0##*/}: cannot continue without User-Script env"
+    exit 2
   fi
 }
 
@@ -79,7 +88,7 @@ _us_pp_load ()
     [[ "${ref:0:1}" == / ]] || {
       [[ ${EWD:+set} ]] || {
         [[ ! -e "$ref" ]] ||
-        >&2 echo "Set EWD for relative path config (ignored: ${ref@Q})"
+        _us_pp_notice "Set EWD for relative path config (ignored: ${ref@Q})"
         continue
       }
       ref=$EWD/$ref

@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ ${US_PP_BASH_DEBUG:+set} ]]; then
+  DEBUG=1
+  set -x
+fi
+
 #
 # Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
@@ -41,7 +46,7 @@ userscripts::core::echo_stderr_with_status ()
     return ${stat};
     : alias failerr
 }
-    
+
 
 userscripts::core::_init () {
   : "${ENV_CTX:=$0[$$]}"
@@ -82,6 +87,946 @@ userscripts::core::pass_status () {
 userscripts::core::set_status () {
   return ${1:?$FUNCNAME: Status number, $ENV_CTX}
 : alias status
+}
+
+
+userscripts::preproc::_debug ()
+{
+: private-prefix _us_pp
+  ((QUIET)) || ! ((DEBUG)) || >&2 _us_pp_cmdmsg "$1"
+}
+
+userscripts::preproc::_notice ()
+{
+: private-prefix _us_pp
+  ((QUIET)) || >&2 _us_pp_cmdmsg "$@"
+}
+
+userscripts::preproc::_cmdmsg ()
+{
+: private-prefix _us_pp
+  echo "$$"'$'"$-/$script_cmdname: $1"
+}
+
+userscripts::preproc::build_main ()
+{
+: alias us_build_main
+: about 'Shortcut to build <target> from <target>.build (wrapper for us-pp main)'
+  local exec=0 check=1 _pp_opts _file_arg=() {dest,srcs}file
+  while (($#))
+  do case "$1" in
+    ( --update ) check=0 ;;
+    ( --run | --exec ) exec=1 ;;
+    #( --output=* ) destfile=${1:9} ;;
+    ( --sources=* ) srcsfile=${1:10} _pp_opts+=( "$1" ) ;;
+    ( -- ) shift; false ;;
+    ( -* ) _pp_opts+=( "$1" ) ;;
+    ( * ) [[ ${#_file_arg[*]} -lt 2 ]] && _file_arg+=( "$1" ) ;;
+    esac && shift || break
+  done
+    # srcsfile="$us_pp_output.inc.list"
+  local -n _input='_file_arg[0]'
+  local -n _output='_file_arg[1]'
+  [[ ${_input:+set} ]] ||
+    failerr "Input file argument expected" || return
+  if [[ ${_output:+set} ]]
+  then
+    build_target=$_output
+    unset "${!_output}"
+  else
+    : "${_input%.us-build}"
+    : "${_%.build}"
+    local build_target=${_}
+    [[ ${_input} != "$build_target" ]] || {
+      _input+=${us_pp_build_ext:-.us-build}
+    }
+  fi
+  [[ -f $_input ]] ||
+    failerr "Input file expected ${_input@Q}" || return
+  # TODO: need to check the whole include list here. but not sure where to store
+  # that yet. probably track name/target mapping in user data
+  if [[ ! -s "$build_target" ]] || ! ((check)) || {
+    local srcs _test
+    _test+=( "$_input" -nt "$build_target" )
+    if [[ ${srcsfile:+set} && ! -s "${srcsfile-}" ]]; then
+      mapfile -a srcs < "$srcsfile"
+      for src in "${srcs[@]}"
+      do _test+=( -o "$src" -nt "$build_target" )
+      done
+    fi
+    ! ((DEBUG)) ||
+      >&2 declare -p _test
+    test "${_test[@]}"
+  }
+  then
+    _pp_opts+=( --output="$build_target.new" )
+    userscripts::preproc::main "${_pp_opts[@]}" "${_file_arg[@]}" ||
+      failerr "E$? Building ${build_target}" || return
+    test -s "$build_target.new" ||
+      failerr "Output expected ${_file_arg[*]@Q}" || return
+    if [[ $(command -v $script_cmdname) -ef "$build_target.new" ]]
+    then
+      _us_pp_notice "Warning: should probably not overwrite currently running script"
+    fi
+    if std_noo diff -bqr "$build_target.new" "$_output"; then
+      _us_pp_debug "No updates for $build_target"
+      rm "$build_target.new"
+    else
+      <"$build_target.new" >"$build_target" cat &&
+      rm "$build_target.new" &&
+      _us_pp_notice "Updated $build_target" || return
+    fi
+  else
+    #! ((DEBUG)) ||
+    #>&2 declare -p build_target check _input srcsfile || true
+    #>&2 echo "${!_input}=$_input"
+    _us_pp_notice "No check or UTD"
+  fi
+  if ((exec))
+  then
+    [[ ${build_target:0:1} == / ]] &&
+    : "$build_target" || : "./${build_target}"
+    chmod +x "$_" && exec "$_" "${@}"
+  fi
+}
+
+userscripts::preproc::gpp ()
+{
+: alias _us_gpp
+  # Standard GPP user/meta modes for reference:
+  # User mode arguments:
+  # 1. macro start sequence
+  # 2. macro end seq
+  # 3. argument start seq
+  # 4. arg separator
+  # 5. arg end seq
+  # 6. arg balancing stack character list
+  # 7. unstack char list
+  # 8. number reference string
+  # 9. quote char
+  gpp_default_user_mode=(
+    "" "" "(" "," ")" "(" ")" "#" "\\"
+  )
+  # Meta-macro arguments
+  # 1. macro start seq
+  # 2. macro end seq
+  # 3. arg start seq
+  # 4. arg sep seq
+  # 5. arg end seq
+  # 6. arg bal stack char list
+  # 7. arg bal unstack char list
+  gpp_default_meta_mode=(
+    "#" "\n" " " " " "\n" "(" ")"
+  )
+  gpp_c_compat_mode=(
+    -C
+    #-n -U "" "" "(" "," ")" "(" ")" "#" ""
+    #-M "\n#\w" "\n" " " " " "\n" "" ""
+    #+c "/*" "*/" +c "//" "\n" +c "\\\n" ""
+    #+s "\"" "\"" "\\" +s "'" "'" "\\"
+  )
+  gpp_tex_like_mode=(
+    -U "\\" "" "{" "}{" "}" "{" "}" "#" "@"
+  )
+  gpp_default_mode=(
+    -U "${gpp_default_user_mode[@]}"
+    -M "${gpp_default_meta_mode[@]}"
+  )
+  # Custom mode that seems to work for shell (and strips unix line comments)
+  gpp_shell_mode=(
+    # XXX: any  occurence is captured by the PP unless quoted
+    +s "\"" "\"" "\\"
+    +s "'" "'" "\\"
+  )
+  gpp_shell_nc_mode=( "${gpp_shell_mode[@]}"
+    # XXX: strip comments
+    +c "\n#\b" "\n"
+    +c "\n#\n" ""
+  )
+  # Testing; could not get {% ... %} syntax to work
+  gpp_jinja_mode=(
+    -U "{% " " %}" "(" "," ")" "({}" "})" "#" "\""
+  )
+  gpp_xxx_mode=(
+    -U "${default_user_mode[@]}"
+    -M "{%" " %}" "%" " " "\n" "(" ")"
+  )
+  declare -n argv=gpp_${1}_mode
+  [[ ${argv:+set} ]] ||
+    failerr "us:gpp: No such mode ${1@Q}" || return
+  shift
+  local tag path
+  local -a args
+  local -n _sub='us_gpp_subs["$tag"]'
+  [[ ! ${us_pp_lang:+set} ]] ||
+    [[ ${us_gpp_subs["LANG"]:+set} ]] || args+=( -D"LANG=$us_pp_lang" )
+  for tag in "${us_gpp_defs[@]}"
+  do
+    args+=( -D"${tag}${_sub:+=$_sub}" )
+  done
+  for path in "${us_pp_incs[@]}"
+  do
+    args+=( -I"${path}" )
+  done
+  _us_pp_debug "> command gpp ${args[*]@Q} ${argv[*]@Q} ${*@Q}"
+  command gpp "${args[@]}" "${argv[@]}" "${@}"
+}
+
+userscripts::preproc::main ()
+{
+: alias us_pp_main
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  local -a files=() gppargs=()
+  local -I us_pp_off
+  : "${us_pp_off:+0}"
+  local run_gpp=1 run_us_pp=${_:-1} output=0 exec=0 {dest,srcs,}file first_script
+  # FIXME: isolate these vars better from env
+  local do_outline=0 do_modeline=0 # us_pp_{{in,out}put,lang}
+  local -I us_gpp_mode
+  local -I us_pp_ext
+  local -I us_pp_outliner
+  : "${us_pp_ext:=.i}"
+  do_outline=${us_pp_outliner:+1}
+  : "${us_pp_outliner:=default_outliner}"
+  while (($#))
+  do case "$1" in
+    ( --exec | --run ) exec=1 ;;
+    ( --ext=* ) us_pp_ext=${1:6} ;;
+    ( --gpp=* ) us_gpp_mode=${1:6} ;;
+    ( --help ) userscripts::preproc::main_help "${@:2}"; return ;;
+    ( --lang=* ) : "${us_pp_lang:=${1:7}}" ;;
+    ( --no-gpp ) run_gpp=0 ;;
+    ( --no-modeline ) do_modeline=0 ;;
+    ( --no-outline ) do_outline=0 ;;
+    ( --no-process ) run_us_pp=0 ;;
+    ( --modeline ) do_modeline=1 ;;
+    ( --outline ) do_outline=1 do_modeline=1 ;;
+    ( --outline=* ) do_outline=1 do_modeline=1 us_pp_outliner=${1:9} ;;
+    ( --output ) output=1 ;;
+    ( --output=* ) destfile=${1:9} ;;
+    # TODO: find other places and try to build from parts/rules+ constraints
+    ( --debug ) declare -x DEBUG=1 ;;
+    ( --verbose ) declare -x VERBOSE=1 ;;
+    ( --pwd ) : "${EWD:=$PWD}"
+        declare -x EWD
+      ;;
+    ( --sources=* ) srcsfile=${1:10} ;;
+    ( -- ) shift; false ;;
+    ( --* ) userscripts::preproc::main_help "$@"; return 1 ;;
+    ( - ) files+=( "$1" ) ;;
+    ( -* ) gppargs+=( "$1" ) ;;
+    ( * ) [[ -f $1 ]] && files+=( "$1" ) || false
+    esac && shift || break
+  done
+  : "${us_gpp_mode:=shell}"
+  ((${#files[*]})) ||
+    failerr "$$ us-pp: Preprocessor expects input file argument" || return
+  # XXX: want to share/access some, output in particular
+  #local us_pp_{input,shebang,lang,inputreal,output,linecomment}
+  us_pp_linecomment="#"
+  local -n _ext=us_pp_ext
+  for file in "${files[@]}"; do
+    if [[ $file == - ]]
+    then [[ ! -t 0 ]] ||
+      failerr "$$ us-pp: Input expected" || return
+    elif [[ ! -f ${file} ]]
+    then failerr "$$ us-pp: File input expected: ${file@Q}" || return; fi
+    if ((run_us_pp))
+    then _us_pp_procfile "$file" ||
+        failerr "$$ us-pp: E$? processing ${file@Q}" || return
+      if ! ((run_gpp)); then
+        _us_pp_notice "us-pp: ready: $us_pp_output"
+        if ((output))
+        then cat "$us_pp_output"
+        else [[ ${first_script-} ]] || first_script=$us_pp_output; fi
+      else
+        _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$us_pp_output$_ext" "$us_pp_output" ||
+          failerr "$$ us-pp: E$? running gpp ${us_pp_output}" || return
+        _us_pp_notice "us-gpp: ready: $us_pp_output$_ext"
+        if ((output)); then
+          cat "$us_pp_output$_ext"
+        else [[ ${first_script-} ]] || first_script=$us_pp_output$_ext; fi; fi
+    else
+      _us_pp_notice "Skipped PP"
+      _us_gpp ${us_gpp_mode} "${gppargs[@]}" -o "$file$_ext" "$file" ||
+        failerr "$$ us-pp: E$? running gpp ${file}" || return
+      _us_pp_notice "us-gpp: ready: $file$_ext"
+      if ((output)); then
+        cat "$file$_ext"
+      else [[ ${first_script-} ]] || first_script=$file$_ext; fi; fi
+  done
+  # Store included file list if requested
+  if ((run_us_pp)) && [[ ${srcsfile:+set} ]]
+  then
+    > "$srcsfile" printf '%s\n' "${us_pp_sources[@]}"
+    _us_pp_debug "us-pp: wrote input list to $srcsfile"
+  fi
+  # Truncate target and insert generated script lines if requested
+  if [[ ${destfile:+set} ]]
+  then
+    if [[ $(command -v $script_cmdname) -ef "$destfile" ]]
+    then
+      <"$first_script" >"$destfile.new" cat
+      _us_pp_notice "Updates for/at $destfile{,.new}"
+    else
+      <"$first_script" >"$destfile" cat; fi; fi
+  # Fork to target script if requested
+  if ((exec))
+  then [[ ${first_script:0:1} == / ]] &&
+    : "$first_script" || : "./${first_script}"
+    chmod +x "$_" && exec "$_" "${@}"; fi
+}
+
+userscripts::preproc::main_help ()
+{
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  local cmd=${0##*/} sub=${1-}
+  local us_pp_main_man='~ - super simple preprocessor in shell script
+
+Usage:
+    ~ [infile]
+    ~ <<EOM
+\#define FOO This is \\
+   a multiline definition.
+\#define GREET(name) Hello, name!
+GREET(Alice)
+GREET(Bob)
+\\GREET(Charly)
+EOM
+
+TODO: build-in pp main inc docstrings
+'
+  local -A us_pp_main_sub_man=(
+    [--gpp]='Use GPP to produce script file'
+    [--no-gpp]='Do not add second pass GPP'
+    [--no-process]='Do not run us-pp, only GPP'
+    [--output]='Output after processing'
+    [--process]='Use us-pp to produce script from input'
+    [--exec]='Execute the produced script file'
+    [--help]='Shows manual or command description'
+    [-*]='Argument for GPP'
+    [--]='Abort argument processing. Pass rest of arguments to executed script'
+    [*]='Considered as file input, abort argument processing if non-existent file'
+  )
+  ! (($#)) || {
+    local -n _doc='us_pp_main_sub_man["$sub"]'
+    [[ ${_doc:+set} ]] || sub=--$sub
+    [[ ${_doc:+set} ]] || failerr "$script_cmdname: No such command $cmd ${1@Q}" || return
+    echo "$cmd $sub: $_doc"
+    return
+  }
+  echo "${us_pp_main_man//"~"/"$cmd"}"
+  echo
+  echo "Options:"
+  printf.lines.array-map us_pp_main_sub_man
+}
+
+userscripts::preproc::run_main ()
+{
+: alias us_run_main
+: about 'Shortcut for us-build --run'
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  userscripts::preproc::build_main --run "$@"
+}
+
+userscripts::preproc::update_main ()
+{
+: alias us_update_main
+: about 'Shortcut for us-build --update'
+  _us_pp_debug "> $FUNCNAME: ${*@Q}"
+  userscripts::preproc::build_main --update "$@"
+}
+
+
+userscripts::preproc::_op_define ()
+{
+: private-prefix _us_pp
+  local lk=define:${current_dir}
+
+  [[ ! ${current_param:+set} ]] ||
+    failerr "Unexpected parameter(s) ${current_param@Q}" || return
+  #us_pp_param["$current_dir"]=$current_param
+  us_pp_snip["$current_dir"]=$current_block
+  us_pp_snip_literal["$current_dir"]=$current_literal
+  _us_pp_notice "Defined ${current_dir} = ${current_block@Q}"
+}
+
+userscripts::preproc::_op_generate ()
+{
+: private-prefix _us_pp
+  local lk=generate:${current_dir}
+  case "$current_dir" in
+
+  ( about )
+      : "${current_block:0:-1} "
+      : "${_//$'\n'# /$'\n'}"
+      : "${_%%[# ]}"
+      : "${_##[# ]}"
+      ABOUT_HEAD=$_
+      : "${SCRIPT_ABOUT_HEAD:=$ABOUT_HEAD}"
+      local _lc=$us_pp_linecomment
+      # XXX: should really check if text starts with linebreak to insert space
+      : "$_lc ${SCRIPT_ABOUT_HEAD//$'\n'/$'\n'$_lc }"
+      echo "${_//# $'\n'/#$'\n'}"
+    ;;
+
+  ( * ) failerr "No such generated block ${current_dir@Q}"
+    ;;
+
+  esac
+}
+
+userscripts::preproc::_op_snippet ()
+{
+: private-prefix _us_pp
+  local lk=snippet:${current_dir} us_include=${U_S:?}/tool/us/include
+  _pp_inc () {
+    if ((current_literal))
+    then if ((run_gpp))
+      then echo "#include <user-script.$1>"
+      else cat "$us_include/user-script.$1"
+      fi
+    else
+      _us_pp_unshift_source "$us_include/user-script.$1"
+    fi
+  }
+  _pp_inc_src () {
+    ! ((current_literal)) || _us_pp_notice "Warning: Source is not literal: ${current_dir@Q}: $1"
+    _us_pp_unshift_source "$us_include/user-script.$1"
+  }
+  case "$current_dir" in
+  ( debug | us-debug )    _pp_inc       'debug.sh.h' ;;
+  ( log | us-log )        _pp_inc_src   'log.sh.h' ;;
+  ( strict | us-strict )  _pp_inc       'strict.sh.h' ;;
+  ( us-host-profile )     _pp_inc       'host-profile.sh.h' ;;
+  ( us-basedir )          _pp_inc       'ewd.bash.h' ;;
+  ( us-build-config )     _pp_inc       'build.config.bash.h' ;;
+  ( us-configure )        _pp_inc_src   'configure.bash.h' ;;
+  ( us-package )          _pp_inc       'package.bash.h' ;;
+  ( verbosity | us-build-verbosity )
+                          _pp_inc       'build-verbosity.bash' ;;
+
+  ( * )
+      local -n _dir=current_dir
+      local -n _snip='us_pp_snip["$_dir"]'
+      local -n _snip_lit='us_pp_snip_literal["$_dir"]'
+      [[ ${_snip:+set} ]] ||
+        failerr "No such snippet or definition ${_dir@Q}" || return
+
+      ((current_literal)) || {
+        ((_snip_lit)) || _us_pp_notice "Warning: Source is not literal ${_dir@Q}"
+      }
+      local _new="${_snip//"{{$_dir.content}}"/"$current_param"}"
+      ((_snip_lit)) && echo -n "$_new" || _us_pp_unshift_lineblock _new
+
+  esac
+}
+
+userscripts::preproc::_op_special ()
+{
+: private-prefix _us_pp
+  local lk=special:$current_dir
+  case "$current_dir" in
+
+  ( data )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local file rest
+      read -r file rest <<< "$current_param"
+      [[ ! ${rest:+set} ]] || failerr "Surplus parameter(s) ${rest@Q}" || return
+      . "$file" ||
+        failerr "E$? while loading ${file@Q}"
+    ;;
+
+  ( declare-ifndef )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local -a args
+      read -r -a args <<< "$current_param"
+      _us_pp_debug ":declare-ifndef ${args[*]@Q}"
+      # XXX: see :declare for latest routine
+      # sh_generate_declare ...
+      [[ $us_pp_lang = bash ]] ||
+        failerr "TODO: Conditional declare for $us_pp_lang" 125 || return
+      local a k v
+      case "${args[0]}" in
+        ( -p )
+            for a in "${args[@]:1}"
+            do
+              k=${a%%=*}
+              [[ $k != "$a" ]] ||
+                failerr "Key=value pattern expected: ${a@Q}" || return
+              v=${a: ${#k}+1}
+              printf ': "${%s:=%s}"\n' "$k" "$v"
+            done ;;
+        ( -f )
+            for a in "${args[@]:1}"
+            do
+              if_ok "$(declare -f "$a")" ||
+                failerr "Function not found: ${a@Q}" || return
+              printf 'if_ok "$(declare -F "%s")" ||\n%s\n' "$a" "$_"
+            done ;;
+        ( * ) failerr "Ilegal $current_dir flag ${args[0]}" || return
+      esac
+    ;;
+
+  ( declare )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local -a args
+      read -r -a args <<< "$current_param"
+      _us_pp_debug ":declare ${args[*]@Q}"
+      # TODO: parse flags, see define
+      # XXX: bash format
+      declare "${args[@]}"
+    ;;
+
+  ( define )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      local -a args
+      read -r -a args <<< "$current_param"
+      [[ ${#args[*]} -gt 0 ]] ||
+        failerr "$lk: Cannot parse parameter(s)" || return
+      [[ ${#args[*]} -eq 1 ]] || {
+        [[ ${args[1]:0:1} != '(' ]] || failerr "TODO macro functions" || return
+      }
+      # TODO: parse flags
+      local -n _tag='args[0]'
+      local -n _sub='us_gpp_subs["$_tag"]'
+      [[ ${_sub:+set} ]] || us_gpp_defs+=( "$_tag" )
+      [[ ${#args[*]} -eq 1 ]] &&
+      _sub= || _sub="${args[*]:2}"
+    ;;
+
+  ( generator )
+      # ((DEV))
+      #echo "GENERATOR=\"$$/$0 from ${us_pp_input@Q} at $(date --iso=sec)\""
+      echo "GENERATOR=\"$$/$script_cmdname from ${us_pp_input@Q} at $(date --iso=sec)\""
+    ;;
+
+  ( include )
+      [[ ${current_param:+set} ]] ||
+        failerr "$lk: Expected parameter(s) ${current_dir@Q}" || return
+      : "${us_pp_incs[*]}"
+      local name rest src ext path=${_// /:}
+      read -r name rest <<< "$current_param"
+      [[ ! ${rest:+set} ]] ||
+        failerr "Surplus parameter(s) ${rest@Q}" || return
+      _us_pp_debug "Resolving $current_dir $name"
+      for ext in .build "" .bash
+      do src=$(PATH=$path command -v "$name$ext") && break
+      done
+      [[ -f "$src" ]] ||
+        failerr "Unable to resolve ${name@Q}" || return
+      _us_pp_unshift_source "$src"
+    ;;
+
+  ( license )
+      [[ ! ${current_param:+set} ]] ||
+        failerr "$lk: Unexpected parameter(s) ${current_param@Q}" || return
+      # Generate from template if set empty or LICENSE.head is missing
+      [[ ${PROJECT_LICENSE_HEAD+set} ]] || {
+        [[ ! -e LICENSE.head ]] || PROJECT_LICENSE_HEAD=$(< LICENSE.head)
+      }
+      [[ ${PROJECT_LICENSE_HEAD-} ]] && {
+        # XXX: should really check if text starts with linebreak
+        : "$us_pp_linecomment ${PROJECT_LICENSE_HEAD//$'\n'/$'\n'$us_pp_linecomment }"
+        echo "${_//# $'\n'/#$'\n'}"
+      } || {
+        : "${USER:=$(whoami)}"
+        : "${HOST:=$(hostname)}"
+        YEAR=$(date +%Y)
+        USERINFO=${USER}@${HOST}
+        lines_prefix "$us_pp_linecomment " << EOM
+
+Copyright $YEAR $USER <$USERINFO>
+
+Distributed under terms of the ${FILE_LICENSE:-MIT} license.
+EOM
+        }
+    ;;
+
+  ( modeline ) [[ ${us_pp_lang} = bash ]] ||
+          failerr "$lk: Unsupported build langauge ${us_pp_lang}" || return
+        [[ ${us_pp_lang} = bash ]] && {
+          #echo "# ex:ft=bash:"
+          echo "# ${current_param:-vim:set ft=bash sw=2 sts=2 et:}"
+        }
+      ;;
+
+  ( * ) failerr "No such special ${current_dir@Q}" || return
+  esac
+}
+
+userscripts::preproc::_op_template ()
+{
+: private-prefix _us_pp
+  local lk=template:${current_dir}
+  case "$current_dir" in
+    ( expand )
+        local {key,value,map}name _x rest
+        read -r {key,value,map}name rest <<< "$current_param"
+        [[ ${mapname:+set} ]] || {
+          [[ ${valuename:+set} ]] ||
+            failerr "expand directive expects array value and arguments" || return
+          mapname=$valuename
+          valuename=$keyname
+          keyname=_x
+        }
+        local -n _map=$mapname _value="${mapname}[\"\$_key\"]"
+        [[ ${_map[*]:+set} ]] ||
+          failerr "No data found for array: ${mapname@Q}" || return
+
+        local _str _key _new
+        for _key in "${!_map[@]}"
+        do
+          : "${current_block}"
+          : "${_//\{$keyname\}/$_key}"
+          : "${_//\{$valuename\}/$_value}"
+          _new+=$_
+        done
+
+        ((current_literal)) &&
+        echo -n "$_new" || _us_pp_unshift_lineblock _new
+      ;;
+
+  ( * ) failerr "No such template dir ${current_dir@Q}"
+    ;;
+
+  esac
+}
+
+userscripts::preproc::_prepfile ()
+{
+: private-prefix _us_pp
+  us_pp_input=${2}
+  local _firstline="$(head -n 1 "${2}")"
+  [[ $_firstline == "#!"* ]] && {
+    us_pp_shebang=${_firstline:2}
+    : "${us_pp_shebang##*/}"
+    : ${_#* }
+    us_pp_alias=$_
+    if [[ $us_pp_alias == *.* ]]
+    then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
+    else us_pp_lang=${us_pp_alias}
+    fi
+  } || {
+    us_pp_lang=${2##*.}
+    case "$us_pp_lang" in ( build | us-build )
+        : "${2%.*}"
+        : "${_##*.}"
+        us_pp_lang=${_}
+    esac
+  }
+  us_pp_inputreal="$(realpath "${2}")"
+  : "${us_pp_inputreal%/*}"
+  : "${us_pp_inputreal##*/},${_//\//-}${1}"
+  us_pp_output=/tmp/${_}
+  _us_pp_run
+}
+
+userscripts::preproc::_process_loop () {
+: private-prefix _us_pp
+  declare -ga us_pp_sources
+  _us_pp_open_filesource () {
+    exec {new_fd}<"$1" ||
+        failerr "E$? opening FD for file ${1@Q}" || return
+    us_pp_sources+=( "$1" )
+    _us_pp_debug "Reading from ${1@Q} (FD #${new_fd})"
+  }
+  _us_pp_unshift_source () {
+    local new_fd
+    _us_pp_open_filesource "$1" &&
+    # NOTE read is at end of stack, so unshift is just push
+    us_pp_input_stack+=( "$new_fd" )
+  }
+  _us_pp_concat_source () {
+    local new_fd
+    _us_pp_open_filesource "$1" &&
+    # NOTE read is at end of stack, so concat is actually unshift
+    us_pp_input_stack=( "$new_fd" "${us_pp_input_stack[@]}" )
+  }
+  _us_pp_unshift_lineblock() {
+    local new_fd
+    local -n _str=${1}
+    exec {new_fd}<<<"$_str" ||
+        failerr "E$? opening FD for string ${1}" || return
+    us_pp_input_stack+=( "$new_fd" )
+    _us_pp_debug "Using string input from ${FUNCNAME[1]} at FD #${new_fd}"
+  }
+  _us_pp_readline ()
+  {
+    local _cur_fd=${us_pp_fd}
+    if ! IFS= read -r us_pp_line <&$us_pp_fd
+    then
+      #XXX: try: close
+      exec {us_pp_fd}<&- &&
+      unset ${!us_pp_fd} || {
+        us_pp_fail_stat=$?
+        us_pp_fail_fd=$_cur_fd
+        failerr "E$? closing FD $_cur_fd" $us_pp_fail_stat || return
+      }
+      #/
+      (( ${#us_pp_input_stack[*]} == 0 )) && return ${_E_break:?}
+      return ${_E_next:?}
+    fi
+    _us_pp_debug "FD $us_pp_fd read line ${us_pp_line@Q}"
+  }
+
+  # Prepare to run different directives
+  local -A us_pp_op=(
+    ['%']=define
+    ['<']=template
+    ['>']=generate
+    ['&']=snippet
+    [':']=special
+  )
+  local -n _op='us_pp_op["$current_op"]'
+  local current_{block,dir,literal,op,param}
+  local us_pp_{line,nest}
+  local -n us_pp_fd='us_pp_input_stack[-1]'
+  local -a us_pp_input_stack
+
+  # First apply static script as filter on input
+  [[ ${us_pp_lang-} ]] ||
+    failerr "Language expected for prefilter" || return
+  if [[ ! ${us_pp_filter-} ]]
+  then
+    exec {new_fd}<"$us_pp_input"
+  else
+    exec {new_fd}< <(< "$us_pp_input" . <(echo "${us_pp_filter}"))
+  fi
+  us_pp_sources+=( "$us_pp_input" )
+  us_pp_input_stack=( "$new_fd" )
+
+  if ((do_outline))
+  then
+    declare -ga us_pp_outline{,_tags}
+    us_pp_outline_level=0
+  fi
+
+  # Main processing loop: read one line at a time, from last FD on stack until
+  # all inputs are read
+  while true
+  do
+    _us_pp_readline || {
+      # TODO: when in outliner, do individual SOF/EOF plus final end-of-input event
+      test $_E_next -eq $? && continue || {
+        test $_E_break -eq $_ && break || return $_
+      }
+    }
+    if case "$us_pp_line" in
+    ( '#'['&':]* ) # Match aliases
+        current_op=${us_pp_line:1:1}
+        read -r current_dir current_param <<< "${us_pp_line:2}"
+        [[ ${current_dir:0:1} == "'" ]] &&
+        current_dir=${current_dir:1:-1} current_literal=1 ||
+          current_literal=0
+      ;;
+    ( '#'['<>'%]* ) # Match block definitions
+        current_op=${us_pp_line:1:1}
+        read -r current_dir current_param <<< "${us_pp_line:2}"
+        [[ ${current_dir:0:1} == "'" ]] &&
+        current_dir=${current_dir:1:-1} current_literal=1 ||
+          current_literal=0
+        # Read block
+        us_pp_nest=1
+        while true
+        do
+          _us_pp_readline || {
+            test $_E_next -eq $? && continue || {
+              test $_E_break -eq $_ || return $_
+              failerr "E$_ while reading $current_dir block" $_ || return
+              failerr "EOF while reading $current_dir block from $us_pp_fail_fd" $_ || return
+            }
+          }
+          if [[ ${us_pp_line} == "#$current_op$current_dir"* ||
+                ${us_pp_line} == "#$current_op'$current_dir'"* ]]
+          then ((us_pp_nest+=1))
+          elif [[ ${us_pp_line} == "#/${current_dir}" ]]
+          then
+            ((us_pp_nest-=1)) || break
+          fi
+          current_block+=${us_pp_line}$'\n'
+        done
+      ;;
+    ( '#!'['! ']* ) # Interpret or discard outline header text lines
+        ((do_outline)) || continue
+        _us_pp_scan_${us_pp_outliner:?} || return
+        continue
+      ;;
+    ( '#!'* ) # Replace shebang
+        >/dev/null 2>&1 command -v $us_pp_lang ||
+          _us_pp_notice "Warning: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
+        echo "#!/usr/bin/env $us_pp_lang"
+        continue ;;
+    ( '##'* ) # Reformat to normal cpp/gpp directive
+        us_pp_line=${us_pp_line:1}
+        false ;;
+    ( '#'* ) continue ;; # Strip all other comments or directives
+    ( * ) false ;; # Pass-through line, no processing
+    esac; then
+      _us_pp_op_${_op} || {
+        test $_E_next -eq $? || return $_
+      }
+      unset current_{block,dir,literal,op,param}
+      continue
+    fi
+    # XXX: another feature; accept bash -continuations
+    ! ((${run_gpp:-0})) || {
+      # escape unquated? continuations so they do not get lost
+      [[ ${us_pp_line: -1:1} != "\\" ]] || {
+        us_pp_line="$us_pp_line\\"
+      }
+    }
+    echo "$us_pp_line"
+  done
+}
+
+userscripts::preproc::_procfile ()
+{
+: private-prefix _us_pp
+: about 'Setup input and output and invoke _run to process and write files'
+: extended 'Helper for us-pp main. '
+  # XXX: do shebang AND modeline scanning if process mode is not entirely clear
+  us_pp_input=${1:?}
+  us_pp_output=${2-}
+  if [[ $us_pp_input == - ]]
+  then
+    us_pp_input=/dev/stdin
+    _us_pp_debug "Reading from standard input"
+    ! ((do_modeline)) ||
+      _ failerr "Cannot read modeline from standard input (ignored)"
+  else
+    if ((do_modeline)); then
+      if_ok "$(tail -n 1 "$us_pp_input")" &&
+      _us_pp_scan_modeline "${_:1}" ||
+        failerr "E$? file peek for ${us_pp_input@Q} modeline" || return
+    fi
+  fi
+
+  if [[ ! ${us_pp_lang:+set} ]]; then
+    if [[ $us_pp_input == /dev/stdin ]]
+    then
+      failerr "Cannot read shebang from standard input" || return
+    fi
+    if [[ ${us_pp_output:+set} && "$us_pp_output" == *.* ]]
+    then us_pp_lang=${us_pp_output##*.}
+    else
+      local _firstline="$(head -n 1 "${1}")"
+      if [[ $_firstline == "#!"* ]]
+      then
+        us_pp_shebang=${_firstline:2}
+        : "${us_pp_shebang##*/}"
+        local arg _cmdline=( ${_#* } )
+        for arg in "${_cmdline[@]}"
+        do
+          case "$arg" in
+          ( env ) ;;
+          ( -* ) ;;
+          ( * ) us_pp_alias=$arg; break ;;
+          esac
+        done
+
+        if [[ $us_pp_alias == *.* ]]
+        then us_pp_program=${us_pp_alias%.*} us_pp_lang=${us_pp_alias##*.}
+        else us_pp_lang=${us_pp_alias}
+        fi
+      else
+        us_pp_lang=${us_pp_input##*.}
+      fi
+    fi
+  fi
+
+  # XXX: us-build CLI is too primitive but dont feel like focussing on that rn
+  >/dev/null 2>&1 command -v $us_pp_lang ||
+    _us_pp_notice "Warning: Inaccessible language interpreter ${us_pp_lang@Q}"
+
+  if [[ ! ${us_pp_output:+set} ]]
+  then
+    us_pp_inputreal="$(realpath "${us_pp_input}")"
+    : "${us_pp_inputreal%/*}"
+    : "${us_pp_inputreal##*/},${_//\//-}.mpe.$us_pp_lang"
+    us_pp_output=/tmp/${_}
+  fi
+
+  # Generate and return status
+  _us_pp_run
+}
+
+userscripts::preproc::_run ()
+{
+: private-prefix _us_pp
+  _us_pp_notice "Reading: ${us_pp_input@Q}"
+  _us_pp_writefile || return
+  _us_pp_notice "Done: ${us_pp_output@Q}"
+}
+
+userscripts::preproc::_scan_default_outliner ()
+{
+: private-prefix _us_pp
+: about 'Read text into level headers and parse roles and tags format'
+  local word headerread=0
+  local -n _tags='us_pp_outline_tags[$us_pp_outline_level]'  _header='us_pp_outline[-1]'
+  : "${us_pp_line:1}"
+  : "${_//[^A-Za-z0-9_()#\!\$@%\&*|,\.:=+-]/ }"
+  for word in $_
+  do case "$word" in
+      ( "!"* )
+          : "${word##[^!]*}"
+          ((us_pp_outline_level+=${#_}))
+          us_pp_outline+=( "" )
+        ;;
+      ( "~"* ) ;;
+      ( "+"* )
+          TODO "Add project context tag"
+          _tags+=( "$word" )
+        ;;
+      ( "@"* )
+          TODO "Add generic context tag"
+          _tags+=( "$word" )
+        ;;
+      ( * ) _header+="${_header:+ }$word" ;;
+    esac
+  done
+}
+
+userscripts::preproc::_scan_modeline ()
+{
+: private-prefix _us_pp
+: about 'Parse language and outliner info from text'
+  local word
+  local -n _tags
+  # FIXME: parse prefixed blocks properly
+  : "${*//[^A-Za-z0-9_=:-]/ }"
+  for word in ${_//:/ }
+  do case "$word" in
+
+      ( pwd ) : "${EWD:=$PWD}"
+          declare -x EWD
+        ;;
+
+      ( gpp-mode=* ) us_gpp_mode=${word:9}; return ;;
+      ( *:gpp-mode=*:* )
+          : "${word##*:gpp-mode=}"
+          : "${_%%[: ]*}"
+          us_gpp_mode=$_; return ;;
+
+      ( ft=* ) us_pp_lang=${word:3}; return ;;
+      ( *:ft=*:* )
+          : "${word##*:ft=}"
+          : "${_%%[: ]*}"
+          us_pp_lang=$_; return ;;
+      ( * ) ;;
+    esac
+  done
+}
+
+userscripts::preproc::_writefile ()
+{
+: private-prefix _us_pp
+  _us_pp_process_loop > "$us_pp_output"
 }
 
 
@@ -299,19 +1244,22 @@ _us_pp_init ()
   if [[ ${U_S:+set} ]]
   then
     # Load parts and generate functions to map some namespaced names
-    
-    PATH+=:$U_S/tool/bash/include
-    . us-pp-core.inc.bash
-    . us-pp-cli.inc.bash
 
-    userscripts::use userscripts::core
-    userscripts::use userscripts::string
-    userscripts::use userscripts::preproc
+    # XXX: use when they are not exactly include syntax, need a linter/syntax checker
+    #PATH+=:$U_S/tool/bash/include
+    #. us-pp-core.inc.bash &&
+    #. us-pp-cli.inc.bash || exit
+
+    userscripts::use userscripts::core &&
+    userscripts::use userscripts::string &&
+    userscripts::use userscripts::preproc || exit
+
     if [[ ${ENV:+set} ]]; then
-      userscripts::use userscripts::stdenv
+      userscripts::use userscripts::stdenv || exit
     fi
   else
-    >&2 echo "$$ us-pp: cannot continue without User-Script env"
+    >&2 echo "$$"'$'"$-/${0##*/}: cannot continue without User-Script env"
+    exit 2
   fi
 }
 
@@ -350,7 +1298,7 @@ _us_pp_load ()
     [[ "${ref:0:1}" == / ]] || {
       [[ ${EWD:+set} ]] || {
         [[ ! -e "$ref" ]] ||
-        >&2 echo "Set EWD for relative path config (ignored: ${ref@Q})"
+        _us_pp_notice "Set EWD for relative path config (ignored: ${ref@Q})"
         continue
       }
       ref=$EWD/$ref

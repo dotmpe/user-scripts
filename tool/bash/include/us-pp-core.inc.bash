@@ -14,7 +14,7 @@ userscripts::preproc::_op_define ()
   #us_pp_param["$current_dir"]=$current_param
   us_pp_snip["$current_dir"]=$current_block
   us_pp_snip_literal["$current_dir"]=$current_literal
-  ((QUIET)) || >&2 echo "Defined ${current_dir} = ${current_block@Q}"
+  _us_pp_notice "Defined ${current_dir} = ${current_block@Q}"
 }
 
 userscripts::preproc::_op_generate ()
@@ -57,7 +57,7 @@ userscripts::preproc::_op_snippet ()
     fi
   }
   _pp_inc_src () {
-    ! ((current_literal)) || >&2 echo "Warn: Source is not literal: ${current_dir@Q}: $1"
+    ! ((current_literal)) || _us_pp_notice "Warning: Source is not literal: ${current_dir@Q}: $1"
     _us_pp_unshift_source "$us_include/user-script.$1"
   }
   case "$current_dir" in
@@ -80,7 +80,7 @@ userscripts::preproc::_op_snippet ()
         failerr "No such snippet or definition ${_dir@Q}" || return
 
       ((current_literal)) || {
-        ((_snip_lit)) || >&2 echo "Warn: Source is not literal ${_dir@Q}"
+        ((_snip_lit)) || _us_pp_notice "Warning: Source is not literal ${_dir@Q}"
       }
       local _new="${_snip//"{{$_dir.content}}"/"$current_param"}"
       ((_snip_lit)) && echo -n "$_new" || _us_pp_unshift_lineblock _new
@@ -179,8 +179,7 @@ userscripts::preproc::_op_special ()
       read -r name rest <<< "$current_param"
       [[ ! ${rest:+set} ]] ||
         failerr "Surplus parameter(s) ${rest@Q}" || return
-      ! ((DEBUG)) || ((QUIET)) ||
-        >&2 echo "Resolving $current_dir $name"
+      _us_pp_debug "Resolving $current_dir $name"
       for ext in .build "" .bash
       do src=$(PATH=$path command -v "$name$ext") && break
       done
@@ -301,8 +300,7 @@ userscripts::preproc::_process_loop () {
     exec {new_fd}<"$1" ||
         failerr "E$? opening FD for file ${1@Q}" || return
     us_pp_sources+=( "$1" )
-    ! ((DEBUG)) || ((QUIET)) ||
-      >&2 echo "Reading from ${1@Q} (FD #${new_fd})"
+    _us_pp_debug "Reading from ${1@Q} (FD #${new_fd})"
   }
   _us_pp_unshift_source () {
     local new_fd
@@ -322,8 +320,7 @@ userscripts::preproc::_process_loop () {
     exec {new_fd}<<<"$_str" ||
         failerr "E$? opening FD for string ${1}" || return
     us_pp_input_stack+=( "$new_fd" )
-    ! ((DEBUG)) || ((QUIET)) ||
-      >&2 echo "Using string input from ${FUNCNAME[1]} at FD #${new_fd}"
+    _us_pp_debug "Using string input from ${FUNCNAME[1]} at FD #${new_fd}"
   }
   _us_pp_readline ()
   {
@@ -341,8 +338,7 @@ userscripts::preproc::_process_loop () {
       (( ${#us_pp_input_stack[*]} == 0 )) && return ${_E_break:?}
       return ${_E_next:?}
     fi
-    ! ((DEBUG)) || ((QUIET)) ||
-      >&2 echo "FD $us_pp_fd read line ${us_pp_line@Q}"
+    _us_pp_debug "FD $us_pp_fd read line ${us_pp_line@Q}"
   }
 
   # Prepare to run different directives
@@ -388,14 +384,14 @@ userscripts::preproc::_process_loop () {
       }
     }
     if case "$us_pp_line" in
-    ( \#[\&:]* ) # Match aliases
+    ( '#'['&':]* ) # Match aliases
         current_op=${us_pp_line:1:1}
         read -r current_dir current_param <<< "${us_pp_line:2}"
         [[ ${current_dir:0:1} == "'" ]] &&
         current_dir=${current_dir:1:-1} current_literal=1 ||
           current_literal=0
       ;;
-    ( \#[\<\>%]* ) # Match block definitions
+    ( '#'['<>'%]* ) # Match block definitions
         current_op=${us_pp_line:1:1}
         read -r current_dir current_param <<< "${us_pp_line:2}"
         [[ ${current_dir:0:1} == "'" ]] &&
@@ -422,14 +418,14 @@ userscripts::preproc::_process_loop () {
           current_block+=${us_pp_line}$'\n'
         done
       ;;
-    ( '#!'[\!\ ]* ) # Interpret or discard outline header text lines
+    ( '#!'['! ']* ) # Interpret or discard outline header text lines
         ((do_outline)) || continue
         _us_pp_scan_${us_pp_outliner:?} || return
         continue
       ;;
     ( '#!'* ) # Replace shebang
         >/dev/null 2>&1 command -v $us_pp_lang ||
-          >&2 echo "Warning: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
+          _us_pp_notice "Warning: Entering shebang for inaccessible interpreter ${us_pp_lang@Q}"
         echo "#!/usr/bin/env $us_pp_lang"
         continue ;;
     ( '##'* ) # Reformat to normal cpp/gpp directive
@@ -466,8 +462,7 @@ userscripts::preproc::_procfile ()
   if [[ $us_pp_input == - ]]
   then
     us_pp_input=/dev/stdin
-    ! ((DEBUG)) || ((QUIET)) ||
-      >&2 echo "Reading from standard input"
+    _us_pp_debug "Reading from standard input"
     ! ((do_modeline)) ||
       _ failerr "Cannot read modeline from standard input (ignored)"
   else
@@ -513,7 +508,7 @@ userscripts::preproc::_procfile ()
 
   # XXX: us-build CLI is too primitive but dont feel like focussing on that rn
   >/dev/null 2>&1 command -v $us_pp_lang ||
-    >&2 echo "us-pp: Warning: Inaccessible language interpreter ${us_pp_lang@Q}"
+    _us_pp_notice "Warning: Inaccessible language interpreter ${us_pp_lang@Q}"
 
   if [[ ! ${us_pp_output:+set} ]]
   then
@@ -530,9 +525,9 @@ userscripts::preproc::_procfile ()
 userscripts::preproc::_run ()
 {
 : private-prefix _us_pp
-  ((QUIET)) || >&2 echo "$$ us-pp: reading: $us_pp_input"
+  _us_pp_notice "Reading: ${us_pp_input@Q}"
   _us_pp_writefile || return
-  ((QUIET)) || >&2 echo "$$ us-pp: done: $us_pp_output"
+  _us_pp_notice "Done: ${us_pp_output@Q}"
 }
 
 userscripts::preproc::_scan_default_outliner ()

@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ ${US_BUILD_BASH_DEBUG:+set} ]]; then
+  DEBUG=1
+  set -x
+fi
+
 #
 # Copyright 2008-2026 B. van Berkum <dev@dotmpe.com>
 #
@@ -44,7 +49,7 @@ userscripts::core::echo_stderr_with_status ()
 
 _us_build_init ()
 {
-  # XXX: build us-pp too...
+  # FIXME: this is dev setup, build us-pp too...
   . us-pp && _us_pp_init || failerr "E$? Loading script env" || exit
   # Integrate env 
   # loading additional scripts for preprocessor definitions

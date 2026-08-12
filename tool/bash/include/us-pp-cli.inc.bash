@@ -6,13 +6,19 @@
 userscripts::preproc::_debug ()
 {
 : private-prefix _us_pp
-  ((QUIET)) || ! ((DEBUG)) || >&2 echo "$$ $script_cmdname: $1"
+  ((QUIET)) || ! ((DEBUG)) || >&2 _us_pp_cmdmsg "$1"
 }
 
 userscripts::preproc::_notice ()
 {
 : private-prefix _us_pp
-  ((QUIET)) || >&2 echo "$$ $script_cmdname: $1"
+  ((QUIET)) || >&2 _us_pp_cmdmsg "$@"
+}
+
+userscripts::preproc::_cmdmsg ()
+{
+: private-prefix _us_pp
+  echo "$$"'$'"$-/$script_cmdname: $1"
 }
 
 userscripts::preproc::build_main ()
@@ -73,7 +79,7 @@ userscripts::preproc::build_main ()
       failerr "Output expected ${_file_arg[*]@Q}" || return
     if [[ $(command -v $script_cmdname) -ef "$build_target.new" ]]
     then
-      >&2 echo "$script_cmdname $$: Warning: should probably not overwrite currently running script"
+      _us_pp_notice "Warning: should probably not overwrite currently running script"
     fi
     if std_noo diff -bqr "$build_target.new" "$_output"; then
       _us_pp_debug "No updates for $build_target"

@@ -6,6 +6,11 @@
 #
 # Distributed under terms of the MIT license.
 
+if [[ ${US_BUILD_BASH_DEBUG:+set} ]]; then
+  DEBUG=1
+  set -x
+fi
+
 #&'debug'
 #&'strict'
 #&'log'
