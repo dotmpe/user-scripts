@@ -54,7 +54,7 @@ sh_mode ()
                 # Hash location, inherit DBG/RET traps and exitonerror
                 set -hETe &&
                 shopt -s extdebug &&
-                . "${U_C:?}"/script/bash-uc.lib.sh &&
+                TODO "use new err exit handler for bash trap" &&
                 trap 'bash_uc_errexit' ERR || return
               ;;
 

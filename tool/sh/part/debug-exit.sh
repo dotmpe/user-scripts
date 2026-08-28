@@ -31,7 +31,7 @@ test ! -e "${U_C:=/srv/project-local/user-conf-dev}" && {
       ansi_uc_lib__init
     }
   } &&
-    . ${U_C}/script/bash-uc.lib.sh &&
+    TODO "deprecate all this" &&
 
   trap bash_uc_errexit ERR
 }
